@@ -16,6 +16,7 @@ model Preguntas {
   
   opciones          OpcionesPregunta[]
   respuestasRonda   RespuestasRonda[]
+  votos             VotosPublico[]
 
   @@map("preguntas")
 }
