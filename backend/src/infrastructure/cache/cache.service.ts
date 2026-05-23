@@ -77,7 +77,9 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
     if (this.redisClient) {
       try {
         this.redisClient.disconnect();
-      } catch {}
+      } catch {
+        // Ignorar error al desconectar
+      }
       this.redisClient = null;
     }
 
@@ -118,7 +120,9 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
     if (this.redisClient) {
       try {
         await this.redisClient.quit();
-      } catch {}
+      } catch {
+        // Ignorar error al cerrar
+      }
       this.logger.log('[CACHE:DOWN] Conexión con Redis cerrada.');
     }
   }
