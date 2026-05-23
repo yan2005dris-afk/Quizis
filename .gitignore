@@ -2,3 +2,4 @@
 /openspec
 /.atl
 /backend/src/generated
+.env
