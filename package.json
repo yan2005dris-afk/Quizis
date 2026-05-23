@@ -26,5 +26,10 @@
         "@nestjs/common>class-validator": "0.15.1"
       }
     }
+  },
+  "dependencies": {
+    "@nestjs/platform-socket.io": "^11.1.23",
+    "@nestjs/websockets": "^11.1.23",
+    "socket.io": "^4.8.3"
   }
 }

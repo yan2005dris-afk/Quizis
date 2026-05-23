@@ -3,6 +3,7 @@ import { IdentityModule } from './identity/identity.module';
 import { ConfigModule } from '@nestjs/config';
 import { DatabaseModule } from './infrastructure/database/prisma.module';
 import { ThrottlerModule } from '@nestjs/throttler';
+import { WebsocketsModule } from './websockets/websockets.module.js';
 
 @Module({
   imports: [
@@ -13,6 +14,7 @@ import { ThrottlerModule } from '@nestjs/throttler';
     ThrottlerModule.forRoot([{ ttl: 60000, limit: 100 }]),
     DatabaseModule,
     IdentityModule,
+    WebsocketsModule,
   ],
   controllers: [],
   providers: [],
