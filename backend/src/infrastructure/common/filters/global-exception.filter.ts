@@ -7,7 +7,7 @@ import {
   BadRequestException,
   ValidationError,
 } from '@nestjs/common';
-import { Request, Response } from 'express';
+import type { Request, Response } from 'express';
 
 interface FormattedValidationError {
   field: string;

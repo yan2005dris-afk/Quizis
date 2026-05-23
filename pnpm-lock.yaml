@@ -64,6 +64,9 @@ importers:
       dotenv:
         specifier: ^16.4.7
         version: 16.6.1
+      express:
+        specifier: ^5.2.1
+        version: 5.2.1
       ms:
         specifier: ^2.1.3
         version: 2.1.3
