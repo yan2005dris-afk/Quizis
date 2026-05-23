@@ -1,14 +1,18 @@
 /* RESET */
 
-*{
+html{
   box-sizing: border-box;
-  margin: 0;
-  padding: 0;
+}
+
+*, *::before, *::after{
+  box-sizing: inherit;
 }
 
 /* BODY */
 
 body{
+  margin: 0;
+  padding: 0;
   font-family: Arial, Helvetica, sans-serif;
   background: #e5e7eb;
 }
