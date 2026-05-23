@@ -49,9 +49,19 @@ describe('VotosService (2-Phase Persist)', () => {
       const participanteId = 5;
       const opcionId = 2;
 
-      await service.registrarVoto(rondaId, preguntaId, participanteId, opcionId);
+      await service.registrarVoto(
+        rondaId,
+        preguntaId,
+        participanteId,
+        opcionId,
+      );
 
-      expect(cacheService.setVote).toHaveBeenCalledWith(rondaId, preguntaId, participanteId, opcionId);
+      expect(cacheService.setVote).toHaveBeenCalledWith(
+        rondaId,
+        preguntaId,
+        participanteId,
+        opcionId,
+      );
       expect(prismaService.votosPublico.createMany).not.toHaveBeenCalled();
     });
   });
@@ -67,7 +77,10 @@ describe('VotosService (2-Phase Persist)', () => {
 
       const result = await service.persistirVotos(rondaId, preguntaId);
 
-      expect(cacheService.prepareVotesForPersist).toHaveBeenCalledWith(rondaId, preguntaId);
+      expect(cacheService.prepareVotesForPersist).toHaveBeenCalledWith(
+        rondaId,
+        preguntaId,
+      );
       expect(prismaService.votosPublico.createMany).not.toHaveBeenCalled();
       expect(result).toEqual({ count: 0 });
     });
@@ -85,7 +98,10 @@ describe('VotosService (2-Phase Persist)', () => {
 
       const result = await service.persistirVotos(rondaId, preguntaId);
 
-      expect(cacheService.prepareVotesForPersist).toHaveBeenCalledWith(rondaId, preguntaId);
+      expect(cacheService.prepareVotesForPersist).toHaveBeenCalledWith(
+        rondaId,
+        preguntaId,
+      );
       expect(prismaService.votosPublico.createMany).toHaveBeenCalledWith({
         data: [{ rondaId, preguntaId, participanteId: 5, opcionId: 2 }],
         skipDuplicates: true,
@@ -105,13 +121,24 @@ describe('VotosService (2-Phase Persist)', () => {
         processingKey: procKey,
         votes: mockVotes,
       });
-      mockPrismaService.votosPublico.createMany.mockRejectedValue(new Error('Postgres is down'));
+      mockPrismaService.votosPublico.createMany.mockRejectedValue(
+        new Error('Postgres is down'),
+      );
 
-      await expect(service.persistirVotos(rondaId, preguntaId)).rejects.toThrow('Postgres is down');
+      await expect(service.persistirVotos(rondaId, preguntaId)).rejects.toThrow(
+        'Postgres is down',
+      );
 
-      expect(cacheService.prepareVotesForPersist).toHaveBeenCalledWith(rondaId, preguntaId);
+      expect(cacheService.prepareVotesForPersist).toHaveBeenCalledWith(
+        rondaId,
+        preguntaId,
+      );
       expect(prismaService.votosPublico.createMany).toHaveBeenCalled();
-      expect(cacheService.rollbackVotes).toHaveBeenCalledWith(procKey, rondaId, preguntaId);
+      expect(cacheService.rollbackVotes).toHaveBeenCalledWith(
+        procKey,
+        rondaId,
+        preguntaId,
+      );
       expect(cacheService.commitVotes).not.toHaveBeenCalled();
     });
   });

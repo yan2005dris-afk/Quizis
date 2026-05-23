@@ -5,7 +5,7 @@ services:
     runtime: node
     plan: starter # Se recomienda starter para evitar que el servicio se "duerma" (Free tier duerme tras 15m)
     region: ohio # Asegúrate de que coincida con tu Redis y Supabase si es posible
-    buildCommand: npm install && npm run build && npx prisma generate
+    buildCommand: npm install && npm run build && pnpm exec prisma generate
     startCommand: npm run start:prod
     envVars:
       - key: NODE_ENV
