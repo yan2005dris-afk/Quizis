@@ -64,6 +64,12 @@ importers:
       dotenv:
         specifier: ^16.4.7
         version: 16.6.1
+      express:
+        specifier: ^5.2.1
+        version: 5.2.1
+      ms:
+        specifier: ^2.1.3
+        version: 2.1.3
       passport:
         specifier: ^0.7.0
         version: 0.7.0
@@ -107,6 +113,9 @@ importers:
       '@types/jest':
         specifier: ^30.0.0
         version: 30.0.0
+      '@types/ms':
+        specifier: ^2.1.0
+        version: 2.1.0
       '@types/node':
         specifier: ^24.0.0
         version: 24.12.4
