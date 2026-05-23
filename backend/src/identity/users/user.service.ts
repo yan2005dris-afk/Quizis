@@ -41,16 +41,17 @@ export class UserService {
 
     if (!user || user.deletedAt) return null;
 
-    const rolePermissionRows = user.rol && !user.rol.deletedAt
-      ? await this.prisma.rolPermisos.findMany({
-          where: {
-            rolId: user.rol.rolId,
-            deletedAt: null,
-            permiso: { deletedAt: null },
-          },
-          include: { permiso: { select: { recurso: true, accion: true } } },
-        })
-      : [];
+    const rolePermissionRows =
+      user.rol && !user.rol.deletedAt
+        ? await this.prisma.rolPermisos.findMany({
+            where: {
+              rolId: user.rol.rolId,
+              deletedAt: null,
+              permiso: { deletedAt: null },
+            },
+            include: { permiso: { select: { recurso: true, accion: true } } },
+          })
+        : [];
 
     return {
       usuarioId: user.usuarioId,

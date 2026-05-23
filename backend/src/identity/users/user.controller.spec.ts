@@ -128,9 +128,7 @@ describe('UserController', () => {
       const userId = 1;
       const mockResult = { deleted: true };
 
-      jest
-        .spyOn(userService, 'softDeleteUser')
-        .mockResolvedValue(mockResult as never);
+      jest.spyOn(userService, 'softDeleteUser').mockResolvedValue(mockResult);
 
       const result = await controller.remove(userId);
 
