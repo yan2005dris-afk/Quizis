@@ -1,0 +1,29 @@
+services:
+  # Backend NestJS
+  - type: web
+    name: quizis-backend
+    runtime: node
+    plan: starter # Se recomienda starter para evitar que el servicio se "duerma" (Free tier duerme tras 15m)
+    region: ohio # Asegúrate de que coincida con tu Redis y Supabase si es posible
+    buildCommand: npm install && npm run build && npx prisma generate
+    startCommand: npm run start:prod
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000 # Puerto por defecto en Render
+      - key: DATABASE_URL
+        fromDatabase:
+          name: quizis-db # Si usaras Render Postgres. Como usas Supabase, cámbialo a 'value'
+          property: connectionString
+      - key: REDIS_URL
+        fromDatastore:
+          name: quizis-redis
+          property: connectionString
+
+# Redis (Render Key Value)
+datastores:
+  - type: keyvalue
+    name: quizis-redis
+    plan: free # Puedes empezar con free, o usar 'starter' para persistencia
+    region: ohio
