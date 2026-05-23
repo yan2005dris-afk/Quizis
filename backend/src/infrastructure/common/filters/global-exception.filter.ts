@@ -82,7 +82,6 @@ export class GlobalExceptionFilter implements ExceptionFilter {
 
       // Log the error for debugging - in production this would go to the logger
       if (process.env.NODE_ENV === 'development') {
-        // eslint-disable-next-line no-console
         console.error('Unhandled error:', exception);
       }
     }
