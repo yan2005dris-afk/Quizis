@@ -1,0 +1,69 @@
+import { PrismaPg } from '@prisma/adapter-pg';
+import * as dotenv from 'dotenv';
+import * as path from 'path';
+import { Pool } from 'pg';
+import { PrismaClient } from '../../src/generated/prisma/client';
+import { seedRoles } from './seeds/role.seed';
+import { seedUSers } from './seeds/user.seed';
+
+// Cargar env desde el root de forma explícita
+dotenv.config({ path: path.join(__dirname, '../../../.env') });
+
+if (!process.env.DATABASE_URL) {
+  throw new Error('DATABASE_URL no está definida en el archivo .env');
+}
+
+console.log('🌱 Iniciando conexión a la base de datos...');
+
+const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+const adapter = new PrismaPg(pool);
+
+const prisma = new PrismaClient({
+  adapter,
+  log: ['query', 'error', 'warn'],
+});
+
+async function main() {
+  console.log('🌱 Seeding database...');
+
+  console.log('🧹 Limpiando base de datos...');
+  try {
+    const tablenames = await prisma.$queryRaw<
+      Array<{ tablename: string }>
+    >`SELECT tablename FROM pg_tables WHERE schemaname='public'`;
+
+    const tables = tablenames
+      .map(({ tablename }) => tablename)
+      .filter((name) => name !== '_prisma_migrations')
+      .map((name) => `"public"."${name}"`)
+      .join(', ');
+
+    if (tables.length > 0) {
+      await prisma.$executeRawUnsafe(`TRUNCATE TABLE ${tables} RESTART IDENTITY CASCADE;`);
+    }
+    console.log('✅ Base de datos limpiada correctamente desde 0.');
+  } catch (error) {
+    console.error('❌ Error limpiando base de datos', error);
+  }
+
+  // Roles
+  console.log('🎭 Creando roles...');
+  const roles = await seedRoles(prisma);
+  console.log('✅ Roles creados correctamente.');
+
+  // Usuarios
+  console.log('👤 Creando usuario admin...');
+  await seedUSers(prisma, roles);
+  console.log('✅ Usuarios creados correctamente.');
+
+  console.log('✅ Seed completado exitosamente.');
+}
+
+main()
+  .catch((e) => {
+    console.error('❌ Error en el seed:', e);
+    process.exit(1);
+  })
+  .finally(async () => {
+    await prisma.$disconnect();
+  });
