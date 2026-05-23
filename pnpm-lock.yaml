@@ -67,6 +67,9 @@ importers:
       ioredis:
         specifier: ^5.4.1
         version: 5.10.1
+      express:
+        specifier: ^5.2.1
+        version: 5.2.1
       ms:
         specifier: ^2.1.3
         version: 2.1.3
