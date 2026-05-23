@@ -1,0 +1,16 @@
+{
+  "version": 2,
+  "public": true,
+  "cleanUrls": true,
+  "trailingSlash": false,
+  "framework": "angular",
+  "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "https://quizis-backend.onrender.com/api/:path*"
+    }
+  ],
+  "github": {
+    "silent": true
+  }
+}
