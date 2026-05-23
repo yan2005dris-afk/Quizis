@@ -23,49 +23,60 @@ export class QuizGateway implements OnGatewayConnection, OnGatewayDisconnect {
     console.log(`Cliente desconectado: ${client.id}`);
   }
 
-  
   @SubscribeMessage('unirse_sala')
   handleJoinRoom(
     @ConnectedSocket() client: Socket,
     @MessageBody() payload: { pin: string; nombre: string }
   ) {
-    
     client.join(payload.pin);
     console.log(`${payload.nombre} se unió a la sala ${payload.pin}`);
-    
-    
     this.server.to(payload.pin).emit('nuevo_participante', payload.nombre);
   }
 
   
-  @SubscribeMessage('lanzar_pregunta')
-  handleLanzarPregunta(
+  // CICLO DE VIDA DE LOS EVENTOS 
+  @SubscribeMessage('sala_creada')
+  handleSalaCreada(
     @ConnectedSocket() client: Socket,
-    @MessageBody() payload: { pin: string; preguntaId: number }
+    @MessageBody() payload: { pin: string; configuracion: any }
   ) {
-    
-    this.server.to(payload.pin).emit('pregunta_liberada', payload.preguntaId);
+    // El profesor crea la sala y emitimos la confirmación
+    this.server.to(payload.pin).emit('sala_creada', payload);
   }
 
-  @SubscribeMessage('enviar_voto')
+  @SubscribeMessage('pregunta_liberada')
+  handlePreguntaLiberada(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() payload: { pin: string; pregunta: any }
+  ) {
+    // Se envía la nueva pregunta a todos los celulares conectados a ese PIN
+    this.server.to(payload.pin).emit('pregunta_liberada', payload.pregunta);
+  }
+
+  @SubscribeMessage('temporizador_actualizado')
+  handleTemporizador(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() payload: { pin: string; tiempoRestante: number }
+  ) {
+    // Sincroniza el reloj en todas las pantallas de la sala
+    this.server.to(payload.pin).emit('temporizador_actualizado', payload.tiempoRestante);
+  }
+
+  @SubscribeMessage('voto_recibido')
   handleVotoRecibido(
     @ConnectedSocket() client: Socket,
-    @MessageBody() payload: { pin: string; opcion: string }
+    @MessageBody() payload: { pin: string; userId: string; respuestaId: string }
   ) {
-    
-    this.server.to(payload.pin).emit('voto_recibido', payload.opcion);
+    // Un alumno vota. Se puede notificar al proyector (profesor) que alguien ya respondió
+    this.server.to(payload.pin).emit('voto_recibido', { userId: payload.userId });
   }
 
-  
-  notificarSalaCreada(pin: string) {
-    this.server.emit('sala_creada', pin);
+  @SubscribeMessage('comodin_bloqueado')
+  handleComodinBloqueado(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() payload: { pin: string; userId: string; tipoComodin: string }
+  ) {
+    // Alguien usa un ataque/comodín y afecta a los demás en la sala
+    this.server.to(payload.pin).emit('comodin_bloqueado', payload);
   }
-
-  actualizarTemporizador(pin: string, tiempoRestante: number) {
-    this.server.to(pin).emit('temporizador_actualizado', tiempoRestante);
-  }
-
-  bloquearComodin(pin: string, tipoComodin: string) {
-    this.server.to(pin).emit('comodin_bloqueado', tipoComodin);
-  }
-}
+} 
