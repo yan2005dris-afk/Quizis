@@ -1,24 +1,28 @@
 import { Body, Controller, Get, Param, ParseIntPipe, Post } from '@nestjs/common';
-import { ApiOperation, ApiTags, ApiResponse } from '@nestjs/swagger';
+import { ApiOperation, ApiTags, ApiResponse, ApiProperty } from '@nestjs/swagger';
 import { VotosService } from './votos.service';
 import { IsInt, IsNotEmpty, Min } from 'class-validator';
 
 class RegistrarVotoDto {
+  @ApiProperty({ example: 1, description: 'ID de la ronda activa' })
   @IsInt()
   @Min(1)
   @IsNotEmpty()
   rondaId: number;
 
+  @ApiProperty({ example: 12, description: 'ID de la pregunta activa' })
   @IsInt()
   @Min(1)
   @IsNotEmpty()
   preguntaId: number;
 
+  @ApiProperty({ example: 4, description: 'ID del participante del público que vota' })
   @IsInt()
   @Min(1)
   @IsNotEmpty()
   participanteId: number;
 
+  @ApiProperty({ example: 48, description: 'ID de la opción seleccionada' })
   @IsInt()
   @Min(1)
   @IsNotEmpty()

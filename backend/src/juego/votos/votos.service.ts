@@ -33,31 +33,43 @@ export class VotosService {
   }
 
   /**
-   * Rutina Bulk Insert ATÓMICA: Extrae masivamente usando popVotes y persiste en un solo Query.
+   * Rutina Bulk Insert con Transacción en 2 Fases (Garantía de cero pérdida de datos).
    */
   async persistirVotos(rondaId: number, preguntaId: number): Promise<{ count: number }> {
-    // popVotes obtiene y elimina los votos de caché atómicamente
-    const votos = await this.cacheService.popVotes(rondaId, preguntaId);
+    // Fase 1: Aislar atómicamente los votos en procesamiento
+    const { processingKey, votes } = await this.cacheService.prepareVotesForPersist(rondaId, preguntaId);
     
-    if (votos.length === 0) {
+    if (votes.length === 0) {
       this.logger.log(`[BULK_INSERT] Sin votos para persistir en ronda ${rondaId}, pregunta ${preguntaId}.`);
       return { count: 0 };
     }
 
-    this.logger.log(`[BULK_INSERT] Persistiendo ${votos.length} votos en PostgreSQL para ronda ${rondaId}, pregunta ${preguntaId}...`);
+    this.logger.log(`[BULK_INSERT] Intentando persistir ${votes.length} votos en PostgreSQL...`);
+    
+    try {
+      // Fase 2: Insert masivo idempotente en PostgreSQL
+      const res = await this.prisma.votosPublico.createMany({
+        data: votes.map((v) => ({
+          rondaId,
+          preguntaId,
+          participanteId: v.participanteId,
+          opcionId: v.opcionId,
+        })),
+        skipDuplicates: true,
+      });
 
-    // Bulk Insert idempotente gracias a @@unique en base de datos y skipDuplicates
-    const res = await this.prisma.votosPublico.createMany({
-      data: votos.map((v) => ({
-        rondaId,
-        preguntaId,
-        participanteId: v.participanteId,
-        opcionId: v.opcionId,
-      })),
-      skipDuplicates: true,
-    });
+      // Confirmación: Éxito en DB, eliminamos clave temporal de caché
+      await this.cacheService.commitVotes(processingKey);
+      this.logger.log(`[BULK_INSERT] Persistencia exitosa de ${res.count} votos. Caché de procesamiento liberado.`);
+      return { count: res.count };
 
-    this.logger.log(`[BULK_INSERT] Persistencia exitosa de ${res.count} votos en PostgreSQL.`);
-    return { count: res.count };
+    } catch (error) {
+      // Rollback: Fallo en DB, revertimos y fusionamos los votos al caché original
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      this.logger.error(`[BULK_INSERT:ERROR] Falló la inserción en PostgreSQL: ${errorMsg}. Reventiendo votos al caché original (Rollback)...`);
+      
+      await this.cacheService.rollbackVotes(processingKey, rondaId, preguntaId);
+      throw error; // Re-lanzar error para que la API retorne 500
+    }
   }
 }

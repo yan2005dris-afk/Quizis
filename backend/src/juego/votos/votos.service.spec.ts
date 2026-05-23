@@ -3,7 +3,7 @@ import { VotosService } from './votos.service';
 import { PrismaService } from '../../infrastructure/database/prisma.service';
 import { CacheService } from '../../infrastructure/cache/cache.service';
 
-describe('VotosService', () => {
+describe('VotosService (2-Phase Persist)', () => {
   let service: VotosService;
   let cacheService: CacheService;
   let prismaService: PrismaService;
@@ -11,7 +11,9 @@ describe('VotosService', () => {
   const mockCacheService = {
     setVote: jest.fn(),
     getVotes: jest.fn(),
-    popVotes: jest.fn(),
+    prepareVotesForPersist: jest.fn(),
+    commitVotes: jest.fn(),
+    rollbackVotes: jest.fn(),
   };
 
   const mockPrismaService = {
@@ -54,54 +56,62 @@ describe('VotosService', () => {
     });
   });
 
-  describe('obtenerVotosCache', () => {
-    it('debe retornar la lista de votos guardados en caché', async () => {
-      const rondaId = 1;
-      const preguntaId = 10;
-      const expectedVotes = [{ participanteId: 5, opcionId: 2 }];
-      mockCacheService.getVotes.mockResolvedValue(expectedVotes);
-
-      const result = await service.obtenerVotosCache(rondaId, preguntaId);
-
-      expect(cacheService.getVotes).toHaveBeenCalledWith(rondaId, preguntaId);
-      expect(result).toEqual(expectedVotes);
-    });
-  });
-
   describe('persistirVotos', () => {
-    it('debe retornar count=0 y no invocar Prisma si no hay votos en el caché', async () => {
+    it('debe retornar count=0 si no hay votos aislados en prepareVotesForPersist', async () => {
       const rondaId = 1;
       const preguntaId = 10;
-      mockCacheService.popVotes.mockResolvedValue([]);
+      mockCacheService.prepareVotesForPersist.mockResolvedValue({
+        processingKey: 'votes:1:10:processing',
+        votes: [],
+      });
 
       const result = await service.persistirVotos(rondaId, preguntaId);
 
-      expect(cacheService.popVotes).toHaveBeenCalledWith(rondaId, preguntaId);
+      expect(cacheService.prepareVotesForPersist).toHaveBeenCalledWith(rondaId, preguntaId);
       expect(prismaService.votosPublico.createMany).not.toHaveBeenCalled();
       expect(result).toEqual({ count: 0 });
     });
 
-    it('debe realizar un bulk insert de los votos en PostgreSQL e indicar la cantidad guardada', async () => {
+    it('debe confirmar con commitVotes y retornar la cantidad si el bulk insert tiene éxito', async () => {
       const rondaId = 1;
       const preguntaId = 10;
-      const mockVotes = [
-        { participanteId: 5, opcionId: 2 },
-        { participanteId: 6, opcionId: 3 },
-      ];
-      mockCacheService.popVotes.mockResolvedValue(mockVotes);
-      mockPrismaService.votosPublico.createMany.mockResolvedValue({ count: 2 });
+      const mockVotes = [{ participanteId: 5, opcionId: 2 }];
+      mockCacheService.prepareVotesForPersist.mockResolvedValue({
+        processingKey: 'votes:1:10:processing',
+        votes: mockVotes,
+      });
+      mockPrismaService.votosPublico.createMany.mockResolvedValue({ count: 1 });
 
       const result = await service.persistirVotos(rondaId, preguntaId);
 
-      expect(cacheService.popVotes).toHaveBeenCalledWith(rondaId, preguntaId);
+      expect(cacheService.prepareVotesForPersist).toHaveBeenCalledWith(rondaId, preguntaId);
       expect(prismaService.votosPublico.createMany).toHaveBeenCalledWith({
-        data: [
-          { rondaId, preguntaId, participanteId: 5, opcionId: 2 },
-          { rondaId, preguntaId, participanteId: 6, opcionId: 3 },
-        ],
+        data: [{ rondaId, preguntaId, participanteId: 5, opcionId: 2 }],
         skipDuplicates: true,
       });
-      expect(result).toEqual({ count: 2 });
+      expect(cacheService.commitVotes).toHaveBeenCalledWith('votes:1:10:processing');
+      expect(cacheService.rollbackVotes).not.toHaveBeenCalled();
+      expect(result).toEqual({ count: 1 });
+    });
+
+    it('debe revertir y realizar un rollback de los votos si el bulk insert a PostgreSQL falla', async () => {
+      const rondaId = 1;
+      const preguntaId = 10;
+      const mockVotes = [{ participanteId: 5, opcionId: 2 }];
+      const procKey = 'votes:1:10:processing';
+
+      mockCacheService.prepareVotesForPersist.mockResolvedValue({
+        processingKey: procKey,
+        votes: mockVotes,
+      });
+      mockPrismaService.votosPublico.createMany.mockRejectedValue(new Error('Postgres is down'));
+
+      await expect(service.persistirVotos(rondaId, preguntaId)).rejects.toThrow('Postgres is down');
+
+      expect(cacheService.prepareVotesForPersist).toHaveBeenCalledWith(rondaId, preguntaId);
+      expect(prismaService.votosPublico.createMany).toHaveBeenCalled();
+      expect(cacheService.rollbackVotes).toHaveBeenCalledWith(procKey, rondaId, preguntaId);
+      expect(cacheService.commitVotes).not.toHaveBeenCalled();
     });
   });
 });

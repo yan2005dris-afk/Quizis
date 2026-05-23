@@ -10,6 +10,13 @@ CREATE TABLE "votos_publico" (
     CONSTRAINT "votos_publico_pkey" PRIMARY KEY ("voto_id")
 );
 
+-- CreateIndex
+CREATE UNIQUE INDEX "votos_publico_ronda_id_pregunta_id_participante_id_key" ON "votos_publico"("ronda_id", "pregunta_id", "participante_id");
+
+-- CreateIndex
+CREATE INDEX "votos_publico_ronda_id_pregunta_id_idx" ON "votos_publico"("ronda_id", "pregunta_id");
+
+
 -- AddForeignKey
 ALTER TABLE "votos_publico" ADD CONSTRAINT "votos_publico_ronda_id_fkey" FOREIGN KEY ("ronda_id") REFERENCES "rondas"("ronda_id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
