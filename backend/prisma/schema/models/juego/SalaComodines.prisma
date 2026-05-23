@@ -1,0 +1,12 @@
+model SalaComodines {
+  salaComodinId Int       @id @default(autoincrement()) @map("sala_comodin_id")
+  salaId        Int       @map("sala_id")
+  comodinId     Int       @map("comodin_id")
+  activo        Boolean   @default(true) @map("activo")
+  
+  sala          Salas     @relation(fields: [salaId], references: [salaId])
+  comodin       Comodines @relation(fields: [comodinId], references: [comodinId])
+
+  @@unique([salaId, comodinId])
+  @@map("sala_comodines")
+}

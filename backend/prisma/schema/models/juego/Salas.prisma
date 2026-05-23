@@ -7,9 +7,6 @@ model Salas {
   
   // Configuración
   limitePreguntas  Int       @default(15) @map("limite_preguntas")
-  comodinPublico   Boolean   @default(true) @map("comodin_publico")
-  comodinIA        Boolean   @default(true) @map("comodin_ia")
-  comodinLlamada   Boolean   @default(true) @map("comodin_llamada")
   
   createdAt        DateTime  @default(now()) @map("creado_en")
   updatedAt        DateTime  @updatedAt @map("actualizado_en")
@@ -18,6 +15,7 @@ model Salas {
   admin            Usuarios  @relation(fields: [adminId], references: [usuarioId])
   preguntas        Preguntas[]
   rondas           Rondas[]
+  comodines        SalaComodines[]
 
   @@map("salas")
 }

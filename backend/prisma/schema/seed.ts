@@ -5,6 +5,7 @@ import { Pool } from 'pg';
 import { PrismaClient } from '../../src/generated/prisma/client';
 import { seedRoles } from './seeds/role.seed';
 import { seedUSers } from './seeds/user.seed';
+import { seedComodines } from './seeds/comodines.seed';
 
 // Cargar env desde el root de forma explícita
 dotenv.config({ path: path.join(__dirname, '../../../.env') });
@@ -50,6 +51,11 @@ async function main() {
   console.log('🎭 Creando roles...');
   const roles = await seedRoles(prisma);
   console.log('✅ Roles creados correctamente.');
+
+  // Comodines
+  console.log('🃏 Creando catálogo de comodines...');
+  await seedComodines(prisma);
+  console.log('✅ Catálogo de comodines creado.');
 
   // Usuarios
   console.log('👤 Creando usuario admin...');
