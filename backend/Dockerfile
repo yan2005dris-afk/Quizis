@@ -14,6 +14,7 @@ RUN pnpm install --frozen-lockfile --filter backend...
 
 # ─── Stage 3: Builder ──────────────────────────────────────────
 FROM deps AS builder
+ENV NODE_ENV=production
 COPY backend ./backend
 RUN pnpm --filter backend run prisma:generate
 RUN pnpm --filter backend run build
@@ -31,4 +32,4 @@ COPY --from=builder /app/backend/dist ./backend/dist
 COPY --from=builder /app/backend/src/generated ./backend/src/generated
 
 EXPOSE ${PORT:-3000}
-CMD ["node", "backend/dist/main.js"]
+CMD ["node", "backend/dist/src/main.js"]
