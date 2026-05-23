@@ -1,6 +1,7 @@
 model Salas {
   salaId           Int       @id @default(autoincrement()) @map("sala_id")
   adminId          Int       @map("admin_id")
+  bancoId          Int       @map("banco_id")
   nombre           String    @map("nombre")
   tokenCompartido  String    @unique @default(uuid()) @map("token_compartido")
   estado           String    @default("esperando") @map("estado") // esperando, jugando, terminado
@@ -13,9 +14,10 @@ model Salas {
   deletedAt        DateTime? @map("borrado_en")
 
   admin            Usuarios  @relation(fields: [adminId], references: [usuarioId])
-  preguntas        Preguntas[]
+  banco            BancoPreguntas @relation(fields: [bancoId], references: [bancoId])
   rondas           Rondas[]
   comodines        SalaComodines[]
+  participantes    Participantes[]
 
   @@map("salas")
 }

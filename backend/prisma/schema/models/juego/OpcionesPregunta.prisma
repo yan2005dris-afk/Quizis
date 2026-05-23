@@ -1,0 +1,15 @@
+model OpcionesPregunta {
+  opcionId      Int       @id @default(autoincrement()) @map("opcion_id")
+  preguntaId    Int       @map("pregunta_id")
+  texto         String    @map("texto")
+  esCorrecta    Boolean   @default(false) @map("es_correcta")
+  
+  createdAt     DateTime  @default(now()) @map("creado_en")
+  updatedAt     DateTime  @updatedAt @map("actualizado_en")
+  deletedAt     DateTime? @map("borrado_en")
+
+  pregunta      Preguntas @relation(fields: [preguntaId], references: [preguntaId])
+  respuestasRonda RespuestasRonda[]
+
+  @@map("opciones_pregunta")
+}
