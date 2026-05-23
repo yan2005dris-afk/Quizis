@@ -33,10 +33,21 @@ export class VotosService {
   }
 
   /**
-   * Rutina Bulk Insert con Transacción en 2 Fases (Garantía de cero pérdida de datos).
+   * Rutina Bulk Insert con Transacción en 2 Fases y Autorecuperación (Self-Healing).
+   * 
+   * GARANTÍA DE CERO PÉRDIDA DE DATOS: 
+   * 1. Aislamiento Atómico: En la Fase 1, los votos se mueven de forma atómica a una clave única
+   *    con marca de tiempo `:processing:${timestamp}_${random}`. Esto aísla los votos a persistir
+   *    y permite que nuevos votos sigan ingresando libremente en la clave original.
+   * 2. Recuperación Automática (Self-Healing): Si el servidor sufre un crash después de aislar la clave
+   *    pero antes de confirmar (dejar votos "atascados"), en la siguiente ejecución se escanea cualquier
+   *    clave `:processing:*` huérfana de esa pregunta, recuperando y fusionando sus votos de forma proactiva.
+   * 3. Rollback de Transacción: Si PostgreSQL falla o está caído durante la inserción en la Fase 2, 
+   *    se atrapa la excepción y se ejecuta un rollback inmediato que devuelve y fusiona los votos 
+   *    en procesamiento de vuelta a la cola original en caché (Redis/Memoria), impidiendo pérdidas.
    */
   async persistirVotos(rondaId: number, preguntaId: number): Promise<{ count: number }> {
-    // Fase 1: Aislar atómicamente los votos en procesamiento
+    // Fase 1: Aislar atómicamente los votos actuales y recuperar fallidos anteriores
     const { processingKey, votes } = await this.cacheService.prepareVotesForPersist(rondaId, preguntaId);
     
     if (votes.length === 0) {

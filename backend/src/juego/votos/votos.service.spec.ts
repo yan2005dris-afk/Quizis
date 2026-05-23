@@ -61,7 +61,7 @@ describe('VotosService (2-Phase Persist)', () => {
       const rondaId = 1;
       const preguntaId = 10;
       mockCacheService.prepareVotesForPersist.mockResolvedValue({
-        processingKey: 'votes:1:10:processing',
+        processingKey: 'votes:1:10:processing:12345',
         votes: [],
       });
 
@@ -76,8 +76,9 @@ describe('VotosService (2-Phase Persist)', () => {
       const rondaId = 1;
       const preguntaId = 10;
       const mockVotes = [{ participanteId: 5, opcionId: 2 }];
+      const procKey = 'votes:1:10:processing:12345';
       mockCacheService.prepareVotesForPersist.mockResolvedValue({
-        processingKey: 'votes:1:10:processing',
+        processingKey: procKey,
         votes: mockVotes,
       });
       mockPrismaService.votosPublico.createMany.mockResolvedValue({ count: 1 });
@@ -89,7 +90,7 @@ describe('VotosService (2-Phase Persist)', () => {
         data: [{ rondaId, preguntaId, participanteId: 5, opcionId: 2 }],
         skipDuplicates: true,
       });
-      expect(cacheService.commitVotes).toHaveBeenCalledWith('votes:1:10:processing');
+      expect(cacheService.commitVotes).toHaveBeenCalledWith(procKey);
       expect(cacheService.rollbackVotes).not.toHaveBeenCalled();
       expect(result).toEqual({ count: 1 });
     });
@@ -98,7 +99,7 @@ describe('VotosService (2-Phase Persist)', () => {
       const rondaId = 1;
       const preguntaId = 10;
       const mockVotes = [{ participanteId: 5, opcionId: 2 }];
-      const procKey = 'votes:1:10:processing';
+      const procKey = 'votes:1:10:processing:12345';
 
       mockCacheService.prepareVotesForPersist.mockResolvedValue({
         processingKey: procKey,
