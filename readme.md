@@ -158,3 +158,7 @@ pnpm --filter frontend run start
 - Commits: Conventional Commits
 - Package manager: **pnpm workspaces** (monorepo en la raíz)
 - Tiempo real: WebSockets vía `@nestjs/platform-socket.io` + `socket.io-client`
+
+
+
+
