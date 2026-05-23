@@ -1,0 +1,13 @@
+model VotosPublico {
+  votoId          Int       @id @default(autoincrement()) @map("voto_id")
+  rondaId         Int       @map("ronda_id")
+  preguntaId      Int       @map("pregunta_id")
+  nickname        String    @map("nickname")
+  opcionVotada    String    @map("opcion_votada")
+  
+  timestamp       DateTime  @default(now()) @map("timestamp")
+
+  ronda           Rondas    @relation(fields: [rondaId], references: [rondaId])
+
+  @@map("votos_publico")
+}

@@ -1,0 +1,16 @@
+model Sesiones {
+  sesionId         String   @id @default(uuid()) @map("sesion_id")
+  usuarioId        Int      @map("usuario_id")
+  hashRefreshToken String   @map("hash_token_actualizado")
+  direccionIp      String?  @map("direccion_ip")
+  usuarioAgente    String?  @map("usuario_agente")
+  revocado         Boolean  @default(false) @map("revocado")
+  expiraEn         DateTime @map("expira_en")
+  createdAt        DateTime @default(now()) @map("creado_en")
+  usuario          Usuarios @relation(fields: [usuarioId], references: [usuarioId], onDelete: Cascade)
+
+  @@index([usuarioId])
+  @@index([expiraEn])
+  @@index([revocado, expiraEn])
+  @@map("sesiones")
+}

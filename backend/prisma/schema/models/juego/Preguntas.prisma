@@ -1,0 +1,18 @@
+model Preguntas {
+  preguntaId      Int       @id @default(autoincrement()) @map("pregunta_id")
+  salaId          Int       @map("sala_id")
+  texto           String    @map("texto")
+  opciones        Json      @map("opciones") // { "A": "...", "B": "...", ... }
+  respuestaCorrecta String    @map("respuesta_correcta")
+  nivel           Int       @default(1) @map("nivel")
+  monto           Decimal?  @map("monto")
+  
+  createdAt       DateTime  @default(now()) @map("creado_en")
+  updatedAt       DateTime  @updatedAt @map("actualizado_en")
+  deletedAt       DateTime? @map("borrado_en")
+
+  sala            Salas     @relation(fields: [salaId], references: [salaId])
+  respuestasRonda RespuestasRonda[]
+
+  @@map("preguntas")
+}

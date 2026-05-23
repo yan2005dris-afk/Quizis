@@ -1,0 +1,30 @@
+{
+  "name": "quizis",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "backend:dev": "pnpm --filter backend run start:dev",
+    "backend:build": "pnpm --filter backend run build",
+    "frontend:dev": "pnpm --filter frontend run start",
+    "frontend:build": "pnpm --filter frontend run build"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@nestjs/core",
+      "@parcel/watcher",
+      "@prisma/engines",
+      "@scarf/scarf",
+      "esbuild",
+      "lmdb",
+      "msgpackr-extract",
+      "prisma",
+      "unrs-resolver"
+    ],
+    "peerDependencyRules": {
+      "allowedVersions": {
+        "@nestjs/common>class-transformer": "0.5.1",
+        "@nestjs/common>class-validator": "0.15.1"
+      }
+    }
+  }
+}

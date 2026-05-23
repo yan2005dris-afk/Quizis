@@ -1,0 +1,13 @@
+model Permisos {
+  permisoId   Int       @id @default(autoincrement()) @map("permiso_id")
+  nombre      String    @map("nombre")
+  descripcion String    @map("descripcion")
+  recurso     String    @map("recurso")
+  accion      String    @map("accion")
+  deletedAt   DateTime? @map("borrado_en")
+
+  rolPermisos RolPermisos[]
+
+  @@index([recurso, accion], map: "permisos_recurso_accion_idx")
+  @@map("permisos")
+}

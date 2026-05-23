@@ -1,0 +1,23 @@
+model Salas {
+  salaId           Int       @id @default(autoincrement()) @map("sala_id")
+  adminId          Int       @map("admin_id")
+  nombre           String    @map("nombre")
+  tokenCompartido  String    @unique @default(uuid()) @map("token_compartido")
+  estado           String    @default("esperando") @map("estado") // esperando, jugando, terminado
+  
+  // Configuración
+  limitePreguntas  Int       @default(15) @map("limite_preguntas")
+  comodinPublico   Boolean   @default(true) @map("comodin_publico")
+  comodinIA        Boolean   @default(true) @map("comodin_ia")
+  comodinLlamada   Boolean   @default(true) @map("comodin_llamada")
+  
+  createdAt        DateTime  @default(now()) @map("creado_en")
+  updatedAt        DateTime  @updatedAt @map("actualizado_en")
+  deletedAt        DateTime? @map("borrado_en")
+
+  admin            Usuarios  @relation(fields: [adminId], references: [usuarioId])
+  preguntas        Preguntas[]
+  rondas           Rondas[]
+
+  @@map("salas")
+}

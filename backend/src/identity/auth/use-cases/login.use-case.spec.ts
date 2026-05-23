@@ -1,0 +1,211 @@
+import type { TestingModule } from '@nestjs/testing';
+import { Test } from '@nestjs/testing';
+import { LoginUseCase } from './login.use-case';
+import { PrismaService } from 'src/infrastructure/database/prisma.service';
+import { JwtService } from '@nestjs/jwt';
+import { ConfigService } from '@nestjs/config';
+import { SessionsService } from '../../sessions/sessions.service';
+import {
+  UnauthorizedException,
+  InternalServerErrorException,
+} from '@nestjs/common';
+import * as bcrypt from 'bcryptjs';
+
+jest.mock('bcryptjs');
+jest.mock('crypto', () => ({
+  ...jest.requireActual('crypto'),
+  randomUUID: () => 'test-uuid-1234-5678',
+}));
+
+describe('LoginUseCase', () => {
+  let useCase: LoginUseCase;
+  let prismaService: jest.Mocked<PrismaService>;
+  let jwtService: jest.Mocked<JwtService>;
+  let sessionsService: jest.Mocked<SessionsService>;
+
+  beforeEach(async () => {
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        LoginUseCase,
+        {
+          provide: PrismaService,
+          useValue: {
+            usuarios: {
+              findUnique: jest.fn(),
+            },
+          },
+        },
+        {
+          provide: JwtService,
+          useValue: {
+            signAsync: jest.fn(),
+            decode: jest.fn(),
+          },
+        },
+        {
+          provide: ConfigService,
+          useValue: {
+            getOrThrow: jest.fn((key: string) => {
+              const config: Record<string, string> = {
+                JWT_ACCESS_SECRET: 'test-access-secret',
+                JWT_REFRESH_SECRET: 'test-refresh-secret',
+                JWT_ACCESS_EXPIRES_IN: '15m',
+                JWT_REFRESH_EXPIRES_IN: '7d',
+              };
+              return config[key];
+            }),
+          },
+        },
+        {
+          provide: SessionsService,
+          useValue: {
+            createSession: jest.fn(),
+          },
+        },
+      ],
+    }).compile();
+
+    useCase = module.get<LoginUseCase>(LoginUseCase);
+    prismaService = module.get(PrismaService);
+    jwtService = module.get(JwtService);
+    sessionsService = module.get(SessionsService);
+  });
+
+  it('should be defined', () => {
+    expect(useCase).toBeDefined();
+  });
+
+  describe('execute', () => {
+    it('should login successfully with minimal data retrieval', async () => {
+      const loginDto = { email: 'test@jasrapo.com', password: 'Password123!' };
+
+      // User data with merged profile fields
+      const mockUser = {
+        usuarioId: 1,
+        email: 'test@jasrapo.com',
+        clave: 'hashedPassword',
+        deletedAt: null,
+        nombres: 'Juan',
+        apellidos: 'Pérez',
+        avatar: { url: 'https://example.com/avatar.png', key: 'avatar.png' },
+        rolId: 1,
+        rol: { nombre: 'admin', deletedAt: null },
+      };
+
+      (prismaService.usuarios.findUnique as jest.Mock).mockResolvedValue(
+        mockUser,
+      );
+
+      (bcrypt.compare as jest.Mock).mockResolvedValue(true);
+      (bcrypt.hash as jest.Mock).mockResolvedValue('hashedRefreshToken');
+
+      jwtService.signAsync
+        .mockResolvedValueOnce('access-token')
+        .mockResolvedValueOnce('refresh-token');
+
+      jwtService.decode
+        .mockReturnValueOnce({ iat: 1000, exp: 2000 })
+        .mockReturnValueOnce({ iat: 1000, exp: 2000 });
+
+      sessionsService.createSession.mockResolvedValue({} as any);
+
+      const result = await useCase.execute(loginDto, '127.0.0.1', 'Chrome');
+
+      expect(result).toMatchObject({
+        sub: 1,
+        email: 'test@jasrapo.com',
+        accessToken: 'access-token',
+        refreshToken: 'refresh-token',
+        nombre: 'Juan Pérez',
+        avatar: 'avatar.png',
+        rolId: 1,
+        nombreRol: 'admin',
+      });
+
+      expect(sessionsService.createSession).toHaveBeenCalled();
+      expect(prismaService.usuarios.findUnique).toHaveBeenCalledTimes(1);
+    });
+
+    it('should throw UnauthorizedException when user not found', async () => {
+      (prismaService.usuarios.findUnique as jest.Mock).mockResolvedValue(null);
+
+      await expect(
+        useCase.execute({ email: 'notfound@test.com', password: 'any' }),
+      ).rejects.toThrow(UnauthorizedException);
+    });
+
+    it('should throw UnauthorizedException when password invalid', async () => {
+      (prismaService.usuarios.findUnique as jest.Mock).mockResolvedValue({
+        usuarioId: 1,
+        email: 'test@test.com',
+        clave: 'hashed',
+        deletedAt: null,
+      });
+      (bcrypt.compare as jest.Mock).mockResolvedValue(false);
+
+      await expect(
+        useCase.execute({ email: 'test@test.com', password: 'wrong' }),
+      ).rejects.toThrow(UnauthorizedException);
+    });
+
+    it('should throw InternalServerErrorException when session creation fails', async () => {
+      (prismaService.usuarios.findUnique as jest.Mock).mockResolvedValue({
+        usuarioId: 1,
+        email: 'test@test.com',
+        clave: 'hashed',
+        deletedAt: null,
+      });
+      (bcrypt.compare as jest.Mock).mockResolvedValue(true);
+      jwtService.signAsync.mockResolvedValue('token');
+      (bcrypt.hash as jest.Mock).mockResolvedValue('hash');
+
+      sessionsService.createSession.mockRejectedValue(new Error('DB Error'));
+
+      await expect(
+        useCase.execute({ email: 'test@test.com', password: 'pass' }),
+      ).rejects.toThrow(InternalServerErrorException);
+    });
+
+    it('should return null rolId and nombreRol when role is soft-deleted', async () => {
+      const loginDto = { email: 'test@jasrapo.com', password: 'Password123!' };
+
+      const mockUser = {
+        usuarioId: 1,
+        email: 'test@jasrapo.com',
+        clave: 'hashedPassword',
+        deletedAt: null,
+        nombres: 'Juan',
+        apellidos: 'Pérez',
+        avatar: null,
+        rolId: 1,
+        rol: { nombre: 'admin', deletedAt: new Date() }, // Soft-deleted role
+      };
+
+      (prismaService.usuarios.findUnique as jest.Mock).mockResolvedValue(
+        mockUser,
+      );
+
+      (bcrypt.compare as jest.Mock).mockResolvedValue(true);
+      (bcrypt.hash as jest.Mock).mockResolvedValue('hashedRefreshToken');
+
+      jwtService.signAsync
+        .mockResolvedValueOnce('access-token')
+        .mockResolvedValueOnce('refresh-token');
+
+      jwtService.decode
+        .mockReturnValueOnce({ iat: 1000, exp: 2000 })
+        .mockReturnValueOnce({ iat: 1000, exp: 2000 });
+
+      sessionsService.createSession.mockResolvedValue({} as any);
+
+      const result = await useCase.execute(loginDto, '127.0.0.1', 'Chrome');
+
+      expect(result).toMatchObject({
+        sub: 1,
+        email: 'test@jasrapo.com',
+        rolId: null,
+        nombreRol: null,
+      });
+    });
+  });
+});
