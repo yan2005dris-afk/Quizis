@@ -50,7 +50,7 @@
     "rxjs": "^7.8.1",
     "socket.io": "^4.8.3"
   },
-  "devDependencies": {
+"devDependencies": {
     "@eslint/eslintrc": "^3.2.0",
     "@eslint/js": "^9.18.0",
     "@nestjs/cli": "^11.0.0",
@@ -58,10 +58,10 @@
     "@nestjs/testing": "^11.0.1",
     "@prisma/config": "^7.8.0",
     "@types/bcryptjs": "^3.0.0",
-    "@types/ms": "^2.1.0",
     "@types/cookie-parser": "^1.4.7",
     "@types/express": "^5.0.0",
     "@types/jest": "^30.0.0",
+    "@types/ms": "^2.1.0",
     "@types/node": "^24.0.0",
     "@types/passport-jwt": "^4.0.1",
     "@types/supertest": "^7.0.0",
@@ -80,8 +80,7 @@
     "tsconfig-paths": "^4.2.0",
     "tsx": "^4.22.3",
     "typescript": "^5.7.3",
-    "typescript-eslint": "^8.20.0",
-    "prisma": "^7.8.0"
+    "typescript-eslint": "^8.20.0"
   },
   "jest": {
     "moduleFileExtensions": [
