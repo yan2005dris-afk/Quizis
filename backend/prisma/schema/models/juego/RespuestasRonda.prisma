@@ -1,15 +1,17 @@
 model RespuestasRonda {
-  respuestaId     Int       @id @default(autoincrement()) @map("respuesta_id")
-  rondaId         Int       @map("ronda_id")
-  preguntaId      Int       @map("pregunta_id")
-  respuestaElegida String?   @map("respuesta_elegida")
-  esCorrecta      Boolean   @default(false) @map("es_correcta")
-  comodinUsado    String?   @map("comodin_usado") // publico, ia, llamada
-  
-  timestamp       DateTime  @default(now()) @map("timestamp")
+  respuestaId      Int     @id @default(autoincrement()) @map("respuesta_id")
+  rondaId          Int     @map("ronda_id")
+  preguntaId       Int     @map("pregunta_id")
+  opcionId         Int?    @map("opcion_id")
+  respuestaElegida String? @map("respuesta_elegida")
+  esCorrecta       Boolean @default(false) @map("es_correcta")
+  comodinUsado     String? @map("comodin_usado") // publico, ia, llamada
 
-  ronda           Rondas    @relation(fields: [rondaId], references: [rondaId])
-  pregunta        Preguntas @relation(fields: [preguntaId], references: [preguntaId])
+  timestamp DateTime @default(now()) @map("timestamp")
+
+  ronda    Rondas            @relation(fields: [rondaId], references: [rondaId])
+  pregunta Preguntas         @relation(fields: [preguntaId], references: [preguntaId])
+  opcion   OpcionesPregunta? @relation(fields: [opcionId], references: [opcionId])
 
   @@map("respuestas_ronda")
 }
