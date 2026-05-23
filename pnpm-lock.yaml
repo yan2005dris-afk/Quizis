@@ -6,17 +6,7 @@ settings:
 
 importers:
 
-  .:
-    dependencies:
-      '@nestjs/platform-socket.io':
-        specifier: ^11.1.23
-        version: 11.1.23(@nestjs/common@11.1.23(class-transformer@0.5.1)(class-validator@0.15.1)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/websockets@11.1.23)(rxjs@7.8.2)
-      '@nestjs/websockets':
-        specifier: ^11.1.23
-        version: 11.1.23(@nestjs/common@11.1.23(class-transformer@0.5.1)(class-validator@0.15.1)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.1.23)(@nestjs/platform-socket.io@11.1.23)(reflect-metadata@0.2.2)(rxjs@7.8.2)
-      socket.io:
-        specifier: ^4.8.3
-        version: 4.8.3
+  .: {}
 
   backend:
     dependencies:
@@ -53,6 +43,9 @@ importers:
       '@prisma/adapter-pg':
         specifier: ^7.8.0
         version: 7.8.0
+      '@prisma/client':
+        specifier: ^7.8.0
+        version: 7.8.0(prisma@7.8.0(@types/react@19.2.15)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(typescript@5.9.3))(typescript@5.9.3)
       '@types/pg':
         specifier: ^8.20.0
         version: 8.20.0
@@ -69,14 +62,23 @@ importers:
         specifier: ^1.4.7
         version: 1.4.7
       date-fns:
-        specifier: ^4.2.1
+        specifier: ^4.1.0
         version: 4.2.1
       date-fns-tz:
         specifier: ^3.2.0
         version: 3.2.0(date-fns@4.2.1)
       dotenv:
-        specifier: ^17.4.2
-        version: 17.4.2
+        specifier: ^16.4.7
+        version: 16.6.1
+      express:
+        specifier: ^5.2.1
+        version: 5.2.1
+      ms:
+        specifier: ^2.1.3
+        version: 2.1.3
+      passport:
+        specifier: ^0.7.0
+        version: 0.7.0
       passport-jwt:
         specifier: ^4.0.1
         version: 4.0.1
@@ -108,9 +110,6 @@ importers:
       '@nestjs/testing':
         specifier: ^11.0.1
         version: 11.1.23(@nestjs/common@11.1.23(class-transformer@0.5.1)(class-validator@0.15.1)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.1.23)(@nestjs/platform-express@11.1.23)
-      '@prisma/client':
-        specifier: ^7.8.0
-        version: 7.8.0(prisma@7.8.0(@types/react@19.2.15)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(typescript@5.9.3))(typescript@5.9.3)
       '@prisma/config':
         specifier: ^7.8.0
         version: 7.8.0
@@ -118,7 +117,7 @@ importers:
         specifier: ^3.0.0
         version: 3.0.0
       '@types/cookie-parser':
-        specifier: ^1.4.10
+        specifier: ^1.4.7
         version: 1.4.10(@types/express@5.0.6)
       '@types/express':
         specifier: ^5.0.0
@@ -126,6 +125,9 @@ importers:
       '@types/jest':
         specifier: ^30.0.0
         version: 30.0.0
+      '@types/ms':
+        specifier: ^2.1.0
+        version: 2.1.0
       '@types/node':
         specifier: ^24.0.0
         version: 24.12.4

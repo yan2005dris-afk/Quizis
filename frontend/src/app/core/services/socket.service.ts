@@ -1,41 +1,58 @@
-import { Injectable } from '@angular/core';
+import { Inject, Injectable, InjectionToken, Optional } from '@angular/core';
 import { io, Socket } from 'socket.io-client';
 import { Observable } from 'rxjs';
+
+export const SOCKET_SERVER_URL = new InjectionToken<string | undefined>('SOCKET_SERVER_URL');
+export const SOCKET_IO_CLIENT = new InjectionToken<Socket>('SOCKET_IO_CLIENT');
 
 @Injectable({
   providedIn: 'root'
 })
 export class SocketService {
-  private socket: Socket;
-  
-  
-  private readonly SERVER_URL = 'http://localhost:3000'; 
+  private socket?: Socket;
 
-  constructor() {
-    
-    this.socket = io(this.SERVER_URL);
+  constructor(
+    @Optional() @Inject(SOCKET_SERVER_URL) private readonly serverUrl?: string,
+    @Optional() @Inject(SOCKET_IO_CLIENT) socket?: Socket
+  ) {
+    this.socket = socket;
   }
 
-  
+  connect(): Socket {
+    if (!this.socket) {
+      this.socket = this.serverUrl ? io(this.serverUrl) : io();
+    }
+
+    return this.socket;
+  }
+
+  private getSocket(): Socket {
+    return this.socket ?? this.connect();
+  }
+
   unirseASala(pin: string, nombre: string): void {
-    this.socket.emit('unirse_sala', { pin, nombre });
+    this.getSocket().emit('unirse_sala', { pin, nombre });
   }
 
-  
   emitirEvento(evento: string, payload: any): void {
-    this.socket.emit(evento, payload);
+    this.getSocket().emit(evento, payload);
   }
 
-  
   escucharEvento<T>(evento: string): Observable<T> {
     return new Observable((subscriber) => {
-      this.socket.on(evento, (data: T) => {
+      const socket = this.getSocket();
+      const listener = (data: T) => {
         subscriber.next(data);
-      });
+      };
+
+      socket.on(evento, listener);
+
+      return () => {
+        socket.off(evento, listener);
+      };
     });
   }
 
-  
   desconectar(): void {
     if (this.socket) {
       this.socket.disconnect();

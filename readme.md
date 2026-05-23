@@ -4,23 +4,23 @@ Sistema interactivo de quizzes estilo "¿Quién quiere ser millonario?" con sala
 
 ## Stack
 
-| Capa | Tecnología |
-|---|---|
-| **Frontend** | Angular 21 (Standalone Components, Signals) |
-| **Backend** | NestJS 11 |
-| **Base de datos** | PostgreSQL 16 |
-| **Cache / Tiempo real** | Redis (Pub/Sub + estado de partida) |
-| **Auth (solo admin)** | JWT (Access + Refresh tokens) |
-| **Acceso público** | Token de sala único + nickname |
-| **Infra** | Docker Compose |
+| Capa                          | Tecnología                                 |
+| ----------------------------- | ------------------------------------------- |
+| **Frontend**            | Angular 21 (Standalone Components, Signals) |
+| **Backend**             | NestJS 11                                   |
+| **Base de datos**       | PostgreSQL 16                               |
+| **Cache / Tiempo real** | Redis (Pub/Sub + estado de partida)         |
+| **Auth (solo admin)**   | JWT (Access + Refresh tokens)               |
+| **Acceso público**     | Token de sala único + nickname             |
+| **Infra**               | Docker Compose                              |
 
 ## Roles
 
-| Rol | Descripción |
-|---|---|
-| **Admin / Ingeniero** | Crea la sala, sube las preguntas, elige al encuestado, configura los comodines habilitados |
-| **Encuestado / Estudiante** | Juega la partida: responde preguntas, decide cuándo usar comodines. Entra con link público y elige su nickname. |
-| **Observador** | Se suscribe a la sala en vivo, puede participar en comodines como "pregunta al público". Entra con link público y elige su nickname. |
+| Rol                               | Descripción                                                                                                                           |
+| --------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| **Admin / Ingeniero**       | Crea la sala, sube las preguntas, elige al encuestado, configura los comodines habilitados                                             |
+| **Encuestado / Estudiante** | Juega la partida: responde preguntas, decide cuándo usar comodines. Entra con link público y elige su nickname.                      |
+| **Observador**              | Se suscribe a la sala en vivo, puede participar en comodines como "pregunta al público". Entra con link público y elige su nickname. |
 
 ## Flujo del juego
 
@@ -44,15 +44,16 @@ Sistema interactivo de quizzes estilo "¿Quién quiere ser millonario?" con sala
 
 Cada comodín se configura como booleano (habilitado/deshabilitado) por partida:
 
-| Comodín | Descripción |
-|---|---|
-| **🗳️ Pregunta al público** | Los observadores suscriptos votan por una opción. La más votada se muestra como sugerencia. |
-| **🤖 Respuesta por IA** | El sistema consulta una IA (vía API key configurada) y devuelve una respuesta sugerida. |
-| **📞 Llamada** | El estudiante elige un observador de la lista de conectados; ese observador recibe notificación y sugiere una respuesta; el estudiante confirma si la toma o no. |
+| Comodín                            | Descripción                                                                                                                                                      |
+| ----------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **🗳️ Pregunta al público** | Los observadores suscriptos votan por una opción. La más votada se muestra como sugerencia.                                                                     |
+| **🤖 Respuesta por IA**       | El sistema consulta una IA (vía API key configurada) y devuelve una respuesta sugerida.                                                                          |
+| **📞 Llamada**                | El estudiante elige un observador de la lista de conectados; ese observador recibe notificación y sugiere una respuesta; el estudiante confirma si la toma o no. |
 
 ## Requerimientos funcionales
 
 ### Autenticación (solo admin)
+
 - Login de admin con JWT (Access + Refresh tokens)
 - El admin se registra una sola vez (seed o registro inicial)
 - Los participantes (estudiantes y observadores) **NO necesitan cuenta**
@@ -60,6 +61,7 @@ Cada comodín se configura como booleano (habilitado/deshabilitado) por partida:
 - Al unirse solo ingresan su nickname — no hay contraseña, no hay registro
 
 ### Gestión de salas (Admin)
+
 - Login protegido con JWT
 - Crear sala con nombre y configuración
 - Subir archivo de preguntas (JSON principalmente, parser extensible)
@@ -75,6 +77,7 @@ Cada comodín se configura como booleano (habilitado/deshabilitado) por partida:
 - Finalizar la sala cuando ya no haya más rondas
 
 ### Ingreso de participantes (sin autenticación)
+
 - El frontend expone una ruta pública tipo `/room/:token`
 - Al entrar, el usuario ingresa su nickname (obligatorio, único en la sala)
 - Se asigna rol de observador por defecto
@@ -82,6 +85,7 @@ Cada comodín se configura como booleano (habilitado/deshabilitado) por partida:
 - La identidad del participante vive en sesión WebSocket + Redis — no se persiste en PostgreSQL
 
 ### Rondas secuenciales (reintento con nuevo estudiante)
+
 - El admin sube un banco de preguntas (ej: 100) y configura un **límite por ronda** (ej: 20)
 - Cada estudiante encuestado responde **todas las preguntas de la ronda** (de la 1 a la N)
 - Cuando el estudiante completa la ronda, la sala queda disponible para una **nueva ronda**
@@ -92,6 +96,7 @@ Cada comodín se configura como booleano (habilitado/deshabilitado) por partida:
 - **Opcional**: el admin puede configurar que las preguntas ya usadas en rondas anteriores se excluyan, forzando que cada ronda use preguntas distintas del banco
 
 ### Sala en vivo (WebSocket + Redis Pub/Sub)
+
 - Conexión vía WebSocket autenticada por token de sala + nickname
 - Suscripción a sala como observador (rol por defecto)
 - Estado de la sala en tiempo real (ronda actual, pregunta actual, progreso del estudiante)
@@ -103,11 +108,13 @@ Cada comodín se configura como booleano (habilitado/deshabilitado) por partida:
 - Cuando cambia la ronda (nuevo estudiante), todos reciben el evento con los datos del nuevo encuestado
 
 ### Comodines en tiempo real
+
 - **Pregunta al público**: los observadores votan, se muestra resultado en vivo
 - **Respuesta por IA**: llamada a API externa, se muestra sugerencia
 - **Llamada**: el estudiante selecciona un observador de la lista de conectados, éste recibe notificación en su pantalla y sugiere una respuesta
 
 ### Resultados e historial
+
 - Guardar partida completa (preguntas, respuestas, comodines usados, resultado final, nickname del estudiante)
 - Historial de partidas por nickname (trazable aunque no haya cuenta)
 - Reporte básico para el admin (cuántos jugaron, quién ganó, reintentos, etc.)
@@ -141,8 +148,8 @@ git clone <repo-url>
 cd Quizis
 pnpm install
 
-# Infraestructura (PostgreSQL + Redis)
-docker compose up -d postgres redis
+# Infraestructura
+docker compose up -d --build 
 
 # Backend (dev)
 pnpm --filter backend run start:dev
