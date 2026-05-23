@@ -11,5 +11,7 @@ model VotosPublico {
   participante Participantes @relation(fields: [participanteId], references: [participanteId])
   opcion       OpcionesPregunta @relation(fields: [opcionId], references: [opcionId])
 
+  @@unique([rondaId, preguntaId, participanteId])
+  @@index([rondaId, preguntaId])
   @@map("votos_publico")
 }

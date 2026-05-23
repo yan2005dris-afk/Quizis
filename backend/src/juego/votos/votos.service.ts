@@ -1,4 +1,4 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../../infrastructure/database/prisma.service';
 import { CacheService } from '../../infrastructure/cache/cache.service';
 
@@ -12,7 +12,9 @@ export class VotosService {
   ) {}
 
   /**
-   * Registra un voto temporal en el caché de alta velocidad (Redis/Memoria).
+   * Registra un voto temporal de forma ultra rápida en caché.
+   * OPTIMIZADO: No realiza consultas SELECT a base de datos por cada voto.
+   * La integridad y unicidad se delegan a PostgreSQL durante el Bulk Insert.
    */
   async registrarVoto(
     rondaId: number,
@@ -20,35 +22,22 @@ export class VotosService {
     participanteId: number,
     opcionId: number,
   ): Promise<void> {
-    // Validamos que los recursos existan antes de guardar el voto efímero
-    const [ronda, pregunta, participante, opcion] = await Promise.all([
-      this.prisma.rondas.findUnique({ where: { rondaId } }),
-      this.prisma.preguntas.findUnique({ where: { preguntaId } }),
-      this.prisma.participantes.findUnique({ where: { participanteId } }),
-      this.prisma.opcionesPregunta.findUnique({ where: { opcionId } }),
-    ]);
-
-    if (!ronda) throw new NotFoundException(`Ronda con ID ${rondaId} no encontrada.`);
-    if (!pregunta) throw new NotFoundException(`Pregunta con ID ${preguntaId} no encontrada.`);
-    if (!participante) throw new NotFoundException(`Participante con ID ${participanteId} no encontrado.`);
-    if (!opcion) throw new NotFoundException(`Opción con ID ${opcionId} no encontrada.`);
-
     await this.cacheService.setVote(rondaId, preguntaId, participanteId, opcionId);
   }
 
   /**
-   * Devuelve los votos acumulados en caché para la pregunta de la ronda actual.
+   * Devuelve los votos en caché.
    */
   async obtenerVotosCache(rondaId: number, preguntaId: number) {
     return this.cacheService.getVotes(rondaId, preguntaId);
   }
 
   /**
-   * Rutina de Bulk Insert: Extrae los votos capturados en caché, los guarda masivamente
-   * en PostgreSQL con un solo insert, y libera la memoria/Redis.
+   * Rutina Bulk Insert ATÓMICA: Extrae masivamente usando popVotes y persiste en un solo Query.
    */
   async persistirVotos(rondaId: number, preguntaId: number): Promise<{ count: number }> {
-    const votos = await this.cacheService.getVotes(rondaId, preguntaId);
+    // popVotes obtiene y elimina los votos de caché atómicamente
+    const votos = await this.cacheService.popVotes(rondaId, preguntaId);
     
     if (votos.length === 0) {
       this.logger.log(`[BULK_INSERT] Sin votos para persistir en ronda ${rondaId}, pregunta ${preguntaId}.`);
@@ -57,7 +46,7 @@ export class VotosService {
 
     this.logger.log(`[BULK_INSERT] Persistiendo ${votos.length} votos en PostgreSQL para ronda ${rondaId}, pregunta ${preguntaId}...`);
 
-    // Bulk Insert usando createMany de Prisma
+    // Bulk Insert idempotente gracias a @@unique en base de datos y skipDuplicates
     const res = await this.prisma.votosPublico.createMany({
       data: votos.map((v) => ({
         rondaId,
@@ -65,13 +54,10 @@ export class VotosService {
         participanteId: v.participanteId,
         opcionId: v.opcionId,
       })),
-      skipDuplicates: true, // Evita colisiones si la transacción se reintenta
+      skipDuplicates: true,
     });
 
-    // Limpiamos los votos del caché
-    await this.cacheService.clearVotes(rondaId, preguntaId);
-    this.logger.log(`[BULK_INSERT] Persistencia exitosa de ${res.count} votos. Caché limpiado.`);
-
+    this.logger.log(`[BULK_INSERT] Persistencia exitosa de ${res.count} votos en PostgreSQL.`);
     return { count: res.count };
   }
 }
