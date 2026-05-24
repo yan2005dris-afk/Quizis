@@ -11,6 +11,7 @@ const ICONS: Record<AlertType, string> = {
 
 @Component({
   selector: 'app-alert',
+  standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrl: './alert.component.scss',
   template: `

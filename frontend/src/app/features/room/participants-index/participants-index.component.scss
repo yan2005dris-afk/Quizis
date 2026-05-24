@@ -1,0 +1,45 @@
+.participants-list {
+  padding: 12px 16px;
+  background: var(--surface-card, #1e1e2e);
+  border-radius: 8px;
+  border: 1px solid var(--border-color, #313244);
+}
+
+.participants-list__title {
+  margin: 0 0 12px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary, #cdd6f4);
+}
+
+.participants-list__grid {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.participants-list__item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--border-color, #313244);
+}
+
+.participants-list__name {
+  font-size: 14px;
+  color: var(--text-primary, #cdd6f4);
+}
+
+.participants-list__score {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--accent-color, #f5c2e7);
+}
+
+.participants-list__empty {
+  color: var(--text-secondary, #a6adc8);
+  font-style: italic;
+  font-size: 13px;
+  margin: 0;
+}

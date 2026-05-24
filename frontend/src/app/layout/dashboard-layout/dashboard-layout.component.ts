@@ -1,9 +1,10 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterOutlet } from '@angular/router';
 import { SidebarComponent } from '../sidebar/sidebar.component';
 import { NavbarComponent } from '../navbar/navbar.component';
 import { FooterComponent } from '../footer/footer.component';
+import { AuthService } from '../../core/services/auth.service';
 
 @Component({
   selector: 'app-dashboard-layout',
@@ -12,4 +13,6 @@ import { FooterComponent } from '../footer/footer.component';
   templateUrl: './dashboard-layout.component.html',
   styleUrl: './dashboard-layout.component.scss',
 })
-export class DashboardLayoutComponent {}
+export class DashboardLayoutComponent {
+  protected readonly auth = inject(AuthService);
+}

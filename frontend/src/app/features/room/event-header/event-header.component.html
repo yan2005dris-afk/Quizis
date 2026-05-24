@@ -1,0 +1,34 @@
+<div class="event-header">
+  <div class="event-header__info">
+    <h2 class="event-header__title">{{ tituloEvento() }}</h2>
+  </div>
+
+  @if (rondaInfo(); as info) {
+    <div class="event-header__badge-wrapper">
+      <span class="event-header__live-badge">EN VIVO</span>
+    </div>
+
+    <div class="event-header__stats">
+      <div class="event-header__timer">
+        @if (tiempoRestante() !== null) {
+          <span class="event-header__timer-value">{{ formattedTimer() }}</span>
+        }
+      </div>
+
+      <div class="event-header__prize">
+        <span class="event-header__prize-label">Premio:</span>
+        <span class="event-header__prize-value">{{ info.premio }}</span>
+      </div>
+
+      <div class="event-header__progress">
+        <span class="event-header__progress-text">
+          Pregunta {{ info.ronda }} de {{ info.totalRondas }}
+        </span>
+      </div>
+    </div>
+  } @else {
+    <div class="event-header__waiting">
+      <span>Esperando información de la ronda...</span>
+    </div>
+  }
+</div>
