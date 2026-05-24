@@ -6,7 +6,7 @@ import { ThrottlerModule } from '@nestjs/throttler';
 import { GamesModule } from './games/games.module';
 import { WebsocketsModule } from './websockets/websockets.module';
 import { CacheModule } from './infrastructure/cache/cache.module';
-import { VotosModule } from './juego/votos/votos.module';
+import { VotosModule } from './games/votos/votos.module';
 
 @Module({
   imports: [
