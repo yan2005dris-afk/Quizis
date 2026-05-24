@@ -1,8 +1,8 @@
-import { Injectable, signal, inject, PLATFORM_ID, isDevMode } from '@angular/core';
+import { Injectable, signal, inject, PLATFORM_ID } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { isPlatformBrowser } from '@angular/common';
-import { firstValueFrom, Observable, tap, catchError, throwError, BehaviorSubject, switchMap, filter, take } from 'rxjs';
+import { firstValueFrom, Observable, tap, BehaviorSubject } from 'rxjs';
 import { environment } from '../../../environments/environment';
 
 export interface User {
@@ -15,7 +15,7 @@ export interface User {
 }
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class AuthService {
   private readonly http = inject(HttpClient);
@@ -26,10 +26,12 @@ export class AuthService {
 
   readonly user = signal<User | null>(null);
   readonly isAuthenticated = signal<boolean>(false);
-  
+
   // Para manejar el estado del refresco y evitar bucles
   private isRefreshing = false;
-  private refreshTokenSubject: BehaviorSubject<string | null> = new BehaviorSubject<string | null>(null);
+  private refreshTokenSubject: BehaviorSubject<string | null> = new BehaviorSubject<string | null>(
+    null,
+  );
 
   constructor() {
     this.loadUserFromStorage();
@@ -45,7 +47,7 @@ export class AuthService {
   async login(email: string, password: string): Promise<void> {
     try {
       const response = await firstValueFrom(
-        this.http.post<any>(`${this.apiUrl}/auth/login`, { email, password })
+        this.http.post<any>(`${this.apiUrl}/auth/login`, { email, password }),
       );
 
       this.handleAuthSuccess(response);
@@ -66,7 +68,7 @@ export class AuthService {
         if (isPlatformBrowser(this.platformId)) {
           localStorage.setItem('accessToken', response.accessToken);
         }
-      })
+      }),
     );
   }
 
@@ -74,7 +76,7 @@ export class AuthService {
     // Opcional: Llamar al endpoint de logout del backend para revocar en Redis
     this.http.post(`${this.apiUrl}/auth/logout`, {}).subscribe({
       next: () => this.clearLocalAuth(),
-      error: () => this.clearLocalAuth() // Limpiamos igual aunque falle el red
+      error: () => this.clearLocalAuth(), // Limpiamos igual aunque falle el red
     });
   }
 
@@ -95,14 +97,14 @@ export class AuthService {
       nombre: response.nombre,
       rolId: response.rolId,
       nombreRol: response.nombreRol,
-      avatar: response.avatar
+      avatar: response.avatar,
     };
 
     if (isPlatformBrowser(this.platformId)) {
       localStorage.setItem('accessToken', response.accessToken);
       localStorage.setItem('user', JSON.stringify(user));
     }
-    
+
     this.user.set(user);
     this.isAuthenticated.set(true);
   }
@@ -111,7 +113,7 @@ export class AuthService {
     if (isPlatformBrowser(this.platformId)) {
       const savedUser = localStorage.getItem('user');
       const token = localStorage.getItem('accessToken');
-      
+
       if (savedUser && token) {
         try {
           this.user.set(JSON.parse(savedUser));
