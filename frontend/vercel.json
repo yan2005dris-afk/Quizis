@@ -4,6 +4,8 @@
   "cleanUrls": true,
   "trailingSlash": false,
   "framework": "angular",
+  "buildCommand": "pnpm --filter frontend run build",
+  "outputDirectory": "dist/frontend/browser",
   "rewrites": [
     {
       "source": "/api/:path*",

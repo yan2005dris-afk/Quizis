@@ -93,7 +93,14 @@ Cada comodín se configura como booleano (habilitado/deshabilitado) por partida:
 - El nuevo estudiante empieza fresco — las preguntas se vuelven a mostrar
 - Los comodines se resetean para cada ronda (cada estudiante tiene sus 3 comodines disponibles)
 - El admin puede cambiar la configuración entre rondas (cantidad de preguntas, comodines habilitados)
-- **Opcional**: el admin puede configurar que las preguntas ya usadas en rondas anteriores se excluyan, forzando que cada ronda use preguntas distintas del banco
+- El admin puede configurar que las preguntas ya usadas en rondas anteriores se excluyan, forzando que cada ronda use preguntas distintas del banco
+
+## Infraestructura y Despliegue
+
+### 📡 Health Check & Keep-Alive
+Para evitar la suspensión de la instancia de Backend en entornos como Render (plan gratuito):
+- **Endpoint de salud**: `GET /api/v1/health` (Público).
+- **Mecanismo de Keep-Alive**: El frontend realiza un "ping" automático cada 14 minutos al endpoint de salud para mantener la instancia activa.
 
 ### Sala en vivo (WebSocket + Redis Pub/Sub)
 
