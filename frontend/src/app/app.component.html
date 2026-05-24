@@ -1,13 +1,1 @@
-<div class="toast-container">
-  @for (toast of toastService.currentToasts(); track toast.id) {
-    <app-alert
-      [type]="toast.type"
-      [title]="toast.title || ''"
-      [message]="toast.message"
-      [dismissible]="true"
-      (dismissed)="toastService.remove(toast.id)"
-    />
-  }
-</div>
-
 <router-outlet></router-outlet>

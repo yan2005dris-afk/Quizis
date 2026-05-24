@@ -2,12 +2,11 @@ import { Component, inject, OnInit, signal } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { KeepAliveService } from './core/services/keep-alive.service';
 import { ToastService } from './core/services/toast.service';
-import { AlertComponent } from './shared/ui/alert/alert.component';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [RouterOutlet, AlertComponent],
+  imports: [RouterOutlet],
   templateUrl: './app.component.html',
   styleUrl: './app.component.scss',
 })
