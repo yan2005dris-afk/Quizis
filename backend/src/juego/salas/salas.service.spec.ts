@@ -127,7 +127,9 @@ describe('SalasService', () => {
 
       mockPrismaService.salas.findUnique.mockResolvedValue(mockSala);
       mockPrismaService.preguntas.findMany.mockResolvedValue(mockPreguntas);
-      mockPrismaService.respuestasRonda.findMany.mockResolvedValue(mockRespuestas);
+      mockPrismaService.respuestasRonda.findMany.mockResolvedValue(
+        mockRespuestas,
+      );
 
       const result = await service.obtenerPorId(1);
 

@@ -1,10 +1,4 @@
-import {
-  Controller,
-  Get,
-  Param,
-  ParseIntPipe,
-  UseGuards,
-} from '@nestjs/common';
+import { Controller, Get, Param, UseGuards } from '@nestjs/common';
 import { ApiOperation, ApiTags, ApiResponse } from '@nestjs/swagger';
 import { SalasService } from './salas.service';
 import { JwtAuthGuard } from '../../identity/auth/guards/jwt-auth.guard';

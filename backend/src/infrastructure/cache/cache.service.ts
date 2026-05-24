@@ -386,7 +386,7 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
       try {
         await this.redisClient.set(key, JSON.stringify(pregunta), 'EX', 3600);
         return;
-      } catch (error) {
+      } catch {
         this.handleRedisFailure();
       }
     }
@@ -406,7 +406,7 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
       try {
         const data = await this.redisClient.get(key);
         return data ? JSON.parse(data) : null;
-      } catch (error) {
+      } catch {
         this.handleRedisFailure();
       }
     }
@@ -423,7 +423,7 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
       try {
         await this.redisClient.set(key, JSON.stringify(info), 'EX', 3600);
         return;
-      } catch (error) {
+      } catch {
         this.handleRedisFailure();
       }
     }
@@ -443,7 +443,7 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
       try {
         const data = await this.redisClient.get(key);
         return data ? JSON.parse(data) : null;
-      } catch (error) {
+      } catch {
         this.handleRedisFailure();
       }
     }

@@ -30,7 +30,7 @@ export class QuizGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @ConnectedSocket() client: Socket,
     @MessageBody() payload: { tokenCompartido: string; nombre: string },
   ) {
-    client.join(payload.tokenCompartido);
+    await client.join(payload.tokenCompartido);
     console.log(
       `${payload.nombre} se unió a la sala con token: ${payload.tokenCompartido}`,
     );
@@ -39,6 +39,7 @@ export class QuizGateway implements OnGatewayConnection, OnGatewayDisconnect {
     const activeQuestion = await this.cacheService.getActiveQuestion(
       payload.tokenCompartido,
     );
+
     if (activeQuestion) {
       client.emit('pregunta_liberada', activeQuestion);
     }
