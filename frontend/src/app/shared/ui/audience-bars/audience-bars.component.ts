@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
-import { VotosPublico } from '../../core/services/game-socket.service';
+import { VotosPublico } from '../../../core/services/game-socket.service';
 
 // Estructura interna que representa una barra ya procesada con su porcentaje calculado
 interface BarraVoto {
@@ -13,69 +13,10 @@ interface BarraVoto {
   // OnPush: el componente solo se re-renderiza cuando su input cambia, no en cada ciclo de Angular
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [],
-  template: `
-  <div class="audience-bars">
-    <!-- Genera una fila por cada opción (A, B, C, D) con su barra y porcentaje -->
-    @for (barra of barras(); track barra.letra) {
-      <div class="barra-row">
-        <span class="letra">{{ barra.letra }}</span>
-        <div class="barra-contenedor">
-          <!-- El ancho se enlaza directamente al porcentaje calculado -->
-          <div class="barra-relleno" [style.width.%]="barra.porcentaje"></div>
-        </div>
-        <span class="porcentaje">{{ barra.porcentaje }}%</span>
-      </div>
-    }
-  </div>
-  `,
-  styles: `
-  .audience-bars {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    padding: 16px;
-  }
-
-  .barra-row {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-  }
-
-  .letra {
-    font-size: 1.2rem;
-    font-weight: bold;
-    width: 20px;
-    color: white;
-  }
-
-  .barra-contenedor {
-    flex: 1;
-    background: rgba(255, 255, 255, 0.2);
-    border-radius: 8px;
-    height: 32px;
-    overflow: hidden;
-  }
-
-  /* La transición hace que las barras se animen suavemente al cambiar los votos en tiempo real */
-  .barra-relleno {
-    height: 100%;
-    background: #3b82f6;
-    border-radius: 8px;
-    transition: width 0.5s ease;
-  }
-
-  .porcentaje {
-    font-size: 1rem;
-    font-weight: bold;
-    width: 40px;
-    text-align: right;
-    color: white;
-  }
-  `,
+  templateUrl: './audience-bars.component.html',
+  styleUrl: './audience-bars.component.scss',
 })
-
-export class AudienceBars {
+export class AudienceBarsComponent {
   // Recibe los votos desde el componente padre; null si el comodín aún no fue activado
   votos = input<VotosPublico | null>(null);
 
