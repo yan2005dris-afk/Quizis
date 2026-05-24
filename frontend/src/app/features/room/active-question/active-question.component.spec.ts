@@ -119,7 +119,9 @@ describe('ActiveQuestionComponent', () => {
     fixture.componentRef.setInput('votosPublico', { A: 10, B: 10, C: 10, D: 10, total: 40 });
     fixture.detectChanges();
 
-    const btn = fixture.nativeElement.querySelector('.active-question__wildcard--active') as HTMLElement;
+    const btn = fixture.nativeElement.querySelector(
+      '.active-question__wildcard--active',
+    ) as HTMLElement;
     expect(btn).toBeTruthy();
     expect(btn.textContent).toContain('Publico');
   });
@@ -140,10 +142,10 @@ describe('ActiveQuestionComponent', () => {
     fixture.detectChanges();
 
     expect(fixture.nativeElement.textContent).toContain('¿Cuál es la capital de Ecuador?');
-    
+
     component['nextQuestion']();
     fixture.detectChanges();
-    
+
     expect(fixture.nativeElement.textContent).toContain('Segunda Pregunta');
     expect(fixture.nativeElement.textContent).toContain('2 / 2');
   });

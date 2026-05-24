@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, input, signal, effect } from '@angular/core';
 import { TitleCasePipe } from '@angular/common';
-import { Pregunta, VotosPublico } from '../../../core/services/game-socket.service';
+import { VotosPublico } from '../../../core/services/game-socket.service';
 import { ComodinSala } from '../../../core/services/salas.service';
 import { LucideAngularModule, ChevronLeft, ChevronRight } from 'lucide-angular';
 

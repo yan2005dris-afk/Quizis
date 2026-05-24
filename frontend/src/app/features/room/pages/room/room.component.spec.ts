@@ -4,8 +4,7 @@ import { RoomComponent } from './room.component';
 import { GameSocketService } from '../../../../core/services/game-socket.service';
 import { ActivatedRoute } from '@angular/router';
 import { provideHttpClient } from '@angular/common/http';
-import { of } from 'rxjs';
-import type { RondaInfo, Participante, ChatMessage } from '../../room.types';
+import type { RondaInfo, Participante } from '../../room.types';
 
 describe('RoomComponent', () => {
   let fixture: ComponentFixture<RoomComponent>;
@@ -16,8 +15,12 @@ describe('RoomComponent', () => {
     Object.defineProperty(globalThis, 'localStorage', {
       value: {
         getItem: () => null,
-        setItem: () => {},
-        removeItem: () => {},
+        setItem: () => {
+          /* Mock implementation for testing purposes */
+        },
+        removeItem: () => {
+          /* Mock implementation for testing purposes */
+        },
       },
       writable: true,
     });
