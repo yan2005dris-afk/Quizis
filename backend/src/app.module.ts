@@ -21,6 +21,7 @@ import { VotosModule } from './games/votos/votos.module';
     WebsocketsModule,
     CacheModule,
     VotosModule,
+    HealthModule,
   ],
   controllers: [],
   providers: [],
