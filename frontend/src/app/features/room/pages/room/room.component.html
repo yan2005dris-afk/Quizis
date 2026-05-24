@@ -13,7 +13,11 @@
     <div class="room__left">
       <app-active-question
         [preguntas]="salaDetalle()?.rondaActiva?.historialPreguntas || []"
-        [preguntaActivaId]="gameSocket.preguntaActiva()?.preguntaId || salaDetalle()?.rondaActiva?.preguntaActualId || null"
+        [preguntaActivaId]="
+          gameSocket.preguntaActiva()?.preguntaId ||
+          salaDetalle()?.rondaActiva?.preguntaActualId ||
+          null
+        "
         [votosPublico]="gameSocket.votosPublico()"
         [comodinBloqueado]="gameSocket.comodinBloqueado()"
         [comodines]="comodines()"

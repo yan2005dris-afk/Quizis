@@ -29,7 +29,7 @@ export const routes: Routes = [
 
       // Rutas Públicas bajo Layout (Se adaptan si hay auth)
       { path: 'sala/:id', component: RoomComponent },
-      
+
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
     ],
   },

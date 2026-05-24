@@ -30,7 +30,7 @@ export class ActiveQuestionComponent {
   readonly comodines = input<ComodinSala[]>([]);
 
   protected readonly currentIndex = signal(0);
-  
+
   // Iconos
   protected readonly PrevIcon = ChevronLeft;
   protected readonly NextIcon = ChevronRight;
@@ -41,7 +41,7 @@ export class ActiveQuestionComponent {
       const activeId = this.preguntaActivaId();
       const list = this.preguntas();
       if (activeId && list.length > 0) {
-        const index = list.findIndex(p => p.preguntaId === activeId);
+        const index = list.findIndex((p) => p.preguntaId === activeId);
         if (index !== -1) {
           this.currentIndex.set(index);
         }
@@ -63,9 +63,9 @@ export class ActiveQuestionComponent {
     if (!p) return [];
 
     return p.opciones.map((o: any) => {
-      const votos = (isViewingActive && v) ? (v as any)[o.letra] ?? 0 : 0;
-      const total = (isViewingActive && v) ? v.total : 0;
-      
+      const votos = isViewingActive && v ? ((v as any)[o.letra] ?? 0) : 0;
+      const total = isViewingActive && v ? v.total : 0;
+
       return {
         id: o.opcionId,
         letra: o.letra,
@@ -74,7 +74,9 @@ export class ActiveQuestionComponent {
         porcentaje: total > 0 ? Math.round((votos / total) * 100) : 0,
         fueElegida: p.respuestaDada?.opcionId === o.opcionId,
         // Nota: esCorrecta solo lo mostramos si ya fue contestada o el admin lo permite
-        esCorrecta: p.respuestaDada ? p.respuestaDada.esCorrecta && p.respuestaDada.opcionId === o.opcionId : undefined
+        esCorrecta: p.respuestaDada
+          ? p.respuestaDada.esCorrecta && p.respuestaDada.opcionId === o.opcionId
+          : undefined,
       };
     });
   });
@@ -94,13 +96,13 @@ export class ActiveQuestionComponent {
 
   protected nextQuestion(): void {
     if (this.currentIndex() < this.preguntas().length - 1) {
-      this.currentIndex.update(i => i + 1);
+      this.currentIndex.update((i) => i + 1);
     }
   }
 
   protected prevQuestion(): void {
     if (this.currentIndex() > 0) {
-      this.currentIndex.update(i => i - 1);
+      this.currentIndex.update((i) => i - 1);
     }
   }
 }

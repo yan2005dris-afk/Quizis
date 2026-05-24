@@ -377,7 +377,10 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
   /**
    * Guarda la pregunta activa actual para una sala.
    */
-  async setActiveQuestion(tokenCompartido: string, pregunta: any): Promise<void> {
+  async setActiveQuestion(
+    tokenCompartido: string,
+    pregunta: any,
+  ): Promise<void> {
     const key = `active_question:${tokenCompartido}`;
     if (this.redisClient && this.isRedisHealthy) {
       try {
