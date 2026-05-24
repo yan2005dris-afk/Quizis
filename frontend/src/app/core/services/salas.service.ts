@@ -29,7 +29,17 @@ export interface SalaDetalle {
     numeroRonda: number;
     estado: string;
     fechaInicio: string | null;
+    preguntaActualId?: number | null;
+    preguntaActual?: any;
+    historialPreguntas?: any[];
   } | null;
+}
+
+export interface ComodinSala {
+  nombre: string;
+  descripcion: string;
+  icono: string;
+  activo: boolean;
 }
 
 @Injectable({
@@ -43,7 +53,11 @@ export class SalasService {
     return this.http.get<SalaResumen[]>(`${this.apiUrl}/salas`);
   }
 
-  obtenerPorId(id: number): Observable<SalaDetalle> {
-    return this.http.get<SalaDetalle>(`${this.apiUrl}/salas/${id}`);
+  obtenerPorId(idOrToken: number | string): Observable<SalaDetalle> {
+    return this.http.get<SalaDetalle>(`${this.apiUrl}/salas/${idOrToken}`);
+  }
+
+  obtenerComodines(idOrToken: number | string): Observable<ComodinSala[]> {
+    return this.http.get<ComodinSala[]>(`${this.apiUrl}/salas/${idOrToken}/comodines`);
   }
 }

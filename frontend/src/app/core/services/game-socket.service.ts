@@ -19,10 +19,7 @@ export interface Pregunta {
 
 // Representa la distribución de votos del público por opción en una ronda activa
 export interface VotosPublico {
-  A: number;
-  B: number;
-  C: number;
-  D: number;
+  [letra: string]: number | undefined;
   total: number;
 }
 
@@ -95,6 +92,28 @@ export class GameSocketService {
     this.socket.on('info_ronda', (data: RondaInfo) => {
       this.infoRonda.set(data);
     });
+  }
+
+  // Permite inicializar el estado desde datos HTTP (ej. al cargar la página)
+  setEstadoInicial(data: {
+    participantes: Participante[];
+    infoRonda: RondaInfo | null;
+    preguntaActiva?: Pregunta | null;
+  }): void {
+    if (data.participantes && data.participantes.length > 0) {
+      this.participantes.set(data.participantes);
+    }
+    if (data.infoRonda) {
+      this.infoRonda.set(data.infoRonda);
+    }
+    if (data.preguntaActiva) {
+      this.preguntaActiva.set(data.preguntaActiva);
+    }
+  }
+
+  // Se une a una sala específica mediante su token compartido
+  unirseASala(tokenCompartido: string, nombre: string): void {
+    this.socket?.emit('unirse_sala', { tokenCompartido, nombre });
   }
 
   // Envía un mensaje o sugerencia al chat de la sala

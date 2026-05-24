@@ -8,11 +8,14 @@ import {
   MessageBody,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
+import { CacheService } from '../infrastructure/cache/cache.service';
 
 @WebSocketGateway({ cors: { origin: '*' } })
 export class QuizGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
   server!: Server;
+
+  constructor(private readonly cacheService: CacheService) {}
 
   handleConnection(client: Socket) {
     console.log(`Cliente conectado: ${client.id}`);
@@ -23,7 +26,7 @@ export class QuizGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   @SubscribeMessage('unirse_sala')
-  handleJoinRoom(
+  async handleJoinRoom(
     @ConnectedSocket() client: Socket,
     @MessageBody() payload: { tokenCompartido: string; nombre: string },
   ) {
@@ -31,12 +34,36 @@ export class QuizGateway implements OnGatewayConnection, OnGatewayDisconnect {
     console.log(
       `${payload.nombre} se unió a la sala con token: ${payload.tokenCompartido}`,
     );
+
+    // Sincronización de estado inicial para el que se une tarde
+    const activeQuestion = await this.cacheService.getActiveQuestion(
+      payload.tokenCompartido,
+    );
+    if (activeQuestion) {
+      client.emit('pregunta_liberada', activeQuestion);
+    }
+
+    const rondaInfo = await this.cacheService.getRondaInfo(
+      payload.tokenCompartido,
+    );
+    if (rondaInfo) {
+      client.emit('info_ronda', rondaInfo);
+    }
+
     this.server
       .to(payload.tokenCompartido)
       .emit('nuevo_participante', payload.nombre);
   }
 
   // CICLO DE VIDA DE LOS EVENTOS DEL JUEGO
+
+  @SubscribeMessage('info_ronda')
+  async handleInfoRonda(
+    @MessageBody() payload: { tokenCompartido: string; info: any },
+  ) {
+    await this.cacheService.setRondaInfo(payload.tokenCompartido, payload.info);
+    this.server.to(payload.tokenCompartido).emit('info_ronda', payload.info);
+  }
 
   @SubscribeMessage('sala_creada')
   handleSalaCreada(
@@ -46,9 +73,15 @@ export class QuizGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   @SubscribeMessage('pregunta_liberada')
-  handlePreguntaLiberada(
+  async handlePreguntaLiberada(
     @MessageBody() payload: { tokenCompartido: string; pregunta: any },
   ) {
+    // Guardar en caché para futuros observadores que entren tarde
+    await this.cacheService.setActiveQuestion(
+      payload.tokenCompartido,
+      payload.pregunta,
+    );
+
     this.server
       .to(payload.tokenCompartido)
       .emit('pregunta_liberada', payload.pregunta);

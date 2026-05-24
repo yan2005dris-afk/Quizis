@@ -8,6 +8,7 @@ import {
 import { ApiOperation, ApiTags, ApiResponse } from '@nestjs/swagger';
 import { SalasService } from './salas.service';
 import { JwtAuthGuard } from '../../identity/auth/guards/jwt-auth.guard';
+import { Public } from '../../infrastructure/common/decorators/public.decorator';
 
 @ApiTags('salas')
 @Controller('salas')
@@ -15,6 +16,7 @@ import { JwtAuthGuard } from '../../identity/auth/guards/jwt-auth.guard';
 export class SalasController {
   constructor(private readonly salasService: SalasService) {}
 
+  @Public()
   @Get()
   @ApiOperation({ summary: 'Lista todas las salas activas' })
   @ApiResponse({
@@ -25,14 +27,26 @@ export class SalasController {
     return this.salasService.listarTodas();
   }
 
-  @Get(':id')
-  @ApiOperation({ summary: 'Obtiene una sala por ID con detalles' })
+  @Public()
+  @Get(':idOrToken')
+  @ApiOperation({ summary: 'Obtiene una sala por ID o Token con detalles' })
   @ApiResponse({
     status: 200,
     description: 'Sala encontrada con participantes y ronda activa.',
   })
   @ApiResponse({ status: 404, description: 'Sala no encontrada.' })
-  async obtenerPorId(@Param('id', ParseIntPipe) id: number) {
-    return this.salasService.obtenerPorId(id);
+  async obtenerPorId(@Param('idOrToken') idOrToken: string) {
+    return this.salasService.obtenerPorId(idOrToken);
+  }
+
+  @Public()
+  @Get(':idOrToken/comodines')
+  @ApiOperation({ summary: 'Obtiene los comodines de una sala' })
+  @ApiResponse({
+    status: 200,
+    description: 'Lista de comodines configurados para la sala.',
+  })
+  async obtenerComodines(@Param('idOrToken') idOrToken: string) {
+    return this.salasService.obtenerComodines(idOrToken);
   }
 }

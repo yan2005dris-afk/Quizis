@@ -24,22 +24,22 @@ export class AudienceBarsComponent {
   barras = computed<BarraVoto[]>(() => {
     const v = this.votos();
 
-    // Si no hay votos o el total es cero, retorna las barras vacías para evitar división por cero
+    // Si no hay votos o el total es cero, retorna una lista vacía o las básicas
     if (!v || v.total === 0) {
-      return [
-        { letra: 'A', votos: 0, porcentaje: 0 },
-        { letra: 'B', votos: 0, porcentaje: 0 },
-        { letra: 'C', votos: 0, porcentaje: 0 },
-        { letra: 'D', votos: 0, porcentaje: 0 },
-      ];
+      return [];
     }
 
-    // Convierte los votos crudos a porcentajes redondeados sobre el total de votos recibidos
-    return [
-      { letra: 'A', votos: v.A, porcentaje: Math.round((v.A / v.total) * 100) },
-      { letra: 'B', votos: v.B, porcentaje: Math.round((v.B / v.total) * 100) },
-      { letra: 'C', votos: v.C, porcentaje: Math.round((v.C / v.total) * 100) },
-      { letra: 'D', votos: v.D, porcentaje: Math.round((v.D / v.total) * 100) },
-    ];
+    // Filtramos la propiedad 'total' y procesamos el resto de llaves dinámicamente
+    return Object.keys(v)
+      .filter((key) => key !== 'total')
+      .sort()
+      .map((letra) => {
+        const votosOpcion = v[letra] ?? 0;
+        return {
+          letra,
+          votos: votosOpcion,
+          porcentaje: Math.round((votosOpcion / v.total) * 100),
+        };
+      });
   });
 }

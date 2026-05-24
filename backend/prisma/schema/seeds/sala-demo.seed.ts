@@ -86,6 +86,46 @@ export const seedSalaDemo = async (prisma: PrismaClient) => {
         { texto: 'Urano', esCorrecta: false },
       ],
     },
+    // ── Pregunta con 8 opciones ──
+    {
+      texto: '¿Qué país NO forma parte del sudeste asiático?',
+      categoria: 'Geografía',
+      nivel: 3,
+      monto: 5000,
+      feedbackCorrecto: '¡Correcto! La India pertenece al sur de Asia, no al sudeste asiático.',
+      feedbackIncorrecto: 'Incorrecto. India está en el sur de Asia, no en el sudeste asiático.',
+      opciones: [
+        { texto: 'Tailandia', esCorrecta: false },
+        { texto: 'Vietnam', esCorrecta: false },
+        { texto: 'India', esCorrecta: true },
+        { texto: 'Malasia', esCorrecta: false },
+        { texto: 'Indonesia', esCorrecta: false },
+        { texto: 'Filipinas', esCorrecta: false },
+        { texto: 'Singapur', esCorrecta: false },
+        { texto: 'Camboya', esCorrecta: false },
+      ],
+    },
+    // ── Pregunta con 10 opciones ──
+    {
+      texto: '¿Cuál de los siguientes NO es un hueso del cuerpo humano?',
+      categoria: 'Ciencia',
+      nivel: 3,
+      monto: 8000,
+      feedbackCorrecto: '¡Claro! El bíceps es un músculo, no un hueso.',
+      feedbackIncorrecto: 'No es correcto. El bíceps es un músculo del brazo.',
+      opciones: [
+        { texto: 'Fémur', esCorrecta: false },
+        { texto: 'Bíceps', esCorrecta: true },
+        { texto: 'Húmero', esCorrecta: false },
+        { texto: 'Tibia', esCorrecta: false },
+        { texto: 'Cráneo', esCorrecta: false },
+        { texto: 'Tríceps', esCorrecta: false },
+        { texto: 'Costilla', esCorrecta: false },
+        { texto: 'Omóplato', esCorrecta: false },
+        { texto: 'Clavícula', esCorrecta: false },
+        { texto: 'Peroné', esCorrecta: false },
+      ],
+    },
   ];
 
   const preguntasCreadas: any[] = [];
@@ -150,6 +190,7 @@ export const seedSalaDemo = async (prisma: PrismaClient) => {
   });
 
   if (estudiante) {
+    const preguntasIDs = preguntasCreadas.map((p) => p.preguntaId);
     await prisma.rondas.create({
       data: {
         salaId: sala.salaId,
@@ -157,7 +198,8 @@ export const seedSalaDemo = async (prisma: PrismaClient) => {
         numeroRonda: 1,
         estado: 'jugando',
         fechaInicio: new Date(),
-        preguntasAsignadas: preguntasCreadas.slice(0, 5).map((p) => p.preguntaId),
+        preguntasAsignadas: preguntasIDs,
+        preguntaActualId: preguntasIDs[0], // Seteamos la primera pregunta como activa
       },
     });
   }
