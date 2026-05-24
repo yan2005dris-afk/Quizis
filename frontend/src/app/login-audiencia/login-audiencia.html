@@ -1,0 +1,40 @@
+<div class="login-container">
+  <div class="login-card">
+    
+    <div class="login-header">
+      <h1>Quizis</h1>
+      <p>¿Quién quiere ser millonario?</p>
+    </div>
+
+    <form class="login-form" (ngSubmit)="ingresarALaSala()">
+      
+      <div class="form-group">
+        <label for="pinSala">Código PIN de la Sala</label>
+        <input 
+          type="text" 
+          id="pinSala" 
+          placeholder="Ej: UPSE-742" 
+          maxlength="8"
+          autocomplete="off" 
+          [(ngModel)]="pinSala" name="pinSala">
+      </div>
+
+      <div class="form-group">
+        <label for="nombreAlumno">Nombre del Estudiante</label>
+        <input 
+          type="text" 
+          id="nombreAlumno" 
+          placeholder="Ingresa tu nombre completo" 
+          maxlength="20"
+          autocomplete="off"
+          [(ngModel)]="nombreAlumno" name="nombreAlumno">
+      </div>
+
+      <button type="submit" class="btn-ingresar">
+        Unirse al Juego
+      </button>
+
+    </form>
+
+  </div>
+</div>
