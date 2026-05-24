@@ -1,8 +1,8 @@
-import { 
-  WebSocketGateway, 
-  SubscribeMessage, 
-  MessageBody, 
-  ConnectedSocket 
+import {
+  WebSocketGateway,
+  SubscribeMessage,
+  MessageBody,
+  ConnectedSocket,
 } from '@nestjs/websockets';
 import { Socket } from 'socket.io';
 import { RedisJuegoService } from '../services/redis-juego.service';
@@ -15,7 +15,8 @@ export class JuegoGateway {
   @SubscribeMessage('audience:vote')
   async handleVote(
     @ConnectedSocket() client: Socket,
-    @MessageBody() payload: { salaId: number; preguntaId: number; opcionId: number }
+    @MessageBody()
+    payload: { salaId: number; preguntaId: number; opcionId: number },
   ) {
     const socketId = client.id;
 
@@ -23,22 +24,21 @@ export class JuegoGateway {
     const votoPermitido = await this.redisJuegoService.registrarVoto(
       payload.salaId,
       payload.preguntaId,
-      socketId
+      socketId,
     );
 
     // El Gateway evalúa la respuesta del Service y decide qué enviar por la red
     if (!votoPermitido) {
-      return { 
-        success: false, 
-        message: 'Acción bloqueada: Ya has enviado una respuesta para esta pregunta.' 
+      return {
+        success: false,
+        message:
+          'Acción bloqueada: Ya has enviado una respuesta para esta pregunta.',
       };
     }
 
-    
-
-    return { 
-      success: true, 
-      message: 'Voto registrado correctamente.' 
+    return {
+      success: true,
+      message: 'Voto registrado correctamente.',
     };
   }
 }

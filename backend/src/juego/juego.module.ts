@@ -7,7 +7,7 @@ import { RedisJuegoService } from './services/redis-juego.service';
 @Module({
   providers: [
     {
-      // Configuramos la conexión a Redis 
+      // Configuramos la conexión a Redis
       provide: 'REDIS_CLIENT',
       useFactory: (configService: ConfigService) => {
         return new Redis({
@@ -20,6 +20,6 @@ import { RedisJuegoService } from './services/redis-juego.service';
     RedisJuegoService,
     JuegoGateway,
   ],
-  exports: ['REDIS_CLIENT'], 
+  exports: ['REDIS_CLIENT'],
 })
 export class JuegoModule {}

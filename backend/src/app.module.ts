@@ -5,7 +5,6 @@ import { DatabaseModule } from './infrastructure/database/prisma.module';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { JuegoModule } from './juego/juego.module';
 
-
 @Module({
   imports: [
     ConfigModule.forRoot({
