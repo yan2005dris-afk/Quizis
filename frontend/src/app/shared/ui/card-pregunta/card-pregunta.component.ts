@@ -1,10 +1,4 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  input,
-  output,
-  signal,
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, input, output, signal } from '@angular/core';
 
 export interface OpcionPregunta {
   id: string | number;
@@ -18,11 +12,11 @@ export interface OpcionPregunta {
   styleUrl: './card-pregunta.component.scss',
 })
 export class CardPreguntaComponent {
-  pregunta        = input.required<string>();
-  opciones        = input.required<OpcionPregunta[]>();
-  numeroPregunta  = input<number>(1);
-  totalPreguntas  = input<number>(1);
-  bloqueado       = input<boolean>(false);
+  pregunta = input.required<string>();
+  opciones = input.required<OpcionPregunta[]>();
+  numeroPregunta = input<number>(1);
+  totalPreguntas = input<number>(1);
+  bloqueado = input<boolean>(false);
 
   seleccionada = output<OpcionPregunta>();
 
