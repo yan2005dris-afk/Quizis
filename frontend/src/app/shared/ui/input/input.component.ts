@@ -66,8 +66,8 @@ export class InputComponent implements ControlValueAccessor {
     return cls.join(' ');
   });
 
-  private onChange: (v: string) => void = () => {};
-  protected onTouched: () => void = () => {};
+  private onChange: (v: string) => void = (_v: string) => undefined;
+  protected onTouched: () => void = () => undefined;
 
   writeValue(val: string): void {
     this.value.set(val ?? '');
