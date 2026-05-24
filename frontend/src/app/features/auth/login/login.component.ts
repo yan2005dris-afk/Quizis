@@ -3,10 +3,12 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { LucideAngularModule, Eye, EyeOff, Globe } from 'lucide-angular';
 import { AuthService } from '../../../core/services/auth.service';
+import { ToastService } from '../../../core/services/toast.service';
 import { AlertComponent, ButtonComponent, InputComponent } from '../../../shared/ui';
 
 @Component({
   selector: 'app-login',
+  standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     ReactiveFormsModule,
@@ -21,6 +23,7 @@ import { AlertComponent, ButtonComponent, InputComponent } from '../../../shared
 })
 export class LoginComponent {
   private readonly authService = inject(AuthService);
+  private readonly toastService = inject(ToastService);
   private readonly fb = inject(FormBuilder);
 
   readonly showPassword = signal(false);
@@ -48,6 +51,7 @@ export class LoginComponent {
     try {
       const { email, password } = this.form.value;
       await this.authService.login(email!, password!);
+      this.toastService.show('Authenticado correctamente', 'success', '¡Bienvenido!');
     } catch (error: unknown) {
       const err = error as { error?: { message?: string } };
       this.errorMessage.set(
