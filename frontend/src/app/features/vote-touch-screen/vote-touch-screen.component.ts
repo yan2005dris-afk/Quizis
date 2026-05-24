@@ -30,6 +30,8 @@ const VOTE_OPTIONS: readonly VoteOption[] = [
 
 @Component({
   selector: 'app-vote-touch-screen',
+  standalone: true,
+  imports: [],
   templateUrl: './vote-touch-screen.component.html',
   styleUrl: './vote-touch-screen.component.scss',
 })

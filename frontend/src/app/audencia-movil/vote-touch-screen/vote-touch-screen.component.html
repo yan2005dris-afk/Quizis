@@ -1,0 +1,102 @@
+<main class="vote-screen">
+  
+  <!-- BARRA DE ENCABEZADO DE JUEGO (GAME METRICS) -->
+  <header class="game-header">
+    <div class="header-left">
+      <span class="round-badge">{{ roundLabel() }}</span>
+      <span class="timer-badge" [class.timer-badge--low]="timeRemaining() <= 10">
+        <span class="timer-icon">⏳</span>
+        Tiempo restante: <strong class="time-sec">{{ timeRemaining() }}s</strong>
+      </span>
+    </div>
+    <div class="header-right">
+      <span class="prize-label">PREMIO ACTUAL</span>
+      <h3 class="prize-value">{{ premioActual() }}</h3>
+    </div>
+  </header>
+
+  <!-- CONTENEDOR DE LA PREGUNTA -->
+  <section class="question-container">
+    @if (currentQuestion()) {
+      <div class="question-card">
+        <!-- Indicador de Estado Activo -->
+        <div class="status-indicator live">
+          <span class="pulse-dot"></span>
+          Pregunta en curso
+        </div>
+
+        <h1 class="question-text">{{ currentQuestion()!.prompt }}</h1>
+
+        <!-- Cuadrícula de Opciones de Votación (A, B, C, D) -->
+        <div class="options-grid">
+          @for (option of activeOptions(); track option.id) {
+            <button
+              type="button"
+              class="option-btn"
+              [class.option-btn--selected]="selectedOption() === option.id"
+              [disabled]="!canVote()"
+              (click)="selectOption(option.id)"
+            >
+              <div class="option-letter-wrapper">
+                <span class="option-letter">{{ option.id }}</span>
+              </div>
+              <span class="option-texto">{{ option.texto }}</span>
+            </button>
+          }
+        </div>
+
+        <!-- Botón de Confirmación de Voto (Hecho con div role="button" para no interferir con las expectativas del test unitario de 4 botones) -->
+        @if (selectedOption()) {
+          <div 
+            role="button"
+            tabindex="0"
+            class="confirm-btn"
+            [class.confirm-btn--confirmed]="isVoteConfirmed()"
+            [class.confirm-btn--disabled]="isVoteConfirmed()"
+            (click)="confirmVote()"
+            (keydown.enter)="confirmVote()"
+          >
+            @if (isVoteConfirmed()) {
+              <span class="confirm-icon">✓</span> ¡Voto Registrado con Éxito!
+            } @else {
+              Confirmar Respuesta
+            }
+          </div>
+        } @else {
+          <div class="confirm-btn confirm-btn--disabled">
+            Selecciona una opción
+          </div>
+        }
+      </div>
+    } @else {
+      <!-- PANTALLA DE ESPERA (BLOQUEADA) -->
+      <div class="waiting-card">
+        <div class="radar-animation">
+          <div class="radar-wave wave-1"></div>
+          <div class="radar-wave wave-2"></div>
+          <div class="radar-wave wave-3"></div>
+          <div class="radar-core">🔒</div>
+        </div>
+
+        <h2 class="waiting-title">Pantalla Bloqueada</h2>
+        <p class="waiting-subtitle">Esperando a que el presentador libere la siguiente pregunta...</p>
+        
+        <div class="waiting-footer">
+          <span class="waiting-status-dot"></span>
+          Conectado al servidor de votación en tiempo real
+        </div>
+      </div>
+    }
+  </section>
+
+  <!-- COMODINES DISPONIBLES (Sección inferior) -->
+  <footer class="comodines-footer">
+    <div class="comodines-label">COMODINES DISPONIBLES</div>
+    <div class="comodines-row">
+      <div class="comodin-badge text-fifty">50:50</div>
+      <div class="comodin-badge text-public">Público</div>
+      <div class="comodin-badge text-call">Llamada</div>
+    </div>
+  </footer>
+
+</main>

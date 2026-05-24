@@ -9,6 +9,10 @@ export const routes: Routes = [
   { path: 'login', component: LoginComponent },
   { path: 'register', component: LoginComponent }, // Placeholder para evitar 404
   { path: 'privacy', component: LoginComponent }, // Placeholder
+  { 
+    path: 'votar', 
+    loadComponent: () => import('./audencia-movil/vote-touch-screen/vote-touch-screen.component').then(m => m.VoteTouchScreenComponent) 
+  },
 
   // Rutas privadas (Protegidas por Layout y Guard)
   {
