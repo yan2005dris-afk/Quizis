@@ -10,19 +10,19 @@ export const authGuard: CanActivateFn = () => {
 
   // --- LÓGICA DE SERVIDOR (SSR) ---
   if (isPlatformServer(platformId)) {
-    // IMPORTANTE: En el servidor no tenemos localStorage, 
+    // IMPORTANTE: En el servidor no tenemos localStorage,
     // pero el navegador nos envía las cookies.
     // Si no hay cookie de sesión, bloqueamos el acceso desde el servidor
     // para evitar el "flash" del Dashboard.
-    
-    // Nota: Por ahora, si no podemos validar la cookie al 100%, 
+
+    // Nota: Por ahora, si no podemos validar la cookie al 100%,
     // es mejor ser conservadores y no mostrar el dashboard.
     if (authService.isAuthenticated()) {
       return true;
     }
     // Si quieres ser ultra estricto en SSR, podrías devolver false aquí,
     // pero por ahora dejémoslo que el cliente decida si ya está inicializado.
-    return true; 
+    return true;
   }
 
   // --- LÓGICA DE NAVEGADOR ---

@@ -9,10 +9,10 @@ export const routes: Routes = [
   { path: 'login', component: LoginComponent },
   { path: 'register', component: LoginComponent }, // Placeholder para evitar 404
   { path: 'privacy', component: LoginComponent }, // Placeholder
-  
+
   // Rutas privadas (Protegidas por Layout y Guard)
-  { 
-    path: '', 
+  {
+    path: '',
     component: DashboardLayoutComponent,
     canActivate: [authGuard],
     children: [
@@ -21,10 +21,10 @@ export const routes: Routes = [
       { path: 'preguntas', component: DashboardComponent },
       { path: 'usuarios', component: DashboardComponent },
       { path: 'configuracion', component: DashboardComponent },
-      { path: '', redirectTo: 'dashboard', pathMatch: 'full' }
-    ]
+      { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
+    ],
   },
 
   // Fallback definitivo al login
-  { path: '**', redirectTo: 'login' }
+  { path: '**', redirectTo: 'login' },
 ];

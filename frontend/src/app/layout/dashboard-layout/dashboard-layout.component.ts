@@ -8,14 +8,8 @@ import { FooterComponent } from '../footer/footer.component';
 @Component({
   selector: 'app-dashboard-layout',
   standalone: true,
-  imports: [
-    CommonModule, 
-    RouterOutlet, 
-    SidebarComponent, 
-    NavbarComponent, 
-    FooterComponent
-  ],
+  imports: [CommonModule, RouterOutlet, SidebarComponent, NavbarComponent, FooterComponent],
   templateUrl: './dashboard-layout.component.html',
-  styleUrl: './dashboard-layout.component.scss'
+  styleUrl: './dashboard-layout.component.scss',
 })
 export class DashboardLayoutComponent {}

@@ -43,12 +43,7 @@
               placeholder="••••••••"
               required
             />
-            <button
-              type="button"
-              class="toggle-password"
-              (click)="togglePassword()"
-              tabindex="-1"
-            >
+            <button type="button" class="toggle-password" (click)="togglePassword()" tabindex="-1">
               <lucide-icon [img]="showPassword() ? EyeOffIcon : EyeIcon"></lucide-icon>
             </button>
           </div>
@@ -87,7 +82,9 @@
         </p>
 
         <p class="legal-notice">
-          Al iniciar sesión, aceptas nuestras <a (click)="$event.preventDefault()" href="javascript:void(0)">Políticas de Privacidad</a>.
+          Al iniciar sesión, aceptas nuestras
+          <a (click)="$event.preventDefault()" href="javascript:void(0)">Políticas de Privacidad</a
+          >.
         </p>
       </form>
     </div>

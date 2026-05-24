@@ -2,21 +2,14 @@ import { Component, signal, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../../core/services/auth.service';
-import { 
-  LucideAngularModule, 
-  Mail, 
-  Lock, 
-  Eye, 
-  EyeOff, 
-  Globe 
-} from 'lucide-angular';
+import { LucideAngularModule, Mail, Lock, Eye, EyeOff, Globe } from 'lucide-angular';
 
 @Component({
   selector: 'app-login',
   standalone: true,
   imports: [CommonModule, FormsModule, LucideAngularModule],
   templateUrl: './login.component.html',
-  styleUrl: './login.component.scss'
+  styleUrl: './login.component.scss',
 })
 export class LoginComponent {
   private readonly authService = inject(AuthService);
@@ -46,7 +39,7 @@ export class LoginComponent {
       await this.authService.login(this.email(), this.password());
     } catch (error: any) {
       this.errorMessage.set(
-        error.error?.message || 'Error al iniciar sesión. Verifica tus credenciales.'
+        error.error?.message || 'Error al iniciar sesión. Verifica tus credenciales.',
       );
     } finally {
       this.isLoading.set(false);
@@ -54,6 +47,6 @@ export class LoginComponent {
   }
 
   togglePassword() {
-    this.showPassword.update(v => !v);
+    this.showPassword.update((v) => !v);
   }
 }

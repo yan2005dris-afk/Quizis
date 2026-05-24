@@ -2,16 +2,16 @@ import { Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
-import { 
-  LucideAngularModule, 
-  LayoutDashboard, 
-  Settings, 
-  LogOut, 
-  Menu, 
+import {
+  LucideAngularModule,
+  LayoutDashboard,
+  Settings,
+  LogOut,
+  Menu,
   X,
   Users,
   Database,
-  PlayCircle
+  PlayCircle,
 } from 'lucide-angular';
 
 @Component({
@@ -19,11 +19,11 @@ import {
   standalone: true,
   imports: [CommonModule, RouterLink, RouterLinkActive, LucideAngularModule],
   templateUrl: './sidebar.component.html',
-  styleUrl: './sidebar.component.scss'
+  styleUrl: './sidebar.component.scss',
 })
 export class SidebarComponent {
   protected readonly authService = inject(AuthService);
-  
+
   readonly isCollapsed = signal(false);
 
   // Iconos
@@ -37,7 +37,7 @@ export class SidebarComponent {
   readonly CloseIcon = X;
 
   toggleSidebar() {
-    this.isCollapsed.update(v => !v);
+    this.isCollapsed.update((v) => !v);
   }
 
   logout() {

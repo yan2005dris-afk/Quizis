@@ -19,10 +19,13 @@
         <span class="user-name">{{ authService.user()?.nombre }}</span>
         <span class="user-role">{{ authService.user()?.nombreRol }}</span>
       </div>
-      <img 
-        [src]="authService.user()?.avatar || 'https://ui-avatars.com/api/?name=' + authService.user()?.nombre" 
-        alt="Avatar" 
-        class="avatar" 
+      <img
+        [src]="
+          authService.user()?.avatar ||
+          'https://ui-avatars.com/api/?name=' + authService.user()?.nombre
+        "
+        alt="Avatar"
+        class="avatar"
       />
     </div>
   </div>
