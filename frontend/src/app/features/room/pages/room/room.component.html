@@ -1,38 +1,44 @@
-<div class="observer-room">
+<div class="room">
+  @if (!auth.isAuthenticated()) {
+    <div class="room__auth-banner">
+      No estás autenticado — ves la sala como público general.
+    </div>
+  }
+
   <app-event-header
     [rondaInfo]="gameSocket.infoRonda()"
     [tiempoRestante]="gameSocket.tiempoRestante()"
     tituloEvento="Gran Torneo de Cultura General - Edición 2024"
   />
 
-  <div class="observer-room__layout">
-    <div class="observer-room__left">
-      <app-main-screen />
+  <div class="room__layout">
+    <div class="room__left">
+      <app-active-question />
 
-      <p class="observer-room__footer-note">
+      <p class="room__footer-note">
         Estás viendo como observador — podés sugerir respuestas y chatear con la comunidad.
       </p>
     </div>
 
-    <div class="observer-room__right">
-      <div class="observer-room__tabs">
+    <div class="room__right">
+      <div class="room__tabs">
         <button
-          class="observer-room__tab-btn"
-          [class.observer-room__tab-btn--active]="activeTab() === 'publico'"
+          class="room__tab-btn"
+          [class.room__tab-btn--active]="activeTab() === 'publico'"
           (click)="activeTab.set('publico')"
         >
           Público ({{ gameSocket.participantes().length }})
         </button>
         <button
-          class="observer-room__tab-btn"
-          [class.observer-room__tab-btn--active]="activeTab() === 'chat'"
+          class="room__tab-btn"
+          [class.room__tab-btn--active]="activeTab() === 'chat'"
           (click)="activeTab.set('chat')"
         >
           Chat en Vivo
         </button>
       </div>
 
-      <div class="observer-room__tab-content">
+      <div class="room__tab-content">
         @if (activeTab() === 'publico') {
           <app-event-feed [eventos]="gameSocket.eventosSala()" />
           <app-participants-list [participantes]="gameSocket.participantes()" />

@@ -6,7 +6,9 @@
         <div class="event-feed__item" data-testid="event-item">
           <span class="event-feed__type">{{ tipoIcono(evento.tipo) }}</span>
           <span class="event-feed__message">{{ evento.mensaje }}</span>
-          <span class="event-feed__time" data-testid="event-time">{{ formatTime(evento.timestamp) }}</span>
+          <span class="event-feed__time" data-testid="event-time">{{
+            formatTime(evento.timestamp)
+          }}</span>
         </div>
       }
     </div>

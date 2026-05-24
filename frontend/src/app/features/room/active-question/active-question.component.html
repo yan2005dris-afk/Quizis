@@ -1,0 +1,50 @@
+<div class="active-question">
+  <p class="active-question__status">El encuestado está pensando su respuesta...</p>
+
+  <h2 class="active-question__text">{{ pregunta() }}</h2>
+
+  <div class="active-question__options">
+    @for (opcion of opciones(); track opcion.id) {
+      <div class="active-question__option" data-testid="option-card">
+        <div class="active-question__option-top">
+          <span class="active-question__option-letra">{{ opcion.letra }}</span>
+          <span class="active-question__option-texto">{{ opcion.texto }}</span>
+          <span class="active-question__option-pct">{{ opcion.porcentaje }}%</span>
+        </div>
+        <div class="active-question__option-bar-track">
+          <div class="active-question__option-bar-fill" [style.width.%]="opcion.porcentaje"></div>
+        </div>
+      </div>
+    }
+  </div>
+
+  <div class="active-question__wildcards">
+    <span class="active-question__wildcards-label">Comodines disponibles</span>
+    <div class="active-question__wildcards-list">
+      <button
+        class="active-question__wildcard"
+        [class.active-question__wildcard--active]="comodinPublicoActivo()"
+        data-testid="wildcard-publico"
+      >
+        <span class="active-question__wildcard-icon">👥</span>
+        <span class="active-question__wildcard-name">Público</span>
+      </button>
+      <button
+        class="active-question__wildcard"
+        [class.active-question__wildcard--disabled]="!comodinDisponible()"
+        data-testid="wildcard-ia"
+      >
+        <span class="active-question__wildcard-icon">🤖</span>
+        <span class="active-question__wildcard-name">IA</span>
+      </button>
+      <button
+        class="active-question__wildcard"
+        [class.active-question__wildcard--disabled]="!comodinDisponible()"
+        data-testid="wildcard-llamada"
+      >
+        <span class="active-question__wildcard-icon">📞</span>
+        <span class="active-question__wildcard-name">Llamada</span>
+      </button>
+    </div>
+  </div>
+</div>

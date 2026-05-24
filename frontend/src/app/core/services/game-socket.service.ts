@@ -1,6 +1,11 @@
 import { Injectable, signal } from '@angular/core';
 import { io, Socket } from 'socket.io-client';
-import type { ChatMessage, SalaEvento, Participante, RondaInfo } from '../../features/observer-room/observer-room.types';
+import {
+  ChatMessage,
+  SalaEvento,
+  Participante,
+  RondaInfo,
+} from '../../features/room/room.types';
 
 // Representa una opción de respuesta individual dentro de una pregunta
 export interface Opcion {

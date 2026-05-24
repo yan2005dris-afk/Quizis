@@ -1,19 +1,29 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { describe, it, expect, beforeEach } from 'vitest';
-import { ObserverRoomComponent } from './observer-room.component';
+import { RoomComponent } from './room.component';
 import { GameSocketService } from '../../../../core/services/game-socket.service';
-import type { RondaInfo, SalaEvento, Participante, ChatMessage } from '../../observer-room.types';
+import type { RondaInfo, Participante, ChatMessage } from '../../room.types';
 
-describe('ObserverRoomComponent', () => {
-  let fixture: ComponentFixture<ObserverRoomComponent>;
+describe('RoomComponent', () => {
+  let fixture: ComponentFixture<RoomComponent>;
   let gameSocket: GameSocketService;
 
   beforeEach(async () => {
+    // Mock localStorage for AuthService constructor
+    Object.defineProperty(globalThis, 'localStorage', {
+      value: { 
+        getItem: () => null, 
+        setItem: () => { /* No-op */ }, 
+        removeItem: () => { /* No-op */ } 
+      },
+      writable: true,
+    });
+
     await TestBed.configureTestingModule({
-      imports: [ObserverRoomComponent],
+      imports: [RoomComponent],
     }).compileComponents();
 
-    fixture = TestBed.createComponent(ObserverRoomComponent);
+    fixture = TestBed.createComponent(RoomComponent);
     gameSocket = TestBed.inject(GameSocketService);
   });
 
@@ -24,18 +34,18 @@ describe('ObserverRoomComponent', () => {
     expect(el.querySelector('app-event-header')).toBeTruthy();
   });
 
-  it('should embed app-main-screen in the left (70%) column', () => {
+  it('should embed app-active-question in the left (70%) column', () => {
     fixture.detectChanges();
 
     const el = fixture.nativeElement as HTMLElement;
-    expect(el.querySelector('app-main-screen')).toBeTruthy();
+    expect(el.querySelector('app-active-question')).toBeTruthy();
   });
 
   it('should render right column with publico and chat tab buttons', () => {
     fixture.detectChanges();
 
     const el = fixture.nativeElement as HTMLElement;
-    const buttons = el.querySelectorAll('.observer-room__tab-btn');
+    const buttons = el.querySelectorAll('.room__tab-btn');
     expect(buttons.length).toBe(2);
     expect(buttons[0].textContent).toContain('Público');
     expect(buttons[1].textContent).toContain('Chat en Vivo');
@@ -54,7 +64,7 @@ describe('ObserverRoomComponent', () => {
     fixture.detectChanges();
 
     const el = fixture.nativeElement as HTMLElement;
-    const chatTab = el.querySelectorAll('.observer-room__tab-btn')[1] as HTMLButtonElement;
+    const chatTab = el.querySelectorAll('.room__tab-btn')[1] as HTMLButtonElement;
     chatTab.click();
     fixture.detectChanges();
 
@@ -66,9 +76,7 @@ describe('ObserverRoomComponent', () => {
     const rondaInfo: RondaInfo = { ronda: 2, totalRondas: 8, premio: '$2000' };
     gameSocket.infoRonda.set(rondaInfo);
 
-    const participantes: Participante[] = [
-      { id: '1', nombre: 'Alice', puntaje: 100 },
-    ];
+    const participantes: Participante[] = [{ id: '1', nombre: 'Alice', puntaje: 100 }];
     gameSocket.participantes.set(participantes);
 
     const mensajes: ChatMessage[] = [
@@ -94,7 +102,7 @@ describe('ObserverRoomComponent', () => {
     expect(el.textContent).toContain('No hay participantes');
 
     // Switch to chat tab to verify chat empty state
-    const chatTab = el.querySelectorAll('.observer-room__tab-btn')[1] as HTMLButtonElement;
+    const chatTab = el.querySelectorAll('.room__tab-btn')[1] as HTMLButtonElement;
     chatTab.click();
     fixture.detectChanges();
     expect(el.textContent).toContain('No hay mensajes');
@@ -105,5 +113,13 @@ describe('ObserverRoomComponent', () => {
 
     const el = fixture.nativeElement as HTMLElement;
     expect(el.textContent).toContain('Estás viendo como observador');
+  });
+
+  it('should show auth banner when user is not authenticated', () => {
+    fixture.detectChanges();
+
+    const el = fixture.nativeElement as HTMLElement;
+    expect(el.textContent).toContain('No estás autenticado');
+    expect(el.querySelector('.room__auth-banner')).toBeTruthy();
   });
 });

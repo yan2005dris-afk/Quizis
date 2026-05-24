@@ -1,13 +1,14 @@
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
-import type { Participante } from '../observer-room.types';
+import { Participante } from '../room.types';
+
 
 @Component({
   selector: 'app-participants-list',
   changeDetection: ChangeDetectionStrategy.OnPush,
   standalone: true,
-  templateUrl: './participants-list.component.html',
-  styleUrl: './participants-list.component.scss',
+  templateUrl: './participants-index.component.html',
+  styleUrl: './participants-index.component.scss',
 })
-export class ParticipantsListComponent {
+export class ParticipantsIndexComponent {
   readonly participantes = input.required<Participante[]>();
 }

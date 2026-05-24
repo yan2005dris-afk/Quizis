@@ -1,7 +1,12 @@
 import { TestBed } from '@angular/core/testing';
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { GameSocketService } from './game-socket.service';
-import type { ChatMessage, SalaEvento, Participante, RondaInfo } from '../../features/observer-room/observer-room.types';
+import type {
+  ChatMessage,
+  SalaEvento,
+  Participante,
+  RondaInfo,
+} from '../../features/observer-room/observer-room.types';
 
 // Mock socket.io-client
 const mockSocket = {

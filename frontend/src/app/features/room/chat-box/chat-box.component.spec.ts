@@ -2,7 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { describe, it, expect, beforeEach } from 'vitest';
 import { By } from '@angular/platform-browser';
 import { ChatBoxComponent } from './chat-box.component';
-import type { ChatMessage } from '../observer-room.types';
+import type { ChatMessage } from '../room.types';
 
 describe('ChatBoxComponent', () => {
   let fixture: ComponentFixture<ChatBoxComponent>;
@@ -46,12 +46,16 @@ describe('ChatBoxComponent', () => {
     const enviarSpy = vi.fn();
     fixture.componentInstance.enviar.subscribe(enviarSpy);
 
-    const input = fixture.nativeElement.querySelector('[data-testid="chat-input"]') as HTMLInputElement;
+    const input = fixture.nativeElement.querySelector(
+      '[data-testid="chat-input"]',
+    ) as HTMLInputElement;
     input.value = 'Hola a todos';
     input.dispatchEvent(new Event('input'));
     fixture.detectChanges();
 
-    const button = fixture.nativeElement.querySelector('[data-testid="send-button"]') as HTMLButtonElement;
+    const button = fixture.nativeElement.querySelector(
+      '[data-testid="send-button"]',
+    ) as HTMLButtonElement;
     button.click();
 
     expect(enviarSpy).toHaveBeenCalledWith({ texto: 'Hola a todos', tipo: 'mensaje' });

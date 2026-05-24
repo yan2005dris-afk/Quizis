@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
-import type { SalaEvento } from '../observer-room.types';
+import { SalaEvento } from '../room.types';
 
 @Component({
   selector: 'app-event-feed',
@@ -24,6 +24,10 @@ export class EventFeedComponent {
 
   protected formatTime(timestamp: number): string {
     const date = new Date(timestamp);
-    return date.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    return date.toLocaleTimeString('es-AR', {
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+    });
   }
 }
