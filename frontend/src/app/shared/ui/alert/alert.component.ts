@@ -1,18 +1,12 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  computed,
-  input,
-  output,
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
 
 export type AlertType = 'success' | 'warning' | 'danger' | 'info';
 
 const ICONS: Record<AlertType, string> = {
   success: '✓',
   warning: '⚠',
-  danger:  '✕',
-  info:    'ℹ',
+  danger: '✕',
+  info: 'ℹ',
 };
 
 @Component({
@@ -23,8 +17,8 @@ const ICONS: Record<AlertType, string> = {
     <div
       [class]="'alert alert--' + type()"
       role="alert"
-      [attr.aria-live]="type() === 'danger' ? 'assertive' : 'polite'">
-
+      [attr.aria-live]="type() === 'danger' ? 'assertive' : 'polite'"
+    >
       <span class="alert__icon" aria-hidden="true">{{ icon() }}</span>
 
       <div class="alert__content">
@@ -39,7 +33,8 @@ const ICONS: Record<AlertType, string> = {
           class="alert__dismiss"
           type="button"
           aria-label="Cerrar alerta"
-          (click)="dismissed.emit()">
+          (click)="dismissed.emit()"
+        >
           ×
         </button>
       }
@@ -47,9 +42,9 @@ const ICONS: Record<AlertType, string> = {
   `,
 })
 export class AlertComponent {
-  type        = input<AlertType>('info');
-  title       = input<string>('');
-  message     = input.required<string>();
+  type = input<AlertType>('info');
+  title = input<string>('');
+  message = input.required<string>();
   dismissible = input<boolean>(false);
 
   dismissed = output<void>();

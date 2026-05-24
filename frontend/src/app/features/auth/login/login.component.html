@@ -1,0 +1,98 @@
+<div class="login-page">
+  <header class="login-header">
+    <div class="logo">
+      <span class="logo-icon">Q</span>
+      <span class="logo-text">Quizis</span>
+    </div>
+    <div class="language-selector">
+      <lucide-icon [img]="GlobeIcon" class="icon-sm"></lucide-icon>
+      <span>Español (ES)</span>
+    </div>
+  </header>
+
+  <main class="main-content">
+    <div class="login-card">
+      <h1>Iniciar sesión</h1>
+      <p class="subtitle">Bienvenido de nuevo. Accede a tu panel de eventos.</p>
+
+      <form [formGroup]="form" (ngSubmit)="onSubmit()" class="login-form" novalidate>
+        <app-input
+          label="Correo electrónico o usuario"
+          type="email"
+          placeholder="ejemplo@quizis.com"
+          formControlName="email"
+        />
+
+        <div class="password-field">
+          <app-input
+            label="Contraseña"
+            [type]="showPassword() ? 'text' : 'password'"
+            placeholder="••••••••"
+            formControlName="password"
+          />
+          <button
+            type="button"
+            class="toggle-password"
+            aria-label="Mostrar u ocultar contraseña"
+            (click)="togglePassword()"
+          >
+            <lucide-icon [img]="showPassword() ? EyeOffIcon : EyeIcon"></lucide-icon>
+          </button>
+        </div>
+
+        <div class="form-options">
+          <label class="checkbox-label">
+            <input type="checkbox" name="remember" />
+            Recordarme
+          </label>
+          <a routerLink="/forgot-password" class="forgot-link">¿Olvidaste tu contraseña?</a>
+        </div>
+
+        @if (errorMessage()) {
+          <app-alert type="danger" [message]="errorMessage()!" />
+        }
+
+        <app-button
+          type="submit"
+          variant="primary"
+          size="lg"
+          [fullWidth]="true"
+          [loading]="isLoading()"
+        >
+          Iniciar sesión
+        </app-button>
+
+        <div class="separator"><span>O CONTINUAR CON</span></div>
+
+        <app-button type="button" variant="ghost" size="md" [fullWidth]="true">
+          <img
+            src="https://www.google.com/favicon.ico"
+            alt=""
+            aria-hidden="true"
+            class="sso-icon"
+          />
+          Continuar con Google
+        </app-button>
+
+        <p class="register-footer">
+          ¿No tienes una cuenta? <a routerLink="/register">Regístrate ahora</a>
+        </p>
+
+        <p class="legal-notice">
+          Al iniciar sesión, aceptas nuestras
+          <a href="#" (click)="$event.preventDefault()">Políticas de Privacidad</a>.
+        </p>
+      </form>
+    </div>
+  </main>
+
+  <footer class="login-footer">
+    <div class="footer-links">
+      <a href="#">TÉRMINOS</a>
+      <a href="#">PRIVACIDAD</a>
+      <a href="#">AYUDA</a>
+      <a href="#">CONTACTO</a>
+    </div>
+    <p class="copyright">© 2026 Quizis Inc. Todos los derechos reservados.</p>
+  </footer>
+</div>

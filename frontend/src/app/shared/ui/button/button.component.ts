@@ -1,13 +1,7 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  computed,
-  input,
-  output,
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
 
 export type ButtonVariant = 'primary' | 'secondary' | 'danger' | 'ghost' | 'accent' | 'ai';
-export type ButtonSize    = 'sm' | 'md' | 'lg';
+export type ButtonSize = 'sm' | 'md' | 'lg';
 
 @Component({
   selector: 'app-button',
@@ -16,10 +10,12 @@ export type ButtonSize    = 'sm' | 'md' | 'lg';
   template: `
     <button
       [class]="hostClass()"
+      [type]="type()"
       [disabled]="disabled() || loading()"
       [attr.aria-busy]="loading() || null"
       [attr.aria-disabled]="disabled() || null"
-      (click)="clicked.emit()">
+      (click)="clicked.emit()"
+    >
       @if (loading()) {
         <span class="btn__spinner" aria-hidden="true"></span>
       }
@@ -28,10 +24,11 @@ export type ButtonSize    = 'sm' | 'md' | 'lg';
   `,
 })
 export class ButtonComponent {
-  variant   = input<ButtonVariant>('primary');
-  size      = input<ButtonSize>('md');
-  disabled  = input<boolean>(false);
-  loading   = input<boolean>(false);
+  variant = input<ButtonVariant>('primary');
+  size = input<ButtonSize>('md');
+  type = input<'button' | 'submit' | 'reset'>('button');
+  disabled = input<boolean>(false);
+  loading = input<boolean>(false);
   fullWidth = input<boolean>(false);
 
   clicked = output<void>();
@@ -39,7 +36,7 @@ export class ButtonComponent {
   protected hostClass = computed(() => {
     const cls = ['btn', `btn--${this.variant()}`, `btn--${this.size()}`];
     if (this.fullWidth()) cls.push('btn--full');
-    if (this.loading())   cls.push('btn--loading');
+    if (this.loading()) cls.push('btn--loading');
     return cls.join(' ');
   });
 }
