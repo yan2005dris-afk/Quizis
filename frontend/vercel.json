@@ -9,7 +9,7 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "https://quizis-backend.onrender.com/api/:path*"
+      "destination": "https://quizis-zvhd.onrender.com/api/:path*"
     },
     {
       "source": "/(.*)",
