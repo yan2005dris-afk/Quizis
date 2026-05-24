@@ -37,7 +37,8 @@ export type InputType = 'text' | 'email' | 'password' | 'number' | 'tel' | 'sear
         [attr.aria-describedby]="errorMsg() ? inputId + '-err' : null"
         [attr.aria-invalid]="!!errorMsg() || null"
         (input)="onInput($event)"
-        (blur)="onTouched()" />
+        (blur)="onTouched()"
+      />
 
       @if (errorMsg()) {
         <p class="input-field__error" [id]="inputId + '-err'" role="alert">
@@ -48,21 +49,21 @@ export type InputType = 'text' | 'email' | 'password' | 'number' | 'tel' | 'sear
   `,
 })
 export class InputComponent implements ControlValueAccessor {
-  label       = input<string>('');
-  type        = input<InputType>('text');
+  label = input<string>('');
+  type = input<InputType>('text');
   placeholder = input<string>('');
-  errorMsg    = input<string>('');
+  errorMsg = input<string>('');
 
-  protected value      = signal<string>('');
-  protected _disabled  = signal<boolean>(false);
+  protected value = signal<string>('');
+  protected _disabled = signal<boolean>(false);
   protected isDisabled = computed(() => this._disabled());
 
   protected readonly inputId = `inp-${Math.random().toString(36).slice(2, 7)}`;
 
   protected wrapperClass = computed(() => {
     const cls = ['input-field'];
-    if (this.errorMsg())    cls.push('input-field--error');
-    if (this.isDisabled())  cls.push('input-field--disabled');
+    if (this.errorMsg()) cls.push('input-field--error');
+    if (this.isDisabled()) cls.push('input-field--disabled');
     return cls.join(' ');
   });
 
