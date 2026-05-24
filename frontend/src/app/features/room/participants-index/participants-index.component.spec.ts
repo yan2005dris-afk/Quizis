@@ -1,17 +1,17 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { describe, it, expect, beforeEach } from 'vitest';
-import { ParticipantsListComponent } from './participants-index.component';
+import { ParticipantsIndexComponent } from './participants-index.component';
 import type { Participante } from '../room.types';
 
-describe('ParticipantsListComponent', () => {
-  let fixture: ComponentFixture<ParticipantsListComponent>;
+describe('ParticipantsIndexComponent', () => {
+  let fixture: ComponentFixture<ParticipantsIndexComponent>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [ParticipantsListComponent],
+      imports: [ParticipantsIndexComponent],
     }).compileComponents();
 
-    fixture = TestBed.createComponent(ParticipantsListComponent);
+    fixture = TestBed.createComponent(ParticipantsIndexComponent);
   });
 
   it('should render a list of participants with scores', () => {

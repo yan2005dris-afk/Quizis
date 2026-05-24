@@ -50,10 +50,10 @@ export class RoomComponent implements OnInit, OnDestroy {
   protected readonly opcionesAdaptadas = computed(() => {
     const p = this.preguntaActiva();
     if (!p) return [];
-    return p.opciones.map(o => ({
+    return p.opciones.map((o) => ({
       id: o.opcionId.toString(),
       texto: o.texto,
-      letra: o.letra
+      letra: o.letra,
     }));
   });
 

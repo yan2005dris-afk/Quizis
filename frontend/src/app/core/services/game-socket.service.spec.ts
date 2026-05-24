@@ -6,7 +6,7 @@ import type {
   SalaEvento,
   Participante,
   RondaInfo,
-} from '../../features/observer-room/observer-room.types';
+} from '../../features/room/room.types';
 
 // Mock socket.io-client
 const mockSocket = {

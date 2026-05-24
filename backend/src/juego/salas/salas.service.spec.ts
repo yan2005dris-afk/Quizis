@@ -96,10 +96,20 @@ describe('SalasService', () => {
         createdAt: new Date('2024-01-01'),
         deletedAt: null,
         participantes: [
-          { participanteId: 1, nickname: 'Juan', rol: 'estudiante', isOnline: true },
+          {
+            participanteId: 1,
+            nickname: 'Juan',
+            rol: 'estudiante',
+            isOnline: true,
+          },
         ],
         rondas: [
-          { rondaId: 1, numeroRonda: 1, estado: 'jugando', fechaInicio: new Date('2024-01-01T10:00:00') },
+          {
+            rondaId: 1,
+            numeroRonda: 1,
+            estado: 'jugando',
+            fechaInicio: new Date('2024-01-01T10:00:00'),
+          },
         ],
       };
       mockPrismaService.salas.findUnique.mockResolvedValue(mockSala);

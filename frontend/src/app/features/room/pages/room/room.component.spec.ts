@@ -11,10 +11,14 @@ describe('RoomComponent', () => {
   beforeEach(async () => {
     // Mock localStorage for AuthService constructor
     Object.defineProperty(globalThis, 'localStorage', {
-      value: { 
-        getItem: () => null, 
-        setItem: () => { /* No-op */ }, 
-        removeItem: () => { /* No-op */ } 
+      value: {
+        getItem: () => null,
+        setItem: () => {
+          /* No-op */
+        },
+        removeItem: () => {
+          /* No-op */
+        },
       },
       writable: true,
     });

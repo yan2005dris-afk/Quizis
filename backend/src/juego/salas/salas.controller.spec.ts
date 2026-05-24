@@ -8,7 +8,13 @@ describe('SalasController', () => {
 
   const mockSalasService = {
     listarTodas: jest.fn().mockResolvedValue([
-      { salaId: 1, nombre: 'Sala 1', estado: 'jugando', participantes: 5, creadoEn: new Date().toISOString() },
+      {
+        salaId: 1,
+        nombre: 'Sala 1',
+        estado: 'jugando',
+        participantes: 5,
+        creadoEn: new Date().toISOString(),
+      },
     ]),
     obtenerPorId: jest.fn().mockResolvedValue({
       salaId: 1,

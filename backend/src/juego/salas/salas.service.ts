@@ -19,10 +19,7 @@ export class SalasService {
           select: { participantes: true },
         },
       },
-      orderBy: [
-        { estado: 'asc' },
-        { createdAt: 'desc' },
-      ],
+      orderBy: [{ estado: 'asc' }, { createdAt: 'desc' }],
     });
 
     return salas.map((sala) => ({
@@ -80,14 +77,15 @@ export class SalasService {
         rol: p.rol,
         isOnline: p.isOnline,
       })),
-      rondaActiva: sala.rondas.length > 0
-        ? {
-            rondaId: sala.rondas[0].rondaId,
-            numeroRonda: sala.rondas[0].numeroRonda,
-            estado: sala.rondas[0].estado,
-            fechaInicio: sala.rondas[0].fechaInicio?.toISOString() ?? null,
-          }
-        : null,
+      rondaActiva:
+        sala.rondas.length > 0
+          ? {
+              rondaId: sala.rondas[0].rondaId,
+              numeroRonda: sala.rondas[0].numeroRonda,
+              estado: sala.rondas[0].estado,
+              fechaInicio: sala.rondas[0].fechaInicio?.toISOString() ?? null,
+            }
+          : null,
     };
   }
 }
