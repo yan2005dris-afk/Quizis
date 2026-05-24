@@ -1,5 +1,5 @@
 import { Routes } from '@angular/router';
-import { MainScreen } from './features/game-show/pages/main-screen/main-screen';
+import { MainScreen } from './features/proyector-juego/pages/main-screen/main-screen';
 import { LoginComponent } from './features/auth/login/login.component';
 import { DashboardComponent } from './features/dashboard/dashboard.component';
 import { DashboardLayoutComponent } from './layout/dashboard-layout/dashboard-layout.component';
