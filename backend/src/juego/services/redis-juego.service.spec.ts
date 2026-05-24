@@ -1,23 +1,23 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { RedisJuegoService } from './redis-juego.service';
 import { ConfigService } from '@nestjs/config';
-import { CacheService } from '../../infrastructure/cache/cache.service';
+import { CacheService } from '../../infrastructure/cache/cache.service'; // Asegura la ruta
 
 describe('RedisJuegoService', () => {
   let service: RedisJuegoService;
-  let cacheService: jest.Mocked<Partial<CacheService>>;
+  let cacheService: CacheService;
+
+  // 1. Patrón: Creamos objetos mock para los servicios
+  const mockCacheService = {
+    get: jest.fn(),
+    set: jest.fn(),
+  };
+
+  const mockConfigService = {
+    get: jest.fn(),
+  };
 
   beforeEach(async () => {
-    // Mockeamos las dependencias
-    const mockCacheService = {
-      get: jest.fn(),
-      set: jest.fn(),
-    };
-
-    const mockConfigService = {
-      get: jest.fn().mockReturnValue(7200),
-    };
-
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         RedisJuegoService,
@@ -27,28 +27,46 @@ describe('RedisJuegoService', () => {
     }).compile();
 
     service = module.get<RedisJuegoService>(RedisJuegoService);
-    cacheService = module.get(CacheService);
+    cacheService = module.get<CacheService>(CacheService);
+    
+    // Limpiamos los mocks antes de cada test para que no se contaminen
+    jest.clearAllMocks();
   });
 
-  it('debería estar definido', () => {
-    expect(service).toBeDefined();
-  });
+  // 2. Patrón: Bloque describe para cada método
+  describe('registrarVoto', () => {
+    
+    it('debe retornar true si el participante no ha votado', async () => {
+      const rondaId = 1;
+      const preguntaId = 10;
+      const participanteId = 5;
 
-  it('debería retornar true si el participante no ha votado', async () => {
-    cacheService.get.mockResolvedValueOnce(null); // Simulamos que no hay voto previo
+      // Configuramos el valor que devuelve el mock
+      mockCacheService.get.mockResolvedValue(null); // No ha votado
+      mockConfigService.get.mockReturnValue(7200);
 
-    const result = await service.registrarVoto(1, 1, 123);
+      const result = await service.registrarVoto(rondaId, preguntaId, participanteId);
 
-    expect(result).toBe(true);
-    expect(cacheService.set).toHaveBeenCalled(); // Verifica que se guardó el voto
-  });
+      expect(result).toBe(true);
+      expect(mockCacheService.set).toHaveBeenCalled();
+    });
 
-  it('debería retornar false si el participante ya votó', async () => {
-    cacheService.get.mockResolvedValueOnce('true'); // Simulamos que YA votó
+    it('debe retornar false si el participante ya votó', async () => {
+      mockCacheService.get.mockResolvedValue('true'); // Ya votó
 
-    const result = await service.registrarVoto(1, 1, 123);
+      const result = await service.registrarVoto(1, 10, 5);
 
-    expect(result).toBe(false);
-    expect(cacheService.set).not.toHaveBeenCalled(); // Verifica que NO se volvió a guardar
+      expect(result).toBe(false);
+      expect(mockCacheService.set).not.toHaveBeenCalled();
+    });
+
+    it('debe retornar false si hay un error en Redis (try/catch)', async () => {
+      // Simulamos un error de red
+      mockCacheService.get.mockRejectedValue(new Error('Redis down'));
+
+      const result = await service.registrarVoto(1, 10, 5);
+
+      expect(result).toBe(false);
+    });
   });
 });
