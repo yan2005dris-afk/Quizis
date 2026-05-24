@@ -8,6 +8,8 @@ import {
   MessageBody,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
+import { CacheService } from 'src/infrastructure/cache/cache.service';
+import { PrismaService } from 'src/infrastructure/database/prisma.service';
 
 
 @WebSocketGateway({ cors: { origin: '*' } })
@@ -15,21 +17,82 @@ export class QuizGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
   server!: Server;
 
+  constructor(
+    private readonly cacheService: CacheService,
+    private readonly prismaService: PrismaService,
+  ) {}
+
   handleConnection(client: Socket) {
     console.log(`Cliente conectado: ${client.id}`);
   }
 
-  handleDisconnect(client: Socket) {
+  async handleDisconnect(client: Socket) {
     console.log(`Cliente desconectado: ${client.id}`);
+    const session = await this.cacheService.removeSocketSession(client.id);
+    if (session) {
+      const { token, nickname } = session;
+      console.log(`Participante ${nickname} se desconectó de la sala ${token}`);
+      try {
+        const sala = await this.prismaService.extendedClient.salas.findUnique({
+          where: { tokenCompartido: token }
+        });
+        if (sala) {
+          await this.prismaService.extendedClient.participantes.update({
+            where: {
+              salaId_nickname: {
+                salaId: sala.salaId,
+                nickname: nickname
+              }
+            },
+            data: { isOnline: false }
+          });
+          this.server.to(token).emit('participante_desconectado', nickname);
+        }
+      } catch (dbError) {
+        console.error('Error actualizando participante al desconectarse:', dbError);
+      }
+    }
   }
 
   @SubscribeMessage('unirse_sala')
-  handleJoinRoom(
+  async handleJoinRoom(
     @ConnectedSocket() client: Socket,
     @MessageBody() payload: { tokenCompartido: string; nombre: string }
   ) {
     client.join(payload.tokenCompartido);
     console.log(`${payload.nombre} se unió a la sala con token: ${payload.tokenCompartido}`);
+    
+    await this.cacheService.saveSocketSession(
+      payload.tokenCompartido,
+      payload.nombre,
+      client.id
+    );
+
+    try {
+      const sala = await this.prismaService.extendedClient.salas.findUnique({
+        where: { tokenCompartido: payload.tokenCompartido }
+      });
+      if (sala) {
+        await this.prismaService.extendedClient.participantes.upsert({
+          where: {
+            salaId_nickname: {
+              salaId: sala.salaId,
+              nickname: payload.nombre
+            }
+          },
+          update: { isOnline: true },
+          create: {
+            salaId: sala.salaId,
+            nickname: payload.nombre,
+            rol: 'observador',
+            isOnline: true
+          }
+        });
+      }
+    } catch (dbError) {
+      console.error('Error actualizando participante al unirse:', dbError);
+    }
+
     this.server.to(payload.tokenCompartido).emit('nuevo_participante', payload.nombre);
   }
 

@@ -17,6 +17,8 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(CacheService.name);
   private redisClient: Redis | null = null;
   private memoryVotes = new Map<string, MemoryCacheEntry>(); // Fallback con TTL
+  private memorySocketSessions = new Map<string, { socketId: string; expiresAt: number }>();
+  private memoryClientSockets = new Map<string, { tokenNickname: string; expiresAt: number }>();
   private isRedisHealthy = true;
   private reconnectTimeout: NodeJS.Timeout | null = null;
   private gcInterval: NodeJS.Timeout | null = null;
@@ -94,6 +96,18 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
     for (const [key, entry] of this.memoryVotes.entries()) {
       if (entry.expiresAt < now) {
         this.memoryVotes.delete(key);
+        count++;
+      }
+    }
+    for (const [key, entry] of this.memorySocketSessions.entries()) {
+      if (entry.expiresAt < now) {
+        this.memorySocketSessions.delete(key);
+        count++;
+      }
+    }
+    for (const [key, entry] of this.memoryClientSockets.entries()) {
+      if (entry.expiresAt < now) {
+        this.memoryClientSockets.delete(key);
         count++;
       }
     }
@@ -372,5 +386,111 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
       }
     }
     this.memoryVotes.delete(key);
+  }
+
+  async saveSocketSession(
+    token: string,
+    nickname: string,
+    socketId: string,
+  ): Promise<void> {
+    const sessionKey = `socket:session:${token}:${nickname}`;
+    const clientKey = `socket:client:${socketId}`;
+    const ttl = 7200; // 2 horas
+
+    if (this.redisClient && this.isRedisHealthy) {
+      try {
+        const tx = this.redisClient.multi();
+        tx.set(sessionKey, socketId, 'EX', ttl);
+        tx.set(clientKey, `${token}:${nickname}`, 'EX', ttl);
+        await tx.exec();
+        return;
+      } catch (error) {
+        const errorMsg = error instanceof Error ? error.message : String(error);
+        this.logger.warn(
+          `[CACHE:WARN] Error en Redis durante saveSocketSession: ${errorMsg}. Usando fallback en memoria.`,
+        );
+        this.handleRedisFailure();
+      }
+    }
+
+    // Fallback memoria
+    const expiresAt = Date.now() + ttl * 1000;
+    this.memorySocketSessions.set(sessionKey, { socketId, expiresAt });
+    this.memoryClientSockets.set(clientKey, {
+      tokenNickname: `${token}:${nickname}`,
+      expiresAt,
+    });
+  }
+
+  async getSocketId(token: string, nickname: string): Promise<string | null> {
+    const sessionKey = `socket:session:${token}:${nickname}`;
+
+    if (this.redisClient && this.isRedisHealthy) {
+      try {
+        return await this.redisClient.get(sessionKey);
+      } catch (error) {
+        const errorMsg = error instanceof Error ? error.message : String(error);
+        this.logger.warn(
+          `[CACHE:WARN] Error en Redis durante getSocketId: ${errorMsg}.`,
+        );
+        this.handleRedisFailure();
+      }
+    }
+
+    // Fallback memoria
+    const entry = this.memorySocketSessions.get(sessionKey);
+    if (entry && entry.expiresAt > Date.now()) {
+      return entry.socketId;
+    }
+    return null;
+  }
+
+  async removeSocketSession(
+    socketId: string,
+  ): Promise<{ token: string; nickname: string } | null> {
+    const clientKey = `socket:client:${socketId}`;
+    let tokenNickname: string | null = null;
+
+    if (this.redisClient && this.isRedisHealthy) {
+      try {
+        tokenNickname = await this.redisClient.get(clientKey);
+        if (tokenNickname) {
+          const parts = tokenNickname.split(':');
+          if (parts.length >= 2) {
+            const token = parts[0];
+            const nickname = parts.slice(1).join(':');
+            const sessionKey = `socket:session:${token}:${nickname}`;
+            
+            const tx = this.redisClient.multi();
+            tx.del(clientKey);
+            tx.del(sessionKey);
+            await tx.exec();
+            return { token, nickname };
+          }
+        }
+      } catch (error) {
+        const errorMsg = error instanceof Error ? error.message : String(error);
+        this.logger.warn(
+          `[CACHE:WARN] Error en Redis durante removeSocketSession: ${errorMsg}.`,
+        );
+        this.handleRedisFailure();
+      }
+    }
+
+    // Fallback memoria
+    const entry = this.memoryClientSockets.get(clientKey);
+    if (entry && entry.expiresAt > Date.now()) {
+      tokenNickname = entry.tokenNickname;
+      this.memoryClientSockets.delete(clientKey);
+      const parts = tokenNickname.split(':');
+      if (parts.length >= 2) {
+        const token = parts[0];
+        const nickname = parts.slice(1).join(':');
+        const sessionKey = `socket:session:${token}:${nickname}`;
+        this.memorySocketSessions.delete(sessionKey);
+        return { token, nickname };
+      }
+    }
+    return null;
   }
 }
