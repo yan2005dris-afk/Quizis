@@ -1,4 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
+import type { FormatoArchivo } from 'src/games/bulk-upload/types/bulk-upload.types';
 
 export class OpcionParseadaEntity {
   @ApiProperty({
@@ -66,8 +67,8 @@ export class PreguntaParseadaEntity {
 export class ErrorParseoEntity {
   @ApiProperty({
     description:
-      'Número de fila donde se encontró el error (1 = primera fila de datos)',
-    example: 3,
+      'Número de fila donde se encontró el error (0 = encabezado, 1 = primera fila de datos)',
+    example: 0,
   })
   fila!: number;
 
@@ -102,7 +103,7 @@ export class PreviewCargaMasivaEntity {
     example: 'excel',
     enum: ['json', 'csv', 'excel'],
   })
-  formato!: string;
+  formato!: FormatoArchivo;
 
   @ApiProperty({
     description: 'Preguntas parseadas exitosamente, listas para guardar',

@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, Logger } from '@nestjs/common';
+import { BadRequestException, HttpException, Injectable, Logger } from '@nestjs/common';
 import { parsearJson } from 'src/games/bulk-upload/parsers/json.parser';
 import { parsearCsv } from 'src/games/bulk-upload/parsers/csv.parser';
 import { parsearExcel } from 'src/games/bulk-upload/parsers/excel.parser';
@@ -45,6 +45,9 @@ export class BulkUploadService {
     try {
       resultado = this.ejecutarParser(buffer, formato);
     } catch (error: unknown) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
       const mensaje =
         error instanceof Error
           ? error.message

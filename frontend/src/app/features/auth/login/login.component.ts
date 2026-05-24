@@ -1,34 +1,44 @@
-import { Component, signal, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
+import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { RouterLink } from '@angular/router';
+import { LucideAngularModule, Eye, EyeOff, Globe } from 'lucide-angular';
 import { AuthService } from '../../../core/services/auth.service';
-import { LucideAngularModule, Mail, Lock, Eye, EyeOff, Globe } from 'lucide-angular';
+import { AlertComponent, ButtonComponent, InputComponent } from '../../../shared/ui';
 
 @Component({
   selector: 'app-login',
-  standalone: true,
-  imports: [CommonModule, FormsModule, LucideAngularModule],
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [
+    ReactiveFormsModule,
+    RouterLink,
+    LucideAngularModule,
+    ButtonComponent,
+    AlertComponent,
+    InputComponent,
+  ],
   templateUrl: './login.component.html',
   styleUrl: './login.component.scss',
 })
 export class LoginComponent {
   private readonly authService = inject(AuthService);
+  private readonly fb = inject(FormBuilder);
 
-  readonly email = signal('');
-  readonly password = signal('');
   readonly showPassword = signal(false);
   readonly isLoading = signal(false);
   readonly errorMessage = signal<string | null>(null);
 
-  readonly MailIcon = Mail;
-  readonly LockIcon = Lock;
   readonly EyeIcon = Eye;
   readonly EyeOffIcon = EyeOff;
   readonly GlobeIcon = Globe;
 
-  async onSubmit() {
-    if (!this.email() || !this.password()) {
-      this.errorMessage.set('Por favor completa todos los campos.');
+  form = this.fb.group({
+    email: ['', [Validators.required, Validators.email]],
+    password: ['', Validators.required],
+  });
+
+  async onSubmit(): Promise<void> {
+    if (this.form.invalid) {
+      this.form.markAllAsTouched();
       return;
     }
 
@@ -36,17 +46,19 @@ export class LoginComponent {
     this.errorMessage.set(null);
 
     try {
-      await this.authService.login(this.email(), this.password());
-    } catch (error: any) {
+      const { email, password } = this.form.value;
+      await this.authService.login(email!, password!);
+    } catch (error: unknown) {
+      const err = error as { error?: { message?: string } };
       this.errorMessage.set(
-        error.error?.message || 'Error al iniciar sesión. Verifica tus credenciales.',
+        err.error?.message ?? 'Error al iniciar sesión. Verifica tus credenciales.',
       );
     } finally {
       this.isLoading.set(false);
     }
   }
 
-  togglePassword() {
+  togglePassword(): void {
     this.showPassword.update((v) => !v);
   }
 }

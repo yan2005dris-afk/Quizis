@@ -5,6 +5,14 @@ import type {
   PreguntaParseada,
   ResultadoParseo,
 } from 'src/games/bulk-upload/types/bulk-upload.types';
+import {
+  COLUMNAS_REQUERIDAS,
+  LETRAS_VALIDAS,
+  normalizarClave,
+  normalizarLetra,
+  toStr,
+} from 'src/games/bulk-upload/parsers/parser.utils';
+import type { LetraOpcion } from 'src/games/bulk-upload/parsers/parser.utils';
 
 /*
  * Columnas esperadas en el CSV (cabecera en primera fila):
@@ -27,46 +35,6 @@ import type {
  * Ejemplo de fila:
  *   "¿Capital de Francia?","Madrid","París","Roma","Berlín","B","Geografía",1,1000,"¡Correcto!","Era París"
  */
-
-const COLUMNAS_REQUERIDAS = [
-  'texto',
-  'opcion_a',
-  'opcion_b',
-  'opcion_c',
-  'opcion_d',
-  'correcta',
-] as const;
-const LETRAS_VALIDAS = ['a', 'b', 'c', 'd'] as const;
-
-type LetraOpcion = (typeof LETRAS_VALIDAS)[number];
-
-function normalizarClave(clave: string): string {
-  return clave.toLowerCase().trim().replace(/\s+/g, '_');
-}
-
-function toStr(valor: unknown): string {
-  if (valor === null || valor === undefined) return '';
-  if (typeof valor === 'string') return valor;
-  if (typeof valor === 'number' || typeof valor === 'boolean')
-    return String(valor);
-  return '';
-}
-
-function normalizarLetra(valor: unknown): LetraOpcion | null {
-  if (typeof valor !== 'string' && typeof valor !== 'number') return null;
-  const letra = String(valor).toLowerCase().trim();
-  if ((LETRAS_VALIDAS as readonly string[]).includes(letra)) {
-    return letra as LetraOpcion;
-  }
-  // Aceptar 1, 2, 3, 4 como alternativa a a, b, c, d
-  const mapaNumero: Record<string, LetraOpcion> = {
-    '1': 'a',
-    '2': 'b',
-    '3': 'c',
-    '4': 'd',
-  };
-  return mapaNumero[letra] ?? null;
-}
 
 export function parsearCsv(buffer: Buffer): ResultadoParseo {
   const preguntas: PreguntaParseada[] = [];

@@ -1,0 +1,35 @@
+<div
+  class="countdown"
+  [class]="estadoClass()"
+  role="timer"
+  [attr.aria-label]="tiempoRestante() + ' segundos restantes'"
+  [attr.aria-live]="'off'"
+>
+  <svg class="countdown__ring" viewBox="0 0 100 100" aria-hidden="true">
+    <!-- Track (background circle) -->
+    <circle
+      class="countdown__track"
+      cx="50"
+      cy="50"
+      [attr.r]="radio"
+      fill="none"
+      stroke-width="8"
+    />
+
+    <!-- Progress circle -->
+    <circle
+      class="countdown__progress"
+      cx="50"
+      cy="50"
+      [attr.r]="radio"
+      fill="none"
+      stroke-width="8"
+      stroke-linecap="round"
+      [attr.stroke-dasharray]="circunferencia"
+      [attr.stroke-dashoffset]="dashOffset()"
+      transform="rotate(-90 50 50)"
+    />
+  </svg>
+
+  <span class="countdown__numero">{{ tiempoRestante() }}</span>
+</div>
