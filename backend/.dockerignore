@@ -4,3 +4,5 @@ dist
 .git
 *.log
 npm-debug.log*
+src/generated
+coverage

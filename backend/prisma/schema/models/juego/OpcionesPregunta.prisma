@@ -10,6 +10,7 @@ model OpcionesPregunta {
 
   pregunta      Preguntas @relation(fields: [preguntaId], references: [preguntaId])
   respuestasRonda RespuestasRonda[]
+  votos           VotosPublico[]
 
   @@map("opciones_pregunta")
 }
