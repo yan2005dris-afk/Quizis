@@ -1,0 +1,55 @@
+<aside class="sidebar" [class.collapsed]="isCollapsed()">
+  <div class="sidebar-header">
+    <div class="logo">
+      <span class="logo-icon">Q</span>
+      @if (!isCollapsed()) {
+        <span class="logo-text">Quizis</span>
+      }
+    </div>
+    <button class="toggle-btn" (click)="toggleSidebar()">
+      <lucide-icon [img]="isCollapsed() ? MenuIcon : CloseIcon"></lucide-icon>
+    </button>
+  </div>
+
+  <nav class="sidebar-nav">
+    <a routerLink="/dashboard" routerLinkActive="active" class="nav-item">
+      <lucide-icon [img]="DashboardIcon"></lucide-icon>
+      @if (!isCollapsed()) {
+        <span>Panel Principal</span>
+      }
+    </a>
+    <a routerLink="/salas" routerLinkActive="active" class="nav-item">
+      <lucide-icon [img]="PlayIcon"></lucide-icon>
+      @if (!isCollapsed()) {
+        <span>Salas Activas</span>
+      }
+    </a>
+    <a routerLink="/preguntas" routerLinkActive="active" class="nav-item">
+      <lucide-icon [img]="DatabaseIcon"></lucide-icon>
+      @if (!isCollapsed()) {
+        <span>Banco de Preguntas</span>
+      }
+    </a>
+    <a routerLink="/usuarios" routerLinkActive="active" class="nav-item">
+      <lucide-icon [img]="UsersIcon"></lucide-icon>
+      @if (!isCollapsed()) {
+        <span>Usuarios</span>
+      }
+    </a>
+  </nav>
+
+  <div class="sidebar-footer">
+    <a routerLink="/configuracion" routerLinkActive="active" class="nav-item">
+      <lucide-icon [img]="SettingsIcon"></lucide-icon>
+      @if (!isCollapsed()) {
+        <span>Configuración</span>
+      }
+    </a>
+    <button (click)="logout()" class="nav-item logout-btn">
+      <lucide-icon [img]="LogOutIcon"></lucide-icon>
+      @if (!isCollapsed()) {
+        <span>Cerrar Sesión</span>
+      }
+    </button>
+  </div>
+</aside>
