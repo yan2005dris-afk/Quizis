@@ -3,3 +3,5 @@
 /.atl
 /backend/src/generated
 .env
+
+.codegraph
