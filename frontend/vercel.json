@@ -4,7 +4,7 @@
   "cleanUrls": true,
   "trailingSlash": false,
   "framework": "angular",
-  "buildCommand": "npm run build",
+  "buildCommand": "pnpm --filter frontend run build",
   "outputDirectory": "dist/frontend/browser",
   "rewrites": [
     {
