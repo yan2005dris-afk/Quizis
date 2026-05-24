@@ -63,7 +63,7 @@ export class QuizGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @ConnectedSocket() client: Socket,
     @MessageBody() payload: { tokenCompartido: string; nombre: string },
   ) {
-    client.join(payload.tokenCompartido);
+    await client.join(payload.tokenCompartido);
     console.log(
       `${payload.nombre} se unió a la sala con token: ${payload.tokenCompartido}`,
     );
@@ -99,12 +99,36 @@ export class QuizGateway implements OnGatewayConnection, OnGatewayDisconnect {
       console.error('Error actualizando participante al unirse:', dbError);
     }
 
+    // Sincronización de estado inicial para el que se une tarde
+    const activeQuestion = await this.cacheService.getActiveQuestion(
+      payload.tokenCompartido,
+    );
+
+    if (activeQuestion) {
+      client.emit('pregunta_liberada', activeQuestion);
+    }
+
+    const rondaInfo = await this.cacheService.getRondaInfo(
+      payload.tokenCompartido,
+    );
+    if (rondaInfo) {
+      client.emit('info_ronda', rondaInfo);
+    }
+
     this.server
       .to(payload.tokenCompartido)
       .emit('nuevo_participante', payload.nombre);
   }
 
   // CICLO DE VIDA DE LOS EVENTOS DEL JUEGO
+
+  @SubscribeMessage('info_ronda')
+  async handleInfoRonda(
+    @MessageBody() payload: { tokenCompartido: string; info: any },
+  ) {
+    await this.cacheService.setRondaInfo(payload.tokenCompartido, payload.info);
+    this.server.to(payload.tokenCompartido).emit('info_ronda', payload.info);
+  }
 
   @SubscribeMessage('sala_creada')
   handleSalaCreada(
@@ -114,9 +138,15 @@ export class QuizGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   @SubscribeMessage('pregunta_liberada')
-  handlePreguntaLiberada(
+  async handlePreguntaLiberada(
     @MessageBody() payload: { tokenCompartido: string; pregunta: any },
   ) {
+    // Guardar en caché para futuros observadores que entren tarde
+    await this.cacheService.setActiveQuestion(
+      payload.tokenCompartido,
+      payload.pregunta,
+    );
+
     this.server
       .to(payload.tokenCompartido)
       .emit('pregunta_liberada', payload.pregunta);

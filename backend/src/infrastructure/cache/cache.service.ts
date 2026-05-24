@@ -563,4 +563,81 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
 
     this.memoryActiveHelpers.delete(key);
   }
+
+  /**
+   * Guarda la pregunta activa actual para una sala.
+   */
+  async setActiveQuestion(
+    tokenCompartido: string,
+    pregunta: any,
+  ): Promise<void> {
+    const key = `active_question:${tokenCompartido}`;
+    if (this.redisClient && this.isRedisHealthy) {
+      try {
+        await this.redisClient.set(key, JSON.stringify(pregunta), 'EX', 3600);
+        return;
+      } catch {
+        this.handleRedisFailure();
+      }
+    }
+    // Fallback memoria
+    this.memoryVotes.set(key, {
+      votes: new Map([[0, pregunta]]), // Reusamos la interfaz MemoryCacheEntry de forma creativa o mapeamos
+      expiresAt: Date.now() + 3600 * 1000,
+    } as any);
+  }
+
+  /**
+   * Recupera la pregunta activa actual de una sala.
+   */
+  async getActiveQuestion(tokenCompartido: string): Promise<any | null> {
+    const key = `active_question:${tokenCompartido}`;
+    if (this.redisClient && this.isRedisHealthy) {
+      try {
+        const data = await this.redisClient.get(key);
+        return data ? JSON.parse(data) : null;
+      } catch {
+        this.handleRedisFailure();
+      }
+    }
+    const mem = this.memoryVotes.get(key);
+    return mem ? (mem.votes.get(0) as any) : null;
+  }
+
+  /**
+   * Guarda la información de la ronda actual para una sala.
+   */
+  async setRondaInfo(tokenCompartido: string, info: any): Promise<void> {
+    const key = `ronda_info:${tokenCompartido}`;
+    if (this.redisClient && this.isRedisHealthy) {
+      try {
+        await this.redisClient.set(key, JSON.stringify(info), 'EX', 3600);
+        return;
+      } catch {
+        this.handleRedisFailure();
+      }
+    }
+    // Fallback memoria
+    this.memoryVotes.set(key, {
+      votes: new Map([[0, info]]),
+      expiresAt: Date.now() + 3600 * 1000,
+    } as any);
+  }
+
+  /**
+   * Recupera la información de la ronda actual de una sala.
+   */
+  async getRondaInfo(tokenCompartido: string): Promise<any | null> {
+    const key = `ronda_info:${tokenCompartido}`;
+    if (this.redisClient && this.isRedisHealthy) {
+      try {
+        const data = await this.redisClient.get(key);
+        return data ? JSON.parse(data) : null;
+      } catch {
+        this.handleRedisFailure();
+      }
+    }
+    const mem = this.memoryVotes.get(key);
+    return mem ? (mem.votes.get(0) as any) : null;
+  }
 }

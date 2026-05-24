@@ -7,6 +7,7 @@ import { WebsocketsModule } from './websockets/websockets.module';
 import { CacheModule } from './infrastructure/cache/cache.module';
 import { VotosModule } from './juego/votos/votos.module';
 import { ComodinesModule } from './comodines/comodines.module';
+import { SalasModule } from './juego/salas/salas.module';
 import { HealthModule } from './infrastructure/health/health.module';
 
 @Module({
@@ -22,6 +23,7 @@ import { HealthModule } from './infrastructure/health/health.module';
     CacheModule,
     VotosModule,
     ComodinesModule,
+    SalasModule,
     HealthModule,
   ],
   controllers: [],
