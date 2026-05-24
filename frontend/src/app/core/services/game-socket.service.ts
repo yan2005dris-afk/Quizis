@@ -1,5 +1,6 @@
 import { Injectable, signal } from '@angular/core';
 import { io, Socket } from 'socket.io-client';
+import type { ChatMessage, SalaEvento, Participante, RondaInfo } from '../../features/observer-room/observer-room.types';
 
 // Representa una opción de respuesta individual dentro de una pregunta
 export interface Opcion {
@@ -38,6 +39,12 @@ export class GameSocketService {
   readonly comodinBloqueado = signal<string | null>(null);
   readonly conectado = signal<boolean>(false);
 
+  // Estado reactivo para el modo observador
+  readonly mensajesChat = signal<ChatMessage[]>([]);
+  readonly eventosSala = signal<SalaEvento[]>([]);
+  readonly participantes = signal<Participante[]>([]);
+  readonly infoRonda = signal<RondaInfo | null>(null);
+
   // Abre la conexión al servidor WebSocket y registra los listeners de cada evento del juego
   conectar(url: string, token: string): void {
     this.desconectar();
@@ -67,6 +74,32 @@ export class GameSocketService {
     this.socket.on('comodin_bloqueado', (data: { tipoComodin: string }) => {
       this.comodinBloqueado.set(data.tipoComodin);
     });
+
+    // ——— Observers ———
+    // Recibe mensajes del chat de la sala
+    this.socket.on('mensaje_chat', (data: ChatMessage[]) => {
+      this.mensajesChat.set(data);
+    });
+
+    // Recibe eventos de la sala (inicio de pregunta, votos, etc.)
+    this.socket.on('evento_sala', (data: SalaEvento[]) => {
+      this.eventosSala.set(data);
+    });
+
+    // Recibe la lista actualizada de participantes
+    this.socket.on('participantes', (data: Participante[]) => {
+      this.participantes.set(data);
+    });
+
+    // Recibe información de la ronda actual
+    this.socket.on('info_ronda', (data: RondaInfo) => {
+      this.infoRonda.set(data);
+    });
+  }
+
+  // Envía un mensaje o sugerencia al chat de la sala
+  enviarMensaje(texto: string, tipo: 'mensaje' | 'sugerencia'): void {
+    this.socket?.emit('enviar_mensaje', { texto, tipo });
   }
 
   // Cierra la conexión limpiamente y resetea el estado de conexión

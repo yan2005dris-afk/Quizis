@@ -3,6 +3,8 @@ import { MainScreen } from './features/proyector-juego/pages/main-screen/main-sc
 import { LoginComponent } from './features/auth/login/login.component';
 import { DashboardComponent } from './features/dashboard/dashboard.component';
 import { DashboardLayoutComponent } from './layout/dashboard-layout/dashboard-layout.component';
+import { ObserverRoomComponent } from './features/observer-room/pages/observer-room/observer-room.component';
+import { SalasListComponent } from './features/salas/salas-list/salas-list.component';
 import { authGuard } from './core/guards/auth.guard';
 
 export const routes: Routes = [
@@ -19,10 +21,11 @@ export const routes: Routes = [
     canActivate: [authGuard],
     children: [
       { path: 'dashboard', component: DashboardComponent },
-      { path: 'salas', component: DashboardComponent },
+      { path: 'salas', component: SalasListComponent },
       { path: 'preguntas', component: DashboardComponent },
       { path: 'usuarios', component: DashboardComponent },
       { path: 'configuracion', component: DashboardComponent },
+      { path: 'sala/:id', component: ObserverRoomComponent },
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
     ],
   },
