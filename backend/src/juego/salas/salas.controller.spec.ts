@@ -11,6 +11,8 @@ describe('SalasController', () => {
   const mockSalasService = {
     create: jest.fn(),
     updateEstado: jest.fn(),
+    validateToken: jest.fn(),
+    listBancosDisponibles: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -34,7 +36,7 @@ describe('SalasController', () => {
       const adminId = 1;
       const expectedSala = {
         salaId: 1,
-        codigoPin: 'UPSE-321',
+        tokenInvitacion: 'jwt-321',
         estado: EstadoSala.BORRADOR,
       };
 
@@ -58,6 +60,33 @@ describe('SalasController', () => {
 
       expect(result).toEqual(expectedSala);
       expect(service.updateEstado).toHaveBeenCalledWith(5, updateDto);
+    });
+  });
+
+  describe('validateToken', () => {
+    it('debería llamar a salasService.validateToken con el token', async () => {
+      const token = 'jwt-token-123';
+      const expectedResult = { salaId: 1, nombre: 'Sala de Prueba', estado: EstadoSala.BORRADOR };
+
+      mockSalasService.validateToken.mockResolvedValue(expectedResult);
+
+      const result = await controller.validateToken(token);
+
+      expect(result).toEqual(expectedResult);
+      expect(service.validateToken).toHaveBeenCalledWith(token);
+    });
+  });
+
+  describe('listBancosDisponibles', () => {
+    it('debería llamar a salasService.listBancosDisponibles', async () => {
+      const expectedResult = [{ bancoId: 1, nombre: 'Matemáticas', totalPreguntas: 5 }];
+
+      mockSalasService.listBancosDisponibles.mockResolvedValue(expectedResult);
+
+      const result = await controller.listBancosDisponibles();
+
+      expect(result).toEqual(expectedResult);
+      expect(service.listBancosDisponibles).toHaveBeenCalled();
     });
   });
 });

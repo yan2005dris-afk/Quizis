@@ -3,18 +3,30 @@ import { Test } from '@nestjs/testing';
 import { SalasService } from './salas.service';
 import { CreateSalaUseCase } from './use-cases/create-sala.use-case';
 import { UpdateEstadoSalaUseCase } from './use-cases/update-estado-sala.use-case';
+import { ValidateTokenSalaUseCase } from './use-cases/validate-token-sala.use-case';
+import { ListBancosDisponiblesUseCase } from './use-cases/list-bancos-disponibles.use-case';
 import { EstadoSala } from './dto/update-estado-sala.dto';
 
 describe('SalasService', () => {
   let service: SalasService;
   let createSalaUseCase: CreateSalaUseCase;
   let updateEstadoSalaUseCase: UpdateEstadoSalaUseCase;
+  let validateTokenSalaUseCase: ValidateTokenSalaUseCase;
+  let listBancosDisponiblesUseCase: ListBancosDisponiblesUseCase;
 
   const mockCreateSalaUseCase = {
     execute: jest.fn(),
   };
 
   const mockUpdateEstadoSalaUseCase = {
+    execute: jest.fn(),
+  };
+
+  const mockValidateTokenSalaUseCase = {
+    execute: jest.fn(),
+  };
+
+  const mockListBancosDisponiblesUseCase = {
     execute: jest.fn(),
   };
 
@@ -27,6 +39,14 @@ describe('SalasService', () => {
           provide: UpdateEstadoSalaUseCase,
           useValue: mockUpdateEstadoSalaUseCase,
         },
+        {
+          provide: ValidateTokenSalaUseCase,
+          useValue: mockValidateTokenSalaUseCase,
+        },
+        {
+          provide: ListBancosDisponiblesUseCase,
+          useValue: mockListBancosDisponiblesUseCase,
+        },
       ],
     }).compile();
 
@@ -34,6 +54,12 @@ describe('SalasService', () => {
     createSalaUseCase = module.get<CreateSalaUseCase>(CreateSalaUseCase);
     updateEstadoSalaUseCase = module.get<UpdateEstadoSalaUseCase>(
       UpdateEstadoSalaUseCase,
+    );
+    validateTokenSalaUseCase = module.get<ValidateTokenSalaUseCase>(
+      ValidateTokenSalaUseCase,
+    );
+    listBancosDisponiblesUseCase = module.get<ListBancosDisponiblesUseCase>(
+      ListBancosDisponiblesUseCase,
     );
     jest.clearAllMocks();
   });
@@ -46,7 +72,7 @@ describe('SalasService', () => {
     it('debería delegar la creación al CreateSalaUseCase', async () => {
       const dto = { bancoId: 1, nombre: 'Test' };
       const adminId = 1;
-      const expectedResult = { salaId: 1, codigoPin: 'UPSE-123' };
+      const expectedResult = { salaId: 1, tokenInvitacion: 'jwt-123' };
 
       mockCreateSalaUseCase.execute.mockResolvedValue(expectedResult);
 
@@ -76,6 +102,34 @@ describe('SalasService', () => {
         updateDto,
       );
       expect(updateEstadoSalaUseCase.execute).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('validateToken', () => {
+    it('debería delegar la validación al ValidateTokenSalaUseCase', async () => {
+      const token = 'jwt-token-to-validate';
+      const expectedResult = { salaId: 1, nombre: 'Sala Test', estado: EstadoSala.BORRADOR };
+
+      mockValidateTokenSalaUseCase.execute.mockResolvedValue(expectedResult);
+
+      const result = await service.validateToken(token);
+
+      expect(result).toEqual(expectedResult);
+      expect(validateTokenSalaUseCase.execute).toHaveBeenCalledWith(token);
+      expect(validateTokenSalaUseCase.execute).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('listBancosDisponibles', () => {
+    it('debería delegar el listado al ListBancosDisponiblesUseCase', async () => {
+      const expectedResult = [{ bancoId: 1, nombre: 'Matemáticas', totalPreguntas: 5 }];
+
+      mockListBancosDisponiblesUseCase.execute.mockResolvedValue(expectedResult);
+
+      const result = await service.listBancosDisponibles();
+
+      expect(result).toEqual(expectedResult);
+      expect(listBancosDisponiblesUseCase.execute).toHaveBeenCalledTimes(1);
     });
   });
 });

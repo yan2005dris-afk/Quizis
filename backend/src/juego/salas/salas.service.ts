@@ -3,6 +3,8 @@ import { CreateSalaDto } from './dto/create-sala.dto';
 import { UpdateEstadoSalaDto } from './dto/update-estado-sala.dto';
 import { CreateSalaUseCase } from './use-cases/create-sala.use-case';
 import { UpdateEstadoSalaUseCase } from './use-cases/update-estado-sala.use-case';
+import { ValidateTokenSalaUseCase } from './use-cases/validate-token-sala.use-case';
+import { ListBancosDisponiblesUseCase } from './use-cases/list-bancos-disponibles.use-case';
 
 /**
  * Servicio fachada para el módulo de Salas.
@@ -17,10 +19,13 @@ export class SalasService {
   constructor(
     private readonly createSalaUseCase: CreateSalaUseCase,
     private readonly updateEstadoSalaUseCase: UpdateEstadoSalaUseCase,
+    private readonly validateTokenSalaUseCase: ValidateTokenSalaUseCase,
+    private readonly listBancosDisponiblesUseCase: ListBancosDisponiblesUseCase,
   ) {}
 
   /**
    * Delega la creación de una sala al caso de uso correspondiente.
+   * Genera un token JWT de invitación y selecciona preguntas al azar.
    * @param createSalaDto - Datos validados de la nueva sala.
    * @param adminId - ID del administrador autenticado.
    */
@@ -35,5 +40,21 @@ export class SalasService {
    */
   async updateEstado(id: number, updateEstadoSalaDto: UpdateEstadoSalaDto) {
     return this.updateEstadoSalaUseCase.execute(id, updateEstadoSalaDto);
+  }
+
+  /**
+   * Valida un token JWT de invitación a sala.
+   * Verifica la firma, expiración y estado de la sala.
+   * @param token - JWT de invitación extraído de la URL.
+   */
+  async validateToken(token: string) {
+    return this.validateTokenSalaUseCase.execute(token);
+  }
+
+  /**
+   * Obtiene los bancos de preguntas disponibles para los profesores.
+   */
+  async listBancosDisponibles() {
+    return this.listBancosDisponiblesUseCase.execute();
   }
 }

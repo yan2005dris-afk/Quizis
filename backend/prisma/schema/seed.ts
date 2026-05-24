@@ -6,6 +6,9 @@ import { PrismaClient } from '../../src/generated/prisma/client';
 import { seedRoles } from './seeds/role.seed';
 import { seedUSers } from './seeds/user.seed';
 import { seedComodines } from './seeds/comodines.seed';
+import { seedPreguntas } from './seeds/preguntas.seed';
+import { seedPermissions } from './seeds/permissions.seed';
+import { seedRondas } from './seeds/rondas.seed';
 
 // Cargar env desde el root de forma explícita
 dotenv.config({ path: path.join(__dirname, '../../../.env') });
@@ -61,6 +64,21 @@ async function main() {
   console.log('👤 Creando usuario admin...');
   await seedUSers(prisma, roles);
   console.log('✅ Usuarios creados correctamente.');
+
+  // Permisos
+  console.log('🔑 Asignando permisos del módulo de salas...');
+  await seedPermissions(prisma, roles);
+  console.log('✅ Permisos asignados correctamente.');
+
+  // Bancos y Preguntas
+  console.log('📚 Creando bancos de preguntas y preguntas...');
+  await seedPreguntas(prisma);
+  console.log('✅ Bancos de preguntas y preguntas creados.');
+
+  // Rondas
+  console.log('🔄 Creando salas de juego, participantes y rondas...');
+  await seedRondas(prisma);
+  console.log('✅ Rondas y participantes creados.');
 
   console.log('✅ Seed completado exitosamente.');
 }

@@ -1,6 +1,7 @@
 import {
   Controller,
   Post,
+  Get,
   Body,
   Patch,
   Param,
@@ -19,35 +20,90 @@ import {
   ApiTags,
   ApiOperation,
   ApiResponse,
+  ApiParam,
 } from '@nestjs/swagger';
 
 /**
  * Controlador REST para la gestión de salas de juego.
  *
- * Todos los endpoints están protegidos por:
- * - JwtAuthGuard: Verifica que el usuario esté autenticado con un token JWT válido.
- * - PermissionsGuard: Verifica que el usuario tenga los permisos necesarios
- *   (recurso:acción) asignados a su rol.
+ * Endpoints protegidos (admin):
+ * - POST /salas → Crear sala con token JWT de invitación
+ * - PATCH /salas/:id/estado → Actualizar estado de la sala
+ *
+ * Endpoints públicos (participantes):
+ * - GET /salas/join/:token → Validar token JWT de invitación
  */
 @ApiTags('salas')
-@ApiBearerAuth()
-@UseGuards(JwtAuthGuard, PermissionsGuard)
 @Controller('salas')
 export class SalasController {
   constructor(private readonly salasService: SalasService) {}
 
   /**
    * Crea una nueva sala de juego asociada a un banco de preguntas.
-   * Genera automáticamente un código PIN único (ej. UPSE-742).
-   * @param createSalaDto - Datos de la sala (bancoId, nombre, limitePreguntas).
+   * Genera un token JWT de invitación con expiración configurable
+   * y selecciona al azar las preguntas del banco.
+   * @param createSalaDto - Datos de la sala (bancoId, nombre, limitePreguntas, duracionTokenHoras).
    * @param adminId - ID del administrador extraído del token JWT.
    */
-  @ApiOperation({ summary: 'Crear una nueva sala de juego' })
-  @ApiResponse({ status: 201, description: 'Sala creada exitosamente' })
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Crear una nueva sala de juego con link de invitación JWT',
+  })
+  @ApiResponse({
+    status: 201,
+    description:
+      'Sala creada con token JWT de invitación, link y preguntas seleccionadas al azar',
+  })
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
   @RequiredPermission('salas', 'create')
   @Post()
   create(@Body() createSalaDto: CreateSalaDto, @AuthUserId() adminId: number) {
     return this.salasService.create(createSalaDto, adminId);
+  }
+
+  /**
+   * Obtiene la lista de bancos de preguntas disponibles para los profesores.
+   * Requiere autenticación de administrador y permisos de creación de salas.
+   */
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Listar los bancos de preguntas disponibles para los profesores',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Lista de bancos con sus conteos de preguntas',
+  })
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @RequiredPermission('salas', 'create')
+  @Get('bancos-disponibles')
+  listBancosDisponibles() {
+    return this.salasService.listBancosDisponibles();
+  }
+
+  /**
+   * Valida un token JWT de invitación a sala.
+   * Endpoint público — no requiere autenticación.
+   * Lo utilizan los participantes (Grupo 7) para verificar que el link
+   * de invitación sea válido antes de unirse por WebSocket.
+   * @param token - Token JWT extraído de la URL del link de invitación.
+   */
+  @ApiOperation({
+    summary:
+      'Validar token JWT de invitación a sala (público, sin autenticación)',
+  })
+  @ApiParam({
+    name: 'token',
+    description: 'Token JWT de invitación generado al crear la sala',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Token válido — retorna datos públicos de la sala',
+  })
+  @ApiResponse({ status: 400, description: 'Token inválido o expirado' })
+  @ApiResponse({ status: 404, description: 'Sala no encontrada' })
+  @Get('join/:token')
+  validateToken(@Param('token') token: string) {
+    return this.salasService.validateToken(token);
   }
 
   /**
@@ -56,8 +112,10 @@ export class SalasController {
    * @param id - ID de la sala (validado como entero por ParseIntPipe).
    * @param updateEstadoSalaDto - DTO con el nuevo estado solicitado.
    */
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Actualizar el estado de una sala' })
   @ApiResponse({ status: 200, description: 'Estado actualizado' })
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
   @RequiredPermission('salas', 'update')
   @Patch(':id/estado')
   updateEstado(
