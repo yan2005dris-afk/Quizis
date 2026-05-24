@@ -1,0 +1,16 @@
+<div class="event-feed">
+  <h3 class="event-feed__title">Eventos de la Sala</h3>
+  @if (eventos().length > 0) {
+    <div class="event-feed__list">
+      @for (evento of eventos(); track evento.timestamp) {
+        <div class="event-feed__item" data-testid="event-item">
+          <span class="event-feed__type">{{ tipoIcono(evento.tipo) }}</span>
+          <span class="event-feed__message">{{ evento.mensaje }}</span>
+          <span class="event-feed__time" data-testid="event-time">{{ formatTime(evento.timestamp) }}</span>
+        </div>
+      }
+    </div>
+  } @else {
+    <p class="event-feed__empty">No hay eventos</p>
+  }
+</div>
