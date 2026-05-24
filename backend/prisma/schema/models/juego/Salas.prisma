@@ -4,10 +4,12 @@ model Salas {
   bancoId          Int       @map("banco_id")
   nombre           String    @map("nombre")
   tokenCompartido  String    @unique @default(uuid()) @map("token_compartido")
-  estado           String    @default("esperando") @map("estado") // esperando, jugando, terminado
-  
+  codigoPin        String    @unique @map("codigo_pin")
+  estado           String    @default("BORRADOR") @map("estado") // BORRADOR, ESPERANDO_ALUMNOS, EN_VIVO, FINALIZADO
+
   // Configuración
   limitePreguntas  Int       @default(15) @map("limite_preguntas")
+
   
   createdAt        DateTime  @default(now()) @map("creado_en")
   updatedAt        DateTime  @updatedAt @map("actualizado_en")

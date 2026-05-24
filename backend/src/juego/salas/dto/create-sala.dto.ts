@@ -1,0 +1,34 @@
+import { IsString, IsInt, IsNotEmpty, IsOptional, Min } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+
+/**
+ * DTO para la creación de una nueva sala de juego.
+ * Requiere el banco de preguntas asociado y el nombre descriptivo de la sesión.
+ */
+export class CreateSalaDto {
+  /** ID del banco de preguntas del cual se extraerán las preguntas para esta sala */
+  @ApiProperty({ example: 1, description: 'ID del banco de preguntas' })
+  @IsInt()
+  @IsNotEmpty()
+  bancoId: number;
+
+  /** Nombre descriptivo de la sala (ej. tema o asignatura) */
+  @ApiProperty({
+    example:
+      'Clase de Calidad de Softare - Unidad 1: Introduccion a la calidad de software',
+  })
+  @IsString()
+  @IsNotEmpty()
+  nombre: string;
+
+  /** Cantidad máxima de preguntas a extraer del banco. Por defecto 15 */
+  @ApiPropertyOptional({
+    example: 20,
+    default: 15,
+    description: 'Límite de preguntas',
+  })
+  @IsInt()
+  @Min(1)
+  @IsOptional()
+  limitePreguntas?: number;
+}
