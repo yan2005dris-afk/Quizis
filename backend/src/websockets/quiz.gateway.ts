@@ -8,9 +8,9 @@ import {
   MessageBody,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
-import { CacheService } from 'src/infrastructure/cache/cache.service';
-import { PrismaService } from 'src/infrastructure/database/prisma.service';
-import { ComodinLlamadaService } from 'src/comodines/comodin-llamada/comodin-llamada.service';
+import { CacheService } from '../infrastructure/cache/cache.service';
+import { PrismaService } from '../infrastructure/database/prisma.service';
+import { ComodinLlamadaService } from '../comodines/comodin-llamada/comodin-llamada.service';
 
 @WebSocketGateway({ cors: { origin: '*' } })
 export class QuizGateway implements OnGatewayConnection, OnGatewayDisconnect {
