@@ -50,6 +50,13 @@ const MIME_PERMITIDOS = new Set([
   'application/vnd.ms-excel',
 ]);
 
+const EXTENSIONES_PERMITIDAS = new Set(['.json', '.csv', '.xlsx', '.xls']);
+
+function extraerExtension(nombreArchivo: string): string {
+  const match = nombreArchivo.toLowerCase().match(/(\.[a-z0-9]+)$/);
+  return match ? match[1] : '';
+}
+
 @ApiTags('bulk-upload')
 @ApiBearerAuth()
 @ApiExtraModels(
@@ -112,12 +119,15 @@ export class BulkUploadController {
     FileInterceptor('archivo', {
       limits: { fileSize: TAMANIO_MAXIMO_BYTES },
       fileFilter: (_req, file, callback) => {
-        if (MIME_PERMITIDOS.has(file.mimetype)) {
+        const ext = extraerExtension(file.originalname);
+        const mimeValido = MIME_PERMITIDOS.has(file.mimetype);
+        const extValida = EXTENSIONES_PERMITIDAS.has(ext);
+        if (mimeValido && extValida) {
           callback(null, true);
         } else {
           callback(
             new BadRequestException(
-              `Tipo de archivo no permitido: "${file.mimetype}". ` +
+              `Tipo de archivo no permitido: "${file.originalname}". ` +
                 'Se aceptan archivos .json, .csv, .xlsx y .xls.',
             ),
             false,

@@ -93,7 +93,7 @@ export function parsearJson(buffer: Buffer): ResultadoParseo {
             typeof op === 'object' &&
             op !== null &&
             typeof (op as Record<string, unknown>).texto === 'string' &&
-            (op as Record<string, unknown>).texto !== '' &&
+            ((op as Record<string, unknown>).texto as string).trim() !== '' &&
             typeof (op as Record<string, unknown>).esCorrecta === 'boolean',
         );
 
