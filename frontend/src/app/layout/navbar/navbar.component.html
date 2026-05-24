@@ -1,0 +1,32 @@
+<header class="top-navbar">
+  <div class="navbar-left">
+    <div class="search-wrapper">
+      <lucide-icon [img]="SearchIcon" class="search-icon"></lucide-icon>
+      <input type="text" placeholder="Buscar salas, preguntas..." />
+    </div>
+  </div>
+
+  <div class="navbar-right">
+    <button class="icon-btn">
+      <lucide-icon [img]="BellIcon"></lucide-icon>
+      <span class="notification-badge"></span>
+    </button>
+
+    <div class="divider"></div>
+
+    <div class="user-profile">
+      <div class="user-info">
+        <span class="user-name">{{ authService.user()?.nombre }}</span>
+        <span class="user-role">{{ authService.user()?.nombreRol }}</span>
+      </div>
+      <img
+        [src]="
+          authService.user()?.avatar ||
+          'https://ui-avatars.com/api/?name=' + authService.user()?.nombre
+        "
+        alt="Avatar"
+        class="avatar"
+      />
+    </div>
+  </div>
+</header>
