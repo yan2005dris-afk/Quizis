@@ -6,9 +6,9 @@ model VotosPublico {
   opcionId       Int      @map("opcion_id")
   timestamp      DateTime @default(now()) @map("timestamp")
 
-  ronda        Rondas        @relation(fields: [rondaId], references: [rondaId])
-  pregunta     Preguntas     @relation(fields: [preguntaId], references: [preguntaId])
-  participante Participantes @relation(fields: [participanteId], references: [participanteId])
+  ronda        Rondas           @relation(fields: [rondaId], references: [rondaId])
+  pregunta     Preguntas        @relation(fields: [preguntaId], references: [preguntaId])
+  participante Participantes    @relation(fields: [participanteId], references: [participanteId])
   opcion       OpcionesPregunta @relation(fields: [opcionId], references: [opcionId])
 
   @@unique([rondaId, preguntaId, participanteId])

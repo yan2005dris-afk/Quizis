@@ -1,22 +1,22 @@
 model Preguntas {
-  preguntaId        Int       @id @default(autoincrement()) @map("pregunta_id")
-  bancoId           Int       @map("banco_id")
-  categoria         String?   @map("categoria")
-  texto             String    @map("texto")
-  feedbackCorrecto  String?   @map("feedback_correcto")
+  preguntaId         Int      @id @default(autoincrement()) @map("pregunta_id")
+  bancoId            Int      @map("banco_id")
+  categoria          String?  @map("categoria")
+  texto              String   @map("texto")
+  feedbackCorrecto   String?  @map("feedback_correcto")
   feedbackIncorrecto String?  @map("feedback_incorrecto")
-  nivel             Int       @default(1) @map("nivel")
-  monto             Decimal?  @map("monto")
-  
-  createdAt         DateTime  @default(now()) @map("creado_en")
-  updatedAt         DateTime  @updatedAt @map("actualizado_en")
-  deletedAt         DateTime? @map("borrado_en")
+  nivel              Int      @default(1) @map("nivel")
+  monto              Decimal? @map("monto")
 
-  banco             BancoPreguntas @relation(fields: [bancoId], references: [bancoId])
-  
-  opciones          OpcionesPregunta[]
-  respuestasRonda   RespuestasRonda[]
-  votos             VotosPublico[]
+  createdAt DateTime  @default(now()) @map("creado_en")
+  updatedAt DateTime  @updatedAt @map("actualizado_en")
+  deletedAt DateTime? @map("borrado_en")
+
+  banco BancoPreguntas @relation(fields: [bancoId], references: [bancoId])
+
+  opciones        OpcionesPregunta[]
+  respuestasRonda RespuestasRonda[]
+  votos           VotosPublico[]
 
   @@map("preguntas")
 }

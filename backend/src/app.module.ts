@@ -5,6 +5,8 @@ import { DatabaseModule } from './infrastructure/database/prisma.module';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { CacheModule } from './infrastructure/cache/cache.module';
 import { VotosModule } from './juego/votos/votos.module';
+import { SalasModule } from './juego/salas/salas.module';
+import { RondasModule } from './juego/rondas/rondas.module';
 
 @Module({
   imports: [
@@ -17,6 +19,8 @@ import { VotosModule } from './juego/votos/votos.module';
     IdentityModule,
     CacheModule,
     VotosModule,
+    SalasModule,
+    RondasModule,
   ],
   controllers: [],
   providers: [],

@@ -1,11 +1,11 @@
 model Comodines {
-  comodinId     Int       @id @default(autoincrement()) @map("comodin_id")
-  nombre        String    @unique @map("nombre") // ej: PUBLICO, IA, LLAMADA
-  descripcion   String?   @map("descripcion")
-  
-  createdAt     DateTime  @default(now()) @map("creado_en")
-  updatedAt     DateTime  @updatedAt @map("actualizado_en")
-  deletedAt     DateTime? @map("borrado_en")
+  comodinId   Int     @id @default(autoincrement()) @map("comodin_id")
+  nombre      String  @unique @map("nombre") // ej: PUBLICO, IA, LLAMADA
+  descripcion String? @map("descripcion")
+
+  createdAt DateTime  @default(now()) @map("creado_en")
+  updatedAt DateTime  @updatedAt @map("actualizado_en")
+  deletedAt DateTime? @map("borrado_en")
 
   salasComodines SalaComodines[]
 

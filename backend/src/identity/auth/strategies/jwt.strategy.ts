@@ -25,7 +25,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   }
 
   async validate(payload: JwtAccessPayload) {
-    const { sub: usuarioId, sid: sesionId, email } = payload;
+    const { sub: usuarioId, sid: sesionId, email, rolNombre } = payload;
     if (!usuarioId || !sesionId) {
       throw new UnauthorizedException('Session invalida');
     }
@@ -41,6 +41,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       sid: sesionId,
       email,
       permisos,
+      rolNombre,
     };
   }
 }

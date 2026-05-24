@@ -54,6 +54,7 @@ export class LoginUseCase {
       user.usuarioId,
       sesionId,
       user.email,
+      user.rol?.nombre,
     );
 
     // Guardar sesión
@@ -119,8 +120,9 @@ export class LoginUseCase {
     userId: number,
     sessionId: string,
     email: string,
+    rolNombre?: string,
   ) {
-    const payload = { sub: userId, sid: sessionId, email };
+    const payload = { sub: userId, sid: sessionId, email, rolNombre };
     const accessSecret = this.config.getOrThrow<string>('JWT_ACCESS_SECRET');
     const refreshSecret = this.config.getOrThrow<string>('JWT_REFRESH_SECRET');
 

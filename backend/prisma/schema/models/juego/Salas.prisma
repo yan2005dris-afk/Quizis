@@ -1,23 +1,24 @@
 model Salas {
-  salaId           Int       @id @default(autoincrement()) @map("sala_id")
-  adminId          Int       @map("admin_id")
-  bancoId          Int       @map("banco_id")
-  nombre           String    @map("nombre")
-  tokenCompartido  String    @unique @default(uuid()) @map("token_compartido")
-  estado           String    @default("esperando") @map("estado") // esperando, jugando, terminado
-  
-  // Configuración
-  limitePreguntas  Int       @default(15) @map("limite_preguntas")
-  
-  createdAt        DateTime  @default(now()) @map("creado_en")
-  updatedAt        DateTime  @updatedAt @map("actualizado_en")
-  deletedAt        DateTime? @map("borrado_en")
+  salaId          Int    @id @default(autoincrement()) @map("sala_id")
+  adminId         Int    @map("admin_id")
+  bancoId         Int    @map("banco_id")
+  nombre          String @map("nombre")
+  tokenCompartido String @unique @default(uuid()) @map("token_compartido")
+  pin             String @unique @default(uuid()) @map("pin")
+  estado          String @default("borrador") @map("estado") // borrador, esperando, en_vivo, finalizado
 
-  admin            Usuarios  @relation(fields: [adminId], references: [usuarioId])
-  banco            BancoPreguntas @relation(fields: [bancoId], references: [bancoId])
-  rondas           Rondas[]
-  comodines        SalaComodines[]
-  participantes    Participantes[]
+  // Configuración
+  limitePreguntas Int @default(15) @map("limite_preguntas")
+
+  createdAt DateTime  @default(now()) @map("creado_en")
+  updatedAt DateTime  @updatedAt @map("actualizado_en")
+  deletedAt DateTime? @map("borrado_en")
+
+  admin         Usuarios        @relation(fields: [adminId], references: [usuarioId])
+  banco         BancoPreguntas  @relation(fields: [bancoId], references: [bancoId])
+  rondas        Rondas[]
+  comodines     SalaComodines[]
+  participantes Participantes[]
 
   @@map("salas")
 }

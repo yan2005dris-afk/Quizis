@@ -4,12 +4,14 @@ export type JwtAccessPayload = {
   sub: number;
   sid: string;
   email?: string;
+  rolNombre?: string;
 };
 
 export type JwtRefreshPayload = {
   sub: number;
   sid: string;
   email?: string;
+  rolNombre?: string;
 };
 
 export type RequestWithCookies = Request & {
@@ -19,5 +21,6 @@ export type RequestWithCookies = Request & {
 export type JwtRequest = Request & {
   user: {
     sub: number;
+    rolNombre?: string;
   };
 };

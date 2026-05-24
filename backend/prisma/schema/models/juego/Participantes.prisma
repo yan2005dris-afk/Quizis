@@ -1,17 +1,17 @@
 model Participantes {
-  participanteId  Int       @id @default(autoincrement()) @map("participante_id")
-  salaId          Int       @map("sala_id")
-  nickname        String    @map("nickname")
-  rol             String    @default("observador") @map("rol") // estudiante, observador
-  isOnline        Boolean   @default(true) @map("is_online")
-  
-  createdAt       DateTime  @default(now()) @map("creado_en")
-  updatedAt       DateTime  @updatedAt @map("actualizado_en")
-  deletedAt       DateTime? @map("borrado_en")
+  participanteId Int     @id @default(autoincrement()) @map("participante_id")
+  salaId         Int     @map("sala_id")
+  nickname       String  @map("nickname")
+  rol            String  @default("observador") @map("rol") // estudiante, observador
+  isOnline       Boolean @default(true) @map("is_online")
 
-  sala            Salas     @relation(fields: [salaId], references: [salaId])
-  rondasJugadas   Rondas[]  @relation("ParticipanteRonda")
-  votos           VotosPublico[]
+  createdAt DateTime  @default(now()) @map("creado_en")
+  updatedAt DateTime  @updatedAt @map("actualizado_en")
+  deletedAt DateTime? @map("borrado_en")
+
+  sala          Salas          @relation(fields: [salaId], references: [salaId])
+  rondasJugadas Rondas[]       @relation("ParticipanteRonda")
+  votos         VotosPublico[]
 
   @@unique([salaId, nickname])
   @@map("participantes")

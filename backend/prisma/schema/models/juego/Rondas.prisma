@@ -1,21 +1,21 @@
 model Rondas {
-  rondaId            Int    @id @default(autoincrement()) @map("ronda_id")
-  salaId             Int    @map("sala_id")
-  participanteId     Int    @map("participante_id") // El estudiante encuestado
-  
+  rondaId        Int @id @default(autoincrement()) @map("ronda_id")
+  salaId         Int @map("sala_id")
+  participanteId Int @map("participante_id") // El estudiante encuestado
+
   numeroRonda        Int    @map("numero_ronda") // Intento 1, 2, 3... en la sala
   estado             String @default("pendiente") @map("estado") // pendiente, jugando, completado, cancelado
   preguntasAsignadas Json?  @map("preguntas_asignadas") // IDs de preguntas elegidas del banco
-  
-  fechaInicio        DateTime? @map("fecha_inicio")
-  fechaFin           DateTime? @map("fecha_fin")
-  createdAt          DateTime  @default(now()) @map("creado_en")
-  updatedAt          DateTime  @updatedAt @map("actualizado_en")
 
-  sala               Salas             @relation(fields: [salaId], references: [salaId])
-  participante       Participantes     @relation("ParticipanteRonda", fields: [participanteId], references: [participanteId])
-  respuestas         RespuestasRonda[]
-  votos              VotosPublico[]
+  fechaInicio DateTime? @map("fecha_inicio")
+  fechaFin    DateTime? @map("fecha_fin")
+  createdAt   DateTime  @default(now()) @map("creado_en")
+  updatedAt   DateTime  @updatedAt @map("actualizado_en")
+
+  sala         Salas             @relation(fields: [salaId], references: [salaId])
+  participante Participantes     @relation("ParticipanteRonda", fields: [participanteId], references: [participanteId])
+  respuestas   RespuestasRonda[]
+  votos        VotosPublico[]
 
   @@map("rondas")
 }
