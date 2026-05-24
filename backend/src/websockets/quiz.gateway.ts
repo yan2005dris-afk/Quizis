@@ -9,7 +9,7 @@ import {
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 
-// Configuramos el Gateway para que acepte conexiones de cualquier origen (CORS)
+
 @WebSocketGateway({ cors: { origin: '*' } })
 export class QuizGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
@@ -33,12 +33,14 @@ export class QuizGateway implements OnGatewayConnection, OnGatewayDisconnect {
     this.server.to(payload.tokenCompartido).emit('nuevo_participante', payload.nombre);
   }
 
+
   // CICLO DE VIDA DE LOS EVENTOS DEL JUEGO
+  
+
   @SubscribeMessage('sala_creada')
   handleSalaCreada(
     @MessageBody() payload: { tokenCompartido: string; configuracion: any }
   ) {
-    
     this.server.to(payload.tokenCompartido).emit('sala_creada', payload);
   }
 
@@ -46,7 +48,6 @@ export class QuizGateway implements OnGatewayConnection, OnGatewayDisconnect {
   handlePreguntaLiberada(
     @MessageBody() payload: { tokenCompartido: string; pregunta: any }
   ) {
-    
     this.server.to(payload.tokenCompartido).emit('pregunta_liberada', payload.pregunta);
   }
 
@@ -54,7 +55,6 @@ export class QuizGateway implements OnGatewayConnection, OnGatewayDisconnect {
   handleTemporizador(
     @MessageBody() payload: { tokenCompartido: string; tiempoRestante: number }
   ) {
-    
     this.server.to(payload.tokenCompartido).emit('temporizador_actualizado', payload.tiempoRestante);
   }
 
@@ -62,7 +62,6 @@ export class QuizGateway implements OnGatewayConnection, OnGatewayDisconnect {
   handleVotoRecibido(
     @MessageBody() payload: { tokenCompartido: string; userId: string; respuestaId: string }
   ) {
-    
     this.server.to(payload.tokenCompartido).emit('voto_recibido', { userId: payload.userId });
   }
 
@@ -70,7 +69,6 @@ export class QuizGateway implements OnGatewayConnection, OnGatewayDisconnect {
   handleComodinBloqueado(
     @MessageBody() payload: { tokenCompartido: string; userId: string; tipoComodin: string }
   ) {
-    
     this.server.to(payload.tokenCompartido).emit('comodin_bloqueado', payload);
   }
 }

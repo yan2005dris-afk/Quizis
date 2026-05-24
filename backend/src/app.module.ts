@@ -4,6 +4,8 @@ import { ConfigModule } from '@nestjs/config';
 import { DatabaseModule } from './infrastructure/database/prisma.module';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { WebsocketsModule } from './websockets/websockets.module';
+import { CacheModule } from './infrastructure/cache/cache.module';
+import { VotosModule } from './juego/votos/votos.module';
 
 @Module({
   imports: [
@@ -15,6 +17,8 @@ import { WebsocketsModule } from './websockets/websockets.module';
     DatabaseModule,
     IdentityModule,
     WebsocketsModule,
+    CacheModule,
+    VotosModule,
   ],
   controllers: [],
   providers: [],
