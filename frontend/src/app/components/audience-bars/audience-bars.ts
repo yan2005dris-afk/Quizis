@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
-import { VotosPublico } from '../../services/game-socket.service';
+import { VotosPublico } from '../../core/services/game-socket.service';
 
 // Estructura interna que representa una barra ya procesada con su porcentaje calculado
 interface BarraVoto {
