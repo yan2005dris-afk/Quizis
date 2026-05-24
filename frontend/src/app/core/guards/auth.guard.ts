@@ -1,5 +1,5 @@
 import { inject, PLATFORM_ID } from '@angular/core';
-import { CanActivateFn } from '@angular/router';
+import { CanActivateFn, Router } from '@angular/router';
 import { AuthService } from '../services/auth.service';
 import { isPlatformServer } from '@angular/common';
 import { ToastService } from '../services/toast.service';
@@ -22,12 +22,14 @@ export const authGuard: CanActivateFn = () => {
     return true;
   }
 
-  // Si no está autenticado, mostramos un mensaje y cancelamos la navegación
+  // Si no está autenticado, mostramos un mensaje y redirigimos al login
   toastService.show(
     'Necesitás iniciar sesión para acceder a esta sección.',
     'danger',
     'Acceso Denegado',
   );
 
+  const router = inject(Router);
+  router.navigate(['/login']);
   return false;
 };
