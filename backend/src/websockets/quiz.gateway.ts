@@ -10,6 +10,7 @@ import {
 import { Server, Socket } from 'socket.io';
 import { CacheService } from 'src/infrastructure/cache/cache.service';
 import { PrismaService } from 'src/infrastructure/database/prisma.service';
+import { ComodinLlamadaService } from 'src/comodines/comodin-llamada/comodin-llamada.service';
 
 @WebSocketGateway({ cors: { origin: '*' } })
 export class QuizGateway implements OnGatewayConnection, OnGatewayDisconnect {
@@ -19,6 +20,7 @@ export class QuizGateway implements OnGatewayConnection, OnGatewayDisconnect {
   constructor(
     private readonly cacheService: CacheService,
     private readonly prismaService: PrismaService,
+    private readonly comodinLlamadaService: ComodinLlamadaService,
   ) {}
 
   handleConnection(client: Socket) {
@@ -163,21 +165,42 @@ export class QuizGateway implements OnGatewayConnection, OnGatewayDisconnect {
     const { tokenCompartido, pregunta } = payload;
     console.log(`Solicitud de comodín llamada en sala: ${tokenCompartido}`);
 
-    const consultor = await this.seleccionarConsultorAleatorio(tokenCompartido);
+    //---------------
+    // aqui se utiliza la seleccion aleatoria del servicio de comodines
+    //---------------
+
+    const consultor =
+      await this.comodinLlamadaService.seleccionarConsultorAleatorio(
+        tokenCompartido,
+      );
     if (!consultor) {
-      console.warn(`No se encontraron compañeros observadores en línea en sala: ${tokenCompartido}`);
-      client.emit('comodin_llamada_error', { message: 'No hay compañeros en línea disponibles.' });
+      console.warn(
+        `No se encontraron compañeros observadores en línea en sala: ${tokenCompartido}`,
+      );
+      client.emit('comodin_llamada_error', {
+        message: 'No hay compañeros en línea disponibles.',
+      });
       return;
     }
 
-    const consultorSocketId = await this.cacheService.getSocketId(tokenCompartido, consultor.nickname);
+    const consultorSocketId = await this.cacheService.getSocketId(
+      tokenCompartido,
+      consultor.nickname,
+    );
     if (!consultorSocketId) {
-      console.warn(`No se encontró socketId en caché para el consultor: ${consultor.nickname}`);
-      client.emit('comodin_llamada_error', { message: 'El compañero seleccionado se desconectó.' });
+      console.warn(
+        `No se encontró socketId en caché para el consultor: ${consultor.nickname}`,
+      );
+      client.emit('comodin_llamada_error', {
+        message: 'El compañero seleccionado se desconectó.',
+      });
       return;
     }
 
-    await this.cacheService.saveActiveHelper(tokenCompartido, consultor.nickname);
+    await this.cacheService.saveActiveHelper(
+      tokenCompartido,
+      consultor.nickname,
+    );
 
     this.server.to(consultorSocketId).emit('consultor_seleccionado', {
       tokenCompartido,
@@ -188,77 +211,80 @@ export class QuizGateway implements OnGatewayConnection, OnGatewayDisconnect {
       nicknameConsultor: consultor.nickname,
     });
 
-    console.log(`Comodín llamada iniciado. Consultor: ${consultor.nickname} (${consultorSocketId})`);
+    console.log(
+      `Comodín llamada iniciado. Consultor: ${consultor.nickname} (${consultorSocketId})`,
+    );
   }
 
-  /**
-   * Busca entre los clientes a ver quien tiene el rol de "estudiante", es decir el que esta jugando en ese momento
-   * @param tokenCompartido
-   * @returns
-   */
-  private async getRondaActivaConEstudiante(tokenCompartido: string) {
-    return this.prismaService.extendedClient.rondas.findFirst({
-      where: {
-        sala: { tokenCompartido },
-        estado: 'jugando',
-      },
-      include: {
-        participante: true,
-      },
-    });
-  }
-  /**
-   * Busca entre los clientes a ver quienes pueden ser consultores, es decir, quienes tengan el rol de "observador", no son el estudiante y estan en linea
-   * @param salaId
-   * @param estudianteNickname
-   * @returns
-   */
-  private async getConsultoresCandidatos(
-    salaId: number,
-    estudianteNickname: string,
+  @SubscribeMessage('enviar_pista_consultor')
+  async handleEnviarPistaConsultor(
+    @ConnectedSocket() client: Socket,
+    @MessageBody()
+    payload: {
+      tokenCompartido: string;
+      preguntaId: number;
+      pista: string;
+    },
   ) {
-    return this.prismaService.extendedClient.participantes.findMany({
-      where: {
-        salaId,
-        isOnline: true,
-        rol: 'observador',
-        nickname: {
-          not: estudianteNickname,
-        },
-      },
-    });
-  }
+    const { tokenCompartido, preguntaId, pista } = payload;
+    console.log(`Pista recibida del consultor en sala: ${tokenCompartido}`);
 
-  /**
-   * Devuelve un elemento aleatorio del array
-   * @param array Array del cual se seleccionara un elemento
-   * @returns Elemento aleatorio del array o null si el array esta vacio
-   */
-  private selectRandomElement<T>(array: T[]): T | null {
-    if (array.length === 0) return null;
-    const randomIndex = Math.floor(Math.random() * array.length);
-    return array[randomIndex];
-  }
-
-  /**
-   * Selecciona un consultor aleatorio entre los clientes conectados
-   * @param tokenCompartido Token de la sala
-   * @returns Consultor seleccionado o null si no se encontro ninguno
-   */
-  private async seleccionarConsultorAleatorio(tokenCompartido: string) {
-    const rondaActiva = await this.getRondaActivaConEstudiante(tokenCompartido);
-    if (!rondaActiva) {
-      console.warn(
-        `No hay ronda activa jugando en la sala con token: ${tokenCompartido}`,
-      );
-      return null;
+    const activeHelperNickname = await this.cacheService.getActiveHelper(tokenCompartido);
+    if (!activeHelperNickname) {
+      client.emit('enviar_pista_error', { message: 'No hay ninguna llamada activa en esta sala.' });
+      return;
     }
 
-    const candidatos = await this.getConsultoresCandidatos(
-      rondaActiva.salaId,
-      rondaActiva.participante.nickname,
-    );
+    const expectedSocketId = await this.cacheService.getSocketId(tokenCompartido, activeHelperNickname);
+    if (client.id !== expectedSocketId) {
+      client.emit('enviar_pista_error', { message: 'No eres el consultor asignado para esta llamada.' });
+      return;
+    }
 
-    return this.selectRandomElement(candidatos);
+    const rondaActiva = await this.comodinLlamadaService.getRondaActivaConEstudiante(tokenCompartido);
+    if (!rondaActiva) {
+      client.emit('enviar_pista_error', { message: 'No hay una ronda activa en esta sala.' });
+      return;
+    }
+
+    this.server.to(tokenCompartido).emit('pista_consultor_recibida', {
+      pista,
+      consultor: activeHelperNickname,
+    });
+
+    try {
+      const existingAnswer = await this.prismaService.extendedClient.respuestasRonda.findFirst({
+        where: {
+          rondaId: rondaActiva.rondaId,
+          preguntaId: preguntaId,
+        },
+      });
+
+      if (existingAnswer) {
+        await this.prismaService.extendedClient.respuestasRonda.update({
+          where: { respuestaId: existingAnswer.respuestaId },
+          data: { comodinUsado: 'LLAMADA' },
+        });
+      } else {
+        await this.prismaService.extendedClient.respuestasRonda.create({
+          data: {
+            rondaId: rondaActiva.rondaId,
+            preguntaId: preguntaId,
+            comodinUsado: 'LLAMADA',
+            esCorrecta: false,
+          },
+        });
+      }
+    } catch (dbError) {
+      console.error('Error al persistir el uso del comodín LLAMADA:', dbError);
+    }
+
+    this.server.to(tokenCompartido).emit('comodin_usado', {
+      tipoComodin: 'LLAMADA',
+    });
+
+    await this.cacheService.removeActiveHelper(tokenCompartido);
+
+    console.log(`Pista transmitida con éxito y comodín LLAMADA registrado como usado.`);
   }
 }
