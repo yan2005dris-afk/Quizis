@@ -37,7 +37,6 @@ export class QuizGateway implements OnGatewayConnection, OnGatewayDisconnect {
   // CICLO DE VIDA DE LOS EVENTOS 
   @SubscribeMessage('sala_creada')
   handleSalaCreada(
-    @ConnectedSocket() client: Socket,
     @MessageBody() payload: { pin: string; configuracion: any }
   ) {
     // El profesor crea la sala y emitimos la confirmación
@@ -46,7 +45,6 @@ export class QuizGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   @SubscribeMessage('pregunta_liberada')
   handlePreguntaLiberada(
-    @ConnectedSocket() client: Socket,
     @MessageBody() payload: { pin: string; pregunta: any }
   ) {
     // Se envía la nueva pregunta a todos los celulares conectados a ese PIN
@@ -55,7 +53,6 @@ export class QuizGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   @SubscribeMessage('temporizador_actualizado')
   handleTemporizador(
-    @ConnectedSocket() client: Socket,
     @MessageBody() payload: { pin: string; tiempoRestante: number }
   ) {
     // Sincroniza el reloj en todas las pantallas de la sala
@@ -64,7 +61,6 @@ export class QuizGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   @SubscribeMessage('voto_recibido')
   handleVotoRecibido(
-    @ConnectedSocket() client: Socket,
     @MessageBody() payload: { pin: string; userId: string; respuestaId: string }
   ) {
     // Un alumno vota. Se puede notificar al proyector (profesor) que alguien ya respondió
@@ -73,7 +69,6 @@ export class QuizGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   @SubscribeMessage('comodin_bloqueado')
   handleComodinBloqueado(
-    @ConnectedSocket() client: Socket,
     @MessageBody() payload: { pin: string; userId: string; tipoComodin: string }
   ) {
     // Alguien usa un ataque/comodín y afecta a los demás en la sala
