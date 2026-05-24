@@ -1,4 +1,4 @@
-import { Inject, Injectable, InjectionToken, Optional } from '@angular/core';
+import { inject, Injectable, InjectionToken } from '@angular/core';
 import { io, Socket } from 'socket.io-client';
 import { Observable } from 'rxjs';
 
@@ -6,17 +6,11 @@ export const SOCKET_SERVER_URL = new InjectionToken<string | undefined>('SOCKET_
 export const SOCKET_IO_CLIENT = new InjectionToken<Socket>('SOCKET_IO_CLIENT');
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class SocketService {
-  private socket?: Socket;
-
-  constructor(
-    @Optional() @Inject(SOCKET_SERVER_URL) private readonly serverUrl?: string,
-    @Optional() @Inject(SOCKET_IO_CLIENT) socket?: Socket
-  ) {
-    this.socket = socket;
-  }
+  private readonly serverUrl = inject(SOCKET_SERVER_URL, { optional: true });
+  private socket = inject(SOCKET_IO_CLIENT, { optional: true });
 
   connect(): Socket {
     if (!this.socket) {
@@ -29,7 +23,6 @@ export class SocketService {
   private getSocket(): Socket {
     return this.socket ?? this.connect();
   }
-
 
   unirseASala(tokenCompartido: string, nombre: string): void {
     this.getSocket().emit('unirse_sala', { tokenCompartido, nombre });
