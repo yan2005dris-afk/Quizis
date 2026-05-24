@@ -30,8 +30,9 @@ export class SocketService {
     return this.socket ?? this.connect();
   }
 
-  unirseASala(pin: string, nombre: string): void {
-    this.getSocket().emit('unirse_sala', { pin, nombre });
+
+  unirseASala(tokenCompartido: string, nombre: string): void {
+    this.getSocket().emit('unirse_sala', { tokenCompartido, nombre });
   }
 
   emitirEvento(evento: string, payload: any): void {
