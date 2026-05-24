@@ -1,4 +1,5 @@
-import { inject, Injectable, OnDestroy } from '@angular/core';
+import { inject, Injectable, OnDestroy, PLATFORM_ID } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { timer, Subscription } from 'rxjs';
 import { catchError } from 'rxjs/operators';
@@ -10,11 +11,12 @@ import { environment } from '../../../environments/environment';
 })
 export class KeepAliveService implements OnDestroy {
   private readonly http = inject(HttpClient);
+  private readonly platformId = inject(PLATFORM_ID);
   private subscription?: Subscription;
   private readonly PING_INTERVAL = 5 * 60 * 1000; // 5 minutes
 
   start(): void {
-    if (this.subscription) {
+    if (!isPlatformBrowser(this.platformId) || this.subscription) {
       return;
     }
 
