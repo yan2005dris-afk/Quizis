@@ -16,8 +16,8 @@ import {
   styleUrl: './countdown.component.scss',
 })
 export class CountdownComponent implements OnDestroy {
-  duracion = input.required<number>();   // segundos totales
-  activo   = input<boolean>(false);
+  duracion = input.required<number>(); // segundos totales
+  activo = input<boolean>(false);
 
   tiempoAgotado = output<void>();
 
@@ -36,12 +36,10 @@ export class CountdownComponent implements OnDestroy {
   });
 
   // SVG ring
-  protected readonly radio           = 44;
-  protected readonly circunferencia  = +(2 * Math.PI * 44).toFixed(3);
+  protected readonly radio = 44;
+  protected readonly circunferencia = +(2 * Math.PI * 44).toFixed(3);
 
-  protected dashOffset = computed(() =>
-    this.circunferencia * (1 - this.porcentaje() / 100)
-  );
+  protected dashOffset = computed(() => this.circunferencia * (1 - this.porcentaje() / 100));
 
   private intervalo?: ReturnType<typeof setInterval>;
 
@@ -59,7 +57,7 @@ export class CountdownComponent implements OnDestroy {
   private iniciarIntervalo(): void {
     this.limpiarIntervalo();
     this.intervalo = setInterval(() => {
-      this.tiempoRestante.update(t => {
+      this.tiempoRestante.update((t) => {
         if (t <= 1) {
           this.limpiarIntervalo();
           this.tiempoAgotado.emit();
