@@ -1,25 +1,10 @@
 import { Module } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import Redis from 'ioredis';
+import { CacheModule } from '../infrastructure/cache/cache.module';
 import { JuegoGateway } from './gateways/juego.gateway';
 import { RedisJuegoService } from './services/redis-juego.service';
 
 @Module({
-  providers: [
-    {
-      // Configuramos la conexión a Redis
-      provide: 'REDIS_CLIENT',
-      useFactory: (configService: ConfigService): Redis => {
-        return new Redis({
-          host: configService.get<string>('REDIS_HOST', 'localhost'),
-          port: configService.get<number>('REDIS_PORT', 6379),
-        });
-      },
-      inject: [ConfigService],
-    },
-    RedisJuegoService,
-    JuegoGateway,
-  ],
-  exports: ['REDIS_CLIENT'],
+  imports: [CacheModule],
+  providers: [RedisJuegoService, JuegoGateway],
 })
 export class JuegoModule {}

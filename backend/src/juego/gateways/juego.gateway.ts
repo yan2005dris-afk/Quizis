@@ -6,39 +6,49 @@ import {
 } from '@nestjs/websockets';
 import { Socket } from 'socket.io';
 import { RedisJuegoService } from '../services/redis-juego.service';
+import { Logger } from '@nestjs/common';
 
 @WebSocketGateway({ cors: true })
 export class JuegoGateway {
-  // Inyectamos el Service mediante el constructor
+  private readonly logger = new Logger(JuegoGateway.name);
   constructor(private readonly redisJuegoService: RedisJuegoService) {}
 
   @SubscribeMessage('audience:vote')
   async handleVote(
     @ConnectedSocket() client: Socket,
     @MessageBody()
-    payload: { salaId: number; preguntaId: number; opcionId: number },
+    payload: {
+      salaId: number;
+      preguntaId: number;
+      participanteId: number;
+      opcionId: number;
+    },
   ) {
-    const socketId = client.id;
+    try {
+      const votoPermitido = await this.redisJuegoService.registrarVoto(
+        payload.salaId,
+        payload.preguntaId,
+        payload.participanteId,
+      );
 
-    // El Gateway le pasa los datos al Service
-    const votoPermitido = await this.redisJuegoService.registrarVoto(
-      payload.salaId,
-      payload.preguntaId,
-      socketId,
-    );
+      if (!votoPermitido) {
+        return {
+          success: false,
+          message:
+            'Acción bloqueada: Ya has enviado una respuesta para esta pregunta.',
+        };
+      }
 
-    // El Gateway evalúa la respuesta del Service y decide qué enviar por la red
-    if (!votoPermitido) {
+      return {
+        success: true,
+        message: 'Voto registrado correctamente.',
+      };
+    } catch (error) {
+      this.logger.error(`Error en Gateway al procesar voto:`, error);
       return {
         success: false,
-        message:
-          'Acción bloqueada: Ya has enviado una respuesta para esta pregunta.',
+        message: 'Error interno del servidor. Intenta nuevamente.',
       };
     }
-
-    return {
-      success: true,
-      message: 'Voto registrado correctamente.',
-    };
   }
 }

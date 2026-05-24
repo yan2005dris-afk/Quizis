@@ -373,4 +373,27 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
     }
     this.memoryVotes.delete(key);
   }
+
+  //Agregados para JuegoModule
+  async get(key: string): Promise<string | null> {
+    if (this.redisClient && this.isRedisHealthy) {
+      try {
+        return await this.redisClient.get(key);
+      } catch (error) {
+        this.logger.warn(`[CACHE:WARN] Error genérico GET: ${error}`);
+        return null;
+      }
+    }
+    return null;
+  }
+
+  async set(key: string, value: string, ttlSeconds: number): Promise<void> {
+    if (this.redisClient && this.isRedisHealthy) {
+      try {
+        await this.redisClient.set(key, value, 'EX', ttlSeconds);
+      } catch (error) {
+        this.logger.warn(`[CACHE:WARN] Error genérico SET: ${error}`);
+      }
+    }
+  }
 }

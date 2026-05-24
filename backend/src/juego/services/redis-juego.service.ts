@@ -1,27 +1,41 @@
-import { Injectable, Inject } from '@nestjs/common';
-import { Redis } from 'ioredis';
+import { Injectable, Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { CacheService } from '../../infrastructure/cache/cache.service';
 
 @Injectable()
 export class RedisJuegoService {
-  constructor(@Inject('REDIS_CLIENT') private readonly redis: Redis) {}
+  private readonly logger = new Logger(RedisJuegoService.name);
+  constructor(
+    private readonly cacheService: CacheService,
+    private readonly configService: ConfigService,
+  ) {}
 
   async registrarVoto(
-    salaId: number,
+    rondaId: number,
     preguntaId: number,
-    socketId: string,
+    participanteId: number,
   ): Promise<boolean> {
-    const redisKey = `sala:${salaId}:pregunta:${preguntaId}:votos`;
+    try {
+      //crea llave unica para usuario en esa pregunta especifica
+      const cacheKey = `sala:${rondaId}:pregunta:${preguntaId}:voto:${participanteId}`;
 
-    // SADD es una operación atómica en Redis.
-    // Retorna 1 si inserta un nuevo valor. Retorna 0 si el socketId ya estaba registrado.
-    const fueAgregado = await this.redis.sadd(redisKey, socketId);
+      const yaVoto = await this.cacheService.get(cacheKey);
+      if (yaVoto) {
+        return false; // Retorna false bloqueando el doble voto
+      }
+      const expireTime = this.configService.get<number>(
+        'REDIS_VOTE_EXPIRE_TIME',
+        3600,
+      );
+      await this.cacheService.set(cacheKey, 'true', expireTime);
 
-    if (fueAgregado === 1) {
-      // Configuramos la expiración de la llave a 7200 segundos (2 horas) para liberar RAM
-      await this.redis.expire(redisKey, 7200);
       return true;
+    } catch (error) {
+      this.logger.error(
+        `Falla de conexión con Redis al procesar voto del participante ${participanteId}`,
+        error instanceof Error ? error.stack : error,
+      );
+      return false;
     }
-
-    return false; // Retorna false bloqueando el doble voto
   }
 }
