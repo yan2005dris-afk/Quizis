@@ -18,7 +18,6 @@ export class KeepAliveService implements OnDestroy {
       return;
     }
 
-    // timer(initialDelay, period)
     this.subscription = timer(0, this.PING_INTERVAL).subscribe(() => {
       this.ping();
     });

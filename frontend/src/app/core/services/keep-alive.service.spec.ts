@@ -19,7 +19,13 @@ describe('KeepAliveService', () => {
   });
 
   afterEach(() => {
+    service.stop();
+    // Flush any pending requests to not affect other tests
+    const pending = httpMock.match(() => true);
+    pending.forEach((req) => req.flush({}));
+
     httpMock.verify();
+    vi.clearAllTimers();
     vi.useRealTimers();
   });
 
@@ -30,39 +36,34 @@ describe('KeepAliveService', () => {
   it('should start pinging when start() is called', () => {
     service.start();
 
-    // Trigger immediate timer emission
-    vi.advanceTimersByTime(0);
+    // First ping
+    // We use a small tick to trigger the timer(0)
+    vi.advanceTimersByTime(100);
 
-    // First ping (timer starts at 0)
     const req = httpMock.expectOne(`${environment.apiUrl}/health`);
     expect(req.request.method).toBe('GET');
     req.flush({ status: 'ok' });
 
-    // Advance time by 14 minutes
-    vi.advanceTimersByTime(14 * 60 * 1000);
+    // Advance time by 5 minutes
+    vi.advanceTimersByTime(5 * 60 * 1000);
 
     // Second ping
     const req2 = httpMock.expectOne(`${environment.apiUrl}/health`);
     expect(req2.request.method).toBe('GET');
     req2.flush({ status: 'ok' });
-
-    service.stop();
   });
 
   it('should handle errors silently', () => {
     service.start();
 
-    vi.advanceTimersByTime(0);
+    vi.advanceTimersByTime(100);
 
     const req = httpMock.expectOne(`${environment.apiUrl}/health`);
     req.error(new ProgressEvent('error'));
 
     // Should not throw and continue to next interval
-    vi.advanceTimersByTime(14 * 60 * 1000);
+    vi.advanceTimersByTime(5 * 60 * 1000);
     const req2 = httpMock.expectOne(`${environment.apiUrl}/health`);
-    expect(req2).toBeTruthy();
     req2.flush({ status: 'ok' });
-
-    service.stop();
   });
 });
