@@ -54,8 +54,8 @@ export class GameSocketService {
     });
 
     // Recibe el tiempo restante de la pregunta activa (el servidor lo emite cada segundo)
-    this.socket.on('temporizador_actualizado', (data: { segundos: number }) => {
-      this.tiempoRestante.set(data.segundos);
+    this.socket.on('temporizador_actualizado', (data: number) => {
+      this.tiempoRestante.set(data);
     });
 
     // Actualiza los votos del público en tiempo real para que las barras se redibujen
@@ -64,8 +64,8 @@ export class GameSocketService {
     });
 
     // Registra qué comodín fue bloqueado para que la pantalla lo marque como no disponible
-    this.socket.on('comodin_bloqueado', (data: { comodin: string }) => {
-      this.comodinBloqueado.set(data.comodin);
+    this.socket.on('comodin_bloqueado', (data: { tipoComodin: string }) => {
+      this.comodinBloqueado.set(data.tipoComodin);
     });
   }
 
