@@ -1,4 +1,5 @@
 import { Routes } from '@angular/router';
+import { MainScreen } from './features/game-show/pages/main-screen/main-screen';
 import { LoginComponent } from './features/auth/login/login.component';
 import { DashboardComponent } from './features/dashboard/dashboard.component';
 import { DashboardLayoutComponent } from './layout/dashboard-layout/dashboard-layout.component';
@@ -9,6 +10,7 @@ export const routes: Routes = [
   { path: 'login', component: LoginComponent },
   { path: 'register', component: LoginComponent }, // Placeholder para evitar 404
   { path: 'privacy', component: LoginComponent }, // Placeholder
+  { path: 'show', component: MainScreen },
 
   // Rutas privadas (Protegidas por Layout y Guard)
   {

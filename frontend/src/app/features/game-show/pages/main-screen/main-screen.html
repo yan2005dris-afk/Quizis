@@ -1,0 +1,34 @@
+<div class="game-screen">
+  <div class="game-screen__background-glow"></div>
+
+  <div class="game-screen__header">
+    <div class="game-screen__logo">QUIZ SHOW</div>
+
+    <app-countdown [duracion]="20" [activo]="true" (tiempoAgotado)="onTiempoAgotado()">
+    </app-countdown>
+  </div>
+
+  @if (mensaje()) {
+    <div class="game-screen__alert">
+      <app-alert type="info" [message]="mensaje()"> </app-alert>
+    </div>
+  }
+
+  <div class="game-screen__question-container">
+    <app-card-pregunta
+      [pregunta]="pregunta()"
+      [opciones]="opciones()"
+      [numeroPregunta]="1"
+      [totalPreguntas]="10"
+      (seleccionada)="onSeleccion($event)"
+    >
+    </app-card-pregunta>
+  </div>
+
+  <!-- Barras del comodín público: se muestran cuando el comodín está activo y hay votos disponibles -->
+  @if (gameSocket.votosPublico()) {
+    <div class="game-screen__audience-bars">
+      <app-audience-bars [votos]="gameSocket.votosPublico()" />
+    </div>
+  }
+</div>
