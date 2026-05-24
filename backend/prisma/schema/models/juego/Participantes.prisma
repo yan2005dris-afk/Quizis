@@ -11,6 +11,7 @@ model Participantes {
 
   sala            Salas     @relation(fields: [salaId], references: [salaId])
   rondasJugadas   Rondas[]  @relation("ParticipanteRonda")
+  votos           VotosPublico[]
 
   @@unique([salaId, nickname])
   @@map("participantes")
