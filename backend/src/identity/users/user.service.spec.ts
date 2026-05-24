@@ -95,7 +95,6 @@ describe('UserService', () => {
   });
 
   describe('updateUser', () => {
-
     it('should throw NotFoundException if rolId is invalid (not found)', async () => {
       mockPrismaService.usuarios.findUnique.mockResolvedValue({
         usuarioId: 1,

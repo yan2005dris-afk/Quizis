@@ -7,15 +7,7 @@ import { GetEffectivePermissionsUseCase } from './use-cases/get-effective-permis
 @Module({
   imports: [],
   controllers: [UserController],
-  providers: [
-    UserService,
-    CreateUserUseCase,
-    GetEffectivePermissionsUseCase,
-  ],
-  exports: [
-    UserService,
-    CreateUserUseCase,
-    GetEffectivePermissionsUseCase,
-  ],
+  providers: [UserService, CreateUserUseCase, GetEffectivePermissionsUseCase],
+  exports: [UserService, CreateUserUseCase, GetEffectivePermissionsUseCase],
 })
 export class UserModule {}

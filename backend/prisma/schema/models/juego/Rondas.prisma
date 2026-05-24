@@ -15,6 +15,7 @@ model Rondas {
   sala               Salas             @relation(fields: [salaId], references: [salaId])
   participante       Participantes     @relation("ParticipanteRonda", fields: [participanteId], references: [participanteId])
   respuestas         RespuestasRonda[]
+  votos              VotosPublico[]
 
   @@map("rondas")
 }

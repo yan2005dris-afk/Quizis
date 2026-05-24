@@ -1,0 +1,19 @@
+services:
+  # Backend NestJS
+  - type: web
+    name: quizis-backend
+    runtime: node
+    plan: starter
+    region: ohio
+    rootDir: backend # Define que el código está en esta carpeta
+    buildCommand: pnpm install && pnpm run build && pnpm exec prisma generate
+    startCommand: pnpm run start:prod
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: DATABASE_URL
+        sync: false # Render te pedirá la URL de Supabase al desplegar
+      - key: REDIS_URL
+        sync: false # Render te pedirá la URL de Upstash al desplegar
