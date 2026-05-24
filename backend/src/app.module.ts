@@ -6,6 +6,7 @@ import { ThrottlerModule } from '@nestjs/throttler';
 import { WebsocketsModule } from './websockets/websockets.module';
 import { CacheModule } from './infrastructure/cache/cache.module';
 import { VotosModule } from './juego/votos/votos.module';
+import { HealthModule } from './infrastructure/health/health.module';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { VotosModule } from './juego/votos/votos.module';
     WebsocketsModule,
     CacheModule,
     VotosModule,
+    HealthModule,
   ],
   controllers: [],
   providers: [],

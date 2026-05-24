@@ -2,13 +2,7 @@ name: Frontend CI
 
 on:
   push:
-    branches:
-      [
-        main,
-        develop,
-        3-base-de-datos-modelado-relacional-y-capa-de-cache,
-        yandrisRivera/Frontend-Login,
-      ]
+    branches: [main, develop]
     paths:
       - "frontend/**"
   pull_request:
@@ -26,8 +20,6 @@ jobs:
 
       - name: Install pnpm
         uses: pnpm/action-setup@v4
-        with:
-          version: 11.1.1
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
