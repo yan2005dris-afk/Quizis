@@ -1,0 +1,105 @@
+<div class="login-page">
+  <header class="header">
+    <div class="logo">
+      <span class="logo-icon">Q</span>
+      <span class="logo-text">Quizis</span>
+    </div>
+    <div class="language-selector">
+      <lucide-icon [img]="GlobeIcon" class="icon-sm"></lucide-icon>
+      <span>Español (ES)</span>
+    </div>
+  </header>
+
+  <main class="main-content">
+    <div class="login-card">
+      <h1>Iniciar sesión</h1>
+      <p class="subtitle">Bienvenido de nuevo. Accede a tu panel de eventos.</p>
+
+      <form (submit)="onSubmit(); $event.preventDefault()" class="login-form">
+        <div class="form-group">
+          <label for="email">Correo electrónico o usuario</label>
+          <div class="input-wrapper">
+            <lucide-icon [img]="MailIcon" class="input-icon-left"></lucide-icon>
+            <input
+              type="email"
+              id="email"
+              name="email"
+              [(ngModel)]="email"
+              placeholder="ejemplo@quizis.com"
+              required
+            />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="password">Contraseña</label>
+          <div class="input-wrapper">
+            <lucide-icon [img]="LockIcon" class="input-icon-left"></lucide-icon>
+            <input
+              [type]="showPassword() ? 'text' : 'password'"
+              id="password"
+              name="password"
+              [(ngModel)]="password"
+              placeholder="••••••••"
+              required
+            />
+            <button
+              type="button"
+              class="toggle-password"
+              (click)="togglePassword()"
+              tabindex="-1"
+            >
+              <lucide-icon [img]="showPassword() ? EyeOffIcon : EyeIcon"></lucide-icon>
+            </button>
+          </div>
+        </div>
+
+        <div class="form-options">
+          <label class="checkbox-container">
+            <input type="checkbox" name="remember" />
+            <span class="checkmark"></span>
+            Recordarme
+          </label>
+          <a routerLink="/forgot-password" class="forgot-link">¿Olvidaste tu contraseña?</a>
+        </div>
+
+        @if (errorMessage()) {
+          <div class="error-banner">
+            {{ errorMessage() }}
+          </div>
+        }
+
+        <button type="submit" class="btn-primary" [disabled]="isLoading()">
+          {{ isLoading() ? 'Iniciando sesión...' : 'Iniciar sesión' }}
+        </button>
+
+        <div class="separator">
+          <span>O CONTINUAR CON</span>
+        </div>
+
+        <button type="button" class="btn-sso">
+          <img src="https://www.google.com/favicon.ico" alt="Google" class="sso-icon" />
+          Continuar con Google
+        </button>
+
+        <p class="register-footer">
+          ¿No tienes una cuenta? <a routerLink="/register">Regístrate ahora</a>
+        </p>
+
+        <p class="legal-notice">
+          Al iniciar sesión, aceptas nuestras <a (click)="$event.preventDefault()" href="javascript:void(0)">Políticas de Privacidad</a>.
+        </p>
+      </form>
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-links">
+      <a href="#">TÉRMINOS</a>
+      <a href="#">PRIVACIDAD</a>
+      <a href="#">AYUDA</a>
+      <a href="#">CONTACTO</a>
+    </div>
+    <p class="copyright">© 2026 Quizis Inc. Todos los derechos reservados.</p>
+  </footer>
+</div>
