@@ -30,11 +30,23 @@ export const serverRoutes: ServerRoute[] = [
   // Rutas estáticas públicas
   {
     path: 'login',
-    renderMode: RenderMode.Prerender,
+    renderMode: RenderMode.Server,
+  },
+  {
+    path: 'register',
+    renderMode: RenderMode.Server,
+  },
+  {
+    path: 'privacy',
+    renderMode: RenderMode.Server,
+  },
+  {
+    path: 'show',
+    renderMode: RenderMode.Server,
   },
   // Por defecto para el resto (incluyendo el fallback **)
   {
     path: '**',
-    renderMode: RenderMode.Prerender,
+    renderMode: RenderMode.Server,
   },
 ];
