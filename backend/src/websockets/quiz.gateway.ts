@@ -155,6 +155,42 @@ export class QuizGateway implements OnGatewayConnection, OnGatewayDisconnect {
     this.server.to(payload.tokenCompartido).emit('comodin_bloqueado', payload);
   }
 
+  @SubscribeMessage('activar_comodin_llamada')
+  async handleActivarComodinLlamada(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() payload: { tokenCompartido: string; pregunta: any },
+  ) {
+    const { tokenCompartido, pregunta } = payload;
+    console.log(`Solicitud de comodín llamada en sala: ${tokenCompartido}`);
+
+    const consultor = await this.seleccionarConsultorAleatorio(tokenCompartido);
+    if (!consultor) {
+      console.warn(`No se encontraron compañeros observadores en línea en sala: ${tokenCompartido}`);
+      client.emit('comodin_llamada_error', { message: 'No hay compañeros en línea disponibles.' });
+      return;
+    }
+
+    const consultorSocketId = await this.cacheService.getSocketId(tokenCompartido, consultor.nickname);
+    if (!consultorSocketId) {
+      console.warn(`No se encontró socketId en caché para el consultor: ${consultor.nickname}`);
+      client.emit('comodin_llamada_error', { message: 'El compañero seleccionado se desconectó.' });
+      return;
+    }
+
+    await this.cacheService.saveActiveHelper(tokenCompartido, consultor.nickname);
+
+    this.server.to(consultorSocketId).emit('consultor_seleccionado', {
+      tokenCompartido,
+      pregunta,
+    });
+
+    this.server.to(tokenCompartido).emit('comodin_llamada_iniciado', {
+      nicknameConsultor: consultor.nickname,
+    });
+
+    console.log(`Comodín llamada iniciado. Consultor: ${consultor.nickname} (${consultorSocketId})`);
+  }
+
   /**
    * Busca entre los clientes a ver quien tiene el rol de "estudiante", es decir el que esta jugando en ese momento
    * @param tokenCompartido

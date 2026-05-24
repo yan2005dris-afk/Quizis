@@ -19,6 +19,7 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
   private memoryVotes = new Map<string, MemoryCacheEntry>(); // Fallback con TTL
   private memorySocketSessions = new Map<string, { socketId: string; expiresAt: number }>();
   private memoryClientSockets = new Map<string, { tokenNickname: string; expiresAt: number }>();
+  private memoryActiveHelpers = new Map<string, { helperNickname: string; expiresAt: number }>();
   private isRedisHealthy = true;
   private reconnectTimeout: NodeJS.Timeout | null = null;
   private gcInterval: NodeJS.Timeout | null = null;
@@ -108,6 +109,12 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
     for (const [key, entry] of this.memoryClientSockets.entries()) {
       if (entry.expiresAt < now) {
         this.memoryClientSockets.delete(key);
+        count++;
+      }
+    }
+    for (const [key, entry] of this.memoryActiveHelpers.entries()) {
+      if (entry.expiresAt < now) {
+        this.memoryActiveHelpers.delete(key);
         count++;
       }
     }
@@ -492,5 +499,68 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
       }
     }
     return null;
+  }
+
+  async saveActiveHelper(token: string, helperNickname: string): Promise<void> {
+    const key = `socket:helper:${token}`;
+    const ttl = 600; // 10 minutos
+
+    if (this.redisClient && this.isRedisHealthy) {
+      try {
+        await this.redisClient.set(key, helperNickname, 'EX', ttl);
+        return;
+      } catch (error) {
+        const errorMsg = error instanceof Error ? error.message : String(error);
+        this.logger.warn(
+          `[CACHE:WARN] Error en Redis durante saveActiveHelper: ${errorMsg}.`,
+        );
+        this.handleRedisFailure();
+      }
+    }
+
+    // Fallback memoria
+    const expiresAt = Date.now() + ttl * 1000;
+    this.memoryActiveHelpers.set(key, { helperNickname, expiresAt });
+  }
+
+  async getActiveHelper(token: string): Promise<string | null> {
+    const key = `socket:helper:${token}`;
+
+    if (this.redisClient && this.isRedisHealthy) {
+      try {
+        return await this.redisClient.get(key);
+      } catch (error) {
+        const errorMsg = error instanceof Error ? error.message : String(error);
+        this.logger.warn(
+          `[CACHE:WARN] Error en Redis durante getActiveHelper: ${errorMsg}.`,
+        );
+        this.handleRedisFailure();
+      }
+    }
+
+    // Fallback memoria
+    const entry = this.memoryActiveHelpers.get(key);
+    if (entry && entry.expiresAt > Date.now()) {
+      return entry.helperNickname;
+    }
+    return null;
+  }
+
+  async removeActiveHelper(token: string): Promise<void> {
+    const key = `socket:helper:${token}`;
+
+    if (this.redisClient && this.isRedisHealthy) {
+      try {
+        await this.redisClient.del(key);
+      } catch (error) {
+        const errorMsg = error instanceof Error ? error.message : String(error);
+        this.logger.warn(
+          `[CACHE:WARN] Error en Redis durante removeActiveHelper: ${errorMsg}.`,
+        );
+        this.handleRedisFailure();
+      }
+    }
+
+    this.memoryActiveHelpers.delete(key);
   }
 }
