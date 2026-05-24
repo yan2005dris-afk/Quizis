@@ -1,6 +1,6 @@
 import { Component, DestroyRef, inject, OnInit, signal, computed } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
-import { SocketService } from '../../core/services/socket.service';
+import { SocketService } from '../../../core/services/socket.service';
 
 type VoteOptionKey = 'A' | 'B' | 'C' | 'D';
 

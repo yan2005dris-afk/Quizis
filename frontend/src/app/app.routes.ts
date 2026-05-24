@@ -11,7 +11,7 @@ export const routes: Routes = [
   { path: 'privacy', component: LoginComponent }, // Placeholder
   { 
     path: 'votar', 
-    loadComponent: () => import('./audencia-movil/vote-touch-screen/vote-touch-screen.component').then(m => m.VoteTouchScreenComponent) 
+    loadComponent: () => import('./features/audiencia-movil/vote-touch-screen/vote-touch-screen.component').then(m => m.VoteTouchScreenComponent) 
   },
 
   // Rutas privadas (Protegidas por Layout y Guard)
