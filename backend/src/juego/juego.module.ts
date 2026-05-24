@@ -9,7 +9,7 @@ import { RedisJuegoService } from './services/redis-juego.service';
     {
       // Configuramos la conexión a Redis
       provide: 'REDIS_CLIENT',
-      useFactory: (configService: ConfigService) => {
+      useFactory: (configService: ConfigService): Redis => {
         return new Redis({
           host: configService.get<string>('REDIS_HOST', 'localhost'),
           port: configService.get<number>('REDIS_PORT', 6379),
