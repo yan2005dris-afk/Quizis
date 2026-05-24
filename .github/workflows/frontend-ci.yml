@@ -20,8 +20,6 @@ jobs:
 
       - name: Install pnpm
         uses: pnpm/action-setup@v4
-        with:
-          version: 11
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -31,6 +29,14 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install
+        working-directory: frontend
+
+      - name: Run Lint
+        run: pnpm run lint
+        working-directory: frontend
+
+      - name: Run Tests
+        run: pnpm run test --no-watch
         working-directory: frontend
 
       - name: Run Build

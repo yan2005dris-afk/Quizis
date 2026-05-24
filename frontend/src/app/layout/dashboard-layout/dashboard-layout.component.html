@@ -1,0 +1,23 @@
+<div class="dashboard-wrapper" [class.dashboard-wrapper--public]="!auth.isAuthenticated()">
+  <!-- Sidebar lateral — solo si hay sesión -->
+  @if (auth.isAuthenticated()) {
+    <app-sidebar></app-sidebar>
+  }
+
+  <div class="main-container">
+    <!-- Navbar superior — solo si hay sesión -->
+    @if (auth.isAuthenticated()) {
+      <app-navbar></app-navbar>
+    }
+
+    <!-- Área de contenido dinámico -->
+    <main class="content-area">
+      <router-outlet></router-outlet>
+    </main>
+
+    <!-- Footer opcional — solo si hay sesión (opcional) -->
+    @if (auth.isAuthenticated()) {
+      <app-footer></app-footer>
+    }
+  </div>
+</div>

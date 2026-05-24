@@ -24,50 +24,41 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
   constructor(private readonly configService: ConfigService) {}
 
   async onModuleInit() {
-    await this.connectRedis();
+    // No usamos await aquí para que el bootstrap de NestJS no se bloquee
+    void this.connectRedis();
     // Iniciar colector de basura en memoria cada 5 minutos
     this.gcInterval = setInterval(() => this.runMemoryGC(), 300000);
   }
 
   private async connectRedis() {
-    const redisHost = this.configService.get<string>('REDIS_HOST');
-    const redisPortRaw = this.configService.get<string | number>(
-      'REDIS_PORT',
-      6379,
-    );
-    const redisPort =
-      typeof redisPortRaw === 'string'
-        ? parseInt(redisPortRaw, 10)
-        : redisPortRaw;
+    const redisUrl = this.configService.get<string>('REDIS_URL');
 
-    if (redisHost) {
-      this.logger.log(
-        `[CACHE:INIT] Intentando conectar a Redis en ${redisHost}:${redisPort}...`,
-      );
+    if (redisUrl) {
       try {
-        this.redisClient = new Redis({
-          host: redisHost,
-          port: redisPort,
+        this.redisClient = new Redis(redisUrl, {
           lazyConnect: true,
-          connectTimeout: 3000,
-          maxRetriesPerRequest: 1,
+          connectTimeout: 10000,
+          maxRetriesPerRequest: 0,
         });
 
         await this.redisClient.connect();
+        await this.redisClient.ping();
         this.isRedisHealthy = true;
         this.logger.log(
-          '[CACHE:UP] Conexión con Redis establecida exitosamente.',
+          '[CACHE:UP] Conexión con Upstash Redis establecida exitosamente.',
         );
       } catch (error) {
         this.logger.error(
-          `[CACHE:FALLBACK] Falló la conexión a Redis en ${redisHost}:${redisPort}. Limpiando e implementando fallback en memoria de JS.`,
-          error instanceof Error ? error.stack : String(error),
+          '[CACHE:ERROR] No se pudo conectar a Upstash. Usando fallback en memoria.',
+        );
+        this.logger.error(
+          error instanceof Error ? error.message : String(error),
         );
         this.handleRedisFailure();
       }
     } else {
       this.logger.log(
-        '[CACHE:FALLBACK] REDIS_HOST no configurado. Usando caché en memoria de JS.',
+        '[CACHE:FALLBACK] REDIS_URL no configurado. Usando caché en memoria de JS.',
       );
     }
   }
@@ -381,5 +372,82 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
       }
     }
     this.memoryVotes.delete(key);
+  }
+
+  /**
+   * Guarda la pregunta activa actual para una sala.
+   */
+  async setActiveQuestion(
+    tokenCompartido: string,
+    pregunta: any,
+  ): Promise<void> {
+    const key = `active_question:${tokenCompartido}`;
+    if (this.redisClient && this.isRedisHealthy) {
+      try {
+        await this.redisClient.set(key, JSON.stringify(pregunta), 'EX', 3600);
+        return;
+      } catch {
+        this.handleRedisFailure();
+      }
+    }
+    // Fallback memoria
+    this.memoryVotes.set(key, {
+      votes: new Map([[0, pregunta]]), // Reusamos la interfaz MemoryCacheEntry de forma creativa o mapeamos
+      expiresAt: Date.now() + 3600 * 1000,
+    } as any);
+  }
+
+  /**
+   * Recupera la pregunta activa actual de una sala.
+   */
+  async getActiveQuestion(tokenCompartido: string): Promise<any | null> {
+    const key = `active_question:${tokenCompartido}`;
+    if (this.redisClient && this.isRedisHealthy) {
+      try {
+        const data = await this.redisClient.get(key);
+        return data ? JSON.parse(data) : null;
+      } catch {
+        this.handleRedisFailure();
+      }
+    }
+    const mem = this.memoryVotes.get(key);
+    return mem ? (mem.votes.get(0) as any) : null;
+  }
+
+  /**
+   * Guarda la información de la ronda actual para una sala.
+   */
+  async setRondaInfo(tokenCompartido: string, info: any): Promise<void> {
+    const key = `ronda_info:${tokenCompartido}`;
+    if (this.redisClient && this.isRedisHealthy) {
+      try {
+        await this.redisClient.set(key, JSON.stringify(info), 'EX', 3600);
+        return;
+      } catch {
+        this.handleRedisFailure();
+      }
+    }
+    // Fallback memoria
+    this.memoryVotes.set(key, {
+      votes: new Map([[0, info]]),
+      expiresAt: Date.now() + 3600 * 1000,
+    } as any);
+  }
+
+  /**
+   * Recupera la información de la ronda actual de una sala.
+   */
+  async getRondaInfo(tokenCompartido: string): Promise<any | null> {
+    const key = `ronda_info:${tokenCompartido}`;
+    if (this.redisClient && this.isRedisHealthy) {
+      try {
+        const data = await this.redisClient.get(key);
+        return data ? JSON.parse(data) : null;
+      } catch {
+        this.handleRedisFailure();
+      }
+    }
+    const mem = this.memoryVotes.get(key);
+    return mem ? (mem.votes.get(0) as any) : null;
   }
 }

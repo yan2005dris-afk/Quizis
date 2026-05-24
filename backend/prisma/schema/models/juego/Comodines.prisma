@@ -2,7 +2,8 @@ model Comodines {
   comodinId     Int       @id @default(autoincrement()) @map("comodin_id")
   nombre        String    @unique @map("nombre") // ej: PUBLICO, IA, LLAMADA
   descripcion   String?   @map("descripcion")
-  
+  icono         String    @default("🃏") @map("icono") // emoji para mostrar en pantalla
+
   createdAt     DateTime  @default(now()) @map("creado_en")
   updatedAt     DateTime  @updatedAt @map("actualizado_en")
   deletedAt     DateTime? @map("borrado_en")
