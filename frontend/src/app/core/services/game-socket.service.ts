@@ -28,7 +28,6 @@ export interface VotosPublico {
 // Servicio singleton: Angular crea una sola instancia compartida por toda la app
 @Injectable({ providedIn: 'root' })
 export class GameSocketService {
-
   // Instancia de la conexión WebSocket; null hasta que se llame a conectar()
   private socket: Socket | null = null;
 
@@ -41,6 +40,7 @@ export class GameSocketService {
 
   // Abre la conexión al servidor WebSocket y registra los listeners de cada evento del juego
   conectar(url: string, token: string): void {
+    this.desconectar();
     this.socket = io(url, { auth: { token } });
 
     // Actualiza el estado de conexión según el ciclo de vida del socket

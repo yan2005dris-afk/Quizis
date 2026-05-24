@@ -26,7 +26,7 @@
   </div>
 
   <!-- Barras del comodín público: se muestran cuando el comodín está activo y hay votos disponibles -->
-  @if (gameSocket.votosPublico()) {
+  @if (comodinPublicoActivo() && gameSocket.votosPublico()) {
     <div class="game-screen__audience-bars">
       <app-audience-bars [votos]="gameSocket.votosPublico()" />
     </div>

@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, OnInit, OnDestroy } from '@angular/core';
 
 import { CountdownComponent } from '../../../../shared/ui/countdown/countdown.component';
 import {
@@ -15,7 +15,7 @@ import { GameSocketService } from '../../../../core/services/game-socket.service
   templateUrl: './main-screen.html',
   styleUrl: './main-screen.scss',
 })
-export class MainScreen {
+export class MainScreen implements OnInit, OnDestroy {
   // Servicio WebSocket compartido: provee los votos del público en tiempo real
   readonly gameSocket = inject(GameSocketService);
 
@@ -29,18 +29,24 @@ export class MainScreen {
   ]);
 
   mensaje = signal('');
+  comodinPublicoActivo = signal(false);
 
   onTiempoAgotado() {
     this.mensaje.set('⏰ Tiempo agotado');
   }
 
   onSeleccion(opcion: OpcionPregunta) {
-    console.log(opcion);
-
     if (opcion.texto === 'Quito') {
       this.mensaje.set('✅ Correcto');
     } else {
       this.mensaje.set('❌ Incorrecto');
     }
+  }
+  ngOnInit() {
+    this.gameSocket.conectar('http://localhost:3000', 'token-temporal');
+  }
+
+  ngOnDestroy() {
+    this.gameSocket.desconectar();
   }
 }
