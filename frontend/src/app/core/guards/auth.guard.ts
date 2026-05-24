@@ -1,27 +1,19 @@
 import { inject, PLATFORM_ID } from '@angular/core';
-import { Router, CanActivateFn } from '@angular/router';
+import { CanActivateFn } from '@angular/router';
 import { AuthService } from '../services/auth.service';
 import { isPlatformServer } from '@angular/common';
+import { ToastService } from '../services/toast.service';
 
 export const authGuard: CanActivateFn = () => {
   const authService = inject(AuthService);
-  const router = inject(Router);
   const platformId = inject(PLATFORM_ID);
+  const toastService = inject(ToastService);
 
   // --- LÓGICA DE SERVIDOR (SSR) ---
   if (isPlatformServer(platformId)) {
-    // IMPORTANTE: En el servidor no tenemos localStorage,
-    // pero el navegador nos envía las cookies.
-    // Si no hay cookie de sesión, bloqueamos el acceso desde el servidor
-    // para evitar el "flash" del Dashboard.
-
-    // Nota: Por ahora, si no podemos validar la cookie al 100%,
-    // es mejor ser conservadores y no mostrar el dashboard.
     if (authService.isAuthenticated()) {
       return true;
     }
-    // Si quieres ser ultra estricto en SSR, podrías devolver false aquí,
-    // pero por ahora dejémoslo que el cliente decida si ya está inicializado.
     return true;
   }
 
@@ -30,6 +22,12 @@ export const authGuard: CanActivateFn = () => {
     return true;
   }
 
-  // Si no está autenticado, al login
-  return router.parseUrl('/login');
+  // Si no está autenticado, mostramos un mensaje y cancelamos la navegación
+  toastService.show(
+    'Necesitás iniciar sesión para acceder a esta sección.',
+    'danger',
+    'Acceso Denegado',
+  );
+
+  return false;
 };

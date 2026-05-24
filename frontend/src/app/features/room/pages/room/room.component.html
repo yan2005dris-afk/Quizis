@@ -1,0 +1,63 @@
+<div class="room">
+  @if (!auth.isAuthenticated()) {
+    <div class="room__auth-banner">No estás autenticado — ves la sala como público general.</div>
+  }
+
+  <app-event-header
+    [rondaInfo]="gameSocket.infoRonda()"
+    [tiempoRestante]="gameSocket.tiempoRestante()"
+    [tituloEvento]="salaDetalle()?.nombre || 'Cargando sala...'"
+  />
+
+  <div class="room__layout">
+    <div class="room__left">
+      <app-active-question
+        [preguntas]="salaDetalle()?.rondaActiva?.historialPreguntas || []"
+        [preguntaActivaId]="
+          gameSocket.preguntaActiva()?.preguntaId ||
+          salaDetalle()?.rondaActiva?.preguntaActualId ||
+          null
+        "
+        [votosPublico]="gameSocket.votosPublico()"
+        [comodinBloqueado]="gameSocket.comodinBloqueado()"
+        [comodines]="comodines()"
+      />
+
+      <p class="room__footer-note">
+        Estás viendo como observador — podés sugerir respuestas y chatear con la comunidad.
+      </p>
+    </div>
+
+    <div class="room__right">
+      <div class="room__tabs">
+        <button
+          class="room__tab-btn"
+          [class.room__tab-btn--active]="activeTab() === 'publico'"
+          (click)="activeTab.set('publico')"
+        >
+          Público ({{ gameSocket.participantes().length }})
+        </button>
+        <button
+          class="room__tab-btn"
+          [class.room__tab-btn--active]="activeTab() === 'chat'"
+          (click)="activeTab.set('chat')"
+        >
+          Chat en Vivo
+        </button>
+      </div>
+
+      <div class="room__tab-content">
+        @if (activeTab() === 'publico') {
+          <app-event-feed [eventos]="gameSocket.eventosSala()" />
+          <app-participants-list [participantes]="gameSocket.participantes()" />
+        } @else {
+          <app-chat-box
+            [mensajes]="gameSocket.mensajesChat()"
+            [conectado]="gameSocket.conectado()"
+            (enviar)="onEnviarMensaje($event)"
+          />
+        }
+      </div>
+    </div>
+  </div>
+</div>
