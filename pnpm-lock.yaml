@@ -94,9 +94,6 @@ importers:
       rxjs:
         specifier: ^7.8.1
         version: 7.8.2
-      xlsx:
-        specifier: ^0.18.5
-        version: 0.18.5
       socket.io:
         specifier: ^4.8.3
         version: 4.8.3
@@ -132,9 +129,6 @@ importers:
         specifier: ^30.0.0
         version: 30.0.0
       '@types/ms':
-        specifier: ^2.1.0
-        version: 2.1.0
-      '@types/multer':
         specifier: ^2.1.0
         version: 2.1.0
       '@types/node':
@@ -233,6 +227,9 @@ importers:
       lucide-angular:
         specifier: ^1.0.0
         version: 1.0.0(@angular/common@21.2.14(@angular/core@21.2.14(@angular/compiler@21.2.14)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.14(@angular/compiler@21.2.14)(rxjs@7.8.2))
+      papaparse:
+        specifier: ^5.5.3
+        version: 5.5.3
       rxjs:
         specifier: ~7.8.0
         version: 7.8.2
@@ -242,6 +239,9 @@ importers:
       tslib:
         specifier: ^2.3.0
         version: 2.8.1
+      xlsx:
+        specifier: ^0.18.5
+        version: 0.18.5
     devDependencies:
       '@angular-devkit/core':
         specifier: ^21.2.12
@@ -279,6 +279,9 @@ importers:
       '@types/node':
         specifier: ^20.17.19
         version: 20.19.41
+      '@types/papaparse':
+        specifier: ^5.5.2
+        version: 5.5.2
       '@typescript-eslint/eslint-plugin':
         specifier: ^8.59.4
         version: 8.59.4(@typescript-eslint/parser@8.59.4(eslint@9.39.4(jiti@2.7.0))(typescript@5.9.3))(eslint@9.39.4(jiti@2.7.0))(typescript@5.9.3)
@@ -2557,14 +2560,14 @@ packages:
   '@types/ms@2.1.0':
     resolution: {integrity: sha512-GsCCIZDE/p3i96vtEqx+7dBUGXrc7zeSK3wwPHIaRThS+9OhWIXRqzs4d6k1SVU8g91DrNRWxWUGhp5KXQb2VA==}
 
-  '@types/multer@2.1.0':
-    resolution: {integrity: sha512-zYZb0+nJhOHtPpGDb3vqPjwpdeGlGC157VpkqNQL+UU2qwoacoQ7MpsAmUptI/0Oa127X32JzWDqQVEXp2RcIA==}
-
   '@types/node@20.19.41':
     resolution: {integrity: sha512-ECymXOukMnOoVkC2bb1Vc/w/836DXncOg5m8Xj1RH7xSHZJWNYY6Zh7EH477vcnD5egKNNfy2RpNOmuChhFPgQ==}
 
   '@types/node@24.12.4':
     resolution: {integrity: sha512-GUUEShf+PBCGW2KaXwcIt3Yk+e3pkKwWKb9GSyM9WQVE+ep2jzmHdGsHzu4wgcZy5fN9FBdVzjpBQsYlpfpgLA==}
+
+  '@types/papaparse@5.5.2':
+    resolution: {integrity: sha512-gFnFp/JMzLHCwRf7tQHrNnfhN4eYBVYYI897CGX4MY1tzY9l2aLkVyx2IlKZ/SAqDbB3I1AOZW5gTMGGsqWliA==}
 
   '@types/passport-jwt@4.0.1':
     resolution: {integrity: sha512-Y0Ykz6nWP4jpxgEUYq8NoVZeCQPo1ZndJLfapI249g1jHChvRfZRO/LS3tqu26YgAS/laI1qx98sYGz0IalRXQ==}
@@ -4874,6 +4877,9 @@ packages:
     resolution: {integrity: sha512-O0EDXi85LF4AzdjG74GUwEArhdvawi/YOHcsW6IijKNj7wm8IvEWNF5GnfuxNpQ/ZpO3L37+v8hqdVh8GgWYhg==}
     engines: {node: ^20.17.0 || >=22.9.0}
     hasBin: true
+
+  papaparse@5.5.3:
+    resolution: {integrity: sha512-5QvjGxYVjxO59MGU2lHVYpRWBBtKHnlIAcSe1uNFCkkptUh63NFRj0FJQm7nR67puEruUci/ZkjmEFrjCAyP4A==}
 
   parent-module@1.0.1:
     resolution: {integrity: sha512-GQ2EWRpQV8/o+Aw8YqtfZZPfNRWZYkbidE9k5rpl/hC3vtHHBfGm2Ifi6qWV+coDGkrUKZAxE3Lot5kcsRlh+g==}
@@ -8403,10 +8409,6 @@ snapshots:
 
   '@types/ms@2.1.0': {}
 
-  '@types/multer@2.1.0':
-    dependencies:
-      '@types/express': 5.0.6
-
   '@types/node@20.19.41':
     dependencies:
       undici-types: 6.21.0
@@ -8414,6 +8416,10 @@ snapshots:
   '@types/node@24.12.4':
     dependencies:
       undici-types: 7.16.0
+
+  '@types/papaparse@5.5.2':
+    dependencies:
+      '@types/node': 24.12.4
 
   '@types/passport-jwt@4.0.1':
     dependencies:
@@ -11080,6 +11086,8 @@ snapshots:
       tar: 7.5.15
     transitivePeerDependencies:
       - supports-color
+
+  papaparse@5.5.3: {}
 
   parent-module@1.0.1:
     dependencies:

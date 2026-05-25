@@ -1,12 +1,109 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { PrismaService } from '../../infrastructure/database/prisma.service';
 import { UpdatePreguntaDto } from './dto/update-pregunta.dto';
+import { CreateBancoDto } from './dto/create-banco.dto';
 
 @Injectable()
 export class BancosService {
   private readonly logger = new Logger(BancosService.name);
 
   constructor(private readonly prisma: PrismaService) {}
+
+  async create(dto: CreateBancoDto) {
+    this.logger.log(`Creando nuevo banco: ${dto.nombre}`);
+
+    // Si hay preguntas, validarlas antes de empezar
+    if (dto.preguntas && dto.preguntas.length > 0) {
+      this.validatePreguntas(dto.preguntas);
+    }
+
+    return this.prisma.$transaction(async (tx) => {
+      // 1. Crear el banco
+      const banco = await tx.bancoPreguntas.create({
+        data: {
+          nombre: dto.nombre,
+          descripcion: dto.descripcion ?? null,
+        },
+      });
+
+      // 2. Si hay preguntas, crearlas asociadas al banco
+      if (dto.preguntas && dto.preguntas.length > 0) {
+        await Promise.all(
+          dto.preguntas.map((pregunta) =>
+            tx.preguntas.create({
+              data: {
+                bancoId: banco.bancoId,
+                texto: pregunta.texto,
+                categoria: pregunta.categoria,
+                nivel: pregunta.nivel ?? 1,
+                monto: pregunta.monto,
+                feedbackCorrecto: pregunta.feedbackCorrecto,
+                feedbackIncorrecto: pregunta.feedbackIncorrecto,
+                opciones: {
+                  create: pregunta.opciones.map((op) => ({
+                    texto: op.texto,
+                    esCorrecta: op.esCorrecta ?? false,
+                  })),
+                },
+              },
+            }),
+          ),
+        );
+        this.logger.log(
+          `Creadas ${dto.preguntas.length} preguntas iniciales para el banco ${banco.bancoId}`,
+        );
+      }
+
+      return banco;
+    });
+  }
+
+  async crearPreguntas(bancoId: number, preguntas: any[]) {
+    this.logger.log(`Creando ${preguntas.length} preguntas en banco ${bancoId}`);
+    this.validatePreguntas(preguntas);
+
+    const creadas = await this.prisma.$transaction(
+      preguntas.map((pregunta) =>
+        this.prisma.preguntas.create({
+          data: {
+            bancoId,
+            texto: pregunta.texto,
+            categoria: pregunta.categoria,
+            nivel: pregunta.nivel ?? 1,
+            monto: pregunta.monto,
+            feedbackCorrecto: pregunta.feedbackCorrecto,
+            feedbackIncorrecto: pregunta.feedbackIncorrecto,
+            opciones: {
+              create: pregunta.opciones.map((op) => ({
+                texto: op.texto,
+                esCorrecta: op.esCorrecta ?? false,
+              })),
+            },
+          },
+        }),
+      ),
+    );
+
+    this.logger.log(`Creadas ${creadas.length} preguntas en banco ${bancoId}`);
+    return creadas.length;
+  }
+
+  private validatePreguntas(preguntas: any[]) {
+    for (let i = 0; i < preguntas.length; i++) {
+      const pregunta = preguntas[i];
+      const correctas = pregunta.opciones.filter((op) => op.esCorrecta).length;
+      if (correctas !== 1) {
+        throw new BadRequestException(
+          `La pregunta ${i + 1} debe tener exactamente 1 opción correcta, pero tiene ${correctas}.`,
+        );
+      }
+    }
+  }
 
   async findAll() {
     this.logger.log('Buscando todos los bancos de preguntas');
@@ -45,6 +142,28 @@ export class BancosService {
     }
 
     return banco;
+  }
+
+  async update(id: number, dto: { nombre?: string; descripcion?: string }) {
+    this.logger.log(`Actualizando banco ${id}`);
+    const banco = await this.prisma.bancoPreguntas.findUnique({
+      where: { bancoId: id },
+    });
+
+    if (!banco) {
+      throw new NotFoundException(
+        `Banco de preguntas con ID ${id} no encontrado`,
+      );
+    }
+
+    return this.prisma.bancoPreguntas.update({
+      where: { bancoId: id },
+      data: {
+        nombre: dto.nombre ?? banco.nombre,
+        descripcion:
+          dto.descripcion !== undefined ? dto.descripcion : banco.descripcion,
+      },
+    });
   }
 
   async updatePregunta(
