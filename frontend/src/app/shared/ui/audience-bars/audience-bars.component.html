@@ -1,0 +1,13 @@
+<div class="audience-bars">
+  <!-- Genera una fila por cada opción (A, B, C, D) con su barra y porcentaje -->
+  @for (barra of barras(); track barra.letra) {
+    <div class="barra-row">
+      <span class="letra">{{ barra.letra }}</span>
+      <div class="barra-contenedor">
+        <!-- El ancho se enlaza directamente al porcentaje calculado -->
+        <div class="barra-relleno" [style.width.%]="barra.porcentaje"></div>
+      </div>
+      <span class="porcentaje">{{ barra.porcentaje }}%</span>
+    </div>
+  }
+</div>

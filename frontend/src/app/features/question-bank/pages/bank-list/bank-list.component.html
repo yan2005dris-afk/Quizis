@@ -1,0 +1,59 @@
+<div class="bancos-index">
+  <header class="bancos-index__header">
+    <div class="bancos-index__header-content">
+      <div>
+        <h1 class="bancos-index__title">Banco de Preguntas</h1>
+        <p class="bancos-index__subtitle">Gestiona y organiza todas tus preguntas</p>
+      </div>
+      <app-button routerLink="/bancos/crear">
+        <lucide-icon [img]="PlusIcon" class="icon-sm"></lucide-icon>
+        Crear Banco
+      </app-button>
+    </div>
+  </header>
+
+  @if (bancosResource.isLoading()) {
+    <div class="bancos-index__loading" role="status">
+      <div class="bancos-index__spinner"></div>
+      <span class="sr-only">Cargando bancos...</span>
+    </div>
+  } @else if (bancosResource.error()) {
+    <app-alert
+      type="danger"
+      message="No se pudieron cargar los bancos de preguntas. Intenta de nuevo más tarde."
+    />
+  } @else if ((bancosResource.value() || []).length === 0) {
+    <div class="bancos-index__empty">
+      <div class="bancos-index__empty-icon">📚</div>
+      <h2 class="bancos-index__empty-title">No hay bancos de preguntas</h2>
+      <p class="bancos-index__empty-text">
+        Aún no has creado ningún banco. ¡Crea tu primer banco de preguntas!
+      </p>
+    </div>
+  } @else {
+    <div class="bancos-index__grid">
+      @for (bank of bancosResource.value(); track bank.bancoId) {
+        <a
+          class="banco-card"
+          [routerLink]="['/bancos', bank.bancoId]"
+          [attr.aria-label]="'Ver detalle del banco ' + bank.nombre"
+        >
+          <div class="banco-card__header">
+            <div class="banco-card__title-row">
+              <lucide-icon [img]="DatabaseIcon" class="banco-card__icon"></lucide-icon>
+              <h3 class="banco-card__title">{{ bank.nombre }}</h3>
+            </div>
+          </div>
+          <div class="banco-card__meta">
+            <span class="banco-card__participants">
+              {{ bank._count?.preguntas || 0 }} preguntas
+            </span>
+            <span class="banco-card__date">
+              Creado el {{ bank.createdAt | date: 'dd/MM/yyyy' }}
+            </span>
+          </div>
+        </a>
+      }
+    </div>
+  }
+</div>
