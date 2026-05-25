@@ -10,7 +10,10 @@
     </div>
   } @else if (error()) {
     <div class="bank-info-card">
-      <app-alert type="danger" message="No se pudo cargar el banco de preguntas. Intenta de nuevo más tarde." />
+      <app-alert
+        type="danger"
+        message="No se pudo cargar el banco de preguntas. Intenta de nuevo más tarde."
+      />
       <div class="mt-4">
         <app-button variant="ghost" routerLink="/bancos">Volver a la lista</app-button>
       </div>
@@ -92,7 +95,13 @@
             <div class="actions">
               @if (isEditing()) {
                 <app-button variant="ghost" size="sm" (clicked)="toggleEdit()">Cancelar</app-button>
-                <app-button variant="primary" size="sm" (clicked)="saveQuestion()" [loading]="isSaving()">Guardar</app-button>
+                <app-button
+                  variant="primary"
+                  size="sm"
+                  (clicked)="saveQuestion()"
+                  [loading]="isSaving()"
+                  >Guardar</app-button
+                >
               } @else {
                 <app-button variant="ghost" size="sm" (clicked)="toggleEdit()">Editar</app-button>
               }

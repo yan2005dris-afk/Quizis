@@ -1,5 +1,14 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsString, IsOptional, IsInt, IsArray, ValidateNested, IsBoolean, IsNumber, Min } from 'class-validator';
+import {
+  IsString,
+  IsOptional,
+  IsInt,
+  IsArray,
+  ValidateNested,
+  IsBoolean,
+  IsNumber,
+  Min,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 
 class UpdateOpcionDto {
@@ -75,7 +84,10 @@ export class UpdatePreguntaDto {
   @IsOptional()
   tiempoLimite?: number;
 
-  @ApiProperty({ type: [UpdateOpcionDto], description: 'Listado completo de opciones' })
+  @ApiProperty({
+    type: [UpdateOpcionDto],
+    description: 'Listado completo de opciones',
+  })
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => UpdateOpcionDto)

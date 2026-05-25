@@ -39,13 +39,19 @@ export class BancosService {
     });
 
     if (!banco) {
-      throw new NotFoundException(`Banco de preguntas con ID ${id} no encontrado`);
+      throw new NotFoundException(
+        `Banco de preguntas con ID ${id} no encontrado`,
+      );
     }
 
     return banco;
   }
 
-  async updatePregunta(bancoId: number, preguntaId: number, dto: UpdatePreguntaDto) {
+  async updatePregunta(
+    bancoId: number,
+    preguntaId: number,
+    dto: UpdatePreguntaDto,
+  ) {
     this.logger.log(`Actualizando pregunta ${preguntaId} del banco ${bancoId}`);
 
     // Verificar que la pregunta pertenece al banco
@@ -60,14 +66,14 @@ export class BancosService {
     }
 
     // Extraemos solo los campos que Prisma puede actualizar
-    const { 
-      opciones, 
-      preguntaId: _pId, 
-      bancoId: _bId, 
-      createdAt: _cAt, 
-      updatedAt: _uAt, 
-      deletedAt: _dAt, 
-      ...datosPregunta 
+    const {
+      opciones,
+      preguntaId: _pId,
+      bancoId: _bId,
+      createdAt: _cAt,
+      updatedAt: _uAt,
+      deletedAt: _dAt,
+      ...datosPregunta
     } = dto;
 
     return this.prisma.$transaction(async (tx) => {

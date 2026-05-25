@@ -2,7 +2,11 @@ import { Component, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink, ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { BancosService, Opcion, BancoPreguntasDetalle } from '../../../../core/services/bancos.service';
+import {
+  BancosService,
+  Opcion,
+  BancoPreguntasDetalle,
+} from '../../../../core/services/bancos.service';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { switchMap, catchError, tap, map, startWith } from 'rxjs/operators';
 import { of, Subject } from 'rxjs';
@@ -45,7 +49,7 @@ export class BankDetailComponent {
           startWith(void 0),
           switchMap(() =>
             this.bancosService.getBancoById(Number(id)).pipe(
-              map((data) => ({ data, error: false, loading: false } as BankState)),
+              map((data) => ({ data, error: false, loading: false }) as BankState),
               tap(() => {
                 this.isEditing.set(false);
               }),
