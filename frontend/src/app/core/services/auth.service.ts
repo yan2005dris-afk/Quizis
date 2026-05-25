@@ -44,19 +44,31 @@ export class AuthService {
     return null;
   }
 
+  // --- MÉTODO MODIFICADO PARA DESVÍO LOCAL (BYPASS) ---
   async login(email: string, password: string): Promise<void> {
     try {
-      const response = await firstValueFrom(
-        this.http.post<any>(`${this.apiUrl}/auth/login`, { email, password }),
-      );
+      // 1. Simulamos la respuesta que normalmente enviaría tu backend NestJS
+      const mockResponse = {
+        accessToken: 'fake_development_token_2026',
+        sub: 1,
+        email: email || 'desarrollador@quizis.com',
+        nombre: 'Usuario Developer',
+        rolId: 1,
+        nombreRol: 'Administrador',
+        avatar: '',
+      };
 
-      this.handleAuthSuccess(response);
+      // 2. Ejecutamos la lógica original para guardar datos en LocalStorage y activar las Signals
+      this.handleAuthSuccess(mockResponse);
+
+      // 3. Redireccionamos directamente al dashboard de la aplicación
       await this.router.navigate(['/dashboard']);
     } catch (error) {
-      console.error('Login failed', error);
+      console.error('Login bypass failed', error);
       throw error;
     }
   }
+  // ---------------------------------------------------
 
   /**
    * Intenta refrescar el token de acceso.
@@ -76,7 +88,7 @@ export class AuthService {
     // Opcional: Llamar al endpoint de logout del backend para revocar en Redis
     this.http.post(`${this.apiUrl}/auth/logout`, {}).subscribe({
       next: () => this.clearLocalAuth(),
-      error: () => this.clearLocalAuth(), // Limpiamos igual aunque falle el red
+      error: () => this.clearLocalAuth(), // Limpiamos igual aunque falle la red
     });
   }
 
