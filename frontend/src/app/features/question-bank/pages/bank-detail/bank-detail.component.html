@@ -1,0 +1,247 @@
+<div class="bank-detail-page">
+  <header class="page-header">
+    <a routerLink="/bancos" class="back-link">← Volver a Bancos</a>
+  </header>
+
+  @if (isLoading()) {
+    <div class="loading-state" role="status">
+      <div class="spinner"></div>
+      <span class="sr-only">Cargando banco...</span>
+    </div>
+  } @else if (error()) {
+    <div class="bank-info-card">
+      <app-alert
+        type="danger"
+        message="No se pudo cargar el banco de preguntas. Intenta de nuevo más tarde."
+      />
+      <div class="mt-4">
+        <app-button variant="ghost" routerLink="/bancos">Volver a la lista</app-button>
+      </div>
+    </div>
+  } @else if (banco(); as bancoValue) {
+    <div class="bank-info-card">
+      <h1 class="bank-title">{{ bancoValue.nombre }}</h1>
+      @if (bancoValue.descripcion) {
+        <p class="bank-desc">{{ bancoValue.descripcion }}</p>
+      }
+      <div class="bank-meta">
+        <span>{{ bancoValue.preguntas.length }} preguntas en total</span>
+        <span>Subido el {{ bancoValue.createdAt | date: 'dd/MM/yyyy' }}</span>
+      </div>
+    </div>
+
+    <div class="questions-list">
+      <div class="list-header">
+        <h2 class="list-title">Revisión de Preguntas</h2>
+        @if (totalQuestions() > 0) {
+          <div class="pagination-controls">
+            <app-button
+              variant="ghost"
+              size="sm"
+              [disabled]="currentQuestionIndex() === 0"
+              (clicked)="prevQuestion()"
+            >
+              Anterior
+            </app-button>
+            <span class="pagination-text"
+              >Pregunta {{ currentQuestionIndex() + 1 }} de {{ totalQuestions() }}</span
+            >
+            <app-button
+              variant="ghost"
+              size="sm"
+              [disabled]="currentQuestionIndex() === totalQuestions() - 1"
+              (clicked)="nextQuestion()"
+            >
+              Siguiente
+            </app-button>
+          </div>
+        }
+      </div>
+
+      @if (currentQuestion(); as pregunta) {
+        <div class="question-box" [class.editing]="isEditing()">
+          <div class="question-header">
+            <div class="question-badges">
+              <span class="badge-nivel">
+                Nivel:
+                @if (isEditing()) {
+                  <input
+                    type="number"
+                    [(ngModel)]="pregunta.nivel"
+                    class="inline-input num-input"
+                    min="1"
+                    max="5"
+                  />
+                } @else {
+                  {{ pregunta.nivel }}
+                }
+              </span>
+              <span class="badge-tiempo">
+                Tiempo:
+                @if (isEditing()) {
+                  <input
+                    type="number"
+                    [(ngModel)]="pregunta.tiempoLimite"
+                    class="inline-input num-input"
+                    min="5"
+                    step="5"
+                  />s
+                } @else {
+                  {{ pregunta.tiempoLimite }}s
+                }
+              </span>
+            </div>
+
+            <div class="actions">
+              @if (isEditing()) {
+                <app-button variant="ghost" size="sm" (clicked)="toggleEdit()">Cancelar</app-button>
+                <app-button
+                  variant="primary"
+                  size="sm"
+                  (clicked)="saveQuestion()"
+                  [loading]="isSaving()"
+                  >Guardar</app-button
+                >
+              } @else {
+                <app-button variant="ghost" size="sm" (clicked)="toggleEdit()">Editar</app-button>
+              }
+            </div>
+          </div>
+
+          <div class="question-body">
+            @if (isEditing()) {
+              <div class="edit-grid">
+                <div class="field">
+                  <label [for]="'q-text-' + pregunta.preguntaId">Texto de la pregunta</label>
+                  <textarea
+                    [id]="'q-text-' + pregunta.preguntaId"
+                    [(ngModel)]="pregunta.texto"
+                    class="question-textarea"
+                    rows="3"
+                  ></textarea>
+                </div>
+                <div class="field-row">
+                  <div class="field">
+                    <label [for]="'q-cat-' + pregunta.preguntaId">Categoría</label>
+                    <input
+                      [id]="'q-cat-' + pregunta.preguntaId"
+                      type="text"
+                      [(ngModel)]="pregunta.categoria"
+                      class="inline-input full-input"
+                    />
+                  </div>
+                  <div class="field">
+                    <label [for]="'q-monto-' + pregunta.preguntaId">Monto/Puntos</label>
+                    <input
+                      [id]="'q-monto-' + pregunta.preguntaId"
+                      type="number"
+                      [(ngModel)]="pregunta.monto"
+                      class="inline-input full-input"
+                    />
+                  </div>
+                </div>
+                <div class="field">
+                  <label [for]="'q-fbc-' + pregunta.preguntaId">Feedback Correcto</label>
+                  <input
+                    [id]="'q-fbc-' + pregunta.preguntaId"
+                    type="text"
+                    [(ngModel)]="pregunta.feedbackCorrecto"
+                    class="inline-input full-input"
+                  />
+                </div>
+                <div class="field">
+                  <label [for]="'q-fbi-' + pregunta.preguntaId">Feedback Incorrecto</label>
+                  <input
+                    [id]="'q-fbi-' + pregunta.preguntaId"
+                    type="text"
+                    [(ngModel)]="pregunta.feedbackIncorrecto"
+                    class="inline-input full-input"
+                  />
+                </div>
+              </div>
+            } @else {
+              <p class="question-text">{{ pregunta.texto }}</p>
+
+              <div class="question-info-grid">
+                @if (pregunta.categoria) {
+                  <div class="info-item">
+                    <span class="info-label">Categoría:</span>
+                    <span class="info-value">{{ pregunta.categoria }}</span>
+                  </div>
+                }
+                @if (pregunta.monto) {
+                  <div class="info-item">
+                    <span class="info-label">Monto/Puntos:</span>
+                    <span class="info-value">$ {{ pregunta.monto }}</span>
+                  </div>
+                }
+              </div>
+            }
+          </div>
+
+          <div class="options-section">
+            <h3 class="options-title">Opciones de respuesta</h3>
+            <div class="options-grid">
+              @for (opcion of pregunta.opciones; track opcion.opcionId) {
+                @if (isEditing()) {
+                  <div class="opt" [class.correct]="opcion.esCorrecta">
+                    <button
+                      type="button"
+                      class="checkbox-square"
+                      [class.active]="opcion.esCorrecta"
+                      (click)="toggleCorrectOption(opcion)"
+                      [attr.aria-pressed]="opcion.esCorrecta"
+                    >
+                      @if (opcion.esCorrecta) {
+                        ✓
+                      }
+                    </button>
+                    <label [for]="'opt-' + opcion.opcionId" class="sr-only"
+                      >Opción {{ $index + 1 }}</label
+                    >
+                    <input
+                      [id]="'opt-' + opcion.opcionId"
+                      type="text"
+                      [(ngModel)]="opcion.texto"
+                      class="inline-input flex-1"
+                    />
+                  </div>
+                } @else {
+                  <div class="opt" [class.correct]="opcion.esCorrecta">
+                    <span class="opt-indicator">
+                      @if (opcion.esCorrecta) {
+                        ✓
+                      } @else {
+                        ○
+                      }
+                    </span>
+                    {{ opcion.texto }}
+                  </div>
+                }
+              }
+            </div>
+
+            @if (!isEditing() && (pregunta.feedbackCorrecto || pregunta.feedbackIncorrecto)) {
+              <div class="feedback-section">
+                @if (pregunta.feedbackCorrecto) {
+                  <p class="feedback feedback--correct">
+                    <strong>✓ Feedback (+):</strong> {{ pregunta.feedbackCorrecto }}
+                  </p>
+                }
+                @if (pregunta.feedbackIncorrecto) {
+                  <p class="feedback feedback--incorrect">
+                    <strong>× Feedback (-):</strong> {{ pregunta.feedbackIncorrecto }}
+                  </p>
+                }
+              </div>
+            }
+          </div>
+        </div>
+      } @else {
+        <div class="empty-questions">
+          <p>Este banco no tiene preguntas registradas.</p>
+        </div>
+      }
+    </div>
+  }
+</div>

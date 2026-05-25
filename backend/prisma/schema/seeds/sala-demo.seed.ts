@@ -180,13 +180,13 @@ export const seedSalaDemo = async (prisma: PrismaClient) => {
     await prisma.participantes.upsert({
       where: { salaId_nickname: { salaId: sala.salaId, nickname: p.nickname } },
       update: {},
-      create: { salaId: sala.salaId, nickname: p.nickname, rol: p.rol, isOnline: true },
+      create: { salaId: sala.salaId, nickname: p.nickname, rol: p.rol },
     });
   }
 
   // ── Ronda activa para la sala ──
   const estudiante = await prisma.participantes.findFirst({
-    where: { salaId: sala.salaId, rol: 'estudiante', isOnline: true },
+    where: { salaId: sala.salaId, rol: 'estudiante' },
   });
 
   if (estudiante) {

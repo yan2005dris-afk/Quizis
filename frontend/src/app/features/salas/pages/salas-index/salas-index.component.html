@@ -1,0 +1,64 @@
+<div class="salas-index">
+  <header class="salas-index__header">
+    <div class="salas-index__header-content">
+      <div>
+        <h1 class="salas-index__title">Salas</h1>
+        <p class="salas-index__subtitle">Todas las salas activas del sistema</p>
+      </div>
+      <app-button (clicked)="onCrearSala()">
+        <lucide-icon [img]="PlusIcon" class="icon-sm"></lucide-icon>
+        Crear Sala
+      </app-button>
+    </div>
+  </header>
+
+  @if (loading()) {
+    <div class="salas-index__loading" role="status">
+      <div class="salas-index__spinner"></div>
+      <span class="sr-only">Cargando salas...</span>
+    </div>
+  } @else if (error()) {
+    <app-alert
+      type="danger"
+      message="No se pudieron cargar las salas. Intenta de nuevo más tarde."
+    />
+  } @else if (salas().length === 0) {
+    <div class="salas-index__empty">
+      <div class="salas-index__empty-icon">📋</div>
+      <h2 class="salas-index__empty-title">No hay salas disponibles</h2>
+      <p class="salas-index__empty-text">
+        Aún no se ha creado ninguna sala. Cuando haya salas activas, aparecerán aquí.
+      </p>
+    </div>
+  } @else {
+    <div class="salas-index__grid">
+      @for (sala of salas(); track sala.salaId) {
+        <a
+          class="sala-card"
+          [routerLink]="['/sala', sala.salaId]"
+          [attr.aria-label]="'Entrar a la sala ' + sala.nombre"
+        >
+          <div class="sala-card__header">
+            <h3 class="sala-card__title">{{ sala.nombre }}</h3>
+            @if (sala.estado === 'jugando') {
+              <span class="sala-card__badge sala-card__badge--vivo">EN VIVO</span>
+            } @else if (sala.estado === 'esperando') {
+              <span class="sala-card__badge sala-card__badge--esperando">Esperando</span>
+            } @else {
+              <span class="sala-card__badge sala-card__badge--terminado">Terminado</span>
+            }
+          </div>
+          <div class="sala-card__meta">
+            <span class="sala-card__participants">
+              {{ sala.participantes }}
+              {{ sala.participantes === 1 ? 'participante' : 'participantes' }}
+            </span>
+            <span class="sala-card__date">
+              Creada el {{ sala.creadoEn | date: 'dd/MM/yyyy' }}
+            </span>
+          </div>
+        </a>
+      }
+    </div>
+  }
+</div>
