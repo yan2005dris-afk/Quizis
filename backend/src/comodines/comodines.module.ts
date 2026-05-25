@@ -5,6 +5,6 @@ import { ComodinPublicoService } from './comodin-publico/comodin-publico.service
 
 @Module({
   providers: [ComodinLlamadaService, ComodinIaService, ComodinPublicoService],
-  exports: [ComodinLlamadaService, ComodinIaService, ComodinPublicoService]
+  exports: [ComodinLlamadaService, ComodinIaService, ComodinPublicoService],
 })
 export class ComodinesModule {}

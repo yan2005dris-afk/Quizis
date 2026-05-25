@@ -6,22 +6,67 @@ import {
   OnGatewayDisconnect,
   ConnectedSocket,
   MessageBody,
+  OnGatewayInit,
 } from '@nestjs/websockets';
+import { OnModuleDestroy } from '@nestjs/common';
 import { Server, Socket } from 'socket.io';
 import { CacheService } from '../infrastructure/cache/cache.service';
 import { PrismaService } from '../infrastructure/database/prisma.service';
 import { ComodinLlamadaService } from '../comodines/comodin-llamada/comodin-llamada.service';
 
 @WebSocketGateway({ cors: { origin: '*' } })
-export class QuizGateway implements OnGatewayConnection, OnGatewayDisconnect {
+export class QuizGateway
+  implements
+    OnGatewayConnection,
+    OnGatewayDisconnect,
+    OnGatewayInit,
+    OnModuleDestroy
+{
   @WebSocketServer()
   server!: Server;
+
+  private refreshInterval: NodeJS.Timeout | null = null;
 
   constructor(
     private readonly cacheService: CacheService,
     private readonly prismaService: PrismaService,
     private readonly comodinLlamadaService: ComodinLlamadaService,
   ) {}
+
+  afterInit(server: Server) {
+    console.log(
+      'QuizGateway inicializado. Configurando refresco periódico de sesiones socket.',
+    );
+    // Refrescar las sesiones socket activas cada 1 hora
+    this.refreshInterval = setInterval(() => {
+      this.refreshActiveSessions();
+    }, 3600000);
+  }
+
+  onModuleDestroy() {
+    if (this.refreshInterval) {
+      clearInterval(this.refreshInterval);
+    }
+  }
+
+  private async refreshActiveSessions() {
+    try {
+      const activeSocketIds = Array.from(this.server.sockets.sockets.keys());
+      if (activeSocketIds.length === 0) return;
+
+      console.log(
+        `Refrescando TTL para ${activeSocketIds.length} sesiones de socket activas...`,
+      );
+      for (const socketId of activeSocketIds) {
+        await this.cacheService.refreshSocketSession(socketId);
+      }
+    } catch (error) {
+      console.error(
+        'Error al refrescar las sesiones de socket activas:',
+        error,
+      );
+    }
+  }
 
   handleConnection(client: Socket) {
     console.log(`Cliente conectado: ${client.id}`);
@@ -259,21 +304,34 @@ export class QuizGateway implements OnGatewayConnection, OnGatewayDisconnect {
     const { tokenCompartido, preguntaId, pista } = payload;
     console.log(`Pista recibida del consultor en sala: ${tokenCompartido}`);
 
-    const activeHelperNickname = await this.cacheService.getActiveHelper(tokenCompartido);
+    const activeHelperNickname =
+      await this.cacheService.getActiveHelper(tokenCompartido);
     if (!activeHelperNickname) {
-      client.emit('enviar_pista_error', { message: 'No hay ninguna llamada activa en esta sala.' });
+      client.emit('enviar_pista_error', {
+        message: 'No hay ninguna llamada activa en esta sala.',
+      });
       return;
     }
 
-    const expectedSocketId = await this.cacheService.getSocketId(tokenCompartido, activeHelperNickname);
+    const expectedSocketId = await this.cacheService.getSocketId(
+      tokenCompartido,
+      activeHelperNickname,
+    );
     if (client.id !== expectedSocketId) {
-      client.emit('enviar_pista_error', { message: 'No eres el consultor asignado para esta llamada.' });
+      client.emit('enviar_pista_error', {
+        message: 'No eres el consultor asignado para esta llamada.',
+      });
       return;
     }
 
-    const rondaActiva = await this.comodinLlamadaService.getRondaActivaConEstudiante(tokenCompartido);
+    const rondaActiva =
+      await this.comodinLlamadaService.getRondaActivaConEstudiante(
+        tokenCompartido,
+      );
     if (!rondaActiva) {
-      client.emit('enviar_pista_error', { message: 'No hay una ronda activa en esta sala.' });
+      client.emit('enviar_pista_error', {
+        message: 'No hay una ronda activa en esta sala.',
+      });
       return;
     }
 
@@ -283,12 +341,13 @@ export class QuizGateway implements OnGatewayConnection, OnGatewayDisconnect {
     });
 
     try {
-      const existingAnswer = await this.prismaService.extendedClient.respuestasRonda.findFirst({
-        where: {
-          rondaId: rondaActiva.rondaId,
-          preguntaId: preguntaId,
-        },
-      });
+      const existingAnswer =
+        await this.prismaService.extendedClient.respuestasRonda.findFirst({
+          where: {
+            rondaId: rondaActiva.rondaId,
+            preguntaId: preguntaId,
+          },
+        });
 
       if (existingAnswer) {
         await this.prismaService.extendedClient.respuestasRonda.update({
@@ -315,6 +374,8 @@ export class QuizGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     await this.cacheService.removeActiveHelper(tokenCompartido);
 
-    console.log(`Pista transmitida con éxito y comodín LLAMADA registrado como usado.`);
+    console.log(
+      `Pista transmitida con éxito y comodín LLAMADA registrado como usado.`,
+    );
   }
 }

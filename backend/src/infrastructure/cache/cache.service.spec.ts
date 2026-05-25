@@ -163,4 +163,38 @@ describe('CacheService (Memory Fallback - Robust Self-Healing)', () => {
     const validVotes = await service.getVotes(rondaId, 55);
     expect(validVotes).toHaveLength(1);
   });
+
+  it('debe guardar, obtener, refrescar y remover una sesión socket', async () => {
+    const token = 'sala-token';
+    const nickname = 'player1';
+    const socketId = 'socket-id-123';
+
+    await service.saveSocketSession(token, nickname, socketId);
+
+    const retrievedSocketId = await service.getSocketId(token, nickname);
+    expect(retrievedSocketId).toBe(socketId);
+
+    // Guardar el expiresAt original de la memoria para verificar el refresco
+    const clientKey = `socket:client:${socketId}`;
+    const initialExpiry = service['memoryClientSockets'].get(clientKey)?.expiresAt;
+    expect(initialExpiry).toBeDefined();
+
+    // Adelantar el tiempo de expiración simulando que pasó tiempo
+    if (initialExpiry) {
+      service['memoryClientSockets'].get(clientKey)!.expiresAt = initialExpiry - 10000;
+      const sessionKey = `socket:session:${token}:${nickname}`;
+      service['memorySocketSessions'].get(sessionKey)!.expiresAt = initialExpiry - 10000;
+    }
+
+    await service.refreshSocketSession(socketId);
+
+    const refreshedExpiry = service['memoryClientSockets'].get(clientKey)?.expiresAt;
+    expect(refreshedExpiry).toBeGreaterThan(initialExpiry! - 10000);
+
+    const removedSession = await service.removeSocketSession(socketId);
+    expect(removedSession).toEqual({ token, nickname });
+
+    const retrievedAfterRemove = await service.getSocketId(token, nickname);
+    expect(retrievedAfterRemove).toBeNull();
+  });
 });

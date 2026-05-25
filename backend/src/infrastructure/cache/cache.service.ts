@@ -17,9 +17,18 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(CacheService.name);
   private redisClient: Redis | null = null;
   private memoryVotes = new Map<string, MemoryCacheEntry>(); // Fallback con TTL
-  private memorySocketSessions = new Map<string, { socketId: string; expiresAt: number }>();
-  private memoryClientSockets = new Map<string, { tokenNickname: string; expiresAt: number }>();
-  private memoryActiveHelpers = new Map<string, { helperNickname: string; expiresAt: number }>();
+  private memorySocketSessions = new Map<
+    string,
+    { socketId: string; expiresAt: number }
+  >();
+  private memoryClientSockets = new Map<
+    string,
+    { tokenNickname: string; expiresAt: number }
+  >();
+  private memoryActiveHelpers = new Map<
+    string,
+    { helperNickname: string; expiresAt: number }
+  >();
   private isRedisHealthy = true;
   private reconnectTimeout: NodeJS.Timeout | null = null;
   private gcInterval: NodeJS.Timeout | null = null;
@@ -402,7 +411,7 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
   ): Promise<void> {
     const sessionKey = `socket:session:${token}:${nickname}`;
     const clientKey = `socket:client:${socketId}`;
-    const ttl = 7200; // 2 horas
+    const ttl = 86400; // 24 horas
 
     if (this.redisClient && this.isRedisHealthy) {
       try {
@@ -427,6 +436,53 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
       tokenNickname: `${token}:${nickname}`,
       expiresAt,
     });
+  }
+
+  async refreshSocketSession(socketId: string): Promise<void> {
+    const clientKey = `socket:client:${socketId}`;
+    const ttl = 86400; // 24 horas
+
+    if (this.redisClient && this.isRedisHealthy) {
+      try {
+        const tokenNickname = await this.redisClient.get(clientKey);
+        if (tokenNickname) {
+          const parts = tokenNickname.split(':');
+          if (parts.length >= 2) {
+            const token = parts[0];
+            const nickname = parts.slice(1).join(':');
+            const sessionKey = `socket:session:${token}:${nickname}`;
+
+            const tx = this.redisClient.multi();
+            tx.expire(clientKey, ttl);
+            tx.expire(sessionKey, ttl);
+            await tx.exec();
+          }
+        }
+      } catch (error) {
+        const errorMsg = error instanceof Error ? error.message : String(error);
+        this.logger.warn(
+          `[CACHE:WARN] Error en Redis durante refreshSocketSession: ${errorMsg}.`,
+        );
+        this.handleRedisFailure();
+      }
+    }
+
+    // Fallback memoria
+    const entry = this.memoryClientSockets.get(clientKey);
+    if (entry) {
+      const expiresAt = Date.now() + ttl * 1000;
+      entry.expiresAt = expiresAt;
+      const parts = entry.tokenNickname.split(':');
+      if (parts.length >= 2) {
+        const token = parts[0];
+        const nickname = parts.slice(1).join(':');
+        const sessionKey = `socket:session:${token}:${nickname}`;
+        const sessionEntry = this.memorySocketSessions.get(sessionKey);
+        if (sessionEntry) {
+          sessionEntry.expiresAt = expiresAt;
+        }
+      }
+    }
   }
 
   async getSocketId(token: string, nickname: string): Promise<string | null> {
@@ -467,7 +523,6 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
             const token = parts[0];
             const nickname = parts.slice(1).join(':');
             const sessionKey = `socket:session:${token}:${nickname}`;
-            
             const tx = this.redisClient.multi();
             tx.del(clientKey);
             tx.del(sessionKey);
