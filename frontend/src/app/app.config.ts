@@ -3,14 +3,13 @@ import { provideRouter, withComponentInputBinding } from '@angular/router';
 import { provideHttpClient, withFetch, withInterceptors } from '@angular/common/http';
 
 import { routes } from './app.routes';
-import { provideClientHydration, withEventReplay } from '@angular/platform-browser';
+// Static SPA — no SSR, no client hydration needed
 import { authInterceptor } from './core/interceptors/auth.interceptor';
 
 export const appConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),
     provideRouter(routes, withComponentInputBinding()),
-    provideClientHydration(withEventReplay()),
     provideHttpClient(
       withFetch(),
       withInterceptors([authInterceptor]), // Registramos el interceptor aquí
