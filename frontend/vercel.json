@@ -11,7 +11,11 @@
       "destination": "https://quizis-zvhd.onrender.com/api/:path*"
     },
     {
-      "source": "/(.*)",
+      "source": "/socket.io/:path*",
+      "destination": "https://quizis-zvhd.onrender.com/socket.io/:path*"
+    },
+    {
+      "source": "/((?!api|socket\\.io|.*\\..*).*)",
       "destination": "/index.html"
     }
   ],
