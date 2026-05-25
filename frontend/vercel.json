@@ -11,11 +11,7 @@
       "destination": "https://quizis-zvhd.onrender.com/socket.io/:path*"
     },
     {
-<<<<<<< Updated upstream
-      "source": "/((?!api|socket\\.io|.*\\..*).*)",
-=======
       "source": "/(.*)",
->>>>>>> Stashed changes
       "destination": "/index.html"
     }
   ],
