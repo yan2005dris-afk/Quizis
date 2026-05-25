@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ComodinLlamadaService } from './comodin-llamada.service';
 import { PrismaService } from '../../infrastructure/database/prisma.service';
+import { CacheService } from '../../infrastructure/cache/cache.service';
 
 describe('ComodinLlamadaService', () => {
   let service: ComodinLlamadaService;
@@ -9,10 +10,24 @@ describe('ComodinLlamadaService', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         ComodinLlamadaService,
-        // Añadimos esta simulación para que no busque la BD real
         {
           provide: PrismaService,
-          useValue: {}, 
+          useValue: {
+            extendedClient: {
+              rondas: {
+                findFirst: jest.fn(),
+              },
+              participantes: {
+                findMany: jest.fn(),
+              },
+            },
+          },
+        },
+        {
+          provide: CacheService,
+          useValue: {
+            getOnlineParticipants: jest.fn().mockResolvedValue([]),
+          },
         },
       ],
     }).compile();
