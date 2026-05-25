@@ -11,7 +11,7 @@ import { FileParserService, type ParseResult } from '../../../../core/services/f
 import { toSignal } from '@angular/core/rxjs-interop';
 import { switchMap, catchError, tap, map, startWith } from 'rxjs/operators';
 import { of, Subject } from 'rxjs';
-import { ButtonComponent, AlertComponent } from '../../../../shared/ui';
+import { ButtonComponent, AlertComponent, InputComponent } from '../../../../shared/ui';
 import { ToastService } from '../../../../core/services/toast.service';
 
 interface BankState {
@@ -26,7 +26,7 @@ const PAGE_SIZE = 10;
 @Component({
   selector: 'app-bank-detail',
   standalone: true,
-  imports: [CommonModule, RouterLink, FormsModule, ButtonComponent, AlertComponent],
+  imports: [CommonModule, RouterLink, FormsModule, ButtonComponent, AlertComponent, InputComponent],
   templateUrl: './bank-detail.component.html',
   styleUrls: ['./bank-detail.component.scss'],
 })

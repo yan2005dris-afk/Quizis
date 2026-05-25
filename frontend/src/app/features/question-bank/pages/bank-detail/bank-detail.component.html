@@ -27,16 +27,13 @@
         @if (isEditingBank()) {
           <div class="bank-edit-form">
             <h1 class="bank-title">{{ isNewBank() ? 'Crear Nuevo Banco' : 'Editar Información' }}</h1>
-            <div class="form-group mt-4">
-              <label for="bank-name">Nombre del Banco</label>
-              <input
-                id="bank-name"
-                type="text"
-                [(ngModel)]="bankName"
-                class="inline-input full-input title-input"
-                placeholder="Ej: Cultura General"
-              />
-            </div>
+            
+            <app-input
+              label="Nombre del Banco"
+              placeholder="Ej: Cultura General"
+              [(ngModel)]="bankName"
+            />
+
             <div class="form-group">
               <label for="bank-desc">Descripción (opcional)</label>
               <textarea
@@ -47,6 +44,7 @@
                 placeholder="De qué trata este banco..."
               ></textarea>
             </div>
+            
             <div class="form-actions mt-4">
               @if (!isNewBank()) {
                 <app-button variant="ghost" size="sm" (clicked)="toggleEditBank()">Cancelar</app-button>
@@ -351,43 +349,33 @@
                   ></textarea>
                 </div>
                 <div class="field-row">
-                  <div class="field">
-                    <label [for]="'q-cat-' + (pregunta.preguntaId || 'new')">Categoría</label>
-                    <input
-                      [id]="'q-cat-' + (pregunta.preguntaId || 'new')"
-                      type="text"
-                      [(ngModel)]="pregunta.categoria"
-                      class="inline-input full-input"
-                    />
-                  </div>
-                  <div class="field">
-                    <label [for]="'q-monto-' + (pregunta.preguntaId || 'new')">Monto/Puntos</label>
-                    <input
-                      [id]="'q-monto-' + (pregunta.preguntaId || 'new')"
-                      type="number"
-                      [(ngModel)]="pregunta.monto"
-                      class="inline-input full-input"
-                    />
-                  </div>
-                </div>
-                <div class="field">
-                  <label [for]="'q-fbc-' + (pregunta.preguntaId || 'new')">Feedback Correcto</label>
-                  <input
-                    [id]="'q-fbc-' + (pregunta.preguntaId || 'new')"
-                    type="text"
-                    [(ngModel)]="pregunta.feedbackCorrecto"
-                    class="inline-input full-input"
+                  
+                  <app-input
+                    label="Categoría"
+                    placeholder="Ej: Cine"
+                    [(ngModel)]="pregunta.categoria"
+                  />
+
+                  <app-input
+                    label="Monto/Puntos"
+                    type="number"
+                    placeholder="Ej: 1000"
+                    [(ngModel)]="pregunta.monto"
                   />
                 </div>
-                <div class="field">
-                  <label [for]="'q-fbi-' + (pregunta.preguntaId || 'new')">Feedback Incorrecto</label>
-                  <input
-                    [id]="'q-fbi-' + (pregunta.preguntaId || 'new')"
-                    type="text"
-                    [(ngModel)]="pregunta.feedbackIncorrecto"
-                    class="inline-input full-input"
-                  />
-                </div>
+
+                <app-input
+                  label="Feedback Correcto"
+                  placeholder="Explicación para respuesta correcta"
+                  [(ngModel)]="pregunta.feedbackCorrecto"
+                />
+
+                <app-input
+                  label="Feedback Incorrecto"
+                  placeholder="Explicación para respuesta incorrecta"
+                  [(ngModel)]="pregunta.feedbackIncorrecto"
+                />
+
               </div>
             } @else {
               <p class="question-text">{{ pregunta.texto }}</p>
