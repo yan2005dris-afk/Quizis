@@ -67,14 +67,20 @@ export class ParticipantsCacheUseCase implements OnModuleInit, OnModuleDestroy {
 
     let entry = this.memoryOnline.get(key);
     if (!entry) {
-      entry = { participants: new Set<string>(), expiresAt: Date.now() + 3600 * 1000 };
+      entry = {
+        participants: new Set<string>(),
+        expiresAt: Date.now() + 3600 * 1000,
+      };
       this.memoryOnline.set(key, entry);
     }
     entry.participants.add(nickname);
 
     let histEntry = this.memoryOnline.get(historyKey);
     if (!histEntry) {
-      histEntry = { participants: new Set<string>(), expiresAt: Date.now() + 14400 * 1000 };
+      histEntry = {
+        participants: new Set<string>(),
+        expiresAt: Date.now() + 14400 * 1000,
+      };
       this.memoryOnline.set(historyKey, histEntry);
     }
     histEntry.participants.add(nickname);

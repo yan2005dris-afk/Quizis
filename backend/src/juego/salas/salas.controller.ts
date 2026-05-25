@@ -196,4 +196,16 @@ export class SalasController {
   async finalizarSala(@Param('id', ParseIntPipe) id: number) {
     return this.salasService.finalizarSala(id);
   }
+
+  /**
+   * Reinicia la ronda activa: cierra la actual y abre una nueva con las mismas preguntas.
+   */
+  @Post(':id/reiniciar-ronda')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @RequiredPermission('salas', 'update')
+  @ApiOperation({ summary: 'Reiniciar la ronda activa de una sala.' })
+  async reiniciarRonda(@Param('id', ParseIntPipe) id: number) {
+    return this.salasService.reiniciarRonda(id);
+  }
 }

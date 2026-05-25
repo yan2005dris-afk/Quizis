@@ -1,8 +1,24 @@
-import { ChangeDetectionStrategy, Component, computed, input, signal, effect, output, inject } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  input,
+  signal,
+  effect,
+  output,
+  inject,
+} from '@angular/core';
 import { CommonModule, TitleCasePipe } from '@angular/common';
 import { GameSocketService, VotosPublico } from '../../../../core/services/game-socket.service';
 import { SalasService, ComodinSala } from '../../../../core/services/salas.service';
-import { LucideAngularModule, ChevronLeft, ChevronRight, BrainCircuit, Loader2 } from 'lucide-angular';
+import {
+  LucideAngularModule,
+  ChevronLeft,
+  ChevronRight,
+  BrainCircuit,
+  Loader2,
+} from 'lucide-angular';
+import { AudienceBarsComponent, ButtonComponent, CountdownComponent } from '../../../../shared/ui';
 
 export interface OpcionVoto {
   id: number;
@@ -18,7 +34,13 @@ export interface OpcionVoto {
 @Component({
   selector: 'app-active-question',
   standalone: true,
-  imports: [CommonModule, TitleCasePipe, LucideAngularModule],
+  imports: [
+    CommonModule,
+    TitleCasePipe,
+    LucideAngularModule,
+    AudienceBarsComponent,
+    ButtonComponent,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './active-question.component.html',
   styleUrl: './active-question.component.scss',
@@ -30,6 +52,7 @@ export class ActiveQuestionComponent {
   readonly preguntaActivaId = input<number | null>(null);
   readonly preguntas = input<any[]>([]);
   readonly votosPublico = input<VotosPublico | null>(null);
+  readonly tiempoRestante = input<number | null>(null);
   readonly comodinBloqueado = input<string[]>([]);
   readonly comodines = input<ComodinSala[]>([]);
   readonly tokenCompartido = input<string>('');
@@ -54,12 +77,19 @@ export class ActiveQuestionComponent {
     effect(() => {
       const activeId = this.preguntaActivaId();
       const list = this.preguntas();
-      if (activeId && list.length > 0) {
+
+      if (!activeId) {
+        this.iaSugerencia.set(null);
+        this.localSelectedId.set(null);
+        return;
+      }
+
+      if (list.length > 0) {
         const index = list.findIndex((p) => p.preguntaId === activeId);
         if (index !== -1) {
           this.currentIndex.set(index);
-          this.localSelectedId.set(null); // Resetear selección local al cambiar pregunta
-          this.iaSugerencia.set(null); // Resetear IA al cambiar pregunta
+          this.localSelectedId.set(null);
+          this.iaSugerencia.set(null);
         }
       }
     });
@@ -68,17 +98,17 @@ export class ActiveQuestionComponent {
     effect(() => {
       const result = this.gameSocket.ultimoResultado();
       const activeId = this.preguntaActivaId();
-      
+
       if (result && activeId === result.preguntaId) {
         // Actualizar la pregunta en el historial local para que las opciones reflejen la respuesta
         const list = [...this.preguntas()];
-        const index = list.findIndex(p => p.preguntaId === result.preguntaId);
-        
+        const index = list.findIndex((p) => p.preguntaId === result.preguntaId);
+
         if (index !== -1 && !list[index].respuestaDada) {
           list[index].respuestaDada = {
             opcionId: this.localSelectedId() || result.opcionId || -1, // Intentar matchear con lo que eligió localmente
             esCorrecta: result.esCorrecta,
-            feedback: result.feedback
+            feedback: result.feedback,
           };
           // Nota: Como 'preguntas' es un input, no podemos mutar la lista original de forma reactiva simple.
           // Pero las opciones se calculan en base a 'preguntaMostrada()', que lee de 'preguntas()'.
@@ -104,7 +134,9 @@ export class ActiveQuestionComponent {
     if (!p) return [];
 
     // Combinar datos del historial con el resultado en tiempo real del socket
-    const respuestaDada = p.respuestaDada || (isViewingActive && result && result.preguntaId === p.preguntaId ? result : null);
+    const respuestaDada =
+      p.respuestaDada ||
+      (isViewingActive && result && result.preguntaId === p.preguntaId ? result : null);
 
     return p.opciones.map((o: any) => {
       const votos = isViewingActive && v ? ((v as any)[o.letra] ?? 0) : 0;
@@ -129,12 +161,15 @@ export class ActiveQuestionComponent {
     const p = this.preguntaMostrada();
     const result = this.gameSocket.ultimoResultado();
     const isViewingActive = p?.preguntaId === this.preguntaActivaId();
-    const respondida = p?.respuestaDada || (isViewingActive && result && result.preguntaId === p?.preguntaId);
+    const respondida =
+      p?.respuestaDada || (isViewingActive && result && result.preguntaId === p?.preguntaId);
 
     if (!p) return 'Esperando...';
     if (respondida) return 'Pregunta contestada';
     if (isViewingActive) {
-       return this.localSelectedId() ? 'Procesando respuesta...' : 'El encuestado está respondiendo...';
+      return this.localSelectedId()
+        ? 'Procesando respuesta...'
+        : 'El encuestado está respondiendo...';
     }
     return 'Pregunta pendiente';
   });
@@ -157,20 +192,35 @@ export class ActiveQuestionComponent {
   }
 
   protected onOpcionClick(opcionId: number): void {
-    if (!this.interactive() || this.preguntaMostrada()?.respuestaDada || this.localSelectedId()) return;
+    if (!this.interactive() || this.preguntaMostrada()?.respuestaDada || this.localSelectedId())
+      return;
     this.localSelectedId.set(opcionId);
     this.seleccionada.emit(opcionId);
   }
 
   protected onComodinClick(comodin: ComodinSala): void {
-    if (!this.interactive() || !comodin.activo || this.comodinBloqueado().includes(comodin.nombre)) {
+    if (
+      !this.interactive() ||
+      !comodin.activo ||
+      this.comodinBloqueado().includes(comodin.nombre)
+    ) {
       return;
     }
 
     if (comodin.nombre === 'IA') {
       this.usarComodinIa();
+    } else if (comodin.nombre === 'PUBLICO') {
+      this.usarComodinPublico();
     }
-    // TODO: Implementar otros comodines (Público, Llamada, etc.)
+    // TODO: Implementar Llamada
+  }
+
+  protected usarComodinPublico(): void {
+    const token = this.tokenCompartido();
+    if (!token) return;
+
+    console.log('[COMODIN:PUBLICO] Activando votación del público...');
+    this.gameSocket.bloquearComodin(token, 'PUBLICO');
   }
 
   protected usarComodinIa(): void {
@@ -202,5 +252,15 @@ export class ActiveQuestionComponent {
         alert('No se pudo obtener la sugerencia de la IA. Por favor, intenta más tarde.');
       },
     });
+  }
+
+  protected isComodinUsado(comodin: ComodinSala): boolean {
+    return this.comodinBloqueado().includes(comodin.nombre);
+  }
+
+  protected getComodinEstadoTexto(comodin: ComodinSala): string {
+    if (!comodin.activo) return 'Deshabilitado en la configuración';
+    if (this.isComodinUsado(comodin)) return 'Usado en esta ronda';
+    return 'Disponible';
   }
 }

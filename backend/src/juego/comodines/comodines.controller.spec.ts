@@ -33,15 +33,15 @@ describe('ComodinesController', () => {
 
   describe('solicitarSugerenciaIa', () => {
     it('should call service.obtenerSugerenciaIa with correct params', async () => {
-      const pregunta = '¿Cuál es la capital de Francia?';
+      const preguntaId = 123;
       const expectedResult = { sugerencia: 'París' };
       mockComodinesService.obtenerSugerenciaIa.mockResolvedValue(
         expectedResult,
       );
 
-      const result = await controller.solicitarSugerenciaIa(pregunta);
+      const result = await controller.solicitarSugerenciaIa(preguntaId);
 
-      expect(service.obtenerSugerenciaIa).toHaveBeenCalledWith(pregunta);
+      expect(service.obtenerSugerenciaIa).toHaveBeenCalledWith(preguntaId);
       expect(result).toEqual(expectedResult);
     });
   });

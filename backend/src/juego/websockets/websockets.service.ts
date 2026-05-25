@@ -6,7 +6,10 @@ import {
   VotePayload,
 } from './use-cases/process-audience-vote.use-case';
 import { ReleaseQuestionUseCase } from './use-cases/release-question.use-case';
-import { SubmitAnswerUseCase, AnswerPayload } from './use-cases/submit-answer.use-case';
+import {
+  SubmitAnswerUseCase,
+  AnswerPayload,
+} from './use-cases/submit-answer.use-case';
 import { ToggleRoomEnabledUseCase } from './use-cases/toggle-room-enabled.use-case';
 
 @Injectable()

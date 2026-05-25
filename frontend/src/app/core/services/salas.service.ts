@@ -86,10 +86,7 @@ export class SalasService {
       tokenCompartido: string;
       tokenInvitacion: string;
       message: string;
-    }>(
-      `${this.apiUrl}/salas/${salaId}/regenerar-token`,
-      {},
-    );
+    }>(`${this.apiUrl}/salas/${salaId}/regenerar-token`, {});
   }
 
   getLinkInvitacion(salaId: number): Observable<{ tokenInvitacion: string }> {
@@ -101,6 +98,15 @@ export class SalasService {
   finalizarSala(salaId: number): Observable<{ success: boolean; totalParticipantes: number }> {
     return this.http.post<{ success: boolean; totalParticipantes: number }>(
       `${this.apiUrl}/salas/${salaId}/finalizar`,
+      {},
+    );
+  }
+
+  reiniciarRonda(
+    salaId: number,
+  ): Observable<{ estado: EstadoSala; rondaActiva: SalaDetalle['rondaActiva'] }> {
+    return this.http.post<{ estado: EstadoSala; rondaActiva: SalaDetalle['rondaActiva'] }>(
+      `${this.apiUrl}/salas/${salaId}/reiniciar-ronda`,
       {},
     );
   }

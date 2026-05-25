@@ -1,4 +1,9 @@
-import { Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  OnModuleDestroy,
+  OnModuleInit,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import Redis from 'ioredis';
 
@@ -43,9 +48,7 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
       this.logger.error(
         '[REDIS:ERROR] No se pudo conectar a Redis. Activando modo degradado.',
       );
-      this.logger.error(
-        error instanceof Error ? error.message : String(error),
-      );
+      this.logger.error(error instanceof Error ? error.message : String(error));
       this.handleFailure();
     }
   }

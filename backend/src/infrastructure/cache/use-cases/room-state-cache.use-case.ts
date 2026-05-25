@@ -74,7 +74,10 @@ export class RoomStateCacheUseCase implements OnModuleInit, OnModuleDestroy {
       }
     }
 
-    this.memoryData.set(key, { data: estado, expiresAt: Date.now() + 86400 * 1000 });
+    this.memoryData.set(key, {
+      data: estado,
+      expiresAt: Date.now() + 86400 * 1000,
+    });
   }
 
   async getRoomEstado(token: string): Promise<string | null> {
@@ -104,12 +107,20 @@ export class RoomStateCacheUseCase implements OnModuleInit, OnModuleDestroy {
         await client.set(statusKey, 'released', 'EX', 3600);
         return;
       } catch (error) {
-        this.logger.warn(`[CACHE:WARN] Fallo setActiveQuestion Redis: ${error}`);
+        this.logger.warn(
+          `[CACHE:WARN] Fallo setActiveQuestion Redis: ${error}`,
+        );
       }
     }
 
-    this.memoryData.set(key, { data: question, expiresAt: Date.now() + 3600 * 1000 });
-    this.memoryData.set(statusKey, { data: 'released', expiresAt: Date.now() + 3600 * 1000 });
+    this.memoryData.set(key, {
+      data: question,
+      expiresAt: Date.now() + 3600 * 1000,
+    });
+    this.memoryData.set(statusKey, {
+      data: 'released',
+      expiresAt: Date.now() + 3600 * 1000,
+    });
   }
 
   async getActiveQuestion(token: string): Promise<any | null> {
@@ -121,7 +132,9 @@ export class RoomStateCacheUseCase implements OnModuleInit, OnModuleDestroy {
         const data = await client.get(key);
         return data ? JSON.parse(data) : null;
       } catch (error) {
-        this.logger.warn(`[CACHE:WARN] Fallo getActiveQuestion Redis: ${error}`);
+        this.logger.warn(
+          `[CACHE:WARN] Fallo getActiveQuestion Redis: ${error}`,
+        );
       }
     }
 
@@ -129,7 +142,10 @@ export class RoomStateCacheUseCase implements OnModuleInit, OnModuleDestroy {
     return entry ? entry.data : null;
   }
 
-  async setQuestionStatus(token: string, status: 'released' | 'answered'): Promise<void> {
+  async setQuestionStatus(
+    token: string,
+    status: 'released' | 'answered',
+  ): Promise<void> {
     const key = this.getQuestionStatusKey(token);
     const client = this.redisService.getClient();
 
@@ -138,11 +154,16 @@ export class RoomStateCacheUseCase implements OnModuleInit, OnModuleDestroy {
         await client.set(key, status, 'EX', 3600);
         return;
       } catch (error) {
-        this.logger.warn(`[CACHE:WARN] Fallo setQuestionStatus Redis: ${error}`);
+        this.logger.warn(
+          `[CACHE:WARN] Fallo setQuestionStatus Redis: ${error}`,
+        );
       }
     }
 
-    this.memoryData.set(key, { data: status, expiresAt: Date.now() + 3600 * 1000 });
+    this.memoryData.set(key, {
+      data: status,
+      expiresAt: Date.now() + 3600 * 1000,
+    });
   }
 
   async getQuestionStatus(token: string): Promise<string | null> {
@@ -153,7 +174,9 @@ export class RoomStateCacheUseCase implements OnModuleInit, OnModuleDestroy {
       try {
         return await client.get(key);
       } catch (error) {
-        this.logger.warn(`[CACHE:WARN] Fallo getQuestionStatus Redis: ${error}`);
+        this.logger.warn(
+          `[CACHE:WARN] Fallo getQuestionStatus Redis: ${error}`,
+        );
       }
     }
 
@@ -175,7 +198,10 @@ export class RoomStateCacheUseCase implements OnModuleInit, OnModuleDestroy {
       }
     }
 
-    this.memoryData.set(key, { data: value, expiresAt: Date.now() + 7200 * 1000 });
+    this.memoryData.set(key, {
+      data: value,
+      expiresAt: Date.now() + 7200 * 1000,
+    });
   }
 
   async isRoomEnabled(token: string): Promise<boolean> {
@@ -209,14 +235,19 @@ export class RoomStateCacheUseCase implements OnModuleInit, OnModuleDestroy {
         await client.expire(key, 86400);
         return;
       } catch (error) {
-        this.logger.warn(`[CACHE:WARN] Fallo addBlockedComodin Redis: ${error}`);
+        this.logger.warn(
+          `[CACHE:WARN] Fallo addBlockedComodin Redis: ${error}`,
+        );
       }
     }
 
     const entry = this.memoryData.get(key);
     const current: string[] = entry ? entry.data : [];
     if (!current.includes(tipoComodin)) current.push(tipoComodin);
-    this.memoryData.set(key, { data: current, expiresAt: Date.now() + 86400 * 1000 });
+    this.memoryData.set(key, {
+      data: current,
+      expiresAt: Date.now() + 86400 * 1000,
+    });
   }
 
   async getBlockedComodines(token: string): Promise<string[]> {
@@ -227,11 +258,33 @@ export class RoomStateCacheUseCase implements OnModuleInit, OnModuleDestroy {
       try {
         return await client.smembers(key);
       } catch (error) {
-        this.logger.warn(`[CACHE:WARN] Fallo getBlockedComodines Redis: ${error}`);
+        this.logger.warn(
+          `[CACHE:WARN] Fallo getBlockedComodines Redis: ${error}`,
+        );
       }
     }
 
     const entry = this.memoryData.get(key);
     return entry ? (entry.data as string[]) : [];
+  }
+
+  async clearRoundState(token: string): Promise<void> {
+    const keys = [
+      this.getActiveQuestionKey(token),
+      this.getQuestionStatusKey(token),
+      this.getBlockedComidinesKey(token),
+    ];
+    const client = this.redisService.getClient();
+
+    if (client) {
+      try {
+        await client.del(...keys);
+        return;
+      } catch (error) {
+        this.logger.warn(`[CACHE:WARN] Fallo clearRoundState Redis: ${error}`);
+      }
+    }
+
+    for (const key of keys) this.memoryData.delete(key);
   }
 }

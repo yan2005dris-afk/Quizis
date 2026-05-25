@@ -14,6 +14,9 @@ import { RegenerateRoomTokenUseCase } from './use-cases/regenerate-room-token.us
 import { FinalizeRoomUseCase } from './use-cases/finalize-room.use-case';
 import { JoinSalaUseCase } from './use-cases/join-sala.use-case';
 import { GetInvitacionTokenUseCase } from './use-cases/get-invitacion-token.use-case';
+import { UpdateParticipantRoleUseCase } from './use-cases/update-participant-role.use-case';
+import { GetParticipantsWithRolesUseCase } from './use-cases/get-participants-with-roles.use-case';
+import { RestartRoundUseCase } from './use-cases/restart-round.use-case';
 
 /**
  * Servicio fachada para el módulo de Salas.
@@ -35,6 +38,9 @@ export class SalasService {
     private readonly finalizeRoomUseCase: FinalizeRoomUseCase,
     private readonly joinSalaUseCase: JoinSalaUseCase,
     private readonly getInvitacionTokenUseCase: GetInvitacionTokenUseCase,
+    private readonly updateParticipantRoleUseCase: UpdateParticipantRoleUseCase,
+    private readonly getParticipantsWithRolesUseCase: GetParticipantsWithRolesUseCase,
+    private readonly restartRoundUseCase: RestartRoundUseCase,
   ) {}
 
   /**
@@ -126,5 +132,28 @@ export class SalasService {
 
   async getInvitacionToken(salaId: number) {
     return this.getInvitacionTokenUseCase.execute(salaId);
+  }
+
+  async updateParticipantRole(
+    tokenCompartido: string,
+    nickname: string,
+    nuevoRol: string,
+  ) {
+    return this.updateParticipantRoleUseCase.execute(
+      tokenCompartido,
+      nickname,
+      nuevoRol,
+    );
+  }
+
+  async getParticipantsWithRoles(tokenCompartido: string, nicknames: string[]) {
+    return this.getParticipantsWithRolesUseCase.execute(
+      tokenCompartido,
+      nicknames,
+    );
+  }
+
+  async reiniciarRonda(salaId: number) {
+    return this.restartRoundUseCase.execute(salaId);
   }
 }

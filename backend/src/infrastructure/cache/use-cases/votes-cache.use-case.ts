@@ -68,15 +68,13 @@ export class VotesCacheUseCase implements OnModuleInit, OnModuleDestroy {
 
     if (client) {
       try {
-        await client.hset(
-          key,
-          participanteId.toString(),
-          opcionId.toString(),
-        );
+        await client.hset(key, participanteId.toString(), opcionId.toString());
         await client.expire(key, 3600);
         return;
       } catch (error) {
-        this.logger.warn(`[CACHE:WARN] Fallo al setear voto en Redis: ${error}`);
+        this.logger.warn(
+          `[CACHE:WARN] Fallo al setear voto en Redis: ${error}`,
+        );
       }
     }
 
@@ -113,7 +111,9 @@ export class VotesCacheUseCase implements OnModuleInit, OnModuleDestroy {
           votesMap.set(parseInt(pId, 10), parseInt(oId, 10));
         }
       } catch (error) {
-        this.logger.warn(`[CACHE:WARN] Fallo al obtener votos de Redis: ${error}`);
+        this.logger.warn(
+          `[CACHE:WARN] Fallo al obtener votos de Redis: ${error}`,
+        );
       }
     }
 
@@ -170,7 +170,9 @@ export class VotesCacheUseCase implements OnModuleInit, OnModuleDestroy {
           }
         }
       } catch (error) {
-        this.logger.warn(`[CACHE:WARN] Fallo en persistencia atómica Redis: ${error}`);
+        this.logger.warn(
+          `[CACHE:WARN] Fallo en persistencia atómica Redis: ${error}`,
+        );
       }
     }
 

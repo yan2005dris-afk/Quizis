@@ -50,9 +50,9 @@ describe('ComodinesService', () => {
   });
 
   it('obtenerSugerenciaIa should delegate to GetIaSuggestionUseCase', async () => {
-    const pregunta = 'test';
-    await service.obtenerSugerenciaIa(pregunta);
-    expect(getIaSuggestionUseCase.execute).toHaveBeenCalledWith(pregunta);
+    const preguntaId = 1;
+    await service.obtenerSugerenciaIa(preguntaId);
+    expect(getIaSuggestionUseCase.execute).toHaveBeenCalledWith(preguntaId);
   });
 
   it('seleccionarConsultorAleatorio should delegate to SelectRandomConsultantUseCase', async () => {

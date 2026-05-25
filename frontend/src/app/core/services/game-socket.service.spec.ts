@@ -80,9 +80,9 @@ describe('GameSocketService (observer extension)', () => {
       service.conectar('http://test.local', 'fake-token');
 
       const participantes: Participante[] = [
-        { id: '1', nombre: 'Alice', puntaje: 100 },
-        { id: '2', nombre: 'Bob', puntaje: 85 },
-        { id: '3', nombre: 'Charlie', puntaje: 72 },
+        { id: '1', nombre: 'Alice', puntaje: 100, rol: 'estudiante' },
+        { id: '2', nombre: 'Bob', puntaje: 85, rol: 'observador' },
+        { id: '3', nombre: 'Charlie', puntaje: 72, rol: 'admin' },
       ];
 
       const onCalls = mockSocket.on.mock.calls;

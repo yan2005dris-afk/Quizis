@@ -14,6 +14,7 @@ import * as ProcessVote from '../../juego/websockets/use-cases/process-audience-
 import * as SubmitAnswer from '../../juego/websockets/use-cases/submit-answer.use-case';
 import { SalasService } from '../../juego/salas/salas.service';
 import { RoomStateCacheUseCase } from '../cache/use-cases/room-state-cache.use-case';
+import { ParticipantsCacheUseCase } from '../cache/use-cases/participants-cache.use-case';
 
 @WebSocketGateway({ cors: { origin: '*' } })
 export class JuegoGateway implements OnGatewayConnection, OnGatewayDisconnect {
@@ -34,6 +35,7 @@ export class JuegoGateway implements OnGatewayConnection, OnGatewayDisconnect {
     private readonly websocketsService: WebsocketsService,
     private readonly salasService: SalasService,
     private readonly roomStateCache: RoomStateCacheUseCase,
+    private readonly participantsCache: ParticipantsCacheUseCase,
   ) {}
 
   handleConnection(client: Socket) {
@@ -48,9 +50,14 @@ export class JuegoGateway implements OnGatewayConnection, OnGatewayDisconnect {
         socketId: client.id,
       });
       this.socketMap.delete(client.id);
+
+      const participantesDb = await this.salasService.getParticipantsWithRoles(
+        info.tokenCompartido,
+        result.participants,
+      );
       this.server
         .to(result.tokenCompartido)
-        .emit('participantes', result.participants.map((n) => ({ id: n, nombre: n, puntaje: 0 })));
+        .emit('participantes', participantesDb);
     } else {
       this.logger.log(`Cliente desconectado sin registro previo: ${client.id}`);
     }
@@ -67,14 +74,57 @@ export class JuegoGateway implements OnGatewayConnection, OnGatewayDisconnect {
     });
 
     client.join(info.tokenCompartido);
-    this.socketMap.set(client.id, { tokenCompartido: info.tokenCompartido, nickname: info.nickname });
+    this.socketMap.set(client.id, {
+      tokenCompartido: info.tokenCompartido,
+      nickname: info.nickname,
+    });
 
-    this.server
-      .to(info.tokenCompartido)
-      .emit('participantes', info.participants.map((n) => ({ id: n, nombre: n, puntaje: 0 })));
+    const participantesDb = await this.salasService.getParticipantsWithRoles(
+      info.tokenCompartido,
+      info.participants,
+    );
+    this.server.to(info.tokenCompartido).emit('participantes', participantesDb);
 
-    const bloqueados = await this.roomStateCache.getBlockedComodines(info.tokenCompartido);
+    const bloqueados = await this.roomStateCache.getBlockedComodines(
+      info.tokenCompartido,
+    );
     client.emit('comodines_bloqueados', bloqueados);
+  }
+
+  @SubscribeMessage('cambiar_rol_participante')
+  async handleCambiarRolParticipante(
+    @MessageBody()
+    payload: {
+      tokenCompartido: string;
+      nickname: string;
+      nuevoRol: string;
+    },
+  ) {
+    try {
+      await this.salasService.updateParticipantRole(
+        payload.tokenCompartido,
+        payload.nickname,
+        payload.nuevoRol,
+      );
+
+      const onlineNicknames =
+        await this.participantsCache.getOnlineParticipants(
+          payload.tokenCompartido,
+        );
+      const participantesDb = await this.salasService.getParticipantsWithRoles(
+        payload.tokenCompartido,
+        onlineNicknames,
+      );
+
+      this.server
+        .to(payload.tokenCompartido)
+        .emit('participantes', participantesDb);
+
+      return { success: true };
+    } catch (e: any) {
+      this.logger.error(`Error cambiando rol:`, e);
+      return { success: false, message: 'Error al cambiar rol' };
+    }
   }
 
   @SubscribeMessage('audience:vote')
@@ -89,9 +139,9 @@ export class JuegoGateway implements OnGatewayConnection, OnGatewayDisconnect {
         return result;
       }
 
-      this.server.to(result.data!.tokenCompartido).emit('voto_recibido', {
-        participanteId: result.data!.participanteId,
-      });
+      this.server
+        .to(result.data!.tokenCompartido)
+        .emit('voto_recibido', result.distribucion);
 
       return result;
     } catch (error) {
@@ -188,6 +238,31 @@ export class JuegoGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
   }
 
+  @SubscribeMessage('reiniciar_ronda')
+  async handleReiniciarRonda(
+    @MessageBody() payload: { tokenCompartido: string; rondaActiva: any },
+  ) {
+    this.logger.log(
+      `[WS:REINICIAR_RONDA] Recibido para token=${payload.tokenCompartido}`,
+    );
+    try {
+      await this.roomStateCache.clearRoundState(payload.tokenCompartido);
+      this.logger.log(`[WS:REINICIAR_RONDA] Redis limpiado`);
+
+      this.server.to(payload.tokenCompartido).emit('ronda_reiniciada', {
+        rondaActiva: payload.rondaActiva,
+      });
+      this.logger.log(
+        `[WS:REINICIAR_RONDA] Broadcast ronda_reiniciada emitido a sala ${payload.tokenCompartido}`,
+      );
+
+      return { success: true };
+    } catch (error) {
+      this.logger.error(`[WS:REINICIAR_RONDA] Error:`, error);
+      return { success: false, message: 'No se pudo reiniciar la ronda.' };
+    }
+  }
+
   // REENVÍO DE EVENTOS DE CICLO DE VIDA (Relays)
 
   @SubscribeMessage('sala_creada')
@@ -241,7 +316,10 @@ export class JuegoGateway implements OnGatewayConnection, OnGatewayDisconnect {
       tipoComodin: string;
     },
   ) {
-    await this.roomStateCache.addBlockedComodin(payload.tokenCompartido, payload.tipoComodin);
+    await this.roomStateCache.addBlockedComodin(
+      payload.tokenCompartido,
+      payload.tipoComodin,
+    );
     this.server.to(payload.tokenCompartido).emit('comodin_bloqueado', payload);
   }
 }

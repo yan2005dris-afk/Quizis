@@ -121,6 +121,19 @@ export class GameSocketService {
     this.socket.on('info_ronda', (data: RondaInfo) => {
       this.infoRonda.set(data);
     });
+
+    this.socket.on('ronda_reiniciada', (data: any) => {
+      console.log('[WS:ronda_reiniciada] Evento recibido', data);
+      this.preguntaActiva.set(null);
+      this.ultimoResultado.set(null);
+      this.tiempoRestante.set(null);
+      this.votosPublico.set(null);
+      this.comodinBloqueado.set([]);
+      console.log(
+        '[WS:ronda_reiniciada] Signals reseteados. comodinBloqueado=',
+        this.comodinBloqueado(),
+      );
+    });
   }
 
   // Permite inicializar el estado desde datos HTTP
@@ -172,14 +185,41 @@ export class GameSocketService {
     this.socket?.emit('responder_pregunta', payload);
   }
 
+  // Emitir voto del público (Solo Observador)
+  emitirVoto(payload: {
+    salaId: number;
+    rondaId: number;
+    tokenCompartido: string;
+    preguntaId: number;
+    participanteId: number;
+    opcionId: number;
+  }): void {
+    this.socket?.emit('audience:vote', payload);
+  }
+
   // Cambiar estado sala (Solo Admin)
   cambiarEstadoSala(tokenCompartido: string, habilitada: boolean): void {
     this.socket?.emit('cambiar_estado_sala', { tokenCompartido, habilitada });
   }
 
+  // Cambiar rol participante (Solo Admin)
+  cambiarRolParticipante(
+    tokenCompartido: string,
+    nickname: string,
+    nuevoRol: 'estudiante' | 'observador',
+  ): void {
+    this.socket?.emit('cambiar_rol_participante', { tokenCompartido, nickname, nuevoRol });
+  }
+
   // Notificar uso de comodín para bloquearlo (Broadcast)
   bloquearComodin(tokenCompartido: string, tipoComodin: string): void {
     this.socket?.emit('comodin_bloqueado', { tokenCompartido, tipoComodin });
+  }
+
+  // Reiniciar ronda (Solo Host/Admin)
+  reiniciarRonda(tokenCompartido: string, rondaActiva: any): void {
+    console.log('[WS:emit:reiniciar_ronda] Emitiendo a token=', tokenCompartido);
+    this.socket?.emit('reiniciar_ronda', { tokenCompartido, rondaActiva });
   }
 
   // Cierra la conexión limpiamente

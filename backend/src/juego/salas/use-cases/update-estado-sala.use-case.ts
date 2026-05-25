@@ -43,6 +43,54 @@ export class UpdateEstadoSalaUseCase {
 
     await this.roomStateCache.setRoomEstado(sala.tokenCompartido, nuevoEstado);
 
+    if (nuevoEstado === EstadoSala.EN_VIVO) {
+      await this.ensureRondaActiva(
+        sala.salaId,
+        sala.bancoId,
+        sala.limitePreguntas,
+      );
+    }
+
     return { salaId: sala.salaId, estado: nuevoEstado };
+  }
+
+  private async ensureRondaActiva(
+    salaId: number,
+    bancoId: number,
+    limitePreguntas: number,
+  ): Promise<void> {
+    const existing = await this.prisma.rondas.findFirst({
+      where: { salaId, estado: 'jugando' },
+    });
+    if (existing) return;
+
+    const participante =
+      (await this.prisma.participantes.findFirst({
+        where: { salaId, deletedAt: null, rol: 'estudiante' },
+      })) ??
+      (await this.prisma.participantes.findFirst({
+        where: { salaId, deletedAt: null },
+      }));
+
+    if (!participante) return;
+
+    const preguntas = await this.prisma.preguntas.findMany({
+      where: { bancoId },
+      take: limitePreguntas,
+      orderBy: { nivel: 'asc' },
+    });
+
+    if (preguntas.length === 0) return;
+
+    await this.prisma.rondas.create({
+      data: {
+        salaId,
+        participanteId: participante.participanteId,
+        numeroRonda: 1,
+        estado: 'jugando',
+        preguntasAsignadas: preguntas.map((p) => p.preguntaId),
+        fechaInicio: new Date(),
+      },
+    });
   }
 }

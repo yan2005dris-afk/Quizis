@@ -10,7 +10,12 @@ import {
 import { ActivatedRoute } from '@angular/router';
 import { GameSocketService, Pregunta } from '../../../../core/services/game-socket.service';
 import { AuthService } from '../../../../core/services/auth.service';
-import { SalasService, ComodinSala, SalaDetalle, EstadoSala } from '../../../../core/services/salas.service';
+import {
+  SalasService,
+  ComodinSala,
+  SalaDetalle,
+  EstadoSala,
+} from '../../../../core/services/salas.service';
 import { ChatBoxComponent } from '../../components/chat-box/chat-box.component';
 import { EventHeaderComponent } from '../../components/event-header/event-header.component';
 import { EventFeedComponent } from '../../components/event-feed/event-feed.component';
@@ -27,6 +32,7 @@ import {
   Power,
   Square,
   CirclePause,
+  RotateCcw,
 } from 'lucide-angular';
 import { environment } from '../../../../../environments/environment';
 
@@ -62,6 +68,7 @@ export class RoomComponent implements OnInit, OnDestroy {
   protected readonly cambiandoEstado = signal(false);
   protected readonly linkCopiado = signal(false);
   protected readonly confirmandoFinalizar = signal(false);
+  protected readonly reiniciandoRonda = signal(false);
 
   // Lucide icons
   protected readonly UsersIcon = Users;
@@ -73,6 +80,7 @@ export class RoomComponent implements OnInit, OnDestroy {
   protected readonly PowerIcon = Power;
   protected readonly StopIcon = Square;
   protected readonly PauseIcon = CirclePause;
+  protected readonly RestartIcon = RotateCcw;
 
   protected readonly preguntaActiva = this.gameSocket.preguntaActiva;
   protected readonly tiempoRestante = this.gameSocket.tiempoRestante;
@@ -88,6 +96,18 @@ export class RoomComponent implements OnInit, OnDestroy {
   protected readonly isEsperando = computed(() => this.estadoSala() === 'ESPERANDO_ALUMNOS');
 
   protected readonly isBorrador = computed(() => this.estadoSala() === 'BORRADOR');
+
+  protected readonly miNickname = computed(() => {
+    if (this.isHost()) return `Host-${this.salaDetalle()?.nombre}`;
+    const participantInfo = JSON.parse(localStorage.getItem('participantInfo') ?? '{}');
+    return participantInfo.nickname;
+  });
+
+  protected readonly miRol = computed(() => {
+    if (this.isHost()) return 'host';
+    const p = this.gameSocket.participantes().find((x) => x.nombre === this.miNickname());
+    return p?.rol || 'observador';
+  });
 
   protected readonly canReleaseNext = computed(() => {
     if (!this.isHost() || this.isFinalizado()) return false;
@@ -135,8 +155,7 @@ export class RoomComponent implements OnInit, OnDestroy {
           infoRonda: sala.rondaActiva
             ? {
                 ronda: sala.rondaActiva.numeroRonda,
-                totalRondas:
-                  sala.rondaActiva.historialPreguntas?.length || sala.limitePreguntas,
+                totalRondas: sala.rondaActiva.historialPreguntas?.length || sala.limitePreguntas,
                 premio: '$0',
               }
             : null,
@@ -150,9 +169,7 @@ export class RoomComponent implements OnInit, OnDestroy {
 
         const interval = setInterval(() => {
           if (this.gameSocket.conectado()) {
-            const participantInfo = JSON.parse(
-              localStorage.getItem('participantInfo') ?? '{}',
-            );
+            const participantInfo = JSON.parse(localStorage.getItem('participantInfo') ?? '{}');
             const nickname = this.isHost()
               ? `Host-${sala.nombre}`
               : (participantInfo.nickname ?? `Estudiante-${Math.floor(Math.random() * 1000)}`);
@@ -219,9 +236,7 @@ export class RoomComponent implements OnInit, OnDestroy {
     this.regenerandoToken.set(true);
     this.salasService.regenerarToken(sala.salaId).subscribe({
       next: (res) => {
-        this.salaDetalle.update((s) =>
-          s ? { ...s, tokenCompartido: res.tokenCompartido } : null,
-        );
+        this.salaDetalle.update((s) => (s ? { ...s, tokenCompartido: res.tokenCompartido } : null));
         this.tokenInvitacion.set(res.tokenInvitacion);
         this.regenerandoToken.set(false);
         this.tokenRegenerado.set(true);
@@ -280,12 +295,24 @@ export class RoomComponent implements OnInit, OnDestroy {
     const sala = this.salaDetalle();
     const pregunta = this.preguntaActiva();
     if (sala?.rondaActiva && pregunta) {
-      this.gameSocket.responderPregunta({
-        tokenCompartido: sala.tokenCompartido,
-        rondaId: sala.rondaActiva.rondaId,
-        preguntaId: pregunta.preguntaId,
-        opcionId,
-      });
+      if (this.miRol() === 'estudiante') {
+        this.gameSocket.responderPregunta({
+          tokenCompartido: sala.tokenCompartido,
+          rondaId: sala.rondaActiva.rondaId,
+          preguntaId: pregunta.preguntaId,
+          opcionId,
+        });
+      } else if (this.miRol() === 'observador') {
+        const participantInfo = JSON.parse(localStorage.getItem('participantInfo') ?? '{}');
+        this.gameSocket.emitirVoto({
+          salaId: sala.salaId,
+          rondaId: sala.rondaActiva.rondaId,
+          tokenCompartido: sala.tokenCompartido,
+          preguntaId: pregunta.preguntaId,
+          participanteId: participantInfo.id || 0, // Necesita ID real, si no lo tiene, fallará. El id debería venir del backend.
+          opcionId,
+        });
+      }
     }
   }
 
@@ -301,5 +328,59 @@ export class RoomComponent implements OnInit, OnDestroy {
 
   public onEnviarMensaje(event: { texto: string; tipo: 'mensaje' | 'sugerencia' }): void {
     this.gameSocket.enviarMensaje(event.texto, event.tipo);
+  }
+
+  public onToggleRol(event: { nickname: string; nuevoRol: 'estudiante' | 'observador' }): void {
+    const sala = this.salaDetalle();
+    if (!sala) return;
+    this.gameSocket.cambiarRolParticipante(sala.tokenCompartido, event.nickname, event.nuevoRol);
+  }
+
+  public onReiniciarRonda(): void {
+    const sala = this.salaDetalle();
+    if (!sala || this.reiniciandoRonda()) return;
+
+    console.log('[REINICIAR] Iniciando HTTP POST para salaId=', sala.salaId);
+    this.reiniciandoRonda.set(true);
+    this.salasService.reiniciarRonda(sala.salaId).subscribe({
+      next: (res) => {
+        console.log(
+          '[REINICIAR] HTTP OK. estado=',
+          res.estado,
+          'rondaId=',
+          res.rondaActiva?.rondaId,
+        );
+
+        // Reset local state immediately — don't wait for WS echo
+        this.gameSocket.preguntaActiva.set(null);
+        this.gameSocket.ultimoResultado.set(null);
+        this.gameSocket.tiempoRestante.set(null);
+        this.gameSocket.votosPublico.set(null);
+        this.gameSocket.comodinBloqueado.set([]);
+        console.log(
+          '[REINICIAR] Signals reseteados. comodinBloqueado=',
+          this.gameSocket.comodinBloqueado(),
+        );
+
+        this.salaDetalle.update((s) =>
+          s ? { ...s, estado: res.estado, rondaActiva: res.rondaActiva } : s,
+        );
+        console.log('[REINICIAR] salaDetalle.estado=', this.salaDetalle()?.estado);
+
+        this.salasService.obtenerComodines(sala.salaId).subscribe({
+          next: (comodines) => this.comodines.set(comodines),
+          error: (err) =>
+            console.error('[REINICIAR] Error recargando comodines:', err),
+        });
+
+        // Broadcast to other clients via WS
+        this.gameSocket.reiniciarRonda(sala.tokenCompartido, res.rondaActiva);
+        this.reiniciandoRonda.set(false);
+      },
+      error: (err) => {
+        console.error('[REINICIAR] Error HTTP:', err);
+        this.reiniciandoRonda.set(false);
+      },
+    });
   }
 }

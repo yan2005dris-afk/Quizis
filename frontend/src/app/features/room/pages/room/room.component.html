@@ -1,5 +1,4 @@
 <div class="room">
-
   <!-- Auth banner for public viewers -->
   @if (!auth.isAuthenticated() && !gameSocket.conectado()) {
     <div class="room__auth-banner" role="status">
@@ -16,7 +15,6 @@
   <!-- ─── Host Admin Panel ─────────────────────────────────────── -->
   @if (isHost()) {
     <div class="room__admin-panel" aria-label="Panel de administración de sala">
-
       <!-- Estado + transiciones -->
       <section class="room__admin-section" aria-labelledby="estado-heading">
         <h2 id="estado-heading" class="room__admin-section-title">Estado de la sala</h2>
@@ -30,11 +28,21 @@
             aria-live="polite"
           >
             @switch (estadoSala()) {
-              @case ('BORRADOR') { Borrador }
-              @case ('ESPERANDO_ALUMNOS') { Esperando alumnos }
-              @case ('EN_VIVO') { En vivo }
-              @case ('FINALIZADO') { Finalizado }
-              @default { — }
+              @case ('BORRADOR') {
+                Borrador
+              }
+              @case ('ESPERANDO_ALUMNOS') {
+                Esperando alumnos
+              }
+              @case ('EN_VIVO') {
+                En vivo
+              }
+              @case ('FINALIZADO') {
+                Finalizado
+              }
+              @default {
+                —
+              }
             }
           </span>
 
@@ -76,6 +84,20 @@
                 ></lucide-icon>
                 {{ gameSocket.salaHabilitada() ? 'Pausar sala' : 'Reanudar sala' }}
               </button>
+              <button
+                class="room__btn room__btn--secondary"
+                [disabled]="reiniciandoRonda()"
+                (click)="onReiniciarRonda()"
+                aria-label="Reiniciar ronda"
+              >
+                <lucide-icon
+                  [img]="RestartIcon"
+                  size="14"
+                  aria-hidden="true"
+                  [class.room__icon--spinning]="reiniciandoRonda()"
+                ></lucide-icon>
+                {{ reiniciandoRonda() ? 'Reiniciando...' : 'Reiniciar ronda' }}
+              </button>
             }
           </div>
         </div>
@@ -92,7 +114,11 @@
             [attr.aria-label]="linkCopiado() ? 'Link copiado' : 'Copiar link de invitación'"
             aria-live="polite"
           >
-            <lucide-icon [img]="linkCopiado() ? CheckIcon : CopyIcon" size="14" aria-hidden="true"></lucide-icon>
+            <lucide-icon
+              [img]="linkCopiado() ? CheckIcon : CopyIcon"
+              size="14"
+              aria-hidden="true"
+            ></lucide-icon>
             {{ linkCopiado() ? 'Copiado' : 'Copiar link' }}
           </button>
           <button
@@ -116,8 +142,14 @@
 
       <!-- Finalizar sala (destructivo) -->
       @if (!isFinalizado()) {
-        <section class="room__admin-section room__admin-section--danger" aria-labelledby="finalizar-heading">
-          <h2 id="finalizar-heading" class="room__admin-section-title room__admin-section-title--danger">
+        <section
+          class="room__admin-section room__admin-section--danger"
+          aria-labelledby="finalizar-heading"
+        >
+          <h2
+            id="finalizar-heading"
+            class="room__admin-section-title room__admin-section-title--danger"
+          >
             Finalizar
           </h2>
           @if (!confirmandoFinalizar()) {
@@ -131,7 +163,12 @@
               Finalizar sala
             </button>
           } @else {
-            <div class="room__confirm-block" role="alertdialog" aria-labelledby="confirm-msg" aria-modal="false">
+            <div
+              class="room__confirm-block"
+              role="alertdialog"
+              aria-labelledby="confirm-msg"
+              aria-modal="false"
+            >
               <p id="confirm-msg" class="room__confirm-msg">
                 Esta acción es irreversible. ¿Cerrar la sala definitivamente?
               </p>
@@ -156,14 +193,12 @@
           }
         </section>
       }
-
     </div>
   }
 
   <!-- ─── Main Layout ────────────────────────────────────────────── -->
   <div class="room__layout">
     <div class="room__left">
-
       @if (isHost()) {
         <div class="room__host-actions">
           <button
@@ -197,6 +232,7 @@
           null
         "
         [votosPublico]="gameSocket.votosPublico()"
+        [tiempoRestante]="gameSocket.tiempoRestante()"
         [comodinBloqueado]="gameSocket.comodinBloqueado()"
         [comodines]="comodines()"
         [tokenCompartido]="salaDetalle()?.tokenCompartido || ''"
@@ -236,7 +272,12 @@
       <div class="room__tab-content" role="tabpanel">
         @if (activeTab() === 'publico') {
           <app-event-feed [eventos]="gameSocket.eventosSala()" />
-          <app-participants-list [participantes]="gameSocket.participantes()" />
+          <app-participants-list
+            [participantes]="gameSocket.participantes()"
+            [isHost]="isHost()"
+            [isEsperando]="isEsperando()"
+            (toggleRol)="onToggleRol($event)"
+          />
         } @else {
           <app-chat-box
             [mensajes]="gameSocket.mensajesChat()"

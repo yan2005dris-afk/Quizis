@@ -1,5 +1,6 @@
 import type { TestingModule } from '@nestjs/testing';
 import { Test } from '@nestjs/testing';
+jest.mock('uuid', () => ({ v4: jest.fn(() => 'mock-uuid') }));
 import { SalasController } from './salas.controller';
 import { SalasService } from './salas.service';
 import { EstadoSala } from './dto/update-estado-sala.dto';
@@ -13,7 +14,7 @@ describe('SalasController', () => {
     updateEstado: jest.fn(),
     validateToken: jest.fn(),
     listBancosDisponibles: jest.fn(),
-    findOne: jest.fn(),
+    obtenerPorId: jest.fn(),
     updateConfiguracion: jest.fn(),
   };
 
@@ -98,8 +99,8 @@ describe('SalasController', () => {
     });
   });
 
-  describe('findOne', () => {
-    it('debería llamar a salasService.findOne con el ID', async () => {
+  describe('obtenerPorId', () => {
+    it('debería llamar a salasService.obtenerPorId con el ID o token', async () => {
       const expectedResult = {
         salaId: 1,
         nombre: 'Sala de Prueba',
@@ -107,12 +108,12 @@ describe('SalasController', () => {
         comodines: [],
       };
 
-      mockSalasService.findOne.mockResolvedValue(expectedResult);
+      mockSalasService.obtenerPorId.mockResolvedValue(expectedResult);
 
-      const result = await controller.findOne(1);
+      const result = await controller.obtenerPorId('1');
 
       expect(result).toEqual(expectedResult);
-      expect(service.findOne).toHaveBeenCalledWith(1);
+      expect(service.obtenerPorId).toHaveBeenCalledWith('1');
     });
   });
 

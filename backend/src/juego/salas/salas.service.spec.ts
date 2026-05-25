@@ -1,5 +1,6 @@
 import type { TestingModule } from '@nestjs/testing';
 import { Test } from '@nestjs/testing';
+jest.mock('uuid', () => ({ v4: jest.fn(() => 'mock-uuid') }));
 import { SalasService } from './salas.service';
 import { CreateSalaUseCase } from './use-cases/create-sala.use-case';
 import { UpdateEstadoSalaUseCase } from './use-cases/update-estado-sala.use-case';
@@ -7,6 +8,15 @@ import { ValidateTokenSalaUseCase } from './use-cases/validate-token-sala.use-ca
 import { ListBancosDisponiblesUseCase } from './use-cases/list-bancos-disponibles.use-case';
 import { GetSalaDetailsUseCase } from './use-cases/get-sala-details.use-case';
 import { UpdateConfiguracionSalaUseCase } from './use-cases/update-configuracion-sala.use-case';
+import { ListAllSalasUseCase } from './use-cases/list-all-salas.use-case';
+import { GetSalaLifelinesUseCase } from './use-cases/get-sala-lifelines.use-case';
+import { RegenerateRoomTokenUseCase } from './use-cases/regenerate-room-token.use-case';
+import { FinalizeRoomUseCase } from './use-cases/finalize-room.use-case';
+import { JoinSalaUseCase } from './use-cases/join-sala.use-case';
+import { GetInvitacionTokenUseCase } from './use-cases/get-invitacion-token.use-case';
+import { UpdateParticipantRoleUseCase } from './use-cases/update-participant-role.use-case';
+import { GetParticipantsWithRolesUseCase } from './use-cases/get-participants-with-roles.use-case';
+import { RestartRoundUseCase } from './use-cases/restart-round.use-case';
 import { EstadoSala } from './dto/update-estado-sala.dto';
 
 describe('SalasService', () => {
@@ -17,6 +27,15 @@ describe('SalasService', () => {
   let listBancosDisponiblesUseCase: ListBancosDisponiblesUseCase;
   let getSalaDetailsUseCase: GetSalaDetailsUseCase;
   let updateConfiguracionSalaUseCase: UpdateConfiguracionSalaUseCase;
+  let listAllSalasUseCase: ListAllSalasUseCase;
+  let getSalaLifelinesUseCase: GetSalaLifelinesUseCase;
+  let regenerateRoomTokenUseCase: RegenerateRoomTokenUseCase;
+  let finalizeRoomUseCase: FinalizeRoomUseCase;
+  let joinSalaUseCase: JoinSalaUseCase;
+  let getInvitacionTokenUseCase: GetInvitacionTokenUseCase;
+  let updateParticipantRoleUseCase: UpdateParticipantRoleUseCase;
+  let getParticipantsWithRolesUseCase: GetParticipantsWithRolesUseCase;
+  let restartRoundUseCase: RestartRoundUseCase;
 
   const mockCreateSalaUseCase = {
     execute: jest.fn(),
@@ -42,8 +61,43 @@ describe('SalasService', () => {
     execute: jest.fn(),
   };
 
+  const mockListAllSalasUseCase = {
+    execute: jest.fn(),
+  };
+
+  const mockGetSalaLifelinesUseCase = {
+    execute: jest.fn(),
+  };
+
+  const mockRegenerateRoomTokenUseCase = {
+    execute: jest.fn(),
+  };
+
+  const mockFinalizeRoomUseCase = {
+    execute: jest.fn(),
+  };
+
+  const mockJoinSalaUseCase = {
+    execute: jest.fn(),
+  };
+
+  const mockGetInvitacionTokenUseCase = {
+    execute: jest.fn(),
+  };
+
+  const mockUpdateParticipantRoleUseCase = {
+    execute: jest.fn(),
+  };
+
+  const mockGetParticipantsWithRolesUseCase = {
+    execute: jest.fn(),
+  };
+
+  const mockRestartRoundUseCase = {
+    execute: jest.fn(),
+  };
+
   beforeEach(async () => {
-    const module: TestingModule = await Test.createTestingModule({
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         SalasService,
@@ -68,6 +122,42 @@ describe('SalasService', () => {
           provide: UpdateConfiguracionSalaUseCase,
           useValue: mockUpdateConfiguracionSalaUseCase,
         },
+        {
+          provide: ListAllSalasUseCase,
+          useValue: mockListAllSalasUseCase,
+        },
+        {
+          provide: GetSalaLifelinesUseCase,
+          useValue: mockGetSalaLifelinesUseCase,
+        },
+        {
+          provide: RegenerateRoomTokenUseCase,
+          useValue: mockRegenerateRoomTokenUseCase,
+        },
+        {
+          provide: FinalizeRoomUseCase,
+          useValue: mockFinalizeRoomUseCase,
+        },
+        {
+          provide: JoinSalaUseCase,
+          useValue: mockJoinSalaUseCase,
+        },
+        {
+          provide: GetInvitacionTokenUseCase,
+          useValue: mockGetInvitacionTokenUseCase,
+        },
+        {
+          provide: UpdateParticipantRoleUseCase,
+          useValue: mockUpdateParticipantRoleUseCase,
+        },
+        {
+          provide: GetParticipantsWithRolesUseCase,
+          useValue: mockGetParticipantsWithRolesUseCase,
+        },
+        {
+          provide: RestartRoundUseCase,
+          useValue: mockRestartRoundUseCase,
+        },
       ],
     }).compile();
 
@@ -88,6 +178,26 @@ describe('SalasService', () => {
     updateConfiguracionSalaUseCase = module.get<UpdateConfiguracionSalaUseCase>(
       UpdateConfiguracionSalaUseCase,
     );
+    listAllSalasUseCase = module.get<ListAllSalasUseCase>(ListAllSalasUseCase);
+    getSalaLifelinesUseCase = module.get<GetSalaLifelinesUseCase>(
+      GetSalaLifelinesUseCase,
+    );
+    regenerateRoomTokenUseCase = module.get<RegenerateRoomTokenUseCase>(
+      RegenerateRoomTokenUseCase,
+    );
+    finalizeRoomUseCase = module.get<FinalizeRoomUseCase>(FinalizeRoomUseCase);
+    joinSalaUseCase = module.get<JoinSalaUseCase>(JoinSalaUseCase);
+    getInvitacionTokenUseCase = module.get<GetInvitacionTokenUseCase>(
+      GetInvitacionTokenUseCase,
+    );
+    updateParticipantRoleUseCase = module.get<UpdateParticipantRoleUseCase>(
+      UpdateParticipantRoleUseCase,
+    );
+    getParticipantsWithRolesUseCase =
+      module.get<GetParticipantsWithRolesUseCase>(
+        GetParticipantsWithRolesUseCase,
+      );
+    restartRoundUseCase = module.get<RestartRoundUseCase>(RestartRoundUseCase);
     jest.clearAllMocks();
   });
 

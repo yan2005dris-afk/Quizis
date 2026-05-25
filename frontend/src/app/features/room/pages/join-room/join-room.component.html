@@ -17,7 +17,9 @@
       } @else if (error()) {
         <app-alert type="danger" [message]="error() || ''" />
         <div class="mt-4">
-          <app-button variant="ghost" routerLink="/login" class="w-full">Volver al inicio</app-button>
+          <app-button variant="ghost" routerLink="/login" class="w-full"
+            >Volver al inicio</app-button
+          >
         </div>
       } @else if (salaInfo()) {
         <div class="sala-info">
@@ -32,7 +34,7 @@
             [(ngModel)]="nickname"
             [disabled]="isLoading()"
           />
-          
+
           <p class="join-form__hint">
             Este nombre será visible para el presentador y el resto de la audiencia.
           </p>

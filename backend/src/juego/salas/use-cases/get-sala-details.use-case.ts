@@ -1,10 +1,7 @@
-import {
-  Injectable,
-  Logger,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../../infrastructure/database/prisma/prisma.service';
 import { ParticipantsCacheUseCase } from '../../../infrastructure/cache/use-cases/participants-cache.use-case';
+import { RoomStateCacheUseCase } from '../../../infrastructure/cache/use-cases/room-state-cache.use-case';
 
 /**
  * Caso de uso: Obtener los detalles completos de una sala de juego.
@@ -19,6 +16,7 @@ export class GetSalaDetailsUseCase {
   constructor(
     private readonly prisma: PrismaService,
     private readonly cacheService: ParticipantsCacheUseCase,
+    private readonly roomStateCache: RoomStateCacheUseCase,
   ) {}
 
   /**
@@ -114,7 +112,13 @@ export class GetSalaDetailsUseCase {
         .filter((p) => p !== null);
     }
 
-    // 3. Obtener estado online desde Redis
+    // 3. Estado real desde Redis (sobrescribe Postgres que puede estar desactualizado)
+    const estadoRedis = await this.roomStateCache.getRoomEstado(
+      sala.tokenCompartido,
+    );
+    const estadoActual = (estadoRedis ?? sala.estado) as string;
+
+    // 4. Obtener estado online desde Redis
     const onlineNicknames = await this.cacheService.getOnlineParticipants(
       sala.tokenCompartido,
     );
@@ -126,12 +130,12 @@ export class GetSalaDetailsUseCase {
       adminId: sala.adminId,
       bancoId: sala.bancoId,
       nombre: sala.nombre,
-      estado: sala.estado,
+      estado: estadoActual,
       limitePreguntas: sala.limitePreguntas,
       tokenCompartido: sala.tokenCompartido,
       totalParticipantes: sala.totalParticipantes,
       createdAt: sala.createdAt,
-      
+
       participantes: sala.participantes.map((p) => ({
         participanteId: p.participanteId,
         nickname: p.nickname,

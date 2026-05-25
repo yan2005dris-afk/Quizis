@@ -8,7 +8,17 @@ import { RoomStateCacheUseCase } from './use-cases/room-state-cache.use-case';
 @Global()
 @Module({
   imports: [RedisModule],
-  providers: [CacheService, VotesCacheUseCase, ParticipantsCacheUseCase, RoomStateCacheUseCase],
-  exports: [CacheService, VotesCacheUseCase, ParticipantsCacheUseCase, RoomStateCacheUseCase],
+  providers: [
+    CacheService,
+    VotesCacheUseCase,
+    ParticipantsCacheUseCase,
+    RoomStateCacheUseCase,
+  ],
+  exports: [
+    CacheService,
+    VotesCacheUseCase,
+    ParticipantsCacheUseCase,
+    RoomStateCacheUseCase,
+  ],
 })
 export class CacheModule {}

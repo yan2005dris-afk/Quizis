@@ -8,10 +8,12 @@ export class ToggleRoomEnabledUseCase {
   constructor(private readonly cacheService: RoomStateCacheUseCase) {}
 
   async execute(tokenCompartido: string, enabled: boolean) {
-    this.logger.log(`Cambiando estado de sala ${tokenCompartido} a: ${enabled ? 'Habilitada' : 'Deshabilitada'}`);
+    this.logger.log(
+      `Cambiando estado de sala ${tokenCompartido} a: ${enabled ? 'Habilitada' : 'Deshabilitada'}`,
+    );
 
     await this.cacheService.setRoomEnabled(tokenCompartido, enabled);
-    
+
     return {
       success: true,
       enabled,

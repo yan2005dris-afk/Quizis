@@ -13,6 +13,9 @@ import { GetSalaDetailsUseCase } from './use-cases/get-sala-details.use-case';
 import { UpdateConfiguracionSalaUseCase } from './use-cases/update-configuracion-sala.use-case';
 import { JoinSalaUseCase } from './use-cases/join-sala.use-case';
 import { GetInvitacionTokenUseCase } from './use-cases/get-invitacion-token.use-case';
+import { UpdateParticipantRoleUseCase } from './use-cases/update-participant-role.use-case';
+import { GetParticipantsWithRolesUseCase } from './use-cases/get-participants-with-roles.use-case';
+import { RestartRoundUseCase } from './use-cases/restart-round.use-case';
 import { AuthModule } from '../../identity/auth/auth.module';
 import { CacheModule } from '../../infrastructure/cache/cache.module';
 
@@ -33,6 +36,9 @@ import { CacheModule } from '../../infrastructure/cache/cache.module';
     UpdateConfiguracionSalaUseCase,
     JoinSalaUseCase,
     GetInvitacionTokenUseCase,
+    UpdateParticipantRoleUseCase,
+    GetParticipantsWithRolesUseCase,
+    RestartRoundUseCase,
   ],
   exports: [SalasService],
 })

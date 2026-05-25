@@ -96,7 +96,9 @@ describe('RoomComponent', () => {
     const rondaInfo: RondaInfo = { ronda: 2, totalRondas: 8, premio: '$2000' };
     gameSocket.infoRonda.set(rondaInfo);
 
-    const participantes: Participante[] = [{ id: '1', nombre: 'Alice', puntaje: 100 }];
+    const participantes: Participante[] = [
+      { id: '1', nombre: 'Alice', puntaje: 100, rol: 'observador' },
+    ];
     gameSocket.participantes.set(participantes);
 
     fixture.detectChanges();

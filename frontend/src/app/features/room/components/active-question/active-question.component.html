@@ -1,12 +1,19 @@
 <div class="active-question-container">
   @if (preguntaMostrada(); as p) {
-    
     <div class="active-question">
-      
       <div class="active-question__header">
-        <p class="active-question__status">
-          {{ statusText() }}
-        </p>
+        <div class="active-question__status-group">
+          <p class="active-question__status">
+            {{ statusText() }}
+          </p>
+
+          <!-- Temporizador visual -->
+          @if (tiempoRestante(); as t) {
+            <div class="active-question__timer" [class.active-question__timer--low]="t <= 5">
+              ⏱️ {{ t }}s
+            </div>
+          }
+        </div>
 
         <div class="active-question__pagination">
           <button
@@ -38,9 +45,13 @@
           <div
             class="active-question__option"
             [class.active-question__option--correct]="opcion.esCorrecta === true"
-            [class.active-question__option--incorrect]="opcion.esCorrecta === false && opcion.fueElegida"
+            [class.active-question__option--incorrect]="
+              opcion.esCorrecta === false && opcion.fueElegida
+            "
             [class.active-question__option--selected]="opcion.fueElegida || opcion.estaPendiente"
-            [style.cursor]="interactive() && !p.respuestaDada && !localSelectedId() ? 'pointer' : 'default'"
+            [style.cursor]="
+              interactive() && !p.respuestaDada && !localSelectedId() ? 'pointer' : 'default'
+            "
             (click)="onOpcionClick(opcion.id)"
           >
             <div class="active-question__option-top">
@@ -64,15 +75,23 @@
             @if (opcion.fueElegida || opcion.estaPendiente) {
               <span class="active-question__choice-label">
                 @if (opcion.estaPendiente) {
-                    Enviando respuesta...
+                  Enviando respuesta...
                 } @else {
-                    {{ opcion.esCorrecta ? '✓ Respuesta Correcta' : '✗ Elegida por el concursante' }}
+                  {{ opcion.esCorrecta ? '✓ Respuesta Correcta' : '✗ Elegida por el concursante' }}
                 }
               </span>
             }
           </div>
         }
       </div>
+
+      <!-- Resultados del Público (Shared Component) -->
+      @if (comodinPublicoActivo()) {
+        <div class="active-question__audience-results">
+          <p class="active-question__wildcards-label">RESULTADOS DEL PÚBLICO</p>
+          <app-audience-bars [votos]="votosPublico()" />
+        </div>
+      }
 
       <!-- Sugerencia IA -->
       @if (iaSugerencia(); as sug) {
@@ -82,7 +101,8 @@
             <span>Sugerencia de la IA</span>
           </div>
           <p class="active-question__ia-content">
-            La IA sugiere la opción <strong>{{ sug.literal }}</strong>.
+            La IA sugiere la opción <strong>{{ sug.literal }}</strong
+            >.
           </p>
           <p class="active-question__ia-explanation">{{ sug.explicacion }}</p>
         </div>
@@ -90,22 +110,28 @@
 
       <div class="active-question__wildcards">
         <p class="active-question__wildcards-label">COMODINES EN ESTA RONDA</p>
-        
+
         <div class="active-question__wildcards-list">
           @for (comodin of comodines(); track comodin.nombre) {
-            <div
-              class="active-question__wildcard"
-              [class.active-question__wildcard--active]="(comodin.nombre === 'PUBLICO' && comodinPublicoActivo()) || (comodin.nombre === 'IA' && iaSugerencia())"
-              [class.active-question__wildcard--disabled]="!comodin.activo || comodinBloqueado().includes(comodin.nombre) || (comodin.nombre === 'IA' && cargandoIa())"
-              [title]="comodin.descripcion"
-              (click)="onComodinClick(comodin)"
-            >
-              @if (comodin.nombre === 'IA' && cargandoIa()) {
-                <lucide-icon [img]="LoaderIcon" size="14" class="active-question__spin"></lucide-icon>
-              } @else {
+            <div class="active-question__wildcard-item">
+              <app-button
+                [variant]="comodin.nombre === 'IA' ? 'ai' : 'secondary'"
+                size="sm"
+                [disabled]="!comodin.activo || isComodinUsado(comodin)"
+                [loading]="comodin.nombre === 'IA' && cargandoIa()"
+                (clicked)="onComodinClick(comodin)"
+                [title]="comodin.descripcion + ' · ' + getComodinEstadoTexto(comodin)"
+              >
                 <span class="active-question__wildcard-icon">{{ comodin.icono }}</span> 
-              }
-              <span class="active-question__wildcard-name">{{ comodin.nombre | titlecase }}</span>
+                <span>{{ comodin.nombre | titlecase }}</span>
+              </app-button>
+              <span
+                class="active-question__wildcard-state"
+                [class.active-question__wildcard-state--used]="isComodinUsado(comodin)"
+                [class.active-question__wildcard-state--disabled]="!comodin.activo"
+              >
+                {{ getComodinEstadoTexto(comodin) }}
+              </span>
             </div>
           } @empty {
             <p class="active-question__status">No hay comodines configurados.</p>
@@ -113,12 +139,11 @@
         </div>
       </div>
     </div>
-
   } @else {
     <div class="active-question">
-       <div class="active-question__header">
-         <p class="active-question__status">Sincronizando con el servidor...</p>
-       </div>
+      <div class="active-question__header">
+        <p class="active-question__status">Sincronizando con el servidor...</p>
+      </div>
     </div>
   }
 </div>

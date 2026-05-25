@@ -39,7 +39,7 @@ describe('ActiveQuestionComponent', () => {
   it('should show waiting state when no questions are provided', () => {
     fixture.componentRef.setInput('preguntas', []);
     fixture.detectChanges();
-    expect(fixture.nativeElement.textContent).toContain('Cargando preguntas');
+    expect(fixture.nativeElement.textContent).toContain('Sincronizando con el servidor');
   });
 
   it('should render the question text when provided', () => {
@@ -65,7 +65,7 @@ describe('ActiveQuestionComponent', () => {
     fixture.componentRef.setInput('preguntaActivaId', 1);
     fixture.detectChanges();
 
-    const cards = fixture.nativeElement.querySelectorAll('[data-testid="option-card"]');
+    const cards = fixture.nativeElement.querySelectorAll('.active-question__option');
     expect(cards.length).toBe(4);
   });
 
@@ -111,7 +111,7 @@ describe('ActiveQuestionComponent', () => {
     expect(pcts[3].textContent).toContain('5%');
   });
 
-  it('should mark publico wildcard as active when votosPublico is set and viewing active question', () => {
+  it('should show audience results when votosPublico is set and viewing active question', () => {
     const comodinesMock = [{ nombre: 'PUBLICO', descripcion: 'test', icono: '👥', activo: true }];
     fixture.componentRef.setInput('preguntas', preguntasMock);
     fixture.componentRef.setInput('preguntaActivaId', 1);
@@ -119,11 +119,11 @@ describe('ActiveQuestionComponent', () => {
     fixture.componentRef.setInput('votosPublico', { A: 10, B: 10, C: 10, D: 10, total: 40 });
     fixture.detectChanges();
 
-    const btn = fixture.nativeElement.querySelector(
-      '.active-question__wildcard--active',
+    const results = fixture.nativeElement.querySelector(
+      '.active-question__audience-results',
     ) as HTMLElement;
-    expect(btn).toBeTruthy();
-    expect(btn.textContent).toContain('Publico');
+    expect(results).toBeTruthy();
+    expect(results.textContent).toContain('RESULTADOS DEL PÚBLICO');
   });
 
   it('should allow navigating between questions', () => {

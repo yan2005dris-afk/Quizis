@@ -39,8 +39,7 @@ export class JoinRoomComponent implements OnInit {
 
   ngOnInit(): void {
     const token =
-      this.route.snapshot.paramMap.get('token') ??
-      this.route.snapshot.queryParamMap.get('token');
+      this.route.snapshot.paramMap.get('token') ?? this.route.snapshot.queryParamMap.get('token');
     if (!token) {
       this.error.set('El link de invitación no es válido o ha expirado.');
       this.isValidating.set(false);
@@ -61,7 +60,7 @@ export class JoinRoomComponent implements OnInit {
         console.error('Token validation failed', err);
         this.error.set('Lo sentimos, este link de invitación no es válido o la sala ya no existe.');
         this.isValidating.set(false);
-      }
+      },
     });
   }
 
@@ -79,15 +78,19 @@ export class JoinRoomComponent implements OnInit {
         // El socket service lo usará para conectarse
         localStorage.setItem('participantToken', res.sessionToken);
         localStorage.setItem('participantInfo', JSON.stringify(res.participante));
-        
-        this.toastService.show(`¡Bienvenido, ${name}! Entrando a la sala...`, 'success', 'Unión Exitosa');
+
+        this.toastService.show(
+          `¡Bienvenido, ${name}! Entrando a la sala...`,
+          'success',
+          'Unión Exitosa',
+        );
         this.router.navigate(['/sala', res.sala.id]);
       },
       error: (err) => {
         this.isLoading.set(false);
         const msg = err.error?.message || 'No se pudo unir a la sala. Intentá con otro nombre.';
         this.toastService.show(msg, 'danger', 'Error');
-      }
+      },
     });
   }
 }

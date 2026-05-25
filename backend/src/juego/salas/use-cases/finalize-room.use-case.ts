@@ -26,9 +26,10 @@ export class FinalizeRoomUseCase {
     }
 
     // 1. Obtener todos los nicknames históricos desde Redis (todos los que alguna vez entraron)
-    const historicalNicknames = await this.participantsCache.getHistoricalParticipants(
-      sala.tokenCompartido,
-    );
+    const historicalNicknames =
+      await this.participantsCache.getHistoricalParticipants(
+        sala.tokenCompartido,
+      );
 
     // 2. Persistir en DB — upsert de cada participante real (excluir entradas de host)
     const participantesReales = historicalNicknames.filter(
