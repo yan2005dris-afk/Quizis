@@ -10,8 +10,8 @@ export class ComodinesController {
   @Post('ia/sugerencia')
   @ApiOperation({ summary: 'Obtener sugerencia de la IA para una pregunta' })
   @ApiResponse({ status: 200, description: 'Sugerencia generada exitosamente.' })
-  async solicitarSugerenciaIa(@Body('pregunta') pregunta: string) {
-    return await this.comodinesService.obtenerSugerenciaIa(pregunta);
+  async solicitarSugerenciaIa(@Body('preguntaId', ParseIntPipe) preguntaId: number) {
+    return await this.comodinesService.obtenerSugerenciaIa(preguntaId);
   }
 
   @Get('publico/resultados/:rondaId/:preguntaId')

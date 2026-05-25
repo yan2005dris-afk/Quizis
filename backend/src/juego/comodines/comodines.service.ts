@@ -11,8 +11,8 @@ export class ComodinesService {
     private readonly getPublicVoteResultsUseCase: GetPublicVoteResultsUseCase,
   ) {}
 
-  async obtenerSugerenciaIa(pregunta: string) {
-    return this.getIaSuggestionUseCase.execute(pregunta);
+  async obtenerSugerenciaIa(preguntaId: number) {
+    return this.getIaSuggestionUseCase.execute(preguntaId);
   }
 
   async seleccionarConsultorAleatorio(tokenCompartido: string) {

@@ -1,71 +1,93 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { ConfigService } from '@nestjs/config';
 import { GetIaSuggestionUseCase } from './get-ia-suggestion.use-case';
-import { InternalServerErrorException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { PrismaService } from '../../../infrastructure/database/prisma.service';
 import OpenAI from 'openai';
+import { InternalServerErrorException, NotFoundException } from '@nestjs/common';
 
-jest.mock('openai');
+// Mock OpenAI
+jest.mock('openai', () => {
+  return jest.fn().mockImplementation(() => ({
+    chat: {
+      completions: {
+        create: jest.fn(),
+      },
+    },
+  }));
+});
 
 describe('GetIaSuggestionUseCase', () => {
   let useCase: GetIaSuggestionUseCase;
-  let configService: ConfigService;
-  let mockOpenAIInstance: any;
+  let prismaService: PrismaService;
+  let openAiMock: any;
 
   beforeEach(async () => {
-    mockOpenAIInstance = {
-      chat: {
-        completions: {
-          create: jest.fn(),
-        },
-      },
-    };
-    (OpenAI as unknown as jest.Mock).mockImplementation(() => mockOpenAIInstance);
-
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         GetIaSuggestionUseCase,
         {
           provide: ConfigService,
+          useValue: { getOrThrow: jest.fn().mockReturnValue('fake-key') },
+        },
+        {
+          provide: PrismaService,
           useValue: {
-            getOrThrow: jest.fn().mockReturnValue('fake-api-key'),
+            preguntas: {
+              findUnique: jest.fn(),
+            },
           },
         },
       ],
     }).compile();
 
     useCase = module.get<GetIaSuggestionUseCase>(GetIaSuggestionUseCase);
-    configService = module.get<ConfigService>(ConfigService);
+    prismaService = module.get<PrismaService>(PrismaService);
+    openAiMock = (useCase as any).openai;
   });
 
-  it('should be defined', () => {
-    expect(useCase).toBeDefined();
-  });
-
-  it('should return suggestion on success', async () => {
-    const pregunta = 'test question';
-    const suggestion = 'test suggestion';
-    mockOpenAIInstance.chat.completions.create.mockResolvedValue({
-      choices: [{ message: { content: suggestion } }],
-    });
-
-    const result = await useCase.execute(pregunta);
-
-    expect(result).toEqual({ sugerencia: suggestion });
-    expect(mockOpenAIInstance.chat.completions.create).toHaveBeenCalledWith({
-      model: 'gpt-4o',
-      messages: [
-        {
-          role: 'system',
-          content: 'Eres un asistente experto en trivias académicas. Da sugerencias breves y precisas.',
-        },
-        { role: 'user', content: pregunta },
+  it('debería retornar un literal y explicación si la IA responde correctamente', async () => {
+    const mockPregunta = {
+      preguntaId: 1,
+      texto: '¿2+2?',
+      opciones: [
+        { opcionId: 1, texto: '3' },
+        { opcionId: 2, texto: '4' },
       ],
-    });
+    };
+
+    const mockAiResponse = {
+      choices: [
+        {
+          message: {
+            content: JSON.stringify({ literal: 'B', explicacion: 'Porque 2+2 es 4' }),
+          },
+        },
+      ],
+    };
+
+    jest.spyOn(prismaService.preguntas, 'findUnique').mockResolvedValue(mockPregunta as any);
+    openAiMock.chat.completions.create.mockResolvedValue(mockAiResponse);
+
+    const result = await useCase.execute(1);
+
+    expect(result).toEqual({ literal: 'B', explicacion: 'Porque 2+2 es 4' });
+    expect(prismaService.preguntas.findUnique).toHaveBeenCalledWith(expect.objectContaining({
+      where: { preguntaId: 1 }
+    }));
   });
 
-  it('should throw InternalServerErrorException on OpenAI error', async () => {
-    mockOpenAIInstance.chat.completions.create.mockRejectedValue(new Error('OpenAI Error'));
+  it('debería lanzar NotFoundException si la pregunta no existe', async () => {
+    jest.spyOn(prismaService.preguntas, 'findUnique').mockResolvedValue(null);
 
-    await expect(useCase.execute('test')).rejects.toThrow(InternalServerErrorException);
+    await expect(useCase.execute(99)).rejects.toThrow(NotFoundException);
+  });
+
+  it('debería lanzar InternalServerErrorException si OpenAI falla', async () => {
+    jest.spyOn(prismaService.preguntas, 'findUnique').mockResolvedValue({
+      opciones: []
+    } as any);
+    openAiMock.chat.completions.create.mockRejectedValue(new Error('OpenAI error'));
+
+    await expect(useCase.execute(1)).rejects.toThrow(InternalServerErrorException);
   });
 });
