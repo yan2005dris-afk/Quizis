@@ -4,6 +4,7 @@ import * as path from 'path';
 import { Pool } from 'pg';
 import { PrismaClient } from '../../src/generated/prisma/client';
 import { seedRoles } from './seeds/role.seed';
+import { seedPermissions } from './seeds/permissions.seed';
 import { seedUSers } from './seeds/user.seed';
 import { seedComodines } from './seeds/comodines.seed';
 import { seedPreguntas } from './seeds/preguntas.seed';
@@ -54,6 +55,11 @@ async function main() {
   console.log('🎭 Creando roles...');
   const roles = await seedRoles(prisma);
   console.log('✅ Roles creados correctamente.');
+
+  // Permisos
+  console.log('🔑 Creando y asignando permisos...');
+  await seedPermissions(prisma, roles);
+  console.log('✅ Permisos asignados correctamente.');
 
   // Comodines
   console.log('🃏 Creando catálogo de comodines...');

@@ -54,12 +54,48 @@ export class BancosService {
   private readonly http = inject(HttpClient);
   private readonly apiUrl = `${environment.apiUrl}/bancos`;
 
+  createBanco(nombre: string, descripcion?: string, preguntas?: any[]): Observable<BancoPreguntas> {
+    return this.http
+      .post<{ success: boolean; message: string; data: BancoPreguntas }>(this.apiUrl, {
+        nombre,
+        descripcion,
+        preguntas,
+      })
+      .pipe(map((res) => res.data));
+  }
+
+  crearPreguntas(
+    bancoId: number,
+    preguntas: any[],
+  ): Observable<{ totalCreadas: number; bancoId: number }> {
+    return this.http
+      .post<{
+        success: boolean;
+        message: string;
+        data: { totalCreadas: number; bancoId: number };
+      }>(`${this.apiUrl}/${bancoId}/preguntas`, preguntas)
+      .pipe(map((res) => res.data));
+  }
+
   getAllBancos(): Observable<BancoPreguntas[]> {
     return this.http.get<BancosResponse>(this.apiUrl).pipe(map((res) => res.data));
   }
 
   getBancoById(id: number): Observable<BancoPreguntasDetalle> {
     return this.http.get<BancoDetalleResponse>(`${this.apiUrl}/${id}`).pipe(map((res) => res.data));
+  }
+
+  updateBanco(
+    id: number,
+    data: { nombre?: string; descripcion?: string },
+  ): Observable<BancoPreguntas> {
+    return this.http
+      .patch<{
+        success: boolean;
+        message: string;
+        data: BancoPreguntas;
+      }>(`${this.apiUrl}/${id}`, data)
+      .pipe(map((res) => res.data));
   }
 
   updatePregunta(

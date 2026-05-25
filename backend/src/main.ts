@@ -181,6 +181,9 @@ estado efímero: participantes conectados, pregunta actual, votos del público.
       'audience-votes',
       'Votos del público para el comodín "Pregunta al público"',
     )
+    .addTag('lifelines', 'Comodines: configuración y activación')
+    .addTag('participants', 'Participantes conectados a una sala (sin cuenta)')
+    .addTag('results', 'Resultados e historial de partidas')
     .addServer('http://localhost:3000', 'Desarrollo local')
     .setContact('Equipo Quizis', '', '')
     .setLicense('MIT', 'https://opensource.org/licenses/MIT')
