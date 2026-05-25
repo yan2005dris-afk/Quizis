@@ -244,12 +244,11 @@ describe('VotosService (2-Phase Persist)', () => {
       expect(result).toEqual({ count: 100 });
     });
 
-    it('debe lanzar error si commitVotes falla después del insert', async () => {
+    it('debe continuar aunque commitVotes falle después del insert', async () => {
       const rondaId = 1;
       const preguntaId = 10;
 
       const mockVotes = [{ participanteId: 5, opcionId: 2 }];
-
       const procKey = 'votes:1:10:processing:commit-fail';
 
       mockCacheService.prepareVotesForPersist.mockResolvedValue({
@@ -257,26 +256,27 @@ describe('VotosService (2-Phase Persist)', () => {
         votes: mockVotes,
       });
 
-      // PostgreSQL guarda correctamente
       mockPrismaService.votosPublico.createMany.mockResolvedValue({
         count: 1,
       });
 
-      // Redis falla al limpiar la clave temporal
       mockCacheService.commitVotes.mockRejectedValue(
         new Error('Redis commit failed'),
       );
 
-      await expect(
-        service.persistirVotos(rondaId, preguntaId),
-      ).rejects.toThrow('Redis commit failed');
+      const result = await service.persistirVotos(rondaId, preguntaId);
 
+      // PostgreSQL siempre debe ejecutarse
       expect(prismaService.votosPublico.createMany).toHaveBeenCalled();
 
+      // Commit fue intentado
       expect(cacheService.commitVotes).toHaveBeenCalledWith(procKey);
 
-      // No debe hacer rollback porque PostgreSQL ya persistió correctamente
+      // NO debe hacer rollback
       expect(cacheService.rollbackVotes).not.toHaveBeenCalled();
+
+      // Pero la operación NO falla
+      expect(result).toEqual({ count: 1 });
     });
     
   });

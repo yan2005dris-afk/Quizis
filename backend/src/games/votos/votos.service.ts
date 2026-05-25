@@ -66,10 +66,6 @@ export class VotosService {
       return { count: 0 };
     }
 
-    this.logger.log(
-      `[BULK_INSERT] Intentando persistir ${votes.length} votos en PostgreSQL...`,
-    );
-
     try {
       // Fase 2: Insert masivo idempotente en PostgreSQL
       const res = await this.prisma.votosPublico.createMany({
@@ -82,11 +78,22 @@ export class VotosService {
         skipDuplicates: true,
       });
 
-      // Confirmación: Éxito en DB, eliminamos clave temporal de caché
-      await this.cacheService.commitVotes(processingKey);
-      this.logger.log(
-        `[BULK_INSERT] Persistencia exitosa de ${res.count} votos. Caché de procesamiento liberado.`,
-      );
+      // FASE 3: Confirmación en caché (best effort)
+      try {
+        await this.cacheService.commitVotes(processingKey);
+
+        this.logger.log(
+          `[BULK_INSERT] Persistencia exitosa de ${res.count} votos.`,
+        );
+      } catch (cacheError) {
+        //NO romper el flujo por Redis
+        this.logger.error(
+          `[BULK_INSERT:WARNING] PostgreSQL OK pero Redis commit falló: ${
+            cacheError instanceof Error ? cacheError.message : String(cacheError)
+          }. Se requiere retry.`,
+        );
+      }
+
       return { count: res.count };
     } catch (error) {
       // Rollback: Fallo en DB, revertimos y fusionamos los votos al caché original
