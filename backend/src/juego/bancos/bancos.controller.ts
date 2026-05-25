@@ -1,8 +1,10 @@
 import {
+  Body,
   Controller,
   Get,
   Param,
   ParseIntPipe,
+  Patch,
   UseGuards,
 } from '@nestjs/common';
 import { BancosService } from './bancos.service';
@@ -12,8 +14,10 @@ import {
   ApiResponse,
   ApiBearerAuth,
   ApiParam,
+  ApiBody,
 } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../identity/auth/guards/jwt-auth.guard';
+import { UpdatePreguntaDto } from './dto/update-pregunta.dto';
 
 @ApiTags('bancos')
 @ApiBearerAuth()
@@ -61,6 +65,28 @@ export class BancosController {
       success: true,
       message: 'Banco recuperado exitosamente',
       data: banco,
+    };
+  }
+
+  @Patch(':bancoId/preguntas/:preguntaId')
+  @ApiOperation({ summary: 'Actualizar una pregunta específica de un banco' })
+  @ApiParam({ name: 'bancoId', type: Number })
+  @ApiParam({ name: 'preguntaId', type: Number })
+  @ApiBody({ type: UpdatePreguntaDto })
+  async updatePregunta(
+    @Param('bancoId', ParseIntPipe) bancoId: number,
+    @Param('preguntaId', ParseIntPipe) preguntaId: number,
+    @Body() dto: UpdatePreguntaDto,
+  ) {
+    const bancoActualizado = await this.bancosService.updatePregunta(
+      bancoId,
+      preguntaId,
+      dto,
+    );
+    return {
+      success: true,
+      message: 'Pregunta actualizada exitosamente',
+      data: bancoActualizado,
     };
   }
 }

@@ -61,4 +61,14 @@ export class BancosService {
   getBancoById(id: number): Observable<BancoPreguntasDetalle> {
     return this.http.get<BancoDetalleResponse>(`${this.apiUrl}/${id}`).pipe(map((res) => res.data));
   }
+
+  updatePregunta(
+    bancoId: number,
+    preguntaId: number,
+    pregunta: any,
+  ): Observable<BancoPreguntasDetalle> {
+    return this.http
+      .patch<BancoDetalleResponse>(`${this.apiUrl}/${bancoId}/preguntas/${preguntaId}`, pregunta)
+      .pipe(map((res) => res.data));
+  }
 }

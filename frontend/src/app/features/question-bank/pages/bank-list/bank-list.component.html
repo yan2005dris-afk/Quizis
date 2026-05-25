@@ -33,7 +33,11 @@
   } @else {
     <div class="bancos-index__grid">
       @for (bank of bancosResource.value(); track bank.bancoId) {
-        <a class="banco-card" [routerLink]="['/bancos', bank.bancoId]">
+        <a
+          class="banco-card"
+          [routerLink]="['/bancos', bank.bancoId]"
+          [attr.aria-label]="'Ver detalle del banco ' + bank.nombre"
+        >
           <div class="banco-card__header">
             <div class="banco-card__title-row">
               <lucide-icon [img]="DatabaseIcon" class="banco-card__icon"></lucide-icon>

@@ -33,7 +33,11 @@
   } @else {
     <div class="salas-index__grid">
       @for (sala of salas(); track sala.salaId) {
-        <a class="sala-card" [routerLink]="['/sala', sala.salaId]">
+        <a
+          class="sala-card"
+          [routerLink]="['/sala', sala.salaId]"
+          [attr.aria-label]="'Entrar a la sala ' + sala.nombre"
+        >
           <div class="sala-card__header">
             <h3 class="sala-card__title">{{ sala.nombre }}</h3>
             @if (sala.estado === 'jugando') {

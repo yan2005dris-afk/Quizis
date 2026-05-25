@@ -12,11 +12,23 @@ interface MemoryCacheEntry {
   expiresAt: number;
 }
 
+interface MemoryOnlineEntry {
+  participants: Set<string>;
+  expiresAt: number;
+}
+
+interface MemoryDataEntry {
+  data: any;
+  expiresAt: number;
+}
+
 @Injectable()
 export class CacheService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(CacheService.name);
   private redisClient: Redis | null = null;
-  private memoryVotes = new Map<string, MemoryCacheEntry>(); // Fallback con TTL
+  private memoryVotes = new Map<string, MemoryCacheEntry>();
+  private memoryOnline = new Map<string, MemoryOnlineEntry>();
+  private memoryData = new Map<string, MemoryDataEntry>();
   private isRedisHealthy = true;
   private reconnectTimeout: NodeJS.Timeout | null = null;
   private gcInterval: NodeJS.Timeout | null = null;
@@ -91,12 +103,31 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
   private runMemoryGC() {
     const now = Date.now();
     let count = 0;
+
+    // Limpiar votos
     for (const [key, entry] of this.memoryVotes.entries()) {
       if (entry.expiresAt < now) {
         this.memoryVotes.delete(key);
         count++;
       }
     }
+
+    // Limpiar online
+    for (const [key, entry] of this.memoryOnline.entries()) {
+      if (entry.expiresAt < now) {
+        this.memoryOnline.delete(key);
+        count++;
+      }
+    }
+
+    // Limpiar data general (pregunta activa, info ronda)
+    for (const [key, entry] of this.memoryData.entries()) {
+      if (entry.expiresAt < now) {
+        this.memoryData.delete(key);
+        count++;
+      }
+    }
+
     if (count > 0) {
       this.logger.log(
         `[CACHE:GC] Recolector de basura liberó ${count} claves en memoria expiradas.`,
@@ -391,10 +422,10 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
       }
     }
     // Fallback memoria
-    this.memoryVotes.set(key, {
-      votes: new Map([[0, pregunta]]), // Reusamos la interfaz MemoryCacheEntry de forma creativa o mapeamos
+    this.memoryData.set(key, {
+      data: pregunta,
       expiresAt: Date.now() + 3600 * 1000,
-    } as any);
+    });
   }
 
   /**
@@ -410,8 +441,8 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
         this.handleRedisFailure();
       }
     }
-    const mem = this.memoryVotes.get(key);
-    return mem ? (mem.votes.get(0) as any) : null;
+    const mem = this.memoryData.get(key);
+    return mem ? mem.data : null;
   }
 
   /**
@@ -428,10 +459,10 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
       }
     }
     // Fallback memoria
-    this.memoryVotes.set(key, {
-      votes: new Map([[0, info]]),
+    this.memoryData.set(key, {
+      data: info,
       expiresAt: Date.now() + 3600 * 1000,
-    } as any);
+    });
   }
 
   /**
@@ -447,8 +478,8 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
         this.handleRedisFailure();
       }
     }
-    const mem = this.memoryVotes.get(key);
-    return mem ? (mem.votes.get(0) as any) : null;
+    const mem = this.memoryData.get(key);
+    return mem ? mem.data : null;
   }
 
   // ─── PARTICIPANTES ONLINE ──────────────────────────────────────────
@@ -475,10 +506,15 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
       }
     }
     // Fallback memoria
-    this.memoryVotes.set(key, {
-      votes: new Map([[1, nickname]]),
-      expiresAt: Date.now() + 7200 * 1000,
-    } as any);
+    let entry = this.memoryOnline.get(key);
+    if (!entry) {
+      entry = {
+        participants: new Set<string>(),
+        expiresAt: Date.now() + 7200 * 1000,
+      };
+      this.memoryOnline.set(key, entry);
+    }
+    entry.participants.add(nickname);
   }
 
   /**
@@ -497,7 +533,14 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
         this.handleRedisFailure();
       }
     }
-    this.memoryVotes.delete(key);
+    // Fallback memoria
+    const entry = this.memoryOnline.get(key);
+    if (entry) {
+      entry.participants.delete(nickname);
+      if (entry.participants.size === 0) {
+        this.memoryOnline.delete(key);
+      }
+    }
   }
 
   /**
@@ -512,7 +555,9 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
         this.handleRedisFailure();
       }
     }
-    return [];
+    // Fallback memoria
+    const entry = this.memoryOnline.get(key);
+    return entry ? Array.from(entry.participants) : [];
   }
 
   /**
@@ -528,6 +573,6 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
         this.handleRedisFailure();
       }
     }
-    this.memoryVotes.delete(key);
+    this.memoryOnline.delete(key);
   }
 }

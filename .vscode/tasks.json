@@ -3,8 +3,9 @@
   "version": "2.0.0",
   "tasks": [
     {
-      "type": "npm",
-      "script": "start",
+      "label": "pnpm: frontend:dev",
+      "type": "shell",
+      "command": "pnpm run frontend:dev",
       "isBackground": true,
       "problemMatcher": {
         "owner": "typescript",
@@ -18,24 +19,39 @@
             "regexp": "bundle generation (complete|failed)"
           }
         }
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "new"
       }
     },
     {
-      "type": "npm",
-      "script": "test",
+      "label": "pnpm: backend:dev",
+      "type": "shell",
+      "command": "pnpm run backend:dev",
       "isBackground": true,
       "problemMatcher": {
         "owner": "typescript",
-        "pattern": "$tsc",
+        "pattern": "$tsc-watch",
         "background": {
           "activeOnStart": true,
-          "beginsPattern": {
-            "regexp": "Changes detected"
-          },
-          "endsPattern": {
-            "regexp": "bundle generation (complete|failed)"
-          }
+          "beginsPattern": ".*File change detected.*",
+          "endsPattern": ".*Watching for file changes.*"
         }
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "new"
+      }
+    },
+    {
+      "label": "pnpm: test",
+      "type": "shell",
+      "command": "pnpm run test",
+      "problemMatcher": [],
+      "group": {
+        "kind": "test",
+        "isDefault": true
       }
     }
   ]

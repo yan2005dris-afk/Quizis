@@ -3,7 +3,19 @@
     <a routerLink="/bancos" class="back-link">← Volver a Bancos</a>
   </header>
 
-  @if (banco(); as bancoValue) {
+  @if (isLoading()) {
+    <div class="loading-state" role="status">
+      <div class="spinner"></div>
+      <span class="sr-only">Cargando banco...</span>
+    </div>
+  } @else if (error()) {
+    <div class="bank-info-card">
+      <app-alert type="danger" message="No se pudo cargar el banco de preguntas. Intenta de nuevo más tarde." />
+      <div class="mt-4">
+        <app-button variant="ghost" routerLink="/bancos">Volver a la lista</app-button>
+      </div>
+    </div>
+  } @else if (banco(); as bancoValue) {
     <div class="bank-info-card">
       <h1 class="bank-title">{{ bancoValue.nombre }}</h1>
       @if (bancoValue.descripcion) {
@@ -80,9 +92,7 @@
             <div class="actions">
               @if (isEditing()) {
                 <app-button variant="ghost" size="sm" (clicked)="toggleEdit()">Cancelar</app-button>
-                <app-button variant="primary" size="sm" (clicked)="saveQuestion()"
-                  >Guardar</app-button
-                >
+                <app-button variant="primary" size="sm" (clicked)="saveQuestion()" [loading]="isSaving()">Guardar</app-button>
               } @else {
                 <app-button variant="ghost" size="sm" (clicked)="toggleEdit()">Editar</app-button>
               }
@@ -223,11 +233,6 @@
           <p>Este banco no tiene preguntas registradas.</p>
         </div>
       }
-    </div>
-  } @else {
-    <div class="loading-state" role="status">
-      <div class="spinner"></div>
-      <span class="sr-only">Cargando banco...</span>
     </div>
   }
 </div>

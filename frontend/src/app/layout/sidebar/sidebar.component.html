@@ -6,7 +6,12 @@
         <span class="logo-text">Quizis</span>
       }
     </div>
-    <button class="toggle-btn" (click)="toggleSidebar()">
+    <button
+      class="toggle-btn"
+      type="button"
+      [attr.aria-label]="isCollapsed() ? 'Expandir barra lateral' : 'Contraer barra lateral'"
+      (click)="toggleSidebar()"
+    >
       <lucide-icon [img]="isCollapsed() ? MenuIcon : CloseIcon"></lucide-icon>
     </button>
   </div>
