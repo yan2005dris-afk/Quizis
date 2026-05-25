@@ -99,6 +99,18 @@ export class SalasController {
   }
 
   /**
+   * Une a un participante a la sala usando el token de invitación.
+   * Devuelve un token de sesión de participante.
+   */
+  @ApiOperation({
+    summary: 'Unirse a una sala como participante (público)',
+  })
+  @Post('join')
+  async join(@Body() dto: { token: string; nickname: string }) {
+    return this.salasService.join(dto.token, dto.nickname);
+  }
+
+  /**
    * Obtiene el detalle de una sala por su ID (admin) o Token (juego).
    */
   @Get(':idOrToken')
@@ -147,6 +159,18 @@ export class SalasController {
     @Body() updateEstadoSalaDto: UpdateEstadoSalaDto,
   ) {
     return this.salasService.updateEstado(id, updateEstadoSalaDto);
+  }
+
+  /**
+   * Obtiene el token JWT de invitación actual sin cambiar el tokenCompartido.
+   */
+  @Get(':id/link-invitacion')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @RequiredPermission('salas', 'read')
+  @ApiOperation({ summary: 'Obtener el link de invitación actual de la sala.' })
+  async getLinkInvitacion(@Param('id', ParseIntPipe) id: number) {
+    return this.salasService.getInvitacionToken(id);
   }
 
   /**

@@ -30,7 +30,12 @@ export const seedRondas = async (prisma: PrismaClient) => {
   // Tomamos los primeros 5 IDs de preguntas para asignárselas a la ronda
   const preguntaIds = banco.preguntas.slice(0, 5).map((p) => p.preguntaId);
 
-  // 3. Crear una sala activa de prueba con tokenCompartido (UUID) fijo para facilitar el testeo
+  // 3. Obtener todos los comodines del catálogo para asignarlos a la sala
+  const comodinesCatalogo = await prisma.comodines.findMany({
+    select: { comodinId: true },
+  });
+
+  // 4. Crear una sala activa de prueba con tokenCompartido (UUID) fijo para facilitar el testeo
   const sala = await prisma.salas.create({
     data: {
       adminId: admin.usuarioId,
@@ -39,10 +44,13 @@ export const seedRondas = async (prisma: PrismaClient) => {
       tokenCompartido: 'de9b23b3-8b77-4f6c-8438-e6b8a8b11111',
       estado: 'ESPERANDO_ALUMNOS',
       limitePreguntas: 5,
+      comodines: {
+        create: comodinesCatalogo.map((c) => ({ comodinId: c.comodinId, activo: true })),
+      },
     },
   });
 
-  // 4. Crear un participante (estudiante) en la sala
+  // 5. Crear un participante (estudiante) en la sala
   const estudiante = await prisma.participantes.create({
     data: {
       salaId: sala.salaId,
@@ -51,7 +59,7 @@ export const seedRondas = async (prisma: PrismaClient) => {
     },
   });
 
-  // 5. Crear un participante (observador) en la sala
+  // 6. Crear un participante (observador) en la sala
   await prisma.participantes.create({
     data: {
       salaId: sala.salaId,
@@ -60,7 +68,7 @@ export const seedRondas = async (prisma: PrismaClient) => {
     },
   });
 
-  // 6. Crear una ronda activa para el estudiante en estado 'jugando'
+  // 7. Crear una ronda activa para el estudiante en estado 'jugando'
   await prisma.rondas.create({
     data: {
       salaId: sala.salaId,

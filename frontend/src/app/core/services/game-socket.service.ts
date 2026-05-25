@@ -7,6 +7,7 @@ export interface Opcion {
   opcionId: number;
   texto: string;
   letra: string;
+  esCorrecta?: boolean;
 }
 
 // Representa la estructura completa de una pregunta tal como llega del servidor
@@ -15,12 +16,22 @@ export interface Pregunta {
   texto: string;
   opciones: Opcion[];
   nivel: number;
+  feedbackCorrecto?: string;
+  feedbackIncorrecto?: string;
 }
 
 // Representa la distribución de votos del público por opción en una ronda activa
 export interface VotosPublico {
   [letra: string]: number | undefined;
   total: number;
+}
+
+// Interfaz para el resultado de una respuesta procesada
+export interface ResultRespuesta {
+  preguntaId: number;
+  opcionId: number;
+  esCorrecta: boolean;
+  feedback: string;
 }
 
 // Servicio singleton: Angular crea una sola instancia compartida por toda la app
@@ -33,8 +44,12 @@ export class GameSocketService {
   readonly preguntaActiva = signal<Pregunta | null>(null);
   readonly tiempoRestante = signal<number | null>(null);
   readonly votosPublico = signal<VotosPublico | null>(null);
-  readonly comodinBloqueado = signal<string | null>(null);
+  readonly comodinBloqueado = signal<string[]>([]);
+  readonly salaHabilitada = signal<boolean>(true);
   readonly conectado = signal<boolean>(false);
+
+  // Resultado de la última respuesta enviada
+  readonly ultimoResultado = signal<ResultRespuesta | null>(null);
 
   // Estado reactivo para el modo observador
   readonly mensajesChat = signal<ChatMessage[]>([]);
@@ -51,54 +66,69 @@ export class GameSocketService {
     this.socket.on('connect', () => this.conectado.set(true));
     this.socket.on('disconnect', () => this.conectado.set(false));
 
-    // Al llegar una nueva pregunta, la almacena y limpia los votos de la ronda anterior
+    // Al llegar una nueva pregunta, la almacena y limpia los votos/resultados anteriores
     this.socket.on('pregunta_liberada', (data: Pregunta) => {
       this.preguntaActiva.set(data);
       this.votosPublico.set(null);
+      this.ultimoResultado.set(null);
     });
 
-    // Recibe el tiempo restante de la pregunta activa (el servidor lo emite cada segundo)
+    // Recibe el tiempo restante de la pregunta activa
     this.socket.on('temporizador_actualizado', (data: number) => {
       this.tiempoRestante.set(data);
     });
 
-    // Actualiza los votos del público en tiempo real para que las barras se redibujen
+    // Actualiza los votos del público en tiempo real
     this.socket.on('voto_recibido', (data: VotosPublico) => {
       this.votosPublico.set(data);
     });
 
-    // Registra qué comodín fue bloqueado para que la pantalla lo marque como no disponible
+    // Acumula comodines bloqueados en tiempo real
     this.socket.on('comodin_bloqueado', (data: { tipoComodin: string }) => {
-      this.comodinBloqueado.set(data.tipoComodin);
+      this.comodinBloqueado.update((list) =>
+        list.includes(data.tipoComodin) ? list : [...list, data.tipoComodin],
+      );
+    });
+
+    // Estado inicial de comodines bloqueados al unirse (para quien entra tarde)
+    this.socket.on('comodines_bloqueados', (data: string[]) => {
+      this.comodinBloqueado.set(data);
+    });
+
+    // Recibe cambios en el estado de habilitación de la sala
+    this.socket.on('sala_estado_cambiado', (data: { habilitada: boolean }) => {
+      this.salaHabilitada.set(data.habilitada);
+    });
+
+    // Recibe el resultado de una respuesta procesada (broadcast)
+    this.socket.on('pregunta_respondida', (data: ResultRespuesta) => {
+      this.ultimoResultado.set(data);
     });
 
     // ——— Observers ———
-    // Recibe mensajes del chat de la sala
     this.socket.on('mensaje_chat', (data: ChatMessage[]) => {
       this.mensajesChat.set(data);
     });
 
-    // Recibe eventos de la sala (inicio de pregunta, votos, etc.)
     this.socket.on('evento_sala', (data: SalaEvento[]) => {
       this.eventosSala.set(data);
     });
 
-    // Recibe la lista actualizada de participantes
     this.socket.on('participantes', (data: Participante[]) => {
       this.participantes.set(data);
     });
 
-    // Recibe información de la ronda actual
     this.socket.on('info_ronda', (data: RondaInfo) => {
       this.infoRonda.set(data);
     });
   }
 
-  // Permite inicializar el estado desde datos HTTP (ej. al cargar la página)
+  // Permite inicializar el estado desde datos HTTP
   setEstadoInicial(data: {
     participantes: Participante[];
     infoRonda: RondaInfo | null;
     preguntaActiva?: Pregunta | null;
+    salaHabilitada?: boolean;
   }): void {
     if (data.participantes && data.participantes.length > 0) {
       this.participantes.set(data.participantes);
@@ -109,19 +139,50 @@ export class GameSocketService {
     if (data.preguntaActiva) {
       this.preguntaActiva.set(data.preguntaActiva);
     }
+    if (data.salaHabilitada !== undefined) {
+      this.salaHabilitada.set(data.salaHabilitada);
+    }
   }
 
-  // Se une a una sala específica mediante su token compartido
+  // Se unte a una sala específica
   unirseASala(tokenCompartido: string, nombre: string): void {
     this.socket?.emit('unirse_sala', { tokenCompartido, nombre });
   }
 
-  // Envía un mensaje o sugerencia al chat de la sala
+  // Envía un mensaje o sugerencia
   enviarMensaje(texto: string, tipo: 'mensaje' | 'sugerencia'): void {
     this.socket?.emit('enviar_mensaje', { texto, tipo });
   }
 
-  // Cierra la conexión limpiamente y resetea el estado de conexión
+  // ——— Gameplay Actions ———
+
+  // Liberar pregunta (Solo Host/Admin)
+  liberarPregunta(tokenCompartido: string, pregunta: Pregunta): void {
+    this.socket?.emit('pregunta_liberada', { tokenCompartido, pregunta });
+  }
+
+  // Responder pregunta (Solo Estudiante)
+  responderPregunta(payload: {
+    tokenCompartido: string;
+    rondaId: number;
+    preguntaId: number;
+    opcionId: number;
+    comodinUsado?: string;
+  }): void {
+    this.socket?.emit('responder_pregunta', payload);
+  }
+
+  // Cambiar estado sala (Solo Admin)
+  cambiarEstadoSala(tokenCompartido: string, habilitada: boolean): void {
+    this.socket?.emit('cambiar_estado_sala', { tokenCompartido, habilitada });
+  }
+
+  // Notificar uso de comodín para bloquearlo (Broadcast)
+  bloquearComodin(tokenCompartido: string, tipoComodin: string): void {
+    this.socket?.emit('comodin_bloqueado', { tokenCompartido, tipoComodin });
+  }
+
+  // Cierra la conexión limpiamente
   desconectar(): void {
     this.socket?.disconnect();
     this.socket = null;

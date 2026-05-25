@@ -11,10 +11,12 @@ export interface SalaResumen {
   creadoEn: string;
 }
 
+export type EstadoSala = 'BORRADOR' | 'ESPERANDO_ALUMNOS' | 'EN_VIVO' | 'FINALIZADO';
+
 export interface SalaDetalle {
   salaId: number;
   nombre: string;
-  estado: string;
+  estado: EstadoSala;
   limitePreguntas: number;
   tokenCompartido: string;
   creadoEn: string;
@@ -31,7 +33,7 @@ export interface SalaDetalle {
     fechaInicio: string | null;
     preguntaActualId?: number | null;
     preguntaActual?: any;
-    historialPreguntas?: any[];
+    historialPreguntas: any[];
   } | null;
 }
 
@@ -59,5 +61,54 @@ export class SalasService {
 
   obtenerComodines(idOrToken: number | string): Observable<ComodinSala[]> {
     return this.http.get<ComodinSala[]>(`${this.apiUrl}/salas/${idOrToken}/comodines`);
+  }
+
+  validateToken(token: string): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/salas/join/${token}`);
+  }
+
+  join(token: string, nickname: string): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/salas/join`, { token, nickname });
+  }
+
+  updateEstado(salaId: number, data: { estado: EstadoSala }): Observable<SalaDetalle> {
+    return this.http.patch<SalaDetalle>(`${this.apiUrl}/salas/${salaId}/estado`, data);
+  }
+
+  regenerarToken(salaId: number): Observable<{
+    success: boolean;
+    tokenCompartido: string;
+    tokenInvitacion: string;
+    message: string;
+  }> {
+    return this.http.post<{
+      success: boolean;
+      tokenCompartido: string;
+      tokenInvitacion: string;
+      message: string;
+    }>(
+      `${this.apiUrl}/salas/${salaId}/regenerar-token`,
+      {},
+    );
+  }
+
+  getLinkInvitacion(salaId: number): Observable<{ tokenInvitacion: string }> {
+    return this.http.get<{ tokenInvitacion: string }>(
+      `${this.apiUrl}/salas/${salaId}/link-invitacion`,
+    );
+  }
+
+  finalizarSala(salaId: number): Observable<{ success: boolean; totalParticipantes: number }> {
+    return this.http.post<{ success: boolean; totalParticipantes: number }>(
+      `${this.apiUrl}/salas/${salaId}/finalizar`,
+      {},
+    );
+  }
+
+  solicitarSugerenciaIa(preguntaId: number): Observable<{ literal: string; explicacion: string }> {
+    return this.http.post<{ literal: string; explicacion: string }>(
+      `${this.apiUrl}/comodines/ia/sugerencia`,
+      { preguntaId },
+    );
   }
 }

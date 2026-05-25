@@ -12,9 +12,13 @@ import { ListAllSalasUseCase } from './use-cases/list-all-salas.use-case';
 import { GetSalaLifelinesUseCase } from './use-cases/get-sala-lifelines.use-case';
 import { RegenerateRoomTokenUseCase } from './use-cases/regenerate-room-token.use-case';
 import { FinalizeRoomUseCase } from './use-cases/finalize-room.use-case';
+import { JoinSalaUseCase } from './use-cases/join-sala.use-case';
+import { GetInvitacionTokenUseCase } from './use-cases/get-invitacion-token.use-case';
 
 /**
  * Servicio fachada para el módulo de Salas.
+ *
+ * Actúa como coordinador entre el controlador y los casos de uso.
  */
 @Injectable()
 export class SalasService {
@@ -29,20 +33,34 @@ export class SalasService {
     private readonly getSalaLifelinesUseCase: GetSalaLifelinesUseCase,
     private readonly regenerateRoomTokenUseCase: RegenerateRoomTokenUseCase,
     private readonly finalizeRoomUseCase: FinalizeRoomUseCase,
+    private readonly joinSalaUseCase: JoinSalaUseCase,
+    private readonly getInvitacionTokenUseCase: GetInvitacionTokenUseCase,
   ) {}
 
+  /**
+   * Crea una nueva sala de juego.
+   */
   async create(createSalaDto: CreateSalaDto, adminId: number) {
     return this.createSalaUseCase.execute(createSalaDto, adminId);
   }
 
+  /**
+   * Obtiene detalles de una sala por ID o Token.
+   */
   async obtenerPorId(idOrToken: number | string) {
     return this.getSalaDetailsUseCase.execute(idOrToken);
   }
 
+  /**
+   * Alias para obtenerPorId usado por algunos controladores.
+   */
   async findOne(id: number) {
     return this.getSalaDetailsUseCase.execute(id);
   }
 
+  /**
+   * Actualiza la configuración de la sala.
+   */
   async updateConfiguracion(
     id: number,
     updateConfigDto: UpdateConfiguracionSalaDto,
@@ -50,31 +68,63 @@ export class SalasService {
     return this.updateConfiguracionSalaUseCase.execute(id, updateConfigDto);
   }
 
+  /**
+   * Actualiza el estado (waiting, playing, finished).
+   */
   async updateEstado(id: number, updateEstadoSalaDto: UpdateEstadoSalaDto) {
     return this.updateEstadoSalaUseCase.execute(id, updateEstadoSalaDto);
   }
 
+  /**
+   * Valida un token JWT de invitación.
+   */
   async validateToken(token: string) {
     return this.validateTokenSalaUseCase.execute(token);
   }
 
+  /**
+   * Registra a un nuevo participante en la sala.
+   */
+  async join(token: string, nickname: string) {
+    return this.joinSalaUseCase.execute(token, nickname);
+  }
+
+  /**
+   * Lista bancos de preguntas para el admin.
+   */
   async listBancosDisponibles() {
     return this.listBancosDisponiblesUseCase.execute();
   }
 
+  /**
+   * Lista todas las salas.
+   */
   async listarTodas() {
     return this.listAllSalasUseCase.execute();
   }
 
+  /**
+   * Obtiene los comodines de la sala.
+   */
   async obtenerComodines(idOrToken: number | string) {
     return this.getSalaLifelinesUseCase.execute(idOrToken);
   }
 
+  /**
+   * Genera un nuevo token compartido.
+   */
   async regenerarToken(salaId: number) {
     return this.regenerateRoomTokenUseCase.execute(salaId);
   }
 
+  /**
+   * Finaliza la sala y persiste estadísticas.
+   */
   async finalizarSala(salaId: number) {
     return this.finalizeRoomUseCase.execute(salaId);
+  }
+
+  async getInvitacionToken(salaId: number) {
+    return this.getInvitacionTokenUseCase.execute(salaId);
   }
 }

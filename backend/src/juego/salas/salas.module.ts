@@ -11,6 +11,8 @@ import { ValidateTokenSalaUseCase } from './use-cases/validate-token-sala.use-ca
 import { ListBancosDisponiblesUseCase } from './use-cases/list-bancos-disponibles.use-case';
 import { GetSalaDetailsUseCase } from './use-cases/get-sala-details.use-case';
 import { UpdateConfiguracionSalaUseCase } from './use-cases/update-configuracion-sala.use-case';
+import { JoinSalaUseCase } from './use-cases/join-sala.use-case';
+import { GetInvitacionTokenUseCase } from './use-cases/get-invitacion-token.use-case';
 import { AuthModule } from '../../identity/auth/auth.module';
 import { CacheModule } from '../../infrastructure/cache/cache.module';
 
@@ -29,6 +31,8 @@ import { CacheModule } from '../../infrastructure/cache/cache.module';
     ListBancosDisponiblesUseCase,
     GetSalaDetailsUseCase,
     UpdateConfiguracionSalaUseCase,
+    JoinSalaUseCase,
+    GetInvitacionTokenUseCase,
   ],
   exports: [SalasService],
 })

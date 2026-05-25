@@ -1,45 +1,61 @@
-.participants-list {
-  padding: 12px 16px;
-  background: var(--surface-card, #1e1e2e);
-  border-radius: 8px;
-  border: 1px solid var(--border-color, #313244);
-}
-
-.participants-list__title {
-  margin: 0 0 12px;
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--text-primary, #cdd6f4);
-}
-
-.participants-list__grid {
+.pl__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 8px;
 }
 
-.participants-list__item {
+.pl__item {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  padding: 6px 0;
-  border-bottom: 1px solid var(--border-color, #313244);
+  gap: 10px;
+  padding: 9px 14px;
+  border-bottom: 1px solid #f1f5f9;
+
+  &:last-child {
+    border-bottom: none;
+  }
 }
 
-.participants-list__name {
-  font-size: 14px;
-  color: var(--text-primary, #cdd6f4);
+.pl__avatar {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #eff6ff;
+  color: #2563eb;
+  font-size: 11px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.participants-list__score {
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--accent-color, #f5c2e7);
-}
-
-.participants-list__empty {
-  color: var(--text-secondary, #a6adc8);
-  font-style: italic;
+.pl__name {
+  flex: 1;
   font-size: 13px;
+  font-weight: 500;
+  color: #374151;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pl__online-dot {
+  flex-shrink: 0;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #22c55e;
+  box-shadow: 0 0 0 2px #dcfce7;
+}
+
+.pl__empty {
   margin: 0;
+  padding: 16px;
+  font-size: 13px;
+  color: #94a3b8;
+  font-style: italic;
+  text-align: center;
 }

@@ -1,8 +1,8 @@
-import { ChangeDetectionStrategy, Component, computed, input, signal, effect } from '@angular/core';
-import { TitleCasePipe } from '@angular/common';
-import { VotosPublico } from '../../../../core/services/game-socket.service';
-import { ComodinSala } from '../../../../core/services/salas.service';
-import { LucideAngularModule, ChevronLeft, ChevronRight } from 'lucide-angular';
+import { ChangeDetectionStrategy, Component, computed, input, signal, effect, output, inject } from '@angular/core';
+import { CommonModule, TitleCasePipe } from '@angular/common';
+import { GameSocketService, VotosPublico } from '../../../../core/services/game-socket.service';
+import { SalasService, ComodinSala } from '../../../../core/services/salas.service';
+import { LucideAngularModule, ChevronLeft, ChevronRight, BrainCircuit, Loader2 } from 'lucide-angular';
 
 export interface OpcionVoto {
   id: number;
@@ -12,28 +12,42 @@ export interface OpcionVoto {
   porcentaje: number;
   esCorrecta?: boolean;
   fueElegida?: boolean;
+  estaPendiente?: boolean;
 }
 
 @Component({
   selector: 'app-active-question',
   standalone: true,
-  imports: [TitleCasePipe, LucideAngularModule],
+  imports: [CommonModule, TitleCasePipe, LucideAngularModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './active-question.component.html',
   styleUrl: './active-question.component.scss',
 })
 export class ActiveQuestionComponent {
+  private readonly salasService = inject(SalasService);
+  private readonly gameSocket = inject(GameSocketService);
+
   readonly preguntaActivaId = input<number | null>(null);
   readonly preguntas = input<any[]>([]);
   readonly votosPublico = input<VotosPublico | null>(null);
-  readonly comodinBloqueado = input<string | null>(null);
+  readonly comodinBloqueado = input<string[]>([]);
   readonly comodines = input<ComodinSala[]>([]);
+  readonly tokenCompartido = input<string>('');
+  readonly interactive = input<boolean>(false);
+  readonly seleccionada = output<number>();
 
   protected readonly currentIndex = signal(0);
+  protected readonly localSelectedId = signal<number | null>(null);
+
+  // IA State
+  protected readonly iaSugerencia = signal<{ literal: string; explicacion: string } | null>(null);
+  protected readonly cargandoIa = signal(false);
 
   // Iconos
   protected readonly PrevIcon = ChevronLeft;
   protected readonly NextIcon = ChevronRight;
+  protected readonly IaIcon = BrainCircuit;
+  protected readonly LoaderIcon = Loader2;
 
   constructor() {
     // Sincronizar el índice cuando cambia la pregunta activa en el socket
@@ -44,6 +58,32 @@ export class ActiveQuestionComponent {
         const index = list.findIndex((p) => p.preguntaId === activeId);
         if (index !== -1) {
           this.currentIndex.set(index);
+          this.localSelectedId.set(null); // Resetear selección local al cambiar pregunta
+          this.iaSugerencia.set(null); // Resetear IA al cambiar pregunta
+        }
+      }
+    });
+
+    // Reaccionar a respuestas en tiempo real vía socket
+    effect(() => {
+      const result = this.gameSocket.ultimoResultado();
+      const activeId = this.preguntaActivaId();
+      
+      if (result && activeId === result.preguntaId) {
+        // Actualizar la pregunta en el historial local para que las opciones reflejen la respuesta
+        const list = [...this.preguntas()];
+        const index = list.findIndex(p => p.preguntaId === result.preguntaId);
+        
+        if (index !== -1 && !list[index].respuestaDada) {
+          list[index].respuestaDada = {
+            opcionId: this.localSelectedId() || result.opcionId || -1, // Intentar matchear con lo que eligió localmente
+            esCorrecta: result.esCorrecta,
+            feedback: result.feedback
+          };
+          // Nota: Como 'preguntas' es un input, no podemos mutar la lista original de forma reactiva simple.
+          // Pero las opciones se calculan en base a 'preguntaMostrada()', que lee de 'preguntas()'.
+          // Si el Host no actualiza la prop 'preguntas', el componente hijo no se enterará.
+          // CORRECCIÓN: El componente padre (RoomComponent) ya recibe el evento y debería actualizar la sala.
         }
       }
     });
@@ -58,9 +98,13 @@ export class ActiveQuestionComponent {
   readonly opciones = computed<OpcionVoto[]>(() => {
     const p = this.preguntaMostrada();
     const v = this.votosPublico();
+    const result = this.gameSocket.ultimoResultado();
     const isViewingActive = p?.preguntaId === this.preguntaActivaId();
 
     if (!p) return [];
+
+    // Combinar datos del historial con el resultado en tiempo real del socket
+    const respuestaDada = p.respuestaDada || (isViewingActive && result && result.preguntaId === p.preguntaId ? result : null);
 
     return p.opciones.map((o: any) => {
       const votos = isViewingActive && v ? ((v as any)[o.letra] ?? 0) : 0;
@@ -72,10 +116,10 @@ export class ActiveQuestionComponent {
         texto: o.texto,
         votos,
         porcentaje: total > 0 ? Math.round((votos / total) * 100) : 0,
-        fueElegida: p.respuestaDada?.opcionId === o.opcionId,
-        // Nota: esCorrecta solo lo mostramos si ya fue contestada o el admin lo permite
-        esCorrecta: p.respuestaDada
-          ? p.respuestaDada.esCorrecta && p.respuestaDada.opcionId === o.opcionId
+        fueElegida: respuestaDada?.opcionId === o.opcionId,
+        estaPendiente: !respuestaDada && this.localSelectedId() === o.opcionId,
+        esCorrecta: respuestaDada
+          ? respuestaDada.esCorrecta && respuestaDada.opcionId === o.opcionId
           : undefined,
       };
     });
@@ -83,9 +127,15 @@ export class ActiveQuestionComponent {
 
   readonly statusText = computed(() => {
     const p = this.preguntaMostrada();
+    const result = this.gameSocket.ultimoResultado();
+    const isViewingActive = p?.preguntaId === this.preguntaActivaId();
+    const respondida = p?.respuestaDada || (isViewingActive && result && result.preguntaId === p?.preguntaId);
+
     if (!p) return 'Esperando...';
-    if (p.respuestaDada) return 'Pregunta contestada';
-    if (p.preguntaId === this.preguntaActivaId()) return 'El encuestado está respondiendo...';
+    if (respondida) return 'Pregunta contestada';
+    if (isViewingActive) {
+       return this.localSelectedId() ? 'Procesando respuesta...' : 'El encuestado está respondiendo...';
+    }
     return 'Pregunta pendiente';
   });
 
@@ -104,5 +154,53 @@ export class ActiveQuestionComponent {
     if (this.currentIndex() > 0) {
       this.currentIndex.update((i) => i - 1);
     }
+  }
+
+  protected onOpcionClick(opcionId: number): void {
+    if (!this.interactive() || this.preguntaMostrada()?.respuestaDada || this.localSelectedId()) return;
+    this.localSelectedId.set(opcionId);
+    this.seleccionada.emit(opcionId);
+  }
+
+  protected onComodinClick(comodin: ComodinSala): void {
+    if (!this.interactive() || !comodin.activo || this.comodinBloqueado().includes(comodin.nombre)) {
+      return;
+    }
+
+    if (comodin.nombre === 'IA') {
+      this.usarComodinIa();
+    }
+    // TODO: Implementar otros comodines (Público, Llamada, etc.)
+  }
+
+  protected usarComodinIa(): void {
+    const preguntaId = this.preguntaActivaId();
+    const token = this.tokenCompartido();
+
+    // Idempotencia: Si ya estamos cargando o ya tenemos la sugerencia, no hacer nada
+    if (this.cargandoIa() || this.iaSugerencia()) return;
+
+    if (!preguntaId || !token) {
+      console.warn('[COMODIN:IA] Falta preguntaId o token para solicitar ayuda');
+      return;
+    }
+
+    console.log(`[COMODIN:IA] Solicitando sugerencia para pregunta ${preguntaId}...`);
+    this.cargandoIa.set(true);
+
+    this.salasService.solicitarSugerenciaIa(preguntaId).subscribe({
+      next: (res) => {
+        console.log('[COMODIN:IA] Sugerencia recibida:', res);
+        this.iaSugerencia.set(res);
+        this.cargandoIa.set(false);
+        // Notificar a la sala para bloquear el uso (Broadcast)
+        this.gameSocket.bloquearComodin(token, 'IA');
+      },
+      error: (err) => {
+        console.error('[COMODIN:IA] Error al solicitar ayuda:', err);
+        this.cargandoIa.set(false);
+        alert('No se pudo obtener la sugerencia de la IA. Por favor, intenta más tarde.');
+      },
+    });
   }
 }

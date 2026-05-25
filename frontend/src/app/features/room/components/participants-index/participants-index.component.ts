@@ -4,7 +4,6 @@ import { Participante } from '../../room.types';
 @Component({
   selector: 'app-participants-list',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  standalone: true,
   templateUrl: './participants-index.component.html',
   styleUrl: './participants-index.component.scss',
 })

@@ -4,7 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../../../infrastructure/database/prisma/prisma.service';
-import { CacheService } from '../../../infrastructure/cache/cache.service';
+import { ParticipantsCacheUseCase } from '../../../infrastructure/cache/use-cases/participants-cache.use-case';
 
 /**
  * Caso de uso: Obtener los detalles completos de una sala de juego.
@@ -18,7 +18,7 @@ export class GetSalaDetailsUseCase {
 
   constructor(
     private readonly prisma: PrismaService,
-    private readonly cacheService: CacheService,
+    private readonly cacheService: ParticipantsCacheUseCase,
   ) {}
 
   /**

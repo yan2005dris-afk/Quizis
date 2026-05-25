@@ -13,6 +13,7 @@ import { WebsocketsService } from '../../juego/websockets/websockets.service';
 import * as ProcessVote from '../../juego/websockets/use-cases/process-audience-vote.use-case';
 import * as SubmitAnswer from '../../juego/websockets/use-cases/submit-answer.use-case';
 import { SalasService } from '../../juego/salas/salas.service';
+import { RoomStateCacheUseCase } from '../cache/use-cases/room-state-cache.use-case';
 
 @WebSocketGateway({ cors: { origin: '*' } })
 export class JuegoGateway implements OnGatewayConnection, OnGatewayDisconnect {
@@ -32,6 +33,7 @@ export class JuegoGateway implements OnGatewayConnection, OnGatewayDisconnect {
   constructor(
     private readonly websocketsService: WebsocketsService,
     private readonly salasService: SalasService,
+    private readonly roomStateCache: RoomStateCacheUseCase,
   ) {}
 
   handleConnection(client: Socket) {
@@ -41,11 +43,14 @@ export class JuegoGateway implements OnGatewayConnection, OnGatewayDisconnect {
   async handleDisconnect(client: Socket) {
     const info = this.socketMap.get(client.id);
     if (info) {
-      await this.websocketsService.handleDisconnect({
+      const result = await this.websocketsService.handleDisconnect({
         ...info,
         socketId: client.id,
       });
       this.socketMap.delete(client.id);
+      this.server
+        .to(result.tokenCompartido)
+        .emit('participantes', result.participants.map((n) => ({ id: n, nombre: n, puntaje: 0 })));
     } else {
       this.logger.log(`Cliente desconectado sin registro previo: ${client.id}`);
     }
@@ -62,11 +67,14 @@ export class JuegoGateway implements OnGatewayConnection, OnGatewayDisconnect {
     });
 
     client.join(info.tokenCompartido);
-    this.socketMap.set(client.id, info);
+    this.socketMap.set(client.id, { tokenCompartido: info.tokenCompartido, nickname: info.nickname });
 
     this.server
       .to(info.tokenCompartido)
-      .emit('nuevo_participante', info.nickname);
+      .emit('participantes', info.participants.map((n) => ({ id: n, nombre: n, puntaje: 0 })));
+
+    const bloqueados = await this.roomStateCache.getBlockedComodines(info.tokenCompartido);
+    client.emit('comodines_bloqueados', bloqueados);
   }
 
   @SubscribeMessage('audience:vote')
@@ -106,6 +114,7 @@ export class JuegoGateway implements OnGatewayConnection, OnGatewayDisconnect {
       // Notificar a la sala que la pregunta fue respondida
       this.server.to(payload.tokenCompartido).emit('pregunta_respondida', {
         preguntaId: payload.preguntaId,
+        opcionId: payload.opcionId,
         esCorrecta: result.esCorrecta,
         feedback: result.feedback,
       });
@@ -224,7 +233,7 @@ export class JuegoGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   @SubscribeMessage('comodin_bloqueado')
-  handleComodinBloqueado(
+  async handleComodinBloqueado(
     @MessageBody()
     payload: {
       tokenCompartido: string;
@@ -232,6 +241,7 @@ export class JuegoGateway implements OnGatewayConnection, OnGatewayDisconnect {
       tipoComodin: string;
     },
   ) {
+    await this.roomStateCache.addBlockedComodin(payload.tokenCompartido, payload.tipoComodin);
     this.server.to(payload.tokenCompartido).emit('comodin_bloqueado', payload);
   }
 }

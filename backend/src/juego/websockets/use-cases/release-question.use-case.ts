@@ -1,11 +1,11 @@
 import { Injectable, Logger, BadRequestException } from '@nestjs/common';
-import { CacheService } from '../../../infrastructure/cache/cache.service';
+import { RoomStateCacheUseCase } from '../../../infrastructure/cache/use-cases/room-state-cache.use-case';
 
 @Injectable()
 export class ReleaseQuestionUseCase {
   private readonly logger = new Logger(ReleaseQuestionUseCase.name);
 
-  constructor(private readonly cacheService: CacheService) {}
+  constructor(private readonly cacheService: RoomStateCacheUseCase) {}
 
   async execute(tokenCompartido: string, pregunta: any) {
     this.logger.log(`Liberando pregunta para sala ${tokenCompartido}: ${pregunta.preguntaId}`);

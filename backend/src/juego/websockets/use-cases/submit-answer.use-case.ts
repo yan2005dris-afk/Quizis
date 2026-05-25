@@ -1,6 +1,6 @@
 import { Injectable, Logger, BadRequestException, NotFoundException } from '@nestjs/common';
-import { CacheService } from '../../../infrastructure/cache/cache.service';
-import { PrismaService } from '../../../infrastructure/database/prisma/prisma.service';
+import { RoomStateCacheUseCase } from '../../../infrastructure/cache/use-cases/room-state-cache.use-case';
+import { RecordAnswerUseCase } from '../../respuestas/use-cases/record-answer.use-case';
 
 export interface AnswerPayload {
   tokenCompartido: string;
@@ -15,8 +15,8 @@ export class SubmitAnswerUseCase {
   private readonly logger = new Logger(SubmitAnswerUseCase.name);
 
   constructor(
-    private readonly cacheService: CacheService,
-    private readonly prisma: PrismaService,
+    private readonly cacheService: RoomStateCacheUseCase,
+    private readonly recordAnswerUseCase: RecordAnswerUseCase,
   ) {}
 
   async execute(payload: AnswerPayload) {
@@ -44,14 +44,12 @@ export class SubmitAnswerUseCase {
     const esCorrecta = opcion.esCorrecta;
 
     // 4. Persistir en Base de Datos (Seguridad final)
-    await this.prisma.respuestasRonda.create({
-      data: {
-        rondaId: payload.rondaId,
-        preguntaId: payload.preguntaId,
-        opcionId: payload.opcionId,
-        esCorrecta: esCorrecta,
-        comodinUsado: payload.comodinUsado || null,
-      }
+    await this.recordAnswerUseCase.execute({
+      rondaId: payload.rondaId,
+      preguntaId: payload.preguntaId,
+      opcionId: payload.opcionId,
+      esCorrecta,
+      comodinUsado: payload.comodinUsado ?? null,
     });
 
     // 5. Actualizar estado en Redis a 'answered'
