@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { describe, it, expect, beforeEach } from 'vitest';
 import { ActiveQuestionComponent } from './active-question.component';
-import type { VotosPublico } from '../../../core/services/game-socket.service';
+import type { VotosPublico } from '../../../../core/services/game-socket.service';
 
 const preguntasMock = [
   {

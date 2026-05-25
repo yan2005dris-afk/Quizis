@@ -3,7 +3,8 @@ import { Routes } from '@angular/router';
 export const QUESTION_BANK_ROUTES: Routes = [
   {
     path: '',
-    loadComponent: () => import('./pages/bank-list/bank-list.component').then((m) => m.BankListComponent),
+    loadComponent: () =>
+      import('./pages/bank-list/bank-list.component').then((m) => m.BankListComponent),
   },
   {
     path: 'crear',

@@ -18,7 +18,10 @@
       <span class="sr-only">Cargando salas...</span>
     </div>
   } @else if (error()) {
-    <app-alert type="danger" message="No se pudieron cargar las salas. Intenta de nuevo más tarde." />
+    <app-alert
+      type="danger"
+      message="No se pudieron cargar las salas. Intenta de nuevo más tarde."
+    />
   } @else if (salas().length === 0) {
     <div class="salas-index__empty">
       <div class="salas-index__empty-icon">📋</div>

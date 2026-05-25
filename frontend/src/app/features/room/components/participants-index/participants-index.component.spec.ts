@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { describe, it, expect, beforeEach } from 'vitest';
 import { ParticipantsIndexComponent } from './participants-index.component';
-import type { Participante } from '../room.types';
+import type { Participante } from '../../room.types';
 
 describe('ParticipantsIndexComponent', () => {
   let fixture: ComponentFixture<ParticipantsIndexComponent>;

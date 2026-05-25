@@ -18,7 +18,10 @@
       <span class="sr-only">Cargando bancos...</span>
     </div>
   } @else if (bancosResource.error()) {
-    <app-alert type="danger" message="No se pudieron cargar los bancos de preguntas. Intenta de nuevo más tarde." />
+    <app-alert
+      type="danger"
+      message="No se pudieron cargar los bancos de preguntas. Intenta de nuevo más tarde."
+    />
   } @else if ((bancosResource.value() || []).length === 0) {
     <div class="bancos-index__empty">
       <div class="bancos-index__empty-icon">📚</div>

@@ -2,7 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { describe, it, expect, beforeEach } from 'vitest';
 import { By } from '@angular/platform-browser';
 import { ChatBoxComponent } from './chat-box.component';
-import type { ChatMessage } from '../room.types';
+import type { ChatMessage } from '../../room.types';
 
 describe('ChatBoxComponent', () => {
   let fixture: ComponentFixture<ChatBoxComponent>;
