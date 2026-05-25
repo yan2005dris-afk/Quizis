@@ -1,50 +1,42 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
-import { PrismaService } from '../../infrastructure/database/prisma.service';
+import { Injectable } from '@nestjs/common';
+import { CreateBancoDto } from './dto/create-banco.dto';
 import { UpdatePreguntaDto } from './dto/update-pregunta.dto';
+import { CreateBancoUseCase } from './use-cases/create-banco.use-case';
+import { GetAllBancosUseCase } from './use-cases/get-all-bancos.use-case';
+import { GetBancoUseCase } from './use-cases/get-banco.use-case';
+import { UpdateBancoUseCase } from './use-cases/update-banco.use-case';
+import { AddQuestionsUseCase } from './use-cases/add-questions.use-case';
+import { UpdateQuestionUseCase } from './use-cases/update-question.use-case';
 
 @Injectable()
 export class BancosService {
-  private readonly logger = new Logger(BancosService.name);
+  constructor(
+    private readonly createBancoUseCase: CreateBancoUseCase,
+    private readonly getAllBancosUseCase: GetAllBancosUseCase,
+    private readonly getBancoUseCase: GetBancoUseCase,
+    private readonly updateBancoUseCase: UpdateBancoUseCase,
+    private readonly addQuestionsUseCase: AddQuestionsUseCase,
+    private readonly updateQuestionUseCase: UpdateQuestionUseCase,
+  ) {}
 
-  constructor(private readonly prisma: PrismaService) {}
+  async create(dto: CreateBancoDto) {
+    return this.createBancoUseCase.execute(dto);
+  }
+
+  async crearPreguntas(bancoId: number, preguntas: any[]) {
+    return this.addQuestionsUseCase.execute(bancoId, preguntas);
+  }
 
   async findAll() {
-    this.logger.log('Buscando todos los bancos de preguntas');
-    return this.prisma.bancoPreguntas.findMany({
-      include: {
-        _count: {
-          select: { preguntas: true },
-        },
-      },
-      orderBy: {
-        createdAt: 'desc',
-      },
-    });
+    return this.getAllBancosUseCase.execute();
   }
 
   async findOne(id: number) {
-    this.logger.log(`Buscando banco de preguntas con ID: ${id}`);
-    const banco = await this.prisma.bancoPreguntas.findUnique({
-      where: { bancoId: id },
-      include: {
-        preguntas: {
-          include: {
-            opciones: true,
-          },
-          orderBy: {
-            preguntaId: 'asc',
-          },
-        },
-      },
-    });
+    return this.getBancoUseCase.execute(id);
+  }
 
-    if (!banco) {
-      throw new NotFoundException(
-        `Banco de preguntas con ID ${id} no encontrado`,
-      );
-    }
-
-    return banco;
+  async update(id: number, dto: { nombre?: string; descripcion?: string }) {
+    return this.updateBancoUseCase.execute(id, dto);
   }
 
   async updatePregunta(
@@ -52,56 +44,6 @@ export class BancosService {
     preguntaId: number,
     dto: UpdatePreguntaDto,
   ) {
-    this.logger.log(`Actualizando pregunta ${preguntaId} del banco ${bancoId}`);
-
-    // Verificar que la pregunta pertenece al banco
-    const preguntaExistente = await this.prisma.preguntas.findFirst({
-      where: { preguntaId, bancoId },
-    });
-
-    if (!preguntaExistente) {
-      throw new NotFoundException(
-        `Pregunta ${preguntaId} no encontrada en el banco ${bancoId}`,
-      );
-    }
-
-    // Extraemos solo los campos que Prisma puede actualizar
-    const {
-      opciones,
-      preguntaId: _pId,
-      bancoId: _bId,
-      createdAt: _cAt,
-      updatedAt: _uAt,
-      deletedAt: _dAt,
-      ...datosPregunta
-    } = dto;
-
-    return this.prisma.$transaction(async (tx) => {
-      // 1. Actualizar datos básicos de la pregunta
-      await tx.preguntas.update({
-        where: { preguntaId },
-        data: {
-          ...datosPregunta,
-          updatedAt: new Date(),
-        },
-      });
-
-      // 2. Si vienen opciones, sincronizarlas
-      if (opciones) {
-        await tx.opcionesPregunta.deleteMany({
-          where: { preguntaId },
-        });
-
-        await tx.opcionesPregunta.createMany({
-          data: opciones.map((o) => ({
-            preguntaId,
-            texto: o.texto,
-            esCorrecta: o.esCorrecta,
-          })),
-        });
-      }
-
-      return this.findOne(bancoId);
-    });
+    return this.updateQuestionUseCase.execute(bancoId, preguntaId, dto);
   }
 }
