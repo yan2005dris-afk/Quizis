@@ -7,7 +7,12 @@ import { UpdateEstadoSalaUseCase } from './use-cases/update-estado-sala.use-case
 import { ValidateTokenSalaUseCase } from './use-cases/validate-token-sala.use-case';
 import { ListBancosDisponiblesUseCase } from './use-cases/list-bancos-disponibles.use-case';
 import { GetSalaDetailsUseCase } from './use-cases/get-sala-details.use-case';
+import { GetSalaDetailUseCase } from './use-cases/get-sala-detail.use-case';
 import { UpdateConfiguracionSalaUseCase } from './use-cases/update-configuracion-sala.use-case';
+import { ListAllSalasUseCase } from './use-cases/list-all-salas.use-case';
+import { GetSalaLifelinesUseCase } from './use-cases/get-sala-lifelines.use-case';
+import { RegenerateRoomTokenUseCase } from './use-cases/regenerate-room-token.use-case';
+import { FinalizeRoomUseCase } from './use-cases/finalize-room.use-case';
 
 /**
  * Servicio fachada para el módulo de Salas.
@@ -24,8 +29,13 @@ export class SalasService {
     private readonly updateEstadoSalaUseCase: UpdateEstadoSalaUseCase,
     private readonly validateTokenSalaUseCase: ValidateTokenSalaUseCase,
     private readonly listBancosDisponiblesUseCase: ListBancosDisponiblesUseCase,
-    private readonly getSalaDetailsUseCase: GetSalaDetailsUseCase,
+    private readonly getSalaDetailsUseCase: GetSalaDetailsUseCase, // Para admin/detalles
+    private readonly getSalaDetailUseCase: GetSalaDetailUseCase,   // Para gameplay/historial
     private readonly updateConfiguracionSalaUseCase: UpdateConfiguracionSalaUseCase,
+    private readonly listAllSalasUseCase: ListAllSalasUseCase,
+    private readonly getSalaLifelinesUseCase: GetSalaLifelinesUseCase,
+    private readonly regenerateRoomTokenUseCase: RegenerateRoomTokenUseCase,
+    private readonly finalizeRoomUseCase: FinalizeRoomUseCase,
   ) {}
 
   /**
@@ -40,7 +50,19 @@ export class SalasService {
 
   /**
    * Delega la obtención de los detalles de una sala al caso de uso correspondiente.
-   * @param id - ID de la sala a consultar.
+   * @param idOrToken - ID o Token de la sala a consultar.
+   */
+  async obtenerPorId(idOrToken: number | string) {
+    // Si es un número, usamos GetSalaDetails (admin)
+    // Si es un string (token), usamos GetSalaDetail (gameplay)
+    if (typeof idOrToken === 'number' || !isNaN(Number(idOrToken))) {
+        return this.getSalaDetailsUseCase.execute(Number(idOrToken));
+    }
+    return this.getSalaDetailUseCase.execute(idOrToken);
+  }
+
+  /**
+   * Listado simplificado para admin
    */
   async findOne(id: number) {
     return this.getSalaDetailsUseCase.execute(id);
@@ -81,5 +103,21 @@ export class SalasService {
    */
   async listBancosDisponibles() {
     return this.listBancosDisponiblesUseCase.execute();
+  }
+
+  async listarTodas() {
+    return this.listAllSalasUseCase.execute();
+  }
+
+  async obtenerComodines(idOrToken: number | string) {
+    return this.getSalaLifelinesUseCase.execute(idOrToken);
+  }
+
+  async regenerarToken(salaId: number) {
+    return this.regenerateRoomTokenUseCase.execute(salaId);
+  }
+
+  async finalizarSala(salaId: number) {
+    return this.finalizeRoomUseCase.execute(salaId);
   }
 }

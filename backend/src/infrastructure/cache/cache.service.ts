@@ -405,174 +405,153 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
     this.memoryVotes.delete(key);
   }
 
-  /**
-   * Guarda la pregunta activa actual para una sala.
-   */
-  async setActiveQuestion(
-    tokenCompartido: string,
-    pregunta: any,
-  ): Promise<void> {
-    const key = `active_question:${tokenCompartido}`;
+  //Agregados para JuegoModule
+  async get(key: string): Promise<string | null> {
     if (this.redisClient && this.isRedisHealthy) {
       try {
-        await this.redisClient.set(key, JSON.stringify(pregunta), 'EX', 3600);
-        return;
-      } catch {
-        this.handleRedisFailure();
+        return await this.redisClient.get(key);
+      } catch (error) {
+        this.logger.warn(`[CACHE:WARN] Error genérico GET: ${error}`);
+        return null;
       }
     }
-    // Fallback memoria
-    this.memoryData.set(key, {
-      data: pregunta,
-      expiresAt: Date.now() + 3600 * 1000,
-    });
+    return null;
+  }
+
+  async set(key: string, value: string, ttlSeconds: number): Promise<void> {
+    if (this.redisClient && this.isRedisHealthy) {
+      try {
+        await this.redisClient.set(key, value, 'EX', ttlSeconds);
+      } catch (error) {
+        this.logger.warn(`[CACHE:WARN] Error genérico SET: ${error}`);
+      }
+    }
   }
 
   /**
-   * Recupera la pregunta activa actual de una sala.
+   * Valida y registra la existencia de un elemento en un set de forma atómica.
+   * Retorna true si el elemento fue agregado (no existía), false si ya existía.
    */
-  async getActiveQuestion(tokenCompartido: string): Promise<any | null> {
-    const key = `active_question:${tokenCompartido}`;
+  async checkAndSetDuplicate(
+    key: string,
+    value: string,
+    ttlSeconds: number,
+  ): Promise<boolean> {
     if (this.redisClient && this.isRedisHealthy) {
       try {
-        const data = await this.redisClient.get(key);
-        return data ? JSON.parse(data) : null;
-      } catch {
+        const added = await this.redisClient.sadd(key, value);
+        if (added === 1) {
+          await this.redisClient.expire(key, ttlSeconds);
+          return true;
+        }
+        return false;
+      } catch (error) {
+        this.logger.warn(`[CACHE:WARN] Error en Redis SADD: ${error}`);
         this.handleRedisFailure();
       }
     }
-    const mem = this.memoryData.get(key);
-    return mem ? mem.data : null;
-  }
 
-  /**
-   * Guarda la información de la ronda actual para una sala.
-   */
-  async setRondaInfo(tokenCompartido: string, info: any): Promise<void> {
-    const key = `ronda_info:${tokenCompartido}`;
-    if (this.redisClient && this.isRedisHealthy) {
-      try {
-        await this.redisClient.set(key, JSON.stringify(info), 'EX', 3600);
-        return;
-      } catch {
-        this.handleRedisFailure();
-      }
-    }
-    // Fallback memoria
-    this.memoryData.set(key, {
-      data: info,
-      expiresAt: Date.now() + 3600 * 1000,
-    });
-  }
-
-  /**
-   * Recupera la información de la ronda actual de una sala.
-   */
-  async getRondaInfo(tokenCompartido: string): Promise<any | null> {
-    const key = `ronda_info:${tokenCompartido}`;
-    if (this.redisClient && this.isRedisHealthy) {
-      try {
-        const data = await this.redisClient.get(key);
-        return data ? JSON.parse(data) : null;
-      } catch {
-        this.handleRedisFailure();
-      }
-    }
-    const mem = this.memoryData.get(key);
-    return mem ? mem.data : null;
-  }
-
-  // ─── PARTICIPANTES ONLINE ──────────────────────────────────────────
-
-  private getOnlineKey(tokenCompartido: string): string {
-    return `sala:${tokenCompartido}:online`;
-  }
-
-  /**
-   * Marca un participante como online en una sala (Redis SET).
-   */
-  async setParticipantOnline(
-    tokenCompartido: string,
-    nickname: string,
-  ): Promise<void> {
-    const key = this.getOnlineKey(tokenCompartido);
-    if (this.redisClient && this.isRedisHealthy) {
-      try {
-        await this.redisClient.sadd(key, nickname);
-        await this.redisClient.expire(key, 7200); // TTL 2h por si queda huérfano
-        return;
-      } catch {
-        this.handleRedisFailure();
-      }
-    }
-    // Fallback memoria
+    // Fallback memoria (aproximado)
     let entry = this.memoryOnline.get(key);
     if (!entry) {
       entry = {
         participants: new Set<string>(),
-        expiresAt: Date.now() + 7200 * 1000,
+        expiresAt: Date.now() + ttlSeconds * 1000,
+      };
+      this.memoryOnline.set(key, entry);
+    }
+    if (entry.participants.has(value)) return false;
+    entry.participants.add(value);
+    return true;
+  }
+
+  // Métodos para gestión de participantes online
+  async addParticipantOnline(
+    tokenCompartido: string,
+    nickname: string,
+  ): Promise<void> {
+    const key = `online:${tokenCompartido}`;
+
+    if (this.redisClient && this.isRedisHealthy) {
+      try {
+        await this.redisClient.sadd(key, nickname);
+        await this.redisClient.expire(key, 3600);
+        return;
+      } catch (error) {
+        const errorMsg = error instanceof Error ? error.message : String(error);
+        this.logger.warn(
+          `[CACHE:WARN] Error en Redis durante addParticipantOnline: ${errorMsg}. Usando fallback en memoria.`,
+        );
+        this.handleRedisFailure();
+      }
+    }
+
+    // Fallback en memoria
+    let entry = this.memoryOnline.get(key);
+    if (!entry) {
+      entry = {
+        participants: new Set<string>(),
+        expiresAt: Date.now() + 3600 * 1000,
       };
       this.memoryOnline.set(key, entry);
     }
     entry.participants.add(nickname);
   }
 
-  /**
-   * Marca un participante como offline en una sala (Redis SET).
-   */
   async removeParticipantOnline(
     tokenCompartido: string,
     nickname: string,
   ): Promise<void> {
-    const key = this.getOnlineKey(tokenCompartido);
+    const key = `online:${tokenCompartido}`;
+
     if (this.redisClient && this.isRedisHealthy) {
       try {
         await this.redisClient.srem(key, nickname);
         return;
-      } catch {
+      } catch (error) {
+        const errorMsg = error instanceof Error ? error.message : String(error);
+        this.logger.warn(
+          `[CACHE:WARN] Error en Redis durante removeParticipantOnline: ${errorMsg}. Usando fallback en memoria.`,
+        );
         this.handleRedisFailure();
       }
     }
-    // Fallback memoria
+
+    // Fallback en memoria
     const entry = this.memoryOnline.get(key);
     if (entry) {
       entry.participants.delete(nickname);
-      if (entry.participants.size === 0) {
-        this.memoryOnline.delete(key);
-      }
     }
   }
 
-  /**
-   * Retorna los nicknames de participantes online en una sala.
-   */
   async getOnlineParticipants(tokenCompartido: string): Promise<string[]> {
-    const key = this.getOnlineKey(tokenCompartido);
-    if (this.redisClient && this.isRedisHealthy) {
-      try {
-        return await this.redisClient.smembers(key);
-      } catch {
-        this.handleRedisFailure();
-      }
-    }
-    // Fallback memoria
-    const entry = this.memoryOnline.get(key);
-    return entry ? Array.from(entry.participants) : [];
-  }
+    const key = `online:${tokenCompartido}`;
+    const participants = new Set<string>();
 
-  /**
-   * Limpia el estado online de una sala completa (ej: cuando termina).
-   */
-  async clearOnlineParticipants(tokenCompartido: string): Promise<void> {
-    const key = this.getOnlineKey(tokenCompartido);
+    // Cargar de memoria
+    const memEntry = this.memoryOnline.get(key);
+    if (memEntry) {
+      for (const p of memEntry.participants) {
+        participants.add(p);
+      }
+    }
+
+    // Cargar de Redis
     if (this.redisClient && this.isRedisHealthy) {
       try {
-        await this.redisClient.del(key);
-        return;
-      } catch {
+        const data = await this.redisClient.smembers(key);
+        for (const p of data) {
+          participants.add(p);
+        }
+      } catch (error) {
+        const errorMsg = error instanceof Error ? error.message : String(error);
+        this.logger.warn(
+          `[CACHE:WARN] Error en Redis durante getParticipantsOnline: ${errorMsg}.`,
+        );
         this.handleRedisFailure();
       }
     }
-    this.memoryOnline.delete(key);
+
+    return Array.from(participants);
   }
 }

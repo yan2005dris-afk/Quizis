@@ -7,40 +7,42 @@ import {
   ConnectedSocket,
   MessageBody,
 } from '@nestjs/websockets';
+import { Logger } from '@nestjs/common';
 import { Server, Socket } from 'socket.io';
-import { CacheService } from '../infrastructure/cache/cache.service';
+import { WebsocketsService } from '../../juego/websockets/websockets.service';
+import * as ProcessVote from '../../juego/websockets/use-cases/process-audience-vote.use-case';
 
 @WebSocketGateway({ cors: { origin: '*' } })
-export class QuizGateway implements OnGatewayConnection, OnGatewayDisconnect {
+export class JuegoGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
   server!: Server;
 
+  private readonly logger = new Logger(JuegoGateway.name);
+
   /**
    * Mapeo socket.id -> { tokenCompartido, nickname }
-   * Para saber quién se desconecta cuando se cierra el socket.
    */
   private readonly socketMap = new Map<
     string,
     { tokenCompartido: string; nickname: string }
   >();
 
-  constructor(private readonly cacheService: CacheService) {}
+  constructor(private readonly websocketsService: WebsocketsService) {}
 
   handleConnection(client: Socket) {
-    console.log(`Cliente conectado: ${client.id}`);
+    this.logger.log(`Cliente conectado: ${client.id}`);
   }
 
   async handleDisconnect(client: Socket) {
     const info = this.socketMap.get(client.id);
     if (info) {
-      await this.cacheService.removeParticipantOnline(
-        info.tokenCompartido,
-        info.nickname,
-      );
+      await this.websocketsService.handleDisconnect({
+        ...info,
+        socketId: client.id,
+      });
       this.socketMap.delete(client.id);
-      console.log(`${info.nickname} salió de la sala ${info.tokenCompartido}`);
     } else {
-      console.log(`Cliente desconectado: ${client.id}`);
+      this.logger.log(`Cliente desconectado sin registro previo: ${client.id}`);
     }
   }
 
@@ -49,16 +51,46 @@ export class QuizGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @ConnectedSocket() client: Socket,
     @MessageBody() payload: { tokenCompartido: string; nombre: string },
   ) {
-    client.join(payload.tokenCompartido);
-    console.log(
-      `${payload.nombre} se unió a la sala con token: ${payload.tokenCompartido}`,
-    );
+    const info = await this.websocketsService.joinRoom({
+      ...payload,
+      socketId: client.id,
+    });
+
+    client.join(info.tokenCompartido);
+    this.socketMap.set(client.id, info);
+
     this.server
-      .to(payload.tokenCompartido)
-      .emit('nuevo_participante', payload.nombre);
+      .to(info.tokenCompartido)
+      .emit('nuevo_participante', info.nickname);
   }
 
-  // CICLO DE VIDA DE LOS EVENTOS DEL JUEGO
+  @SubscribeMessage('audience:vote')
+  async handleVote(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() payload: ProcessVote.VotePayload,
+  ) {
+    try {
+      const result = await this.websocketsService.processVote(payload);
+
+      if (!result.success) {
+        return result;
+      }
+
+      this.server.to(result.data!.tokenCompartido).emit('voto_recibido', {
+        participanteId: result.data!.participanteId,
+      });
+
+      return result;
+    } catch (error) {
+      this.logger.error(`Error en Gateway al procesar voto:`, error);
+      return {
+        success: false,
+        message: 'Error interno del servidor. Intenta nuevamente.',
+      };
+    }
+  }
+
+  // REENVÍO DE EVENTOS DE CICLO DE VIDA (Relays)
 
   @SubscribeMessage('sala_creada')
   handleSalaCreada(
@@ -85,20 +117,6 @@ export class QuizGateway implements OnGatewayConnection, OnGatewayDisconnect {
       .emit('temporizador_actualizado', payload.tiempoRestante);
   }
 
-  @SubscribeMessage('voto_recibido')
-  handleVotoRecibido(
-    @MessageBody()
-    payload: {
-      tokenCompartido: string;
-      userId: string;
-      respuestaId: string;
-    },
-  ) {
-    this.server
-      .to(payload.tokenCompartido)
-      .emit('voto_recibido', { userId: payload.userId });
-  }
-
   @SubscribeMessage('comodin_bloqueado')
   handleComodinBloqueado(
     @MessageBody()
@@ -109,18 +127,5 @@ export class QuizGateway implements OnGatewayConnection, OnGatewayDisconnect {
     },
   ) {
     this.server.to(payload.tokenCompartido).emit('comodin_bloqueado', payload);
-  }
-
-  @SubscribeMessage('estado_sala_actualizado')
-  handleEstadoSalaActualizado(
-    @MessageBody()
-    payload: {
-      tokenCompartido: string;
-      estado: string;
-    },
-  ) {
-    this.server
-      .to(payload.tokenCompartido)
-      .emit('estado_sala_actualizado', payload.estado);
   }
 }

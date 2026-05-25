@@ -3,11 +3,10 @@ import { IdentityModule } from './identity/identity.module';
 import { ConfigModule } from '@nestjs/config';
 import { DatabaseModule } from './infrastructure/database/prisma.module';
 import { ThrottlerModule } from '@nestjs/throttler';
-import { GamesModule } from './games/games.module';
-import { WebsocketsModule } from './websockets/websockets.module';
+import { JuegoModule } from './juego/juego.module';
 import { CacheModule } from './infrastructure/cache/cache.module';
-import { SalasModule } from './juego/salas/salas.module';
-import { RondasModule } from './juego/rondas/rondas.module';
+import { HealthModule } from './infrastructure/health/health.module';
+import { WebsocketsInfraModule } from './infrastructure/websockets/websockets.module';
 
 @Module({
   imports: [
@@ -18,12 +17,10 @@ import { RondasModule } from './juego/rondas/rondas.module';
     ThrottlerModule.forRoot([{ ttl: 60000, limit: 100 }]),
     DatabaseModule,
     IdentityModule,
-    GamesModule,
-    WebsocketsModule,
+    JuegoModule,
     CacheModule,
-    VotosModule,
-    SalasModule,
-    RondasModule,
+    HealthModule,
+    WebsocketsInfraModule,
   ],
   controllers: [],
   providers: [],
