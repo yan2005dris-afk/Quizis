@@ -11,6 +11,8 @@ import { Logger } from '@nestjs/common';
 import { Server, Socket } from 'socket.io';
 import { WebsocketsService } from '../../juego/websockets/websockets.service';
 import * as ProcessVote from '../../juego/websockets/use-cases/process-audience-vote.use-case';
+import * as SubmitAnswer from '../../juego/websockets/use-cases/submit-answer.use-case';
+import { SalasService } from '../../juego/salas/salas.service';
 
 @WebSocketGateway({ cors: { origin: '*' } })
 export class JuegoGateway implements OnGatewayConnection, OnGatewayDisconnect {
@@ -27,7 +29,10 @@ export class JuegoGateway implements OnGatewayConnection, OnGatewayDisconnect {
     { tokenCompartido: string; nickname: string }
   >();
 
-  constructor(private readonly websocketsService: WebsocketsService) {}
+  constructor(
+    private readonly websocketsService: WebsocketsService,
+    private readonly salasService: SalasService,
+  ) {}
 
   handleConnection(client: Socket) {
     this.logger.log(`Cliente conectado: ${client.id}`);
@@ -90,6 +95,90 @@ export class JuegoGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
   }
 
+  @SubscribeMessage('responder_pregunta')
+  async handleAnswer(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() payload: SubmitAnswer.AnswerPayload,
+  ) {
+    try {
+      const result = await this.websocketsService.submitAnswer(payload);
+
+      // Notificar a la sala que la pregunta fue respondida
+      this.server.to(payload.tokenCompartido).emit('pregunta_respondida', {
+        preguntaId: payload.preguntaId,
+        esCorrecta: result.esCorrecta,
+        feedback: result.feedback,
+      });
+
+      return result;
+    } catch (error: any) {
+      this.logger.error(`Error en Gateway al responder pregunta:`, error);
+      return {
+        success: false,
+        message: error.message || 'Error interno al procesar respuesta.',
+      };
+    }
+  }
+
+  @SubscribeMessage('cambiar_estado_sala')
+  async handleToggleRoom(
+    @MessageBody() payload: { tokenCompartido: string; habilitada: boolean },
+  ) {
+    try {
+      const result = await this.websocketsService.toggleRoomEnabled(
+        payload.tokenCompartido,
+        payload.habilitada,
+      );
+
+      this.server.to(payload.tokenCompartido).emit('sala_estado_cambiado', {
+        habilitada: result.enabled,
+      });
+
+      return result;
+    } catch (error: any) {
+      this.logger.error(`Error en Gateway al cambiar estado de sala:`, error);
+      return {
+        success: false,
+        message: 'Error al cambiar el estado de la sala.',
+      };
+    }
+  }
+
+  @SubscribeMessage('regenerar_token')
+  async handleRegenerateToken(
+    @MessageBody() payload: { salaId: number; tokenAnterior: string },
+  ) {
+    try {
+      const res = await this.salasService.regenerarToken(payload.salaId);
+
+      // Notificar a la sala antigua que el token cambió
+      this.server.to(payload.tokenAnterior).emit('token_sala_actualizado', {
+        nuevoToken: res.tokenCompartido,
+      });
+
+      return res;
+    } catch (error) {
+      return { success: false, message: 'No se pudo regenerar el token.' };
+    }
+  }
+
+  @SubscribeMessage('finalizar_partida')
+  async handleFinalizeGame(
+    @MessageBody() payload: { salaId: number; tokenCompartido: string },
+  ) {
+    try {
+      const res = await this.salasService.finalizarSala(payload.salaId);
+
+      this.server.to(payload.tokenCompartido).emit('partida_finalizada', {
+        totalParticipantes: res.totalParticipantes,
+      });
+
+      return res;
+    } catch (error) {
+      return { success: false, message: 'No se pudo finalizar la partida.' };
+    }
+  }
+
   // REENVÍO DE EVENTOS DE CICLO DE VIDA (Relays)
 
   @SubscribeMessage('sala_creada')
@@ -100,12 +189,29 @@ export class JuegoGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   @SubscribeMessage('pregunta_liberada')
-  handlePreguntaLiberada(
+  async handlePreguntaLiberada(
     @MessageBody() payload: { tokenCompartido: string; pregunta: any },
   ) {
-    this.server
-      .to(payload.tokenCompartido)
-      .emit('pregunta_liberada', payload.pregunta);
+    try {
+      // 1. Guardar en Redis y validar si se puede liberar
+      await this.websocketsService.releaseQuestion(
+        payload.tokenCompartido,
+        payload.pregunta,
+      );
+
+      // 2. Emitir a la sala
+      this.server
+        .to(payload.tokenCompartido)
+        .emit('pregunta_liberada', payload.pregunta);
+
+      return { success: true };
+    } catch (error: any) {
+      this.logger.warn(`Bloqueo de liberación: ${error.message}`);
+      return {
+        success: false,
+        message: error.message,
+      };
+    }
   }
 
   @SubscribeMessage('temporizador_actualizado')

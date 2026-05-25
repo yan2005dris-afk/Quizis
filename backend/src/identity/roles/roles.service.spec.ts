@@ -2,7 +2,7 @@ import type { TestingModule } from '@nestjs/testing';
 import { Test } from '@nestjs/testing';
 import { NotFoundException } from '@nestjs/common';
 import { RolesService } from './roles.service';
-import { PrismaService } from 'src/infrastructure/database/prisma.service';
+import { PrismaService } from 'src/infrastructure/database/prisma/prisma.service';
 import { CreateRoleUseCase } from './use-cases/create-role.use-case';
 import { AssignPermissionToRoleUseCase } from './use-cases/assign-permission-to-role.use-case';
 import { RemovePermissionFromRoleUseCase } from './use-cases/remove-permission-from-role.use-case';

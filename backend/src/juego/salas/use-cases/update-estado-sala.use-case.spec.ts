@@ -2,7 +2,7 @@ import type { TestingModule } from '@nestjs/testing';
 import { Test } from '@nestjs/testing';
 import { NotFoundException, BadRequestException } from '@nestjs/common';
 import { UpdateEstadoSalaUseCase } from './update-estado-sala.use-case';
-import { PrismaService } from 'src/infrastructure/database/prisma.service';
+import { PrismaService } from 'src/infrastructure/database/prisma/prisma.service';
 import { EstadoSala } from '../dto/update-estado-sala.dto';
 
 describe('UpdateEstadoSalaUseCase', () => {

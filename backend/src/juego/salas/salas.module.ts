@@ -2,17 +2,33 @@ import { Module } from '@nestjs/common';
 import { SalasController } from './salas.controller';
 import { SalasService } from './salas.service';
 import { ListAllSalasUseCase } from './use-cases/list-all-salas.use-case';
-import { GetSalaDetailUseCase } from './use-cases/get-sala-detail.use-case';
 import { GetSalaLifelinesUseCase } from './use-cases/get-sala-lifelines.use-case';
+import { RegenerateRoomTokenUseCase } from './use-cases/regenerate-room-token.use-case';
+import { FinalizeRoomUseCase } from './use-cases/finalize-room.use-case';
+import { CreateSalaUseCase } from './use-cases/create-sala.use-case';
+import { UpdateEstadoSalaUseCase } from './use-cases/update-estado-sala.use-case';
+import { ValidateTokenSalaUseCase } from './use-cases/validate-token-sala.use-case';
+import { ListBancosDisponiblesUseCase } from './use-cases/list-bancos-disponibles.use-case';
+import { GetSalaDetailsUseCase } from './use-cases/get-sala-details.use-case';
+import { UpdateConfiguracionSalaUseCase } from './use-cases/update-configuracion-sala.use-case';
+import { AuthModule } from '../../identity/auth/auth.module';
+import { CacheModule } from '../../infrastructure/cache/cache.module';
 
 @Module({
-  imports: [AuthModule],
+  imports: [AuthModule, CacheModule],
   controllers: [SalasController],
   providers: [
     SalasService,
     ListAllSalasUseCase,
-    GetSalaDetailUseCase,
     GetSalaLifelinesUseCase,
+    RegenerateRoomTokenUseCase,
+    FinalizeRoomUseCase,
+    CreateSalaUseCase,
+    UpdateEstadoSalaUseCase,
+    ValidateTokenSalaUseCase,
+    ListBancosDisponiblesUseCase,
+    GetSalaDetailsUseCase,
+    UpdateConfiguracionSalaUseCase,
   ],
   exports: [SalasService],
 })

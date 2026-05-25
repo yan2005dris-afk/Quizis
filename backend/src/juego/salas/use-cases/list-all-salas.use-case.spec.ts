@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ListAllSalasUseCase } from './list-all-salas.use-case';
-import { PrismaService } from '../../../infrastructure/database/prisma.service';
+import { PrismaService } from '../../../infrastructure/database/prisma/prisma.service';
 
 describe('ListAllSalasUseCase', () => {
   let useCase: ListAllSalasUseCase;

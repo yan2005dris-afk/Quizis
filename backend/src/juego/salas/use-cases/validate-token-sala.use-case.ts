@@ -5,7 +5,7 @@ import {
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
-import { PrismaService } from '../../../infrastructure/database/prisma.service';
+import { PrismaService } from '../../../infrastructure/database/prisma/prisma.service';
 import { EstadoSala } from '../dto/update-estado-sala.dto';
 
 /**

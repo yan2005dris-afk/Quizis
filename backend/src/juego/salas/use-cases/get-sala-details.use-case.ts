@@ -1,52 +1,167 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { PrismaService } from '../../../infrastructure/database/prisma.service';
+import {
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
+import { PrismaService } from '../../../infrastructure/database/prisma/prisma.service';
+import { CacheService } from '../../../infrastructure/cache/cache.service';
 
 /**
  * Caso de uso: Obtener los detalles completos de una sala de juego.
  *
- * Retorna la información de la sala junto con el catálogo de comodines
- * y el estado activo/inactivo de cada uno en esta sala.
+ * Provee una visión unificada tanto para administración como para gameplay,
+ * incluyendo participantes, rondas activas, historial y comodines.
  */
 @Injectable()
 export class GetSalaDetailsUseCase {
-  constructor(private readonly prisma: PrismaService) {}
+  private readonly logger = new Logger(GetSalaDetailsUseCase.name);
+
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly cacheService: CacheService,
+  ) {}
 
   /**
    * Ejecuta la consulta para obtener los detalles de la sala.
-   * @param id - ID de la sala a consultar.
-   * @throws NotFoundException si la sala no existe o está borrada lógicamente.
+   * @param idOrToken - ID (number) o Token (string) de la sala.
+   * @throws NotFoundException si la sala no existe o está borrada.
    */
-  async execute(id: number) {
+  async execute(idOrToken: number | string) {
+    this.logger.log(`Obteniendo detalles de sala: ${idOrToken}`);
+
+    const isToken = typeof idOrToken === 'string' && isNaN(Number(idOrToken));
+
+    // 1. Buscar la sala con todas sus relaciones necesarias
     const sala = await this.prisma.salas.findUnique({
-      where: { salaId: id },
+      where: isToken
+        ? { tokenCompartido: idOrToken as string }
+        : { salaId: Number(idOrToken) },
       include: {
+        participantes: {
+          where: { deletedAt: null },
+          select: {
+            participanteId: true,
+            nickname: true,
+            rol: true,
+          },
+        },
         comodines: {
           include: {
             comodin: true,
+          },
+        },
+        rondas: {
+          where: { estado: 'jugando' },
+          take: 1,
+          select: {
+            rondaId: true,
+            numeroRonda: true,
+            estado: true,
+            fechaInicio: true,
+            preguntaActualId: true,
+            preguntasAsignadas: true,
           },
         },
       },
     });
 
     if (!sala || sala.deletedAt) {
-      throw new NotFoundException('Sala no encontrada');
+      throw new NotFoundException(
+        `Sala con ${isToken ? 'token' : 'ID'} ${idOrToken} no encontrada`,
+      );
     }
 
+    // 2. Procesar historial de preguntas si hay ronda activa
+    let historialPreguntas: any[] = [];
+    if (sala.rondas.length > 0) {
+      const ronda = sala.rondas[0];
+      const preguntasIds = (ronda.preguntasAsignadas as number[]) || [];
+
+      const preguntas = await this.prisma.preguntas.findMany({
+        where: { preguntaId: { in: preguntasIds } },
+        include: { opciones: true },
+      });
+
+      const respuestas = await this.prisma.respuestasRonda.findMany({
+        where: { rondaId: ronda.rondaId },
+      });
+
+      historialPreguntas = preguntasIds
+        .map((id) => {
+          const p = preguntas.find((pre) => pre.preguntaId === id);
+          if (!p) return null;
+
+          const respuesta = respuestas.find((r) => r.preguntaId === id);
+
+          return {
+            preguntaId: p.preguntaId,
+            texto: p.texto,
+            nivel: p.nivel,
+            monto: p.monto,
+            opciones: p.opciones.map((o, index) => ({
+              opcionId: o.opcionId,
+              texto: o.texto,
+              letra: String.fromCharCode(65 + index),
+            })),
+            respuestaDada: respuesta
+              ? {
+                  opcionId: respuesta.opcionId,
+                  esCorrecta: respuesta.esCorrecta,
+                }
+              : null,
+          };
+        })
+        .filter((p) => p !== null);
+    }
+
+    // 3. Obtener estado online desde Redis
+    const onlineNicknames = await this.cacheService.getOnlineParticipants(
+      sala.tokenCompartido,
+    );
+    const onlineSet = new Set(onlineNicknames);
+
+    // 4. Mapear respuesta final
     return {
       salaId: sala.salaId,
       adminId: sala.adminId,
       bancoId: sala.bancoId,
       nombre: sala.nombre,
-      tokenCompartido: sala.tokenCompartido,
       estado: sala.estado,
       limitePreguntas: sala.limitePreguntas,
+      tokenCompartido: sala.tokenCompartido,
+      totalParticipantes: sala.totalParticipantes,
       createdAt: sala.createdAt,
+      
+      participantes: sala.participantes.map((p) => ({
+        participanteId: p.participanteId,
+        nickname: p.nickname,
+        rol: p.rol,
+        isOnline: onlineSet.has(p.nickname),
+      })),
+
       comodines: sala.comodines.map((sc) => ({
         comodinId: sc.comodin.comodinId,
         nombre: sc.comodin.nombre,
         descripcion: sc.comodin.descripcion,
+        icono: sc.comodin.icono,
         activo: sc.activo,
       })),
+
+      rondaActiva:
+        sala.rondas.length > 0
+          ? {
+              rondaId: sala.rondas[0].rondaId,
+              numeroRonda: sala.rondas[0].numeroRonda,
+              estado: sala.rondas[0].estado,
+              fechaInicio: sala.rondas[0].fechaInicio?.toISOString() ?? null,
+              preguntaActualId: sala.rondas[0].preguntaActualId,
+              preguntaActual:
+                historialPreguntas.find(
+                  (p) => p.preguntaId === sala.rondas[0].preguntaActualId,
+                ) || null,
+              historialPreguntas,
+            }
+          : null,
     };
   }
 }

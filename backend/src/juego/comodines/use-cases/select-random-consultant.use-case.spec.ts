@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { SelectRandomConsultantUseCase } from './select-random-consultant.use-case';
-import { PrismaService } from '../../../infrastructure/database/prisma.service';
+import { PrismaService } from '../../../infrastructure/database/prisma/prisma.service';
 import { CacheService } from '../../../infrastructure/cache/cache.service';
 
 describe('SelectRandomConsultantUseCase', () => {

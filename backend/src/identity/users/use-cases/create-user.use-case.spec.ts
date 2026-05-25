@@ -2,7 +2,7 @@ import type { TestingModule } from '@nestjs/testing';
 import { Test } from '@nestjs/testing';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { ConflictException } from '@nestjs/common';
-import { PrismaService } from 'src/infrastructure/database/prisma.service';
+import { PrismaService } from 'src/infrastructure/database/prisma/prisma.service';
 import { CreateUserUseCase } from './create-user.use-case';
 
 describe('CreateUserUseCase', () => {

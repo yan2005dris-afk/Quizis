@@ -1,7 +1,7 @@
 import type { TestingModule } from '@nestjs/testing';
 import { Test } from '@nestjs/testing';
 import { UserService } from './user.service';
-import { PrismaService } from 'src/infrastructure/database/prisma.service';
+import { PrismaService } from 'src/infrastructure/database/prisma/prisma.service';
 import { CreateUserUseCase } from './use-cases/create-user.use-case';
 import { GetEffectivePermissionsUseCase } from './use-cases/get-effective-permissions.use-case';
 import { NotFoundException, BadRequestException } from '@nestjs/common';

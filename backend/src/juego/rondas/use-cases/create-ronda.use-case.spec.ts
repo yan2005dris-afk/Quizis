@@ -2,7 +2,7 @@ import type { TestingModule } from '@nestjs/testing';
 import { Test } from '@nestjs/testing';
 import { NotFoundException, BadRequestException } from '@nestjs/common';
 import { CreateRondaUseCase } from './create-ronda.use-case';
-import { PrismaService } from 'src/infrastructure/database/prisma.service';
+import { PrismaService } from 'src/infrastructure/database/prisma/prisma.service';
 
 describe('CreateRondaUseCase', () => {
   let useCase: CreateRondaUseCase;

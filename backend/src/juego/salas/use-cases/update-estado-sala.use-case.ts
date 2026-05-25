@@ -3,7 +3,7 @@ import {
   NotFoundException,
   BadRequestException,
 } from '@nestjs/common';
-import { PrismaService } from '../../../infrastructure/database/prisma.service';
+import { PrismaService } from '../../../infrastructure/database/prisma/prisma.service';
 import { UpdateEstadoSalaDto, EstadoSala } from '../dto/update-estado-sala.dto';
 
 /**

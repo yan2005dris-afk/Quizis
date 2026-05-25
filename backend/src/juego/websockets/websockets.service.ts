@@ -5,6 +5,9 @@ import {
   ProcessAudienceVoteUseCase,
   VotePayload,
 } from './use-cases/process-audience-vote.use-case';
+import { ReleaseQuestionUseCase } from './use-cases/release-question.use-case';
+import { SubmitAnswerUseCase, AnswerPayload } from './use-cases/submit-answer.use-case';
+import { ToggleRoomEnabledUseCase } from './use-cases/toggle-room-enabled.use-case';
 
 @Injectable()
 export class WebsocketsService {
@@ -12,6 +15,9 @@ export class WebsocketsService {
     private readonly joinRoomUseCase: JoinRoomUseCase,
     private readonly handleDisconnectUseCase: HandleDisconnectUseCase,
     private readonly processAudienceVoteUseCase: ProcessAudienceVoteUseCase,
+    private readonly releaseQuestionUseCase: ReleaseQuestionUseCase,
+    private readonly submitAnswerUseCase: SubmitAnswerUseCase,
+    private readonly toggleRoomEnabledUseCase: ToggleRoomEnabledUseCase,
   ) {}
 
   async joinRoom(payload: {
@@ -32,5 +38,17 @@ export class WebsocketsService {
 
   async processVote(payload: VotePayload) {
     return this.processAudienceVoteUseCase.execute(payload);
+  }
+
+  async releaseQuestion(token: string, pregunta: any) {
+    return this.releaseQuestionUseCase.execute(token, pregunta);
+  }
+
+  async submitAnswer(payload: AnswerPayload) {
+    return this.submitAnswerUseCase.execute(payload);
+  }
+
+  async toggleRoomEnabled(token: string, enabled: boolean) {
+    return this.toggleRoomEnabledUseCase.execute(token, enabled);
   }
 }

@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { GetSalaLifelinesUseCase } from './get-sala-lifelines.use-case';
-import { PrismaService } from '../../../infrastructure/database/prisma.service';
+import { PrismaService } from '../../../infrastructure/database/prisma/prisma.service';
 import { NotFoundException } from '@nestjs/common';
 
 describe('GetSalaLifelinesUseCase', () => {

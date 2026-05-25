@@ -6,6 +6,9 @@ import { ValidateVoteUniquenessUseCase } from './use-cases/validate-vote-uniquen
 import { JoinRoomUseCase } from './use-cases/join-room.use-case';
 import { HandleDisconnectUseCase } from './use-cases/handle-disconnect.use-case';
 import { ProcessAudienceVoteUseCase } from './use-cases/process-audience-vote.use-case';
+import { ReleaseQuestionUseCase } from './use-cases/release-question.use-case';
+import { SubmitAnswerUseCase } from './use-cases/submit-answer.use-case';
+import { ToggleRoomEnabledUseCase } from './use-cases/toggle-room-enabled.use-case';
 
 @Module({
   imports: [CacheModule, VotosModule],
@@ -15,6 +18,9 @@ import { ProcessAudienceVoteUseCase } from './use-cases/process-audience-vote.us
     JoinRoomUseCase,
     HandleDisconnectUseCase,
     ProcessAudienceVoteUseCase,
+    ReleaseQuestionUseCase,
+    SubmitAnswerUseCase,
+    ToggleRoomEnabledUseCase,
   ],
   exports: [WebsocketsService],
 })

@@ -1,7 +1,7 @@
 import type { TestingModule } from '@nestjs/testing';
 import { Test } from '@nestjs/testing';
 import { FindAllPermissionsUseCase } from './find-all-permissions.use-case';
-import { PrismaService } from 'src/infrastructure/database/prisma.service';
+import { PrismaService } from 'src/infrastructure/database/prisma/prisma.service';
 
 describe('FindAllPermissionsUseCase', () => {
   let useCase: FindAllPermissionsUseCase;

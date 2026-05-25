@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { UpdateQuestionUseCase } from './update-question.use-case';
-import { PrismaService } from '../../../infrastructure/database/prisma.service';
+import { PrismaService } from '../../../infrastructure/database/prisma/prisma.service';
 import { NotFoundException } from '@nestjs/common';
 
 describe('UpdateQuestionUseCase', () => {

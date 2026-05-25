@@ -4,7 +4,7 @@ import { NotFoundException, BadRequestException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { CreateSalaUseCase } from './create-sala.use-case';
-import { PrismaService } from 'src/infrastructure/database/prisma.service';
+import { PrismaService } from 'src/infrastructure/database/prisma/prisma.service';
 import { EstadoSala } from '../dto/update-estado-sala.dto';
 
 describe('CreateSalaUseCase', () => {
