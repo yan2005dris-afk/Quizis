@@ -1,0 +1,13 @@
+<div class="toast-container" aria-live="polite" aria-atomic="true">
+  @for (toast of toastService.currentToasts(); track toast.id) {
+    <div class="toast-item">
+      <app-alert
+        [type]="toast.type"
+        [title]="toast.title || ''"
+        [message]="toast.message"
+        [dismissible]="true"
+        (dismissed)="toastService.remove(toast.id)"
+      />
+    </div>
+  }
+</div>

@@ -1,0 +1,63 @@
+<div class="bank-create-page">
+  <header class="page-header">
+    <a routerLink="/bancos" class="back-link">← Volver a Bancos</a>
+    <h1 class="page-title">Crear Banco de Preguntas</h1>
+    <p class="page-sub">Carga masiva de cuestionarios desde archivos externos.</p>
+  </header>
+
+  <div class="content-card">
+    <!-- ARCHIVO -->
+    <div class="file-row">
+      <div class="file-info">
+        <div class="file-icon" aria-hidden="true">📄</div>
+        <div>
+          <p class="file-name">banco_preguntas_final.json</p>
+          <p class="file-meta">42.5 kb · 100% completado</p>
+        </div>
+      </div>
+      <button class="change-btn" type="button">Cambiar archivo</button>
+    </div>
+
+    <hr class="divider" />
+
+    <!-- PREVIEW -->
+    <p class="section-label">Vista previa de importación</p>
+    <div class="preview-info">
+      <span class="badge-analyzed">✓ Analizado</span>
+      <span class="detected-text">15 preguntas detectadas</span>
+      <button class="ver-todas" type="button">Ver todas las preguntas</button>
+    </div>
+
+    <!-- PREGUNTA -->
+    <div class="question-box">
+      <div class="question-header">
+        <span class="preview-tag">Muestra: pregunta #1</span>
+        <span class="badge-nivel">Nivel: Experto</span>
+      </div>
+      <p class="question-text">
+        ¿Cuál es la capital histórica del Imperio Bizantino antes de su caída en 1453?
+      </p>
+      <div class="options-grid">
+        <button class="opt" type="button">A) Roma</button>
+        <button class="opt correct" type="button">B) Constantinopla</button>
+        <button class="opt" type="button">C) Atenas</button>
+        <button class="opt" type="button">D) Cartago</button>
+      </div>
+    </div>
+
+    <!-- MAPEO -->
+    <div class="mapeo-row">
+      <span class="mapeo-icon">⚙</span>
+      <span class="mapeo-label">Mapeo de Campos Técnicos</span>
+      <span class="mapeo-rec">Recomendado</span>
+      <span class="mapeo-arrow">∨</span>
+    </div>
+
+    <!-- BOTONES -->
+    <div class="footer">
+      <app-button variant="ghost" routerLink="/bancos">Cancelar</app-button>
+      <app-button variant="secondary">Re mapear</app-button>
+      <app-button routerLink="/bancos">Confirmar Importación</app-button>
+    </div>
+  </div>
+</div>

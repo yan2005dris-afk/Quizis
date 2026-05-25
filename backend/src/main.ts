@@ -174,10 +174,9 @@ estado efímero: participantes conectados, pregunta actual, votos del público.
     .addTag('auth', 'Autenticación del admin (login, refresh, logout)')
     .addTag('users', 'Gestión de usuarios admin')
     .addTag('roles', 'Administración de roles')
-    .addTag('rooms', 'Gestión de salas de quiz')
-    .addTag('questions', 'Banco de preguntas por sala')
-    .addTag('rounds', 'Rondas de juego — asignación de estudiante y progreso')
-    .addTag('round-answers', 'Respuestas del estudiante durante una ronda')
+    .addTag('permissions', 'Gestión de permisos')
+    .addTag('salas', 'Gestión de salas de quiz')
+    .addTag('bancos', 'Banco de preguntas')
     .addTag(
       'audience-votes',
       'Votos del público para el comodín "Pregunta al público"',

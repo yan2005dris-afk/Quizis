@@ -6,6 +6,8 @@ import { PrismaClient } from '../../src/generated/prisma/client';
 import { seedRoles } from './seeds/role.seed';
 import { seedUSers } from './seeds/user.seed';
 import { seedComodines } from './seeds/comodines.seed';
+import { seedSalaDemo } from './seeds/sala-demo.seed';
+import { seedBancosAdicionales } from './seeds/bancos-adicionales.seed';
 
 // Cargar env desde el root de forma explícita
 dotenv.config({ path: path.join(__dirname, '../../../.env') });
@@ -61,6 +63,17 @@ async function main() {
   console.log('👤 Creando usuario admin...');
   await seedUSers(prisma, roles);
   console.log('✅ Usuarios creados correctamente.');
+
+  // Sala demo
+  console.log('🏠 Creando sala demo...');
+  const salaDemo = await seedSalaDemo(prisma);
+  console.log('✅ Sala demo creada correctamente.');
+  console.log(`   📍 Visitá /sala/${salaDemo.salaId} para verla`);
+
+  // Bancos adicionales
+  console.log('📚 Creando bancos de preguntas adicionales...');
+  await seedBancosAdicionales(prisma);
+  console.log('✅ Bancos adicionales creados.');
 
   console.log('✅ Seed completado exitosamente.');
 }
