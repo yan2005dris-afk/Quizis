@@ -1,11 +1,15 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../infrastructure/database/prisma.service';
+import { CacheService } from '../../infrastructure/cache/cache.service';
 
 @Injectable()
 export class SalasService {
   private readonly logger = new Logger(SalasService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly cacheService: CacheService,
+  ) {}
 
   /**
    * Lista todas las salas con conteo de participantes.
@@ -48,7 +52,6 @@ export class SalasService {
             participanteId: true,
             nickname: true,
             rol: true,
-            isOnline: true,
           },
         },
         rondas: {
@@ -116,6 +119,12 @@ export class SalasService {
         .filter((p) => p !== null);
     }
 
+    // Obtener online status desde Redis
+    const onlineNicknames = await this.cacheService.getOnlineParticipants(
+      sala.tokenCompartido,
+    );
+    const onlineSet = new Set(onlineNicknames);
+
     return {
       salaId: sala.salaId,
       nombre: sala.nombre,
@@ -127,7 +136,7 @@ export class SalasService {
         participanteId: p.participanteId,
         nickname: p.nickname,
         rol: p.rol,
-        isOnline: p.isOnline,
+        isOnline: onlineSet.has(p.nickname),
       })),
       rondaActiva:
         sala.rondas.length > 0

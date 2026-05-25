@@ -1,6 +1,7 @@
 import { Test } from '@nestjs/testing';
 import { SalasService } from './salas.service';
 import { PrismaService } from '../../infrastructure/database/prisma.service';
+import { CacheService } from '../../infrastructure/cache/cache.service';
 
 describe('SalasService', () => {
   let service: SalasService;
@@ -22,11 +23,18 @@ describe('SalasService', () => {
     },
   };
 
+  const mockCacheService = {
+    getOnlineParticipants: jest.fn(),
+    setParticipantOnline: jest.fn(),
+    removeParticipantOnline: jest.fn(),
+  };
+
   beforeEach(async () => {
     const module = await Test.createTestingModule({
       providers: [
         SalasService,
         { provide: PrismaService, useValue: mockPrismaService },
+        { provide: CacheService, useValue: mockCacheService },
       ],
     }).compile();
 
@@ -94,7 +102,6 @@ describe('SalasService', () => {
             participanteId: 1,
             nickname: 'Juan',
             rol: 'estudiante',
-            isOnline: true,
           },
         ],
         rondas: [
@@ -125,6 +132,7 @@ describe('SalasService', () => {
         },
       ];
 
+      mockCacheService.getOnlineParticipants.mockResolvedValue(['Juan']);
       mockPrismaService.salas.findUnique.mockResolvedValue(mockSala);
       mockPrismaService.preguntas.findMany.mockResolvedValue(mockPreguntas);
       mockPrismaService.respuestasRonda.findMany.mockResolvedValue(
