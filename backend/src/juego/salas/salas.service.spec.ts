@@ -5,6 +5,8 @@ import { CreateSalaUseCase } from './use-cases/create-sala.use-case';
 import { UpdateEstadoSalaUseCase } from './use-cases/update-estado-sala.use-case';
 import { ValidateTokenSalaUseCase } from './use-cases/validate-token-sala.use-case';
 import { ListBancosDisponiblesUseCase } from './use-cases/list-bancos-disponibles.use-case';
+import { GetSalaDetailsUseCase } from './use-cases/get-sala-details.use-case';
+import { UpdateConfiguracionSalaUseCase } from './use-cases/update-configuracion-sala.use-case';
 import { EstadoSala } from './dto/update-estado-sala.dto';
 
 describe('SalasService', () => {
@@ -13,6 +15,8 @@ describe('SalasService', () => {
   let updateEstadoSalaUseCase: UpdateEstadoSalaUseCase;
   let validateTokenSalaUseCase: ValidateTokenSalaUseCase;
   let listBancosDisponiblesUseCase: ListBancosDisponiblesUseCase;
+  let getSalaDetailsUseCase: GetSalaDetailsUseCase;
+  let updateConfiguracionSalaUseCase: UpdateConfiguracionSalaUseCase;
 
   const mockCreateSalaUseCase = {
     execute: jest.fn(),
@@ -27,6 +31,14 @@ describe('SalasService', () => {
   };
 
   const mockListBancosDisponiblesUseCase = {
+    execute: jest.fn(),
+  };
+
+  const mockGetSalaDetailsUseCase = {
+    execute: jest.fn(),
+  };
+
+  const mockUpdateConfiguracionSalaUseCase = {
     execute: jest.fn(),
   };
 
@@ -47,6 +59,14 @@ describe('SalasService', () => {
           provide: ListBancosDisponiblesUseCase,
           useValue: mockListBancosDisponiblesUseCase,
         },
+        {
+          provide: GetSalaDetailsUseCase,
+          useValue: mockGetSalaDetailsUseCase,
+        },
+        {
+          provide: UpdateConfiguracionSalaUseCase,
+          useValue: mockUpdateConfiguracionSalaUseCase,
+        },
       ],
     }).compile();
 
@@ -60,6 +80,12 @@ describe('SalasService', () => {
     );
     listBancosDisponiblesUseCase = module.get<ListBancosDisponiblesUseCase>(
       ListBancosDisponiblesUseCase,
+    );
+    getSalaDetailsUseCase = module.get<GetSalaDetailsUseCase>(
+      GetSalaDetailsUseCase,
+    );
+    updateConfiguracionSalaUseCase = module.get<UpdateConfiguracionSalaUseCase>(
+      UpdateConfiguracionSalaUseCase,
     );
     jest.clearAllMocks();
   });
@@ -108,7 +134,11 @@ describe('SalasService', () => {
   describe('validateToken', () => {
     it('debería delegar la validación al ValidateTokenSalaUseCase', async () => {
       const token = 'jwt-token-to-validate';
-      const expectedResult = { salaId: 1, nombre: 'Sala Test', estado: EstadoSala.BORRADOR };
+      const expectedResult = {
+        salaId: 1,
+        nombre: 'Sala Test',
+        estado: EstadoSala.BORRADOR,
+      };
 
       mockValidateTokenSalaUseCase.execute.mockResolvedValue(expectedResult);
 
@@ -122,14 +152,62 @@ describe('SalasService', () => {
 
   describe('listBancosDisponibles', () => {
     it('debería delegar el listado al ListBancosDisponiblesUseCase', async () => {
-      const expectedResult = [{ bancoId: 1, nombre: 'Matemáticas', totalPreguntas: 5 }];
+      const expectedResult = [
+        { bancoId: 1, nombre: 'Matemáticas', totalPreguntas: 5 },
+      ];
 
-      mockListBancosDisponiblesUseCase.execute.mockResolvedValue(expectedResult);
+      mockListBancosDisponiblesUseCase.execute.mockResolvedValue(
+        expectedResult,
+      );
 
       const result = await service.listBancosDisponibles();
 
       expect(result).toEqual(expectedResult);
       expect(listBancosDisponiblesUseCase.execute).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('findOne', () => {
+    it('debería delegar la obtención de detalles al GetSalaDetailsUseCase', async () => {
+      const expectedResult = {
+        salaId: 1,
+        nombre: 'Sala Test',
+        estado: 'BORRADOR',
+        comodines: [],
+      };
+
+      mockGetSalaDetailsUseCase.execute.mockResolvedValue(expectedResult);
+
+      const result = await service.findOne(1);
+
+      expect(result).toEqual(expectedResult);
+      expect(getSalaDetailsUseCase.execute).toHaveBeenCalledWith(1);
+      expect(getSalaDetailsUseCase.execute).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('updateConfiguracion', () => {
+    it('debería delegar la actualización de configuración al UpdateConfiguracionSalaUseCase', async () => {
+      const updateDto = { nombre: 'Sala Editada', limitePreguntas: 12 };
+      const expectedResult = {
+        salaId: 1,
+        nombre: 'Sala Editada',
+        limitePreguntas: 12,
+        comodines: [],
+      };
+
+      mockUpdateConfiguracionSalaUseCase.execute.mockResolvedValue(
+        expectedResult,
+      );
+
+      const result = await service.updateConfiguracion(1, updateDto);
+
+      expect(result).toEqual(expectedResult);
+      expect(updateConfiguracionSalaUseCase.execute).toHaveBeenCalledWith(
+        1,
+        updateDto,
+      );
+      expect(updateConfiguracionSalaUseCase.execute).toHaveBeenCalledTimes(1);
     });
   });
 });

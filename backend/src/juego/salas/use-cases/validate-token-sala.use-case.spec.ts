@@ -96,7 +96,9 @@ describe('ValidateTokenSalaUseCase', () => {
 
   it('debería lanzar BadRequestException si la firma del JWT es inválida o expiró', async () => {
     const token = 'invalid-jwt-token';
-    mockJwtService.verifyAsync.mockRejectedValue(new Error('Invalid signature'));
+    mockJwtService.verifyAsync.mockRejectedValue(
+      new Error('Invalid signature'),
+    );
 
     await expect(useCase.execute(token)).rejects.toThrow(BadRequestException);
     expect(prisma.salas.findUnique).not.toHaveBeenCalled();

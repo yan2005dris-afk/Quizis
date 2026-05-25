@@ -23,6 +23,9 @@ describe('CreateSalaUseCase', () => {
     salas: {
       create: jest.fn(),
     },
+    comodines: {
+      findMany: jest.fn(),
+    },
   };
 
   const mockJwtService = {
@@ -54,6 +57,10 @@ describe('CreateSalaUseCase', () => {
     // Default configuration mocks
     mockConfigService.getOrThrow.mockReturnValue('room-secret-key');
     mockConfigService.get.mockReturnValue('24h');
+    mockPrisma.comodines.findMany.mockResolvedValue([
+      { comodinId: 1 },
+      { comodinId: 2 },
+    ]);
   });
 
   it('debería estar definido', () => {
@@ -105,7 +112,9 @@ describe('CreateSalaUseCase', () => {
 
     mockPrisma.bancoPreguntas.findUnique.mockResolvedValue({ bancoId: 1 });
     // Mock enough questions (at least 15)
-    const questions = Array.from({ length: 20 }, (_, i) => ({ preguntaId: i + 1 }));
+    const questions = Array.from({ length: 20 }, (_, i) => ({
+      preguntaId: i + 1,
+    }));
     mockPrisma.preguntas.findMany.mockResolvedValue(questions);
 
     mockPrisma.salas.create.mockResolvedValue({
@@ -149,7 +158,10 @@ describe('CreateSalaUseCase', () => {
   it('debería reintentar si hay colisión de tokenCompartido (P2002)', async () => {
     const dto = { bancoId: 1, nombre: 'Test colisión', limitePreguntas: 2 };
     const adminId = 1;
-    const p2002Error = { code: 'P2002', meta: { target: ['token_compartido'] } };
+    const p2002Error = {
+      code: 'P2002',
+      meta: { target: ['token_compartido'] },
+    };
 
     mockPrisma.bancoPreguntas.findUnique.mockResolvedValue({ bancoId: 1 });
     mockPrisma.preguntas.findMany.mockResolvedValue([
@@ -175,7 +187,10 @@ describe('CreateSalaUseCase', () => {
 
   it('debería lanzar error si se agotan los reintentos de creación por colisión', async () => {
     const dto = { bancoId: 1, nombre: 'Test agotamiento', limitePreguntas: 2 };
-    const p2002Error = { code: 'P2002', meta: { target: ['token_compartido'] } };
+    const p2002Error = {
+      code: 'P2002',
+      meta: { target: ['token_compartido'] },
+    };
 
     mockPrisma.bancoPreguntas.findUnique.mockResolvedValue({ bancoId: 1 });
     mockPrisma.preguntas.findMany.mockResolvedValue([
@@ -192,7 +207,11 @@ describe('CreateSalaUseCase', () => {
   });
 
   it('debería re-lanzar errores no relacionados con P2002', async () => {
-    const dto = { bancoId: 1, nombre: 'Test error genérico', limitePreguntas: 2 };
+    const dto = {
+      bancoId: 1,
+      nombre: 'Test error genérico',
+      limitePreguntas: 2,
+    };
     const genericError = new Error('Connection refused');
 
     mockPrisma.bancoPreguntas.findUnique.mockResolvedValue({ bancoId: 1 });

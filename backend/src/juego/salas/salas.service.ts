@@ -1,10 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import { CreateSalaDto } from './dto/create-sala.dto';
 import { UpdateEstadoSalaDto } from './dto/update-estado-sala.dto';
+import { UpdateConfiguracionSalaDto } from './dto/update-configuracion-sala.dto';
 import { CreateSalaUseCase } from './use-cases/create-sala.use-case';
 import { UpdateEstadoSalaUseCase } from './use-cases/update-estado-sala.use-case';
 import { ValidateTokenSalaUseCase } from './use-cases/validate-token-sala.use-case';
 import { ListBancosDisponiblesUseCase } from './use-cases/list-bancos-disponibles.use-case';
+import { GetSalaDetailsUseCase } from './use-cases/get-sala-details.use-case';
+import { UpdateConfiguracionSalaUseCase } from './use-cases/update-configuracion-sala.use-case';
 
 /**
  * Servicio fachada para el módulo de Salas.
@@ -21,6 +24,8 @@ export class SalasService {
     private readonly updateEstadoSalaUseCase: UpdateEstadoSalaUseCase,
     private readonly validateTokenSalaUseCase: ValidateTokenSalaUseCase,
     private readonly listBancosDisponiblesUseCase: ListBancosDisponiblesUseCase,
+    private readonly getSalaDetailsUseCase: GetSalaDetailsUseCase,
+    private readonly updateConfiguracionSalaUseCase: UpdateConfiguracionSalaUseCase,
   ) {}
 
   /**
@@ -31,6 +36,26 @@ export class SalasService {
    */
   async create(createSalaDto: CreateSalaDto, adminId: number) {
     return this.createSalaUseCase.execute(createSalaDto, adminId);
+  }
+
+  /**
+   * Delega la obtención de los detalles de una sala al caso de uso correspondiente.
+   * @param id - ID de la sala a consultar.
+   */
+  async findOne(id: number) {
+    return this.getSalaDetailsUseCase.execute(id);
+  }
+
+  /**
+   * Delega la actualización de configuración al caso de uso correspondiente.
+   * @param id - ID de la sala a configurar.
+   * @param updateConfigDto - Datos de configuración a guardar.
+   */
+  async updateConfiguracion(
+    id: number,
+    updateConfigDto: UpdateConfiguracionSalaDto,
+  ) {
+    return this.updateConfiguracionSalaUseCase.execute(id, updateConfigDto);
   }
 
   /**

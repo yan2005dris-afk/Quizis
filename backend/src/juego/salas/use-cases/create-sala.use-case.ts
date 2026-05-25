@@ -73,7 +73,13 @@ export class CreateSalaUseCase {
       limite,
     );
 
-    // 3. Crear la sala con token criptográfico UUID + PIN interno
+    // 3. Obtener los comodines del catálogo
+    const comodinesCatalogo = await this.prisma.comodines.findMany({
+      where: { deletedAt: null },
+      select: { comodinId: true },
+    });
+
+    // 4. Crear la sala con token criptográfico UUID + PIN interno
     let intentos = 0;
 
     while (intentos < this.MAX_RETRIES) {
@@ -88,13 +94,24 @@ export class CreateSalaUseCase {
             tokenCompartido,
             limitePreguntas: limite,
             estado: EstadoSala.BORRADOR,
+            comodines: {
+              create: comodinesCatalogo.map((c) => ({
+                comodinId: c.comodinId,
+                activo: true,
+              })),
+            },
           },
         });
 
-        // 4. Firmar JWT de invitación con expiración
+        // 5. Firmar JWT de invitación con expiración
         const roomSecret = this.config.getOrThrow<string>('JWT_ROOM_SECRET');
-        const roomExpiresIn = this.config.get<string>('JWT_ROOM_EXPIRES_IN', '24h');
-        const expiresIn = duracionTokenHoras ? `${duracionTokenHoras}h` : roomExpiresIn;
+        const roomExpiresIn = this.config.get<string>(
+          'JWT_ROOM_EXPIRES_IN',
+          '24h',
+        );
+        const expiresIn = duracionTokenHoras
+          ? `${duracionTokenHoras}h`
+          : roomExpiresIn;
 
         const tokenInvitacion = await this.jwtService.signAsync(
           {

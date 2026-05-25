@@ -88,4 +88,17 @@ export class QuizGateway implements OnGatewayConnection, OnGatewayDisconnect {
   ) {
     this.server.to(payload.tokenCompartido).emit('comodin_bloqueado', payload);
   }
+
+  @SubscribeMessage('estado_sala_actualizado')
+  handleEstadoSalaActualizado(
+    @MessageBody()
+    payload: {
+      tokenCompartido: string;
+      estado: string;
+    },
+  ) {
+    this.server
+      .to(payload.tokenCompartido)
+      .emit('estado_sala_actualizado', payload.estado);
+  }
 }

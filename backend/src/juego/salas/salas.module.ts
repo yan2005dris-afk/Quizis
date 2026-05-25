@@ -5,6 +5,8 @@ import { CreateSalaUseCase } from './use-cases/create-sala.use-case';
 import { UpdateEstadoSalaUseCase } from './use-cases/update-estado-sala.use-case';
 import { ValidateTokenSalaUseCase } from './use-cases/validate-token-sala.use-case';
 import { ListBancosDisponiblesUseCase } from './use-cases/list-bancos-disponibles.use-case';
+import { GetSalaDetailsUseCase } from './use-cases/get-sala-details.use-case';
+import { UpdateConfiguracionSalaUseCase } from './use-cases/update-configuracion-sala.use-case';
 import { AuthModule } from '../../identity/auth/auth.module';
 
 /**
@@ -26,6 +28,8 @@ import { AuthModule } from '../../identity/auth/auth.module';
     UpdateEstadoSalaUseCase,
     ValidateTokenSalaUseCase,
     ListBancosDisponiblesUseCase,
+    GetSalaDetailsUseCase,
+    UpdateConfiguracionSalaUseCase,
   ],
 })
 export class SalasModule {}

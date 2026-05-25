@@ -25,7 +25,7 @@ export class CreateSalaDto {
   /** Nombre descriptivo de la sala (ej. tema o asignatura) */
   @ApiProperty({
     example:
-      'Clase de Calidad de Softare - Unidad 1: Introduccion a la calidad de software',
+      'Clase de Calidad de Software - Unidad 1: Introducción a la calidad de software',
   })
   @IsString()
   @IsNotEmpty()

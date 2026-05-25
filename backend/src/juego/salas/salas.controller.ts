@@ -11,6 +11,7 @@ import {
 import { SalasService } from './salas.service';
 import { CreateSalaDto } from './dto/create-sala.dto';
 import { UpdateEstadoSalaDto } from './dto/update-estado-sala.dto';
+import { UpdateConfiguracionSalaDto } from './dto/update-configuracion-sala.dto';
 import { JwtAuthGuard } from '../../identity/auth/guards/jwt-auth.guard';
 import { PermissionsGuard } from '../../infrastructure/common/guards/permissions.guard';
 import { RequiredPermission } from '../../infrastructure/common/decorators/require-permission.decorator';
@@ -104,6 +105,52 @@ export class SalasController {
   @Get('join/:token')
   validateToken(@Param('token') token: string) {
     return this.salasService.validateToken(token);
+  }
+
+  /**
+   * Obtiene los detalles de una sala de juego por su ID.
+   * Requiere autenticación de administrador y permisos de lectura de salas.
+   * @param id - ID de la sala (validado por ParseIntPipe).
+   */
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Obtener los detalles de una sala' })
+  @ApiResponse({
+    status: 200,
+    description: 'Detalles de la sala devueltos con éxito',
+  })
+  @ApiResponse({ status: 404, description: 'Sala no encontrada' })
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @RequiredPermission('salas', 'read')
+  @Get(':id')
+  findOne(@Param('id', ParseIntPipe) id: number) {
+    return this.salasService.findOne(id);
+  }
+
+  /**
+   * Actualiza la configuración de una sala de juego por su ID.
+   * Requiere autenticación de administrador y permisos de actualización de salas.
+   * @param id - ID de la sala.
+   * @param updateConfigDto - DTO con los nuevos datos de configuración.
+   */
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Actualizar la configuración de una sala' })
+  @ApiResponse({
+    status: 200,
+    description: 'Configuración actualizada con éxito',
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Solicitud incorrecta o límite de preguntas excede el banco',
+  })
+  @ApiResponse({ status: 404, description: 'Sala no encontrada' })
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @RequiredPermission('salas', 'update')
+  @Patch(':id/configuracion')
+  updateConfiguracion(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() updateConfigDto: UpdateConfiguracionSalaDto,
+  ) {
+    return this.salasService.updateConfiguracion(id, updateConfigDto);
   }
 
   /**

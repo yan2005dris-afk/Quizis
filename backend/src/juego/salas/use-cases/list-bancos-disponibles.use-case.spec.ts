@@ -21,7 +21,9 @@ describe('ListBancosDisponiblesUseCase', () => {
       ],
     }).compile();
 
-    useCase = module.get<ListBancosDisponiblesUseCase>(ListBancosDisponiblesUseCase);
+    useCase = module.get<ListBancosDisponiblesUseCase>(
+      ListBancosDisponiblesUseCase,
+    );
     prisma = module.get<PrismaService>(PrismaService);
     jest.clearAllMocks();
   });

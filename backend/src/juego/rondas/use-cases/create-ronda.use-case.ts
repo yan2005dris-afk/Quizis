@@ -60,6 +60,12 @@ export class CreateRondaUseCase {
       );
     }
 
+    if (randomQuestions.length < limite) {
+      throw new BadRequestException(
+        `El banco de preguntas de esta sala no tiene suficientes preguntas disponibles (disponibles: ${randomQuestions.length}, requeridas: ${limite}) para cumplir con el límite configurado`,
+      );
+    }
+
     // Extraer solo los IDs para almacenarlos como JSON compacto
     const preguntasAsignadas = randomQuestions.map((q) => q.pregunta_id);
 

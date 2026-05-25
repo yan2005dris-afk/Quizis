@@ -13,6 +13,8 @@ describe('SalasController', () => {
     updateEstado: jest.fn(),
     validateToken: jest.fn(),
     listBancosDisponibles: jest.fn(),
+    findOne: jest.fn(),
+    updateConfiguracion: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -66,7 +68,11 @@ describe('SalasController', () => {
   describe('validateToken', () => {
     it('debería llamar a salasService.validateToken con el token', async () => {
       const token = 'jwt-token-123';
-      const expectedResult = { salaId: 1, nombre: 'Sala de Prueba', estado: EstadoSala.BORRADOR };
+      const expectedResult = {
+        salaId: 1,
+        nombre: 'Sala de Prueba',
+        estado: EstadoSala.BORRADOR,
+      };
 
       mockSalasService.validateToken.mockResolvedValue(expectedResult);
 
@@ -79,7 +85,9 @@ describe('SalasController', () => {
 
   describe('listBancosDisponibles', () => {
     it('debería llamar a salasService.listBancosDisponibles', async () => {
-      const expectedResult = [{ bancoId: 1, nombre: 'Matemáticas', totalPreguntas: 5 }];
+      const expectedResult = [
+        { bancoId: 1, nombre: 'Matemáticas', totalPreguntas: 5 },
+      ];
 
       mockSalasService.listBancosDisponibles.mockResolvedValue(expectedResult);
 
@@ -87,6 +95,49 @@ describe('SalasController', () => {
 
       expect(result).toEqual(expectedResult);
       expect(service.listBancosDisponibles).toHaveBeenCalled();
+    });
+  });
+
+  describe('findOne', () => {
+    it('debería llamar a salasService.findOne con el ID', async () => {
+      const expectedResult = {
+        salaId: 1,
+        nombre: 'Sala de Prueba',
+        estado: EstadoSala.BORRADOR,
+        comodines: [],
+      };
+
+      mockSalasService.findOne.mockResolvedValue(expectedResult);
+
+      const result = await controller.findOne(1);
+
+      expect(result).toEqual(expectedResult);
+      expect(service.findOne).toHaveBeenCalledWith(1);
+    });
+  });
+
+  describe('updateConfiguracion', () => {
+    it('debería llamar a salasService.updateConfiguracion con el ID y DTO', async () => {
+      const updateConfigDto = {
+        nombre: 'Sala Modificada',
+        limitePreguntas: 10,
+      };
+      const expectedResult = {
+        salaId: 1,
+        nombre: 'Sala Modificada',
+        limitePreguntas: 10,
+        comodines: [],
+      };
+
+      mockSalasService.updateConfiguracion.mockResolvedValue(expectedResult);
+
+      const result = await controller.updateConfiguracion(1, updateConfigDto);
+
+      expect(result).toEqual(expectedResult);
+      expect(service.updateConfiguracion).toHaveBeenCalledWith(
+        1,
+        updateConfigDto,
+      );
     });
   });
 });

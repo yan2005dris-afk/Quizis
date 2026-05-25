@@ -25,6 +25,18 @@ export const seedPermissions = async (prisma: PrismaClient, roles: any[]) => {
       recurso: 'salas',
       accion: 'update',
     },
+    {
+      nombre: 'Ver Sala',
+      descripcion: 'Permite ver los detalles de una sala de juego',
+      recurso: 'salas',
+      accion: 'read',
+    },
+    {
+      nombre: 'Crear Ronda',
+      descripcion: 'Permite crear una ronda de juego con preguntas aleatorias',
+      recurso: 'rondas',
+      accion: 'create',
+    },
   ];
 
   for (const perm of permisosSalas) {

@@ -138,6 +138,23 @@ describe('CreateRondaUseCase', () => {
     expect(prisma.rondas.create).not.toHaveBeenCalled();
   });
 
+  it('debería lanzar BadRequestException si el banco de preguntas tiene menos preguntas que el límite configurado', async () => {
+    const dto = { salaId: 1, participanteId: 1, numeroRonda: 1 };
+    const mockSala = { salaId: 1, bancoId: 10, limitePreguntas: 5 };
+
+    mockPrisma.salas.findUnique.mockResolvedValue(mockSala);
+    mockPrisma.$queryRaw.mockResolvedValue([
+      { pregunta_id: 1 },
+      { pregunta_id: 2 },
+    ]); // Solo 2 preguntas
+
+    await expect(useCase.execute(dto)).rejects.toThrow(BadRequestException);
+    await expect(useCase.execute(dto)).rejects.toThrow(
+      'El banco de preguntas de esta sala no tiene suficientes preguntas disponibles',
+    );
+    expect(prisma.rondas.create).not.toHaveBeenCalled();
+  });
+
   it('debería generar conjuntos diferentes de preguntas para rondas distintas', async () => {
     const dto1 = { salaId: 1, participanteId: 1, numeroRonda: 1 };
     const dto2 = { salaId: 1, participanteId: 2, numeroRonda: 1 };
