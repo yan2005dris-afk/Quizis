@@ -427,6 +427,43 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
       }
     }
   }
+
+  /**
+   * Valida y registra la existencia de un elemento en un set de forma atómica.
+   * Retorna true si el elemento fue agregado (no existía), false si ya existía.
+   */
+  async checkAndSetDuplicate(
+    key: string,
+    value: string,
+    ttlSeconds: number,
+  ): Promise<boolean> {
+    if (this.redisClient && this.isRedisHealthy) {
+      try {
+        const added = await this.redisClient.sadd(key, value);
+        if (added === 1) {
+          await this.redisClient.expire(key, ttlSeconds);
+          return true;
+        }
+        return false;
+      } catch (error) {
+        this.logger.warn(`[CACHE:WARN] Error en Redis SADD: ${error}`);
+        this.handleRedisFailure();
+      }
+    }
+
+    // Fallback memoria (aproximado)
+    let entry = this.memoryOnline.get(key);
+    if (!entry) {
+      entry = {
+        participants: new Set<string>(),
+        expiresAt: Date.now() + ttlSeconds * 1000,
+      };
+      this.memoryOnline.set(key, entry);
+    }
+    if (entry.participants.has(value)) return false;
+    entry.participants.add(value);
+    return true;
+  }
   
   // Métodos para gestión de participantes online
   async addParticipantOnline(

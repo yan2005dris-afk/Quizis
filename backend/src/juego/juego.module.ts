@@ -1,11 +1,11 @@
 import { Module } from '@nestjs/common';
-import { CacheModule } from '../infrastructure/cache/cache.module';
-import { JuegoGateway } from './websockets/juego.gateway';
-import { RedisJuegoService } from './websockets/redis-juego.service';
-import { QuizGateway } from 'src/juego/websockets/quiz.gateway';
+import { BancosModule } from './bancos/bancos.module';
+import { SalasModule } from './salas/salas.module';
+import { WebsocketsModule } from './websockets/websockets.module';
+import { VotosModule } from './votos/votos.module';
 
 @Module({
-  imports: [CacheModule],
-  providers: [RedisJuegoService, JuegoGateway, QuizGateway],
+  imports: [BancosModule, SalasModule, WebsocketsModule, VotosModule],
+  exports: [WebsocketsModule],
 })
 export class JuegoModule {}
