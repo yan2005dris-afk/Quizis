@@ -12,11 +12,23 @@ interface MemoryCacheEntry {
   expiresAt: number;
 }
 
+interface MemoryOnlineEntry {
+  participants: Set<string>;
+  expiresAt: number;
+}
+
+interface MemoryDataEntry {
+  data: any;
+  expiresAt: number;
+}
+
 @Injectable()
 export class CacheService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(CacheService.name);
   private redisClient: Redis | null = null;
-  private memoryVotes = new Map<string, MemoryCacheEntry>(); // Fallback con TTL
+  private memoryVotes = new Map<string, MemoryCacheEntry>();
+  private memoryOnline = new Map<string, MemoryOnlineEntry>();
+  private memoryData = new Map<string, MemoryDataEntry>();
   private isRedisHealthy = true;
   private reconnectTimeout: NodeJS.Timeout | null = null;
   private gcInterval: NodeJS.Timeout | null = null;
@@ -91,12 +103,31 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
   private runMemoryGC() {
     const now = Date.now();
     let count = 0;
+
+    // Limpiar votos
     for (const [key, entry] of this.memoryVotes.entries()) {
       if (entry.expiresAt < now) {
         this.memoryVotes.delete(key);
         count++;
       }
     }
+
+    // Limpiar online
+    for (const [key, entry] of this.memoryOnline.entries()) {
+      if (entry.expiresAt < now) {
+        this.memoryOnline.delete(key);
+        count++;
+      }
+    }
+
+    // Limpiar data general (pregunta activa, info ronda)
+    for (const [key, entry] of this.memoryData.entries()) {
+      if (entry.expiresAt < now) {
+        this.memoryData.delete(key);
+        count++;
+      }
+    }
+
     if (count > 0) {
       this.logger.log(
         `[CACHE:GC] Recolector de basura liberó ${count} claves en memoria expiradas.`,

@@ -3,11 +3,17 @@
   "version": "0.0.0",
   "private": true,
   "packageManager": "pnpm@11.1.1",
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=11.0.0"
+  },
   "scripts": {
     "preinstall": "npx only-allow pnpm",
     "backend:dev": "pnpm --filter backend run start:dev",
     "backend:build": "pnpm --filter backend run build",
     "frontend:dev": "pnpm --filter frontend run start",
-    "frontend:build": "pnpm --filter frontend run build"
+    "frontend:build": "pnpm --filter frontend run build",
+    "test": "pnpm --recursive run test",
+    "test:watch": "pnpm --recursive run test:watch"
   }
 }
