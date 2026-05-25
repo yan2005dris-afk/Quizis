@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, input, computed } from '@angular/core';
-import { RondaInfo } from '../room.types';
+import { RondaInfo } from '../../room.types';
 
 @Component({
   selector: 'app-event-header',

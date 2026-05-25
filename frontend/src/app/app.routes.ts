@@ -1,10 +1,10 @@
 import { Routes } from '@angular/router';
-import { ActiveQuestionComponent } from './features/room/active-question/active-question.component';
-import { LoginComponent } from './features/auth/login/login.component';
-import { DashboardComponent } from './features/dashboard/dashboard.component';
+import { ActiveQuestionComponent } from './features/room/components/active-question/active-question.component';
+import { LoginComponent } from './features/auth/pages/login/login.component';
+import { DashboardComponent } from './features/dashboard/pages/dashboard/dashboard.component';
 import { DashboardLayoutComponent } from './layout/dashboard-layout/dashboard-layout.component';
 import { RoomComponent } from './features/room/pages/room/room.component';
-import { SalasIndexComponent } from './features/salas/salas-index/salas-index.component';
+import { SalasIndexComponent } from './features/salas/pages/salas-index/salas-index.component';
 import { authGuard } from './core/guards/auth.guard';
 import { PageNotFoundComponent } from './core/components/page-not-found/page-not-found.component';
 

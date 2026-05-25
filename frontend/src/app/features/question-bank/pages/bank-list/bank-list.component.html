@@ -5,10 +5,10 @@
         <h1 class="bancos-index__title">Banco de Preguntas</h1>
         <p class="bancos-index__subtitle">Gestiona y organiza todas tus preguntas</p>
       </div>
-      <button class="btn-create" routerLink="/bancos/crear">
+      <app-button routerLink="/bancos/crear">
         <lucide-icon [img]="PlusIcon" class="icon-sm"></lucide-icon>
         Crear Banco
-      </button>
+      </app-button>
     </div>
   </header>
 
@@ -18,9 +18,7 @@
       <span class="sr-only">Cargando bancos...</span>
     </div>
   } @else if (bancosResource.error()) {
-    <div class="bancos-index__error" role="alert">
-      <p>No se pudieron cargar los bancos de preguntas. Intenta de nuevo más tarde.</p>
-    </div>
+    <app-alert type="danger" message="No se pudieron cargar los bancos de preguntas. Intenta de nuevo más tarde." />
   } @else if ((bancosResource.value() || []).length === 0) {
     <div class="bancos-index__empty">
       <div class="bancos-index__empty-icon">📚</div>

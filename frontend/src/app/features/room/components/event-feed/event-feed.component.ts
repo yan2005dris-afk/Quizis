@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
-import { SalaEvento } from '../room.types';
+import { SalaEvento } from '../../room.types';
 
 @Component({
   selector: 'app-event-feed',

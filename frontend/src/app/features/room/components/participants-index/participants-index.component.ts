@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
-import { Participante } from '../room.types';
+import { Participante } from '../../room.types';
 
 @Component({
   selector: 'app-participants-list',

@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, input, output, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ChatMessage } from '../room.types';
+import { ChatMessage } from '../../room.types';
 
 @Component({
   selector: 'app-chat-box',

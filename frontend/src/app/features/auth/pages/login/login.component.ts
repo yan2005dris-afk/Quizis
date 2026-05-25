@@ -2,9 +2,9 @@ import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/cor
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { LucideAngularModule, Eye, EyeOff, Globe } from 'lucide-angular';
-import { AuthService } from '../../../core/services/auth.service';
-import { ToastService } from '../../../core/services/toast.service';
-import { AlertComponent, ButtonComponent, InputComponent } from '../../../shared/ui';
+import { AuthService } from '../../../../core/services/auth.service';
+import { ToastService } from '../../../../core/services/toast.service';
+import { AlertComponent, ButtonComponent, InputComponent } from '../../../../shared/ui';
 
 @Component({
   selector: 'app-login',

@@ -5,10 +5,10 @@
         <h1 class="salas-index__title">Salas</h1>
         <p class="salas-index__subtitle">Todas las salas activas del sistema</p>
       </div>
-      <button class="btn-create" (click)="onCrearSala()">
+      <app-button (clicked)="onCrearSala()">
         <lucide-icon [img]="PlusIcon" class="icon-sm"></lucide-icon>
         Crear Sala
-      </button>
+      </app-button>
     </div>
   </header>
 
@@ -18,9 +18,7 @@
       <span class="sr-only">Cargando salas...</span>
     </div>
   } @else if (error()) {
-    <div class="salas-index__error" role="alert">
-      <p>No se pudieron cargar las salas. Intenta de nuevo más tarde.</p>
-    </div>
+    <app-alert type="danger" message="No se pudieron cargar las salas. Intenta de nuevo más tarde." />
   } @else if (salas().length === 0) {
     <div class="salas-index__empty">
       <div class="salas-index__empty-icon">📋</div>

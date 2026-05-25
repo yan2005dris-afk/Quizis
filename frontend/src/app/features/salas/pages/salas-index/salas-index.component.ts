@@ -1,13 +1,14 @@
 import { ChangeDetectionStrategy, Component, inject, OnInit, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { SalasService, SalaResumen } from '../../../core/services/salas.service';
+import { SalasService, SalaResumen } from '../../../../core/services/salas.service';
 import { DatePipe } from '@angular/common';
 import { LucideAngularModule, Plus } from 'lucide-angular';
+import { ButtonComponent, AlertComponent } from '../../../../shared/ui';
 
 @Component({
   selector: 'app-salas-index',
   standalone: true,
-  imports: [RouterLink, DatePipe, LucideAngularModule],
+  imports: [RouterLink, DatePipe, LucideAngularModule, ButtonComponent, AlertComponent],
   templateUrl: './salas-index.component.html',
   styleUrl: './salas-index.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
