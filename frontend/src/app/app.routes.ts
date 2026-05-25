@@ -7,7 +7,6 @@ import { RoomComponent } from './features/room/pages/room/room.component';
 import { SalasIndexComponent } from './features/salas/salas-index/salas-index.component';
 import { authGuard } from './core/guards/auth.guard';
 import { PageNotFoundComponent } from './core/components/page-not-found/page-not-found.component';
-import { MainScreen } from './features/game-show/pages/main-screen/main-screen';
 
 export const routes: Routes = [
   // Rutas públicas — sin auth, sin layout base (ej. login)
