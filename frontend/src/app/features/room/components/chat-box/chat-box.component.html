@@ -1,0 +1,43 @@
+<div class="chat-box">
+  <div class="chat-box__header">
+    <h3 class="chat-box__title">Chat</h3>
+    @if (!conectado()) {
+      <span class="chat-box__offline" data-testid="offline-badge">Sin conexión</span>
+    }
+  </div>
+  <div class="chat-box__messages">
+    @if (mensajes().length > 0) {
+      @for (msg of mensajes(); track msg.timestamp) {
+        <div class="chat-box__message" data-testid="chat-message">
+          <span class="chat-box__user">{{ msg.usuario }}</span>
+          <span class="chat-box__text">{{ msg.texto }}</span>
+          @if (msg.tipo === 'sugerencia') {
+            <span class="chat-box__sugerencia">💡</span>
+          }
+        </div>
+      }
+    } @else {
+      <p class="chat-box__empty">No hay mensajes</p>
+    }
+  </div>
+  <div class="chat-box__input-row">
+    <input
+      class="chat-box__input"
+      [class.chat-box__input--disabled]="!conectado()"
+      data-testid="chat-input"
+      [(ngModel)]="textoInput"
+      placeholder="Escribí un mensaje..."
+      (keyup.enter)="send()"
+      [disabled]="!conectado()"
+    />
+    <button
+      class="chat-box__send"
+      [class.chat-box__send--disabled]="!conectado()"
+      data-testid="send-button"
+      (click)="send()"
+      [disabled]="!conectado()"
+    >
+      Enviar
+    </button>
+  </div>
+</div>

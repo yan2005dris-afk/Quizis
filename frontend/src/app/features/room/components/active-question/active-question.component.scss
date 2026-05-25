@@ -1,0 +1,347 @@
+// Variables estéticas heredadas de la línea de diseño principal
+$color-bg-canvas: #f4f6f9;
+$color-card-white: #ffffff;
+$color-ui-primary: #3b82f6;
+$color-ui-primary-light: #eff6ff;
+$color-text-main: #1e293b;
+$color-text-muted: #64748b;
+
+// Colores de feedback semántico
+$color-success: #10b981;
+$color-success-bg: #ecfdf5;
+$color-danger: #ef4444;
+$color-danger-bg: #fef2f2;
+
+.active-question-container {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  box-sizing: border-box;
+}
+
+/* ───────────────────────────────────── */
+/* Tarjeta Blanca de Preguntas */
+/* ───────────────────────────────────── */
+.observer-card {
+  background-color: $color-card-white;
+  border-radius: 24px;
+  padding: 2.5rem;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.02);
+  border: 1px solid rgba(0, 0, 0, 0.03);
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.observer-card__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  border-bottom: 1px solid #f1f5f9;
+  padding-bottom: 1rem;
+}
+
+.observer-card__status {
+  margin: 0;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: $color-text-muted;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+
+  .status-dot {
+    width: 8px;
+    height: 8px;
+    background-color: $color-ui-primary;
+    border-radius: 50%;
+    display: inline-block;
+    box-shadow: 0 0 8px rgba(59, 130, 246, 0.5);
+  }
+}
+
+/* Paginador Estilo UI Minimalista */
+.observer-card__pagination {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background-color: #f8fafc;
+  padding: 4px 12px;
+  border-radius: 30px;
+  border: 1px solid #e2e8f0;
+}
+
+.pagination-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border: none;
+  background: transparent;
+  color: $color-ui-primary;
+  cursor: pointer;
+  border-radius: 50%;
+  transition: all 0.2s;
+
+  &:disabled {
+    color: #cbd5e1;
+    cursor: not-allowed;
+  }
+
+  &:not(:disabled):hover {
+    background-color: #e2e8f0;
+  }
+}
+
+.pagination-info {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #475569;
+  min-width: 35px;
+  text-align: center;
+}
+
+.observer-card__question-text {
+  margin: 0;
+  font-size: clamp(1.3rem, 2.2vw, 1.8rem);
+  font-weight: 800;
+  color: $color-text-main;
+  text-align: center;
+  line-height: 1.4;
+  padding: 0.5rem 0;
+}
+
+/* Rejilla de Opciones */
+.observer-card__options-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Items individuales de Opción */
+.option-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 1rem 1.25rem;
+  background-color: #f8fafc;
+  border-radius: 16px;
+  border: 1px solid #e2e8f0;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.option-item__body {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.option-item__letter {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background-color: #e2e8f0;
+  color: $color-text-main;
+  font-size: 0.8rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.option-item__text {
+  flex: 1;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: $color-text-main;
+}
+
+.option-item__percentage {
+  font-size: 1rem;
+  font-weight: 800;
+  color: $color-ui-primary;
+}
+
+/* Barras de Votos del Público Integradas */
+.option-item__progress-track {
+  width: 100%;
+  height: 6px;
+  background-color: #e2e8f0;
+  border-radius: 10px;
+  overflow: hidden;
+  margin-top: 0.25rem;
+}
+
+.option-item__progress-fill {
+  height: 100%;
+  background-color: $color-ui-primary;
+  border-radius: 10px;
+  transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.option-item__badge {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-top: 0.25rem;
+}
+
+/* Estados Dinámicos del Servidor */
+.option-item--selected {
+  border-color: $color-ui-primary;
+  background-color: $color-ui-primary-light;
+  
+  .option-item__letter {
+    background-color: $color-ui-primary;
+    color: white;
+  }
+}
+
+.option-item--correct {
+  border-color: $color-success;
+  background-color: $color-success-bg;
+
+  .option-item__letter {
+    background-color: $color-success;
+    color: white;
+  }
+  .option-item__percentage { color: $color-success; }
+  .option-item__progress-fill { background-color: $color-success; }
+  .option-item__badge { color: #059669; }
+}
+
+.option-item--incorrect {
+  border-color: $color-danger;
+  background-color: $color-danger-bg;
+
+  .option-item__letter {
+    background-color: $color-danger;
+    color: white;
+  }
+  .option-item__percentage { color: $color-danger; }
+  .option-item__progress-fill { background-color: $color-danger; }
+  .option-item__badge { color: #dc2626; }
+}
+
+/* ───────────────────────────────────── */
+/* Panel de Comodines Inferior */
+/* ───────────────────────────────────── */
+.observer-wildcards-panel {
+  background-color: $color-card-white;
+  border-radius: 24px;
+  padding: 1.5rem 2rem;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.02);
+  border: 1px solid rgba(0, 0, 0, 0.03);
+  text-align: center;
+  align-self: center;
+  width: 100%;
+  max-width: 600px;
+  box-sizing: border-box;
+}
+
+.wildcards-title {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: $color-text-muted;
+  letter-spacing: 2px;
+  margin-bottom: 1.25rem;
+  text-transform: uppercase;
+}
+
+.wildcards-grid {
+  display: flex;
+  justify-content: center;
+  gap: 2.5rem;
+  flex-wrap: wrap;
+}
+
+.wildcard-node {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.wildcard-node__icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background-color: $color-bg-canvas;
+  border: 1px solid #e2e8f0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  transition: all 0.2s;
+}
+
+.wildcard-node__label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: $color-text-main;
+  letter-spacing: 0.5px;
+}
+
+/* Modificadores de estado de comodín desde el socket */
+.wildcard-node--active {
+  .wildcard-node__icon {
+    background-color: $color-ui-primary-light;
+    border-color: $color-ui-primary;
+    box-shadow: 0 0 12px rgba(59, 130, 246, 0.2);
+  }
+  .wildcard-node__label {
+    color: $color-ui-primary;
+    font-weight: 800;
+  }
+}
+
+.wildcard-node--disabled {
+  opacity: 0.35;
+  
+  .wildcard-node__icon {
+    background-color: #f1f5f9;
+    border-color: #cbd5e1;
+  }
+}
+
+.wildcards-empty, .observer-empty-state {
+  font-size: 0.85rem;
+  color: $color-text-muted;
+  font-style: italic;
+  margin: 0;
+}
+
+/* Estado de carga */
+.observer-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  padding: 4rem 2rem;
+  background-color: $color-card-white;
+  border-radius: 24px;
+  border: 1px solid rgba(0, 0, 0, 0.03);
+}
+
+.spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid #e2e8f0;
+  border-top-color: $color-ui-primary;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}

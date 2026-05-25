@@ -3,31 +3,37 @@
   role="region"
   [attr.aria-label]="'Pregunta ' + numeroPregunta() + ' de ' + totalPreguntas()"
 >
-  <header class="card-pregunta__header">
-    <span class="card-pregunta__contador"> {{ numeroPregunta() }} / {{ totalPreguntas() }} </span>
-  </header>
+  <div class="card-pregunta__main-box">
+    
+    <div class="card-pregunta__body">
+      <h1 class="card-pregunta__texto">{{ pregunta() }}</h1>
+    </div>
 
-  <div class="card-pregunta__body">
-    <p class="card-pregunta__texto">{{ pregunta() }}</p>
+    <div class="card-pregunta__opciones" role="list">
+      @for (opcion of opciones(); track opcion.id; let i = $index) {
+        <button
+          role="listitem"
+          class="card-pregunta__opcion"
+          [class.card-pregunta__opcion--selected]="estaSeleccionada(opcion.id)"
+          [disabled]="bloqueado()"
+          [attr.aria-pressed]="estaSeleccionada(opcion.id)"
+          type="button"
+          (click)="alternarSeleccion(opcion)"
+        >
+          <span class="card-pregunta__letra">{{ obtenerLetra(i) }}</span>
+          <span class="card-pregunta__opcion-texto">{{ opcion.texto }}</span>
+        </button>
+      }
+    </div>
   </div>
 
-  <div class="card-pregunta__opciones" role="list">
-    @for (opcion of opciones(); track opcion.id; let i = $index) {
-      <button
-        role="listitem"
-        class="card-pregunta__opcion"
-        [class.card-pregunta__opcion--selected]="opcionElegidaId() === opcion.id"
-        [class.card-pregunta__opcion--dimmed]="
-          opcionElegidaId() !== null && opcionElegidaId() !== opcion.id
-        "
-        [disabled]="bloqueado() || opcionElegidaId() !== null"
-        [attr.aria-pressed]="opcionElegidaId() === opcion.id"
-        type="button"
-        (click)="elegir(opcion)"
-      >
-        <span class="card-pregunta__letra">{{ letras[i] }}</span>
-        <span class="card-pregunta__opcion-texto">{{ opcion.texto }}</span>
-      </button>
-    }
+  <div class="card-pregunta__actions">
+    <button 
+      class="card-pregunta__btn-confirmar" 
+      [disabled]="opcionesElegidasIds().length === 0 || bloqueado()"
+      (click)="enviarRespuesta()"
+    >
+      Confirmar Respuesta
+    </button>
   </div>
 </article>
