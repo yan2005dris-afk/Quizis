@@ -1,6 +1,5 @@
 {
   "version": 2,
-  "public": true,
   "rewrites": [
     {
       "source": "/api/:path*",
@@ -18,8 +17,5 @@
 >>>>>>> Stashed changes
       "destination": "/index.html"
     }
-  ],
-  "github": {
-    "silent": true
-  }
+  ]
 }
