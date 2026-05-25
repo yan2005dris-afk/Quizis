@@ -9,7 +9,7 @@ export const QUESTION_BANK_ROUTES: Routes = [
   {
     path: 'crear',
     loadComponent: () =>
-      import('./pages/bank-create/bank-create.component').then((m) => m.BankCreateComponent),
+      import('./pages/bank-detail/bank-detail.component').then((m) => m.BankDetailComponent),
   },
   {
     path: ':id',
