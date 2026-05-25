@@ -11,11 +11,11 @@ import { ActivatedRoute } from '@angular/router';
 import { GameSocketService } from '../../../../core/services/game-socket.service';
 import { AuthService } from '../../../../core/services/auth.service';
 import { SalasService, ComodinSala, SalaDetalle } from '../../../../core/services/salas.service';
-import { ChatBoxComponent } from '../../chat-box/chat-box.component';
-import { EventHeaderComponent } from '../../event-header/event-header.component';
-import { EventFeedComponent } from '../../event-feed/event-feed.component';
-import { ParticipantsIndexComponent } from '../../participants-index/participants-index.component';
-import { ActiveQuestionComponent } from '../../active-question/active-question.component';
+import { ChatBoxComponent } from '../../components/chat-box/chat-box.component';
+import { EventHeaderComponent } from '../../components/event-header/event-header.component';
+import { EventFeedComponent } from '../../components/event-feed/event-feed.component';
+import { ParticipantsIndexComponent } from '../../components/participants-index/participants-index.component';
+import { ActiveQuestionComponent } from '../../components/active-question/active-question.component';
 import { LucideAngularModule, Activity, Trophy, Users, MessageSquare, Send } from 'lucide-angular';
 import { environment } from '../../../../../environments/environment';
 

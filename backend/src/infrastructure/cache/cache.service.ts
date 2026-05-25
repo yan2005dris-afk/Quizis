@@ -12,6 +12,16 @@ interface MemoryCacheEntry {
   expiresAt: number;
 }
 
+interface MemoryOnlineEntry {
+  participants: Set<string>;
+  expiresAt: number;
+}
+
+interface MemoryDataEntry {
+  data: any;
+  expiresAt: number;
+}
+
 @Injectable()
 export class CacheService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(CacheService.name);
@@ -94,6 +104,8 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
   private runMemoryGC() {
     const now = Date.now();
     let count = 0;
+
+    // Limpiar votos
     for (const [key, entry] of this.memoryVotes.entries()) {
       if (entry.expiresAt < now) {
         this.memoryVotes.delete(key);

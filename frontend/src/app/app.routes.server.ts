@@ -1,52 +1,51 @@
 import { RenderMode, ServerRoute } from '@angular/ssr';
 
 export const serverRoutes: ServerRoute[] = [
-  // Rutas que dependen de IDs dinámicos
+  // SPA puro — todo se renderiza del lado cliente
+  // SSR no aporta valor: app auth-dependiente con Socket.IO en tiempo real
   {
     path: 'sala/:id',
-    renderMode: RenderMode.Server,
+    renderMode: RenderMode.Client,
   },
-  // Rutas que consumen APIs o requieren autenticación
   {
     path: 'dashboard',
-    renderMode: RenderMode.Server,
+    renderMode: RenderMode.Client,
   },
   {
     path: 'salas',
-    renderMode: RenderMode.Server,
+    renderMode: RenderMode.Client,
   },
   {
     path: 'preguntas',
-    renderMode: RenderMode.Server,
+    renderMode: RenderMode.Client,
   },
   {
     path: 'usuarios',
-    renderMode: RenderMode.Server,
+    renderMode: RenderMode.Client,
   },
   {
     path: 'configuracion',
-    renderMode: RenderMode.Server,
+    renderMode: RenderMode.Client,
   },
-  // Rutas estáticas públicas
   {
     path: 'login',
-    renderMode: RenderMode.Server,
+    renderMode: RenderMode.Client,
   },
   {
     path: 'register',
-    renderMode: RenderMode.Server,
+    renderMode: RenderMode.Client,
   },
   {
     path: 'privacy',
-    renderMode: RenderMode.Server,
+    renderMode: RenderMode.Client,
   },
   {
     path: 'show',
-    renderMode: RenderMode.Server,
+    renderMode: RenderMode.Client,
   },
-  // Por defecto para el resto (incluyendo el fallback **)
+  // Catch-all: todo cliente
   {
     path: '**',
-    renderMode: RenderMode.Server,
+    renderMode: RenderMode.Client,
   },
 ];
