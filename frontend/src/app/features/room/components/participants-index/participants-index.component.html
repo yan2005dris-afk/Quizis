@@ -1,0 +1,15 @@
+<div class="participants-list">
+  <h3 class="participants-list__title">Participantes</h3>
+  @if (participantes().length > 0) {
+    <div class="participants-list__grid">
+      @for (p of participantes(); track p.id) {
+        <div class="participants-list__item" data-testid="participant-item">
+          <span class="participants-list__name">{{ p.nombre }}</span>
+          <span class="participants-list__score">{{ p.puntaje }}</span>
+        </div>
+      }
+    </div>
+  } @else {
+    <p class="participants-list__empty">No hay participantes</p>
+  }
+</div>
