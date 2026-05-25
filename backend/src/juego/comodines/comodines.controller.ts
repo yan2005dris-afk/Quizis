@@ -1,4 +1,11 @@
-import { Controller, Post, Body, Get, Param, ParseIntPipe } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  Get,
+  Param,
+  ParseIntPipe,
+} from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { ComodinesService } from './comodines.service';
 
@@ -9,25 +16,40 @@ export class ComodinesController {
 
   @Post('ia/sugerencia')
   @ApiOperation({ summary: 'Obtener sugerencia de la IA para una pregunta' })
-  @ApiResponse({ status: 200, description: 'Sugerencia generada exitosamente.' })
-  async solicitarSugerenciaIa(@Body('preguntaId', ParseIntPipe) preguntaId: number) {
+  @ApiResponse({
+    status: 200,
+    description: 'Sugerencia generada exitosamente.',
+  })
+  async solicitarSugerenciaIa(
+    @Body('preguntaId', ParseIntPipe) preguntaId: number,
+  ) {
     return await this.comodinesService.obtenerSugerenciaIa(preguntaId);
   }
 
   @Get('publico/resultados/:rondaId/:preguntaId')
-  @ApiOperation({ summary: 'Obtener resultados actuales de la votación del público' })
+  @ApiOperation({
+    summary: 'Obtener resultados actuales de la votación del público',
+  })
   async obtenerResultadosPublico(
     @Param('rondaId', ParseIntPipe) rondaId: number,
     @Param('preguntaId', ParseIntPipe) preguntaId: number,
   ) {
-    return await this.comodinesService.obtenerResultadosPublico(rondaId, preguntaId);
+    return await this.comodinesService.obtenerResultadosPublico(
+      rondaId,
+      preguntaId,
+    );
   }
 
   @Post('llamada/seleccionar/:tokenCompartido')
-  @ApiOperation({ summary: 'Seleccionar un consultor aleatorio entre los observadores conectados' })
+  @ApiOperation({
+    summary:
+      'Seleccionar un consultor aleatorio entre los observadores conectados',
+  })
   async seleccionarConsultor(
     @Param('tokenCompartido') tokenCompartido: string,
   ) {
-    return await this.comodinesService.seleccionarConsultorAleatorio(tokenCompartido);
+    return await this.comodinesService.seleccionarConsultorAleatorio(
+      tokenCompartido,
+    );
   }
 }

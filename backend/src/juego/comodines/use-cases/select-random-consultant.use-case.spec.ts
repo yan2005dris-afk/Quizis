@@ -30,7 +30,9 @@ describe('SelectRandomConsultantUseCase', () => {
       ],
     }).compile();
 
-    useCase = module.get<SelectRandomConsultantUseCase>(SelectRandomConsultantUseCase);
+    useCase = module.get<SelectRandomConsultantUseCase>(
+      SelectRandomConsultantUseCase,
+    );
     prisma = module.get<PrismaService>(PrismaService);
     cacheService = module.get<CacheService>(CacheService);
   });
@@ -71,10 +73,7 @@ describe('SelectRandomConsultantUseCase', () => {
       salaId: 10,
       participante: { nickname: 'Player1' },
     };
-    const mockCandidatos = [
-      { nickname: 'Player2' },
-      { nickname: 'Player3' },
-    ];
+    const mockCandidatos = [{ nickname: 'Player2' }, { nickname: 'Player3' }];
     mockPrismaService.rondas.findFirst.mockResolvedValue(mockRonda);
     mockPrismaService.participantes.findMany.mockResolvedValue(mockCandidatos);
     mockCacheService.getOnlineParticipants.mockResolvedValue(['Player2']); // Only Player2 is online

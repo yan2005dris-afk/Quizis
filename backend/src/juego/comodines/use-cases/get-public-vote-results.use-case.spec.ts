@@ -18,7 +18,9 @@ describe('GetPublicVoteResultsUseCase', () => {
       ],
     }).compile();
 
-    useCase = module.get<GetPublicVoteResultsUseCase>(GetPublicVoteResultsUseCase);
+    useCase = module.get<GetPublicVoteResultsUseCase>(
+      GetPublicVoteResultsUseCase,
+    );
     votosService = module.get<VotosService>(VotosService);
   });
 
@@ -42,7 +44,10 @@ describe('GetPublicVoteResultsUseCase', () => {
       totalVotos: 3,
       resultados: { 1: 2, 2: 1 },
     });
-    expect(votosService.obtenerVotosCache).toHaveBeenCalledWith(rondaId, preguntaId);
+    expect(votosService.obtenerVotosCache).toHaveBeenCalledWith(
+      rondaId,
+      preguntaId,
+    );
   });
 
   it('should return zero votes when cache is empty', async () => {

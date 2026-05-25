@@ -8,12 +8,17 @@ export class GetPublicVoteResultsUseCase {
   constructor(private readonly votosService: VotosService) {}
 
   async execute(rondaId: number, preguntaId: number) {
-    this.logger.log(`Calculando resultados de votación para pregunta ${preguntaId} en ronda ${rondaId}`);
-    
-    const votos = await this.votosService.obtenerVotosCache(rondaId, preguntaId);
-    
+    this.logger.log(
+      `Calculando resultados de votación para pregunta ${preguntaId} en ronda ${rondaId}`,
+    );
+
+    const votos = await this.votosService.obtenerVotosCache(
+      rondaId,
+      preguntaId,
+    );
+
     const conteo: Record<number, number> = {};
-    votos.forEach(v => {
+    votos.forEach((v) => {
       conteo[v.opcionId] = (conteo[v.opcionId] || 0) + 1;
     });
 

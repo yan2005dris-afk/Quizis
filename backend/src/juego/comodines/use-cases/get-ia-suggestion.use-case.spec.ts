@@ -3,7 +3,10 @@ import { GetIaSuggestionUseCase } from './get-ia-suggestion.use-case';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../../infrastructure/database/prisma.service';
 import OpenAI from 'openai';
-import { InternalServerErrorException, NotFoundException } from '@nestjs/common';
+import {
+  InternalServerErrorException,
+  NotFoundException,
+} from '@nestjs/common';
 
 // Mock OpenAI
 jest.mock('openai', () => {
@@ -59,21 +62,28 @@ describe('GetIaSuggestionUseCase', () => {
       choices: [
         {
           message: {
-            content: JSON.stringify({ literal: 'B', explicacion: 'Porque 2+2 es 4' }),
+            content: JSON.stringify({
+              literal: 'B',
+              explicacion: 'Porque 2+2 es 4',
+            }),
           },
         },
       ],
     };
 
-    jest.spyOn(prismaService.preguntas, 'findUnique').mockResolvedValue(mockPregunta as any);
+    jest
+      .spyOn(prismaService.preguntas, 'findUnique')
+      .mockResolvedValue(mockPregunta as any);
     openAiMock.chat.completions.create.mockResolvedValue(mockAiResponse);
 
     const result = await useCase.execute(1);
 
     expect(result).toEqual({ literal: 'B', explicacion: 'Porque 2+2 es 4' });
-    expect(prismaService.preguntas.findUnique).toHaveBeenCalledWith(expect.objectContaining({
-      where: { preguntaId: 1 }
-    }));
+    expect(prismaService.preguntas.findUnique).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { preguntaId: 1 },
+      }),
+    );
   });
 
   it('debería lanzar NotFoundException si la pregunta no existe', async () => {
@@ -84,10 +94,14 @@ describe('GetIaSuggestionUseCase', () => {
 
   it('debería lanzar InternalServerErrorException si OpenAI falla', async () => {
     jest.spyOn(prismaService.preguntas, 'findUnique').mockResolvedValue({
-      opciones: []
+      opciones: [],
     } as any);
-    openAiMock.chat.completions.create.mockRejectedValue(new Error('OpenAI error'));
+    openAiMock.chat.completions.create.mockRejectedValue(
+      new Error('OpenAI error'),
+    );
 
-    await expect(useCase.execute(1)).rejects.toThrow(InternalServerErrorException);
+    await expect(useCase.execute(1)).rejects.toThrow(
+      InternalServerErrorException,
+    );
   });
 });

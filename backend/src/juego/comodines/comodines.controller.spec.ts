@@ -35,7 +35,9 @@ describe('ComodinesController', () => {
     it('should call service.obtenerSugerenciaIa with correct params', async () => {
       const pregunta = '¿Cuál es la capital de Francia?';
       const expectedResult = { sugerencia: 'París' };
-      mockComodinesService.obtenerSugerenciaIa.mockResolvedValue(expectedResult);
+      mockComodinesService.obtenerSugerenciaIa.mockResolvedValue(
+        expectedResult,
+      );
 
       const result = await controller.solicitarSugerenciaIa(pregunta);
 
@@ -49,11 +51,19 @@ describe('ComodinesController', () => {
       const rondaId = 1;
       const preguntaId = 10;
       const expectedResult = { totalVotos: 10, resultados: { 1: 5, 2: 5 } };
-      mockComodinesService.obtenerResultadosPublico.mockResolvedValue(expectedResult);
+      mockComodinesService.obtenerResultadosPublico.mockResolvedValue(
+        expectedResult,
+      );
 
-      const result = await controller.obtenerResultadosPublico(rondaId, preguntaId);
+      const result = await controller.obtenerResultadosPublico(
+        rondaId,
+        preguntaId,
+      );
 
-      expect(service.obtenerResultadosPublico).toHaveBeenCalledWith(rondaId, preguntaId);
+      expect(service.obtenerResultadosPublico).toHaveBeenCalledWith(
+        rondaId,
+        preguntaId,
+      );
       expect(result).toEqual(expectedResult);
     });
   });
@@ -62,7 +72,9 @@ describe('ComodinesController', () => {
     it('should call service.seleccionarConsultorAleatorio with correct params', async () => {
       const token = 'test-token';
       const expectedResult = { nickname: 'Consultor1' };
-      mockComodinesService.seleccionarConsultorAleatorio.mockResolvedValue(expectedResult);
+      mockComodinesService.seleccionarConsultorAleatorio.mockResolvedValue(
+        expectedResult,
+      );
 
       const result = await controller.seleccionarConsultor(token);
 

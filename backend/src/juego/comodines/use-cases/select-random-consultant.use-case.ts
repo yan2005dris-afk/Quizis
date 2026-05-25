@@ -12,8 +12,10 @@ export class SelectRandomConsultantUseCase {
   ) {}
 
   async execute(tokenCompartido: string) {
-    this.logger.log(`Seleccionando consultor aleatorio para sala: ${tokenCompartido}`);
-    
+    this.logger.log(
+      `Seleccionando consultor aleatorio para sala: ${tokenCompartido}`,
+    );
+
     // 1. Obtener ronda activa y estudiante
     const rondaActiva = await this.prisma.rondas.findFirst({
       where: {
@@ -26,7 +28,9 @@ export class SelectRandomConsultantUseCase {
     });
 
     if (!rondaActiva) {
-      this.logger.warn(`No hay ronda activa jugando en la sala con token: ${tokenCompartido}`);
+      this.logger.warn(
+        `No hay ronda activa jugando en la sala con token: ${tokenCompartido}`,
+      );
       return null;
     }
 
@@ -42,9 +46,10 @@ export class SelectRandomConsultantUseCase {
     });
 
     // 3. Filtrar por los que están online en Redis
-    const onlineNicknames = await this.cacheService.getOnlineParticipants(tokenCompartido);
-    const candidatosFiltrados = candidatos.filter(c =>
-      onlineNicknames.includes(c.nickname)
+    const onlineNicknames =
+      await this.cacheService.getOnlineParticipants(tokenCompartido);
+    const candidatosFiltrados = candidatos.filter((c) =>
+      onlineNicknames.includes(c.nickname),
     );
 
     if (candidatosFiltrados.length === 0) return null;

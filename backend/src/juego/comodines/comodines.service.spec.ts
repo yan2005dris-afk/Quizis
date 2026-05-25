@@ -18,16 +18,31 @@ describe('ComodinesService', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         ComodinesService,
-        { provide: GetIaSuggestionUseCase, useValue: mockGetIaSuggestionUseCase },
-        { provide: SelectRandomConsultantUseCase, useValue: mockSelectRandomConsultantUseCase },
-        { provide: GetPublicVoteResultsUseCase, useValue: mockGetPublicVoteResultsUseCase },
+        {
+          provide: GetIaSuggestionUseCase,
+          useValue: mockGetIaSuggestionUseCase,
+        },
+        {
+          provide: SelectRandomConsultantUseCase,
+          useValue: mockSelectRandomConsultantUseCase,
+        },
+        {
+          provide: GetPublicVoteResultsUseCase,
+          useValue: mockGetPublicVoteResultsUseCase,
+        },
       ],
     }).compile();
 
     service = module.get<ComodinesService>(ComodinesService);
-    getIaSuggestionUseCase = module.get<GetIaSuggestionUseCase>(GetIaSuggestionUseCase);
-    selectRandomConsultantUseCase = module.get<SelectRandomConsultantUseCase>(SelectRandomConsultantUseCase);
-    getPublicVoteResultsUseCase = module.get<GetPublicVoteResultsUseCase>(GetPublicVoteResultsUseCase);
+    getIaSuggestionUseCase = module.get<GetIaSuggestionUseCase>(
+      GetIaSuggestionUseCase,
+    );
+    selectRandomConsultantUseCase = module.get<SelectRandomConsultantUseCase>(
+      SelectRandomConsultantUseCase,
+    );
+    getPublicVoteResultsUseCase = module.get<GetPublicVoteResultsUseCase>(
+      GetPublicVoteResultsUseCase,
+    );
   });
 
   it('should be defined', () => {
@@ -50,6 +65,9 @@ describe('ComodinesService', () => {
     const rondaId = 1;
     const preguntaId = 1;
     await service.obtenerResultadosPublico(rondaId, preguntaId);
-    expect(getPublicVoteResultsUseCase.execute).toHaveBeenCalledWith(rondaId, preguntaId);
+    expect(getPublicVoteResultsUseCase.execute).toHaveBeenCalledWith(
+      rondaId,
+      preguntaId,
+    );
   });
 });
