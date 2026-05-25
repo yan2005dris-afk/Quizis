@@ -26,10 +26,9 @@ interface MemoryDataEntry {
 export class CacheService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(CacheService.name);
   private redisClient: Redis | null = null;
-  private memoryVotes = new Map<string, MemoryCacheEntry>(); // Fallback con TTL
-  private memorySocketSessions = new Map<string, { socketId: string; expiresAt: number }>();
-  private memoryClientSockets = new Map<string, { tokenNickname: string; expiresAt: number }>();
-  private memoryActiveHelpers = new Map<string, { helperNickname: string; expiresAt: number }>();
+  private memoryVotes = new Map<string, MemoryCacheEntry>();
+  private memoryOnline = new Map<string, MemoryOnlineEntry>();
+  private memoryData = new Map<string, MemoryDataEntry>();
   private isRedisHealthy = true;
   private reconnectTimeout: NodeJS.Timeout | null = null;
   private gcInterval: NodeJS.Timeout | null = null;
@@ -112,24 +111,23 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
         count++;
       }
     }
-    for (const [key, entry] of this.memorySocketSessions.entries()) {
+
+    // Limpiar online
+    for (const [key, entry] of this.memoryOnline.entries()) {
       if (entry.expiresAt < now) {
-        this.memorySocketSessions.delete(key);
+        this.memoryOnline.delete(key);
         count++;
       }
     }
-    for (const [key, entry] of this.memoryClientSockets.entries()) {
+
+    // Limpiar data general (pregunta activa, info ronda)
+    for (const [key, entry] of this.memoryData.entries()) {
       if (entry.expiresAt < now) {
-        this.memoryClientSockets.delete(key);
+        this.memoryData.delete(key);
         count++;
       }
     }
-    for (const [key, entry] of this.memoryActiveHelpers.entries()) {
-      if (entry.expiresAt < now) {
-        this.memoryActiveHelpers.delete(key);
-        count++;
-      }
-    }
+
     if (count > 0) {
       this.logger.log(
         `[CACHE:GC] Recolector de basura liberó ${count} claves en memoria expiradas.`,
@@ -407,172 +405,174 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
     this.memoryVotes.delete(key);
   }
 
-  async saveSocketSession(
-    token: string,
-    nickname: string,
-    socketId: string,
+  /**
+   * Guarda la pregunta activa actual para una sala.
+   */
+  async setActiveQuestion(
+    tokenCompartido: string,
+    pregunta: any,
   ): Promise<void> {
-    const sessionKey = `socket:session:${token}:${nickname}`;
-    const clientKey = `socket:client:${socketId}`;
-    const ttl = 7200; // 2 horas
-
+    const key = `active_question:${tokenCompartido}`;
     if (this.redisClient && this.isRedisHealthy) {
       try {
-        const tx = this.redisClient.multi();
-        tx.set(sessionKey, socketId, 'EX', ttl);
-        tx.set(clientKey, `${token}:${nickname}`, 'EX', ttl);
-        await tx.exec();
+        await this.redisClient.set(key, JSON.stringify(pregunta), 'EX', 3600);
         return;
-      } catch (error) {
-        const errorMsg = error instanceof Error ? error.message : String(error);
-        this.logger.warn(
-          `[CACHE:WARN] Error en Redis durante saveSocketSession: ${errorMsg}. Usando fallback en memoria.`,
-        );
+      } catch {
         this.handleRedisFailure();
       }
     }
-
     // Fallback memoria
-    const expiresAt = Date.now() + ttl * 1000;
-    this.memorySocketSessions.set(sessionKey, { socketId, expiresAt });
-    this.memoryClientSockets.set(clientKey, {
-      tokenNickname: `${token}:${nickname}`,
-      expiresAt,
+    this.memoryData.set(key, {
+      data: pregunta,
+      expiresAt: Date.now() + 3600 * 1000,
     });
   }
 
-  async getSocketId(token: string, nickname: string): Promise<string | null> {
-    const sessionKey = `socket:session:${token}:${nickname}`;
-
+  /**
+   * Recupera la pregunta activa actual de una sala.
+   */
+  async getActiveQuestion(tokenCompartido: string): Promise<any | null> {
+    const key = `active_question:${tokenCompartido}`;
     if (this.redisClient && this.isRedisHealthy) {
       try {
-        return await this.redisClient.get(sessionKey);
-      } catch (error) {
-        const errorMsg = error instanceof Error ? error.message : String(error);
-        this.logger.warn(
-          `[CACHE:WARN] Error en Redis durante getSocketId: ${errorMsg}.`,
-        );
+        const data = await this.redisClient.get(key);
+        return data ? JSON.parse(data) : null;
+      } catch {
         this.handleRedisFailure();
       }
     }
-
-    // Fallback memoria
-    const entry = this.memorySocketSessions.get(sessionKey);
-    if (entry && entry.expiresAt > Date.now()) {
-      return entry.socketId;
-    }
-    return null;
+    const mem = this.memoryData.get(key);
+    return mem ? mem.data : null;
   }
 
-  async removeSocketSession(
-    socketId: string,
-  ): Promise<{ token: string; nickname: string } | null> {
-    const clientKey = `socket:client:${socketId}`;
-    let tokenNickname: string | null = null;
-
+  /**
+   * Guarda la información de la ronda actual para una sala.
+   */
+  async setRondaInfo(tokenCompartido: string, info: any): Promise<void> {
+    const key = `ronda_info:${tokenCompartido}`;
     if (this.redisClient && this.isRedisHealthy) {
       try {
-        tokenNickname = await this.redisClient.get(clientKey);
-        if (tokenNickname) {
-          const parts = tokenNickname.split(':');
-          if (parts.length >= 2) {
-            const token = parts[0];
-            const nickname = parts.slice(1).join(':');
-            const sessionKey = `socket:session:${token}:${nickname}`;
-            
-            const tx = this.redisClient.multi();
-            tx.del(clientKey);
-            tx.del(sessionKey);
-            await tx.exec();
-            return { token, nickname };
-          }
-        }
-      } catch (error) {
-        const errorMsg = error instanceof Error ? error.message : String(error);
-        this.logger.warn(
-          `[CACHE:WARN] Error en Redis durante removeSocketSession: ${errorMsg}.`,
-        );
-        this.handleRedisFailure();
-      }
-    }
-
-    // Fallback memoria
-    const entry = this.memoryClientSockets.get(clientKey);
-    if (entry && entry.expiresAt > Date.now()) {
-      tokenNickname = entry.tokenNickname;
-      this.memoryClientSockets.delete(clientKey);
-      const parts = tokenNickname.split(':');
-      if (parts.length >= 2) {
-        const token = parts[0];
-        const nickname = parts.slice(1).join(':');
-        const sessionKey = `socket:session:${token}:${nickname}`;
-        this.memorySocketSessions.delete(sessionKey);
-        return { token, nickname };
-      }
-    }
-    return null;
-  }
-
-  async saveActiveHelper(token: string, helperNickname: string): Promise<void> {
-    const key = `socket:helper:${token}`;
-    const ttl = 600; // 10 minutos
-
-    if (this.redisClient && this.isRedisHealthy) {
-      try {
-        await this.redisClient.set(key, helperNickname, 'EX', ttl);
+        await this.redisClient.set(key, JSON.stringify(info), 'EX', 3600);
         return;
-      } catch (error) {
-        const errorMsg = error instanceof Error ? error.message : String(error);
-        this.logger.warn(
-          `[CACHE:WARN] Error en Redis durante saveActiveHelper: ${errorMsg}.`,
-        );
+      } catch {
         this.handleRedisFailure();
       }
     }
-
     // Fallback memoria
-    const expiresAt = Date.now() + ttl * 1000;
-    this.memoryActiveHelpers.set(key, { helperNickname, expiresAt });
+    this.memoryData.set(key, {
+      data: info,
+      expiresAt: Date.now() + 3600 * 1000,
+    });
   }
 
-  async getActiveHelper(token: string): Promise<string | null> {
-    const key = `socket:helper:${token}`;
-
+  /**
+   * Recupera la información de la ronda actual de una sala.
+   */
+  async getRondaInfo(tokenCompartido: string): Promise<any | null> {
+    const key = `ronda_info:${tokenCompartido}`;
     if (this.redisClient && this.isRedisHealthy) {
       try {
-        return await this.redisClient.get(key);
-      } catch (error) {
-        const errorMsg = error instanceof Error ? error.message : String(error);
-        this.logger.warn(
-          `[CACHE:WARN] Error en Redis durante getActiveHelper: ${errorMsg}.`,
-        );
+        const data = await this.redisClient.get(key);
+        return data ? JSON.parse(data) : null;
+      } catch {
         this.handleRedisFailure();
       }
     }
-
-    // Fallback memoria
-    const entry = this.memoryActiveHelpers.get(key);
-    if (entry && entry.expiresAt > Date.now()) {
-      return entry.helperNickname;
-    }
-    return null;
+    const mem = this.memoryData.get(key);
+    return mem ? mem.data : null;
   }
 
-  async removeActiveHelper(token: string): Promise<void> {
-    const key = `socket:helper:${token}`;
+  // ─── PARTICIPANTES ONLINE ──────────────────────────────────────────
 
+  private getOnlineKey(tokenCompartido: string): string {
+    return `sala:${tokenCompartido}:online`;
+  }
+
+  /**
+   * Marca un participante como online en una sala (Redis SET).
+   */
+  async setParticipantOnline(
+    tokenCompartido: string,
+    nickname: string,
+  ): Promise<void> {
+    const key = this.getOnlineKey(tokenCompartido);
+    if (this.redisClient && this.isRedisHealthy) {
+      try {
+        await this.redisClient.sadd(key, nickname);
+        await this.redisClient.expire(key, 7200); // TTL 2h por si queda huérfano
+        return;
+      } catch {
+        this.handleRedisFailure();
+      }
+    }
+    // Fallback memoria
+    let entry = this.memoryOnline.get(key);
+    if (!entry) {
+      entry = {
+        participants: new Set<string>(),
+        expiresAt: Date.now() + 7200 * 1000,
+      };
+      this.memoryOnline.set(key, entry);
+    }
+    entry.participants.add(nickname);
+  }
+
+  /**
+   * Marca un participante como offline en una sala (Redis SET).
+   */
+  async removeParticipantOnline(
+    tokenCompartido: string,
+    nickname: string,
+  ): Promise<void> {
+    const key = this.getOnlineKey(tokenCompartido);
+    if (this.redisClient && this.isRedisHealthy) {
+      try {
+        await this.redisClient.srem(key, nickname);
+        return;
+      } catch {
+        this.handleRedisFailure();
+      }
+    }
+    // Fallback memoria
+    const entry = this.memoryOnline.get(key);
+    if (entry) {
+      entry.participants.delete(nickname);
+      if (entry.participants.size === 0) {
+        this.memoryOnline.delete(key);
+      }
+    }
+  }
+
+  /**
+   * Retorna los nicknames de participantes online en una sala.
+   */
+  async getOnlineParticipants(tokenCompartido: string): Promise<string[]> {
+    const key = this.getOnlineKey(tokenCompartido);
+    if (this.redisClient && this.isRedisHealthy) {
+      try {
+        return await this.redisClient.smembers(key);
+      } catch {
+        this.handleRedisFailure();
+      }
+    }
+    // Fallback memoria
+    const entry = this.memoryOnline.get(key);
+    return entry ? Array.from(entry.participants) : [];
+  }
+
+  /**
+   * Limpia el estado online de una sala completa (ej: cuando termina).
+   */
+  async clearOnlineParticipants(tokenCompartido: string): Promise<void> {
+    const key = this.getOnlineKey(tokenCompartido);
     if (this.redisClient && this.isRedisHealthy) {
       try {
         await this.redisClient.del(key);
-      } catch (error) {
-        const errorMsg = error instanceof Error ? error.message : String(error);
-        this.logger.warn(
-          `[CACHE:WARN] Error en Redis durante removeActiveHelper: ${errorMsg}.`,
-        );
+        return;
+      } catch {
         this.handleRedisFailure();
       }
     }
-
-    this.memoryActiveHelpers.delete(key);
+    this.memoryOnline.delete(key);
   }
 }

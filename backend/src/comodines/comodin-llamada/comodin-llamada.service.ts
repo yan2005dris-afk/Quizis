@@ -1,9 +1,16 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/infrastructure/database/prisma.service';
+import { CacheService } from '../../infrastructure/cache/cache.service';
 
 @Injectable()
 export class ComodinLlamadaService {
-  constructor(private readonly prismaService: PrismaService) {}
+  
+ 
+  constructor(
+    private readonly prismaService: PrismaService, 
+    private readonly cacheService: CacheService,
+  ) {}
+  
   /**
    * Busca entre los clientes a ver quien tiene el rol de "estudiante", es decir el que esta jugando en ese momento
    * @param tokenCompartido
@@ -20,6 +27,7 @@ export class ComodinLlamadaService {
       },
     });
   }
+  
   /**
    * Busca entre los clientes a ver quienes pueden ser consultores, es decir, quienes tengan el rol de "observador", no son el estudiante y estan en linea
    * @param salaId
@@ -30,10 +38,10 @@ export class ComodinLlamadaService {
     salaId: number,
     estudianteNickname: string,
   ) {
+    
     return this.prismaService.extendedClient.participantes.findMany({
       where: {
         salaId,
-        isOnline: true,
         rol: 'observador',
         nickname: {
           not: estudianteNickname,
@@ -72,6 +80,12 @@ export class ComodinLlamadaService {
       rondaActiva.participante.nickname,
     );
 
-    return this.selectRandomElement(candidatos);
+    const onlineNicknames = await this.cacheService.getOnlineParticipants(tokenCompartido);
+
+    const candidatosFiltrados = candidatos.filter(c =>
+      onlineNicknames.includes(c.nickname)
+    );
+
+    return this.selectRandomElement(candidatosFiltrados);
   }
 }
