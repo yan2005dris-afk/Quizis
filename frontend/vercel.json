@@ -1,10 +1,6 @@
 {
   "version": 2,
   "public": true,
-  "cleanUrls": true,
-  "trailingSlash": false,
-  "buildCommand": "pnpm --filter frontend run build",
-  "outputDirectory": "dist/frontend/browser",
   "rewrites": [
     {
       "source": "/api/:path*",
@@ -15,7 +11,11 @@
       "destination": "https://quizis-zvhd.onrender.com/socket.io/:path*"
     },
     {
+<<<<<<< Updated upstream
       "source": "/((?!api|socket\\.io|.*\\..*).*)",
+=======
+      "source": "/(.*)",
+>>>>>>> Stashed changes
       "destination": "/index.html"
     }
   ],
