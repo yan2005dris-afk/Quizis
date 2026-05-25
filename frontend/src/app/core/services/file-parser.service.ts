@@ -48,7 +48,9 @@ export class FileParserService {
             }
 
             const headers = results.data[0] as string[];
-            const rows = results.data.slice(1).filter((r: string[]) => r.some((c) => c.trim() !== ''));
+            const rows = results.data
+              .slice(1)
+              .filter((r: string[]) => r.some((c) => c.trim() !== ''));
             const result = this.rowsToPreguntas(headers, rows);
             resolve(result);
           },
@@ -82,7 +84,9 @@ export class FileParserService {
             return;
           }
           const sheet = workbook.Sheets[sheetName];
-          const jsonData: Record<string, string>[] = XLSX.utils.sheet_to_json(sheet, { defval: '' });
+          const jsonData: Record<string, string>[] = XLSX.utils.sheet_to_json(sheet, {
+            defval: '',
+          });
 
           if (jsonData.length === 0) {
             resolve({ preguntas: [], errores: [], total: 0 });
@@ -193,7 +197,8 @@ export class FileParserService {
 
     rows.forEach((row, i) => {
       const fila = i + 1;
-      const texto = this.getCell(row, headerMap, 'pregunta') || this.getCell(row, headerMap, 'texto');
+      const texto =
+        this.getCell(row, headerMap, 'pregunta') || this.getCell(row, headerMap, 'texto');
       const fieldErrors: string[] = [];
 
       if (!texto) fieldErrors.push('texto requerido');
@@ -221,10 +226,14 @@ export class FileParserService {
         categoria: this.getCell(row, headerMap, 'categoria') || undefined,
         nivel: Number(this.getCell(row, headerMap, 'nivel')) || undefined,
         monto: Number(this.getCell(row, headerMap, 'monto')) || undefined,
-        feedbackCorrecto: this.getCell(row, headerMap, 'feedbackCorrecto')
-          || this.getCell(row, headerMap, 'feedback_correcto') || undefined,
-        feedbackIncorrecto: this.getCell(row, headerMap, 'feedbackIncorrecto')
-          || this.getCell(row, headerMap, 'feedback_incorrecto') || undefined,
+        feedbackCorrecto:
+          this.getCell(row, headerMap, 'feedbackCorrecto') ||
+          this.getCell(row, headerMap, 'feedback_correcto') ||
+          undefined,
+        feedbackIncorrecto:
+          this.getCell(row, headerMap, 'feedbackIncorrecto') ||
+          this.getCell(row, headerMap, 'feedback_incorrecto') ||
+          undefined,
       });
     });
 
@@ -306,7 +315,8 @@ export class FileParserService {
       if (!field || field === 'texto') {
         group.texto = value;
       } else if (field === 'escorrecta') {
-        group.esCorrecta = value.toLowerCase() === 'true' || value === '1' || value === 'sí' || value === 'si';
+        group.esCorrecta =
+          value.toLowerCase() === 'true' || value === '1' || value === 'sí' || value === 'si';
       }
     });
 

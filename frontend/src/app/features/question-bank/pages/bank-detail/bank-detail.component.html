@@ -20,14 +20,16 @@
     </div>
   } @else if (isNewBank() || banco()) {
     @let bancoValue = banco();
-    
+
     <!-- Bank info -->
     <div class="bank-info-card">
       <div class="bank-info-header">
         @if (isEditingBank()) {
           <div class="bank-edit-form">
-            <h1 class="bank-title">{{ isNewBank() ? 'Crear Nuevo Banco' : 'Editar Información' }}</h1>
-            
+            <h1 class="bank-title">
+              {{ isNewBank() ? 'Crear Nuevo Banco' : 'Editar Información' }}
+            </h1>
+
             <app-input
               label="Nombre del Banco"
               placeholder="Ej: Cultura General"
@@ -44,10 +46,12 @@
                 placeholder="De qué trata este banco..."
               ></textarea>
             </div>
-            
+
             <div class="form-actions mt-4">
               @if (!isNewBank()) {
-                <app-button variant="ghost" size="sm" (clicked)="toggleEditBank()">Cancelar</app-button>
+                <app-button variant="ghost" size="sm" (clicked)="toggleEditBank()"
+                  >Cancelar</app-button
+                >
               }
               <app-button
                 variant="primary"
@@ -56,7 +60,13 @@
                 [disabled]="!bankName().trim()"
                 [loading]="isSavingBank()"
               >
-                {{ isNewBank() ? (totalQuestions() > 0 ? 'Guardar Banco y ' + totalQuestions() + ' Preguntas' : 'Crear Banco Vacío') : 'Guardar Información' }}
+                {{
+                  isNewBank()
+                    ? totalQuestions() > 0
+                      ? 'Guardar Banco y ' + totalQuestions() + ' Preguntas'
+                      : 'Crear Banco Vacío'
+                    : 'Guardar Información'
+                }}
               </app-button>
             </div>
           </div>
@@ -64,7 +74,9 @@
           <div class="bank-display">
             <div class="bank-title-row">
               <h1 class="bank-title">{{ bancoValue.nombre }}</h1>
-              <app-button variant="ghost" size="sm" (clicked)="toggleEditBank()">Editar Info</app-button>
+              <app-button variant="ghost" size="sm" (clicked)="toggleEditBank()"
+                >Editar Info</app-button
+              >
             </div>
             @if (bancoValue.descripcion) {
               <p class="bank-desc">{{ bancoValue.descripcion }}</p>
@@ -89,8 +101,8 @@
 
         <div class="upload-body">
           <p class="upload-desc">
-            Cargá un archivo con preguntas para agregarlas a este banco.
-            El archivo se procesa en tu navegador — no se sube al servidor.
+            Cargá un archivo con preguntas para agregarlas a este banco. El archivo se procesa en tu
+            navegador — no se sube al servidor.
           </p>
 
           <div class="form-group">
@@ -183,11 +195,7 @@
                       </tr>
                     </thead>
                     <tbody>
-                      @for (
-                        pregunta of paginatedPreguntas();
-                        track $index;
-                        let i = $index
-                      ) {
+                      @for (pregunta of paginatedPreguntas(); track $index; let i = $index) {
                         <tr>
                           <td>{{ currentPage() * pageSize + i + 1 }}</td>
                           <td class="cell-text">{{ pregunta.texto }}</td>
@@ -195,10 +203,7 @@
                           <td>{{ pregunta.nivel || '-' }}</td>
                           <td class="cell-opts">
                             @for (op of pregunta.opciones; track $index) {
-                              <span
-                                class="opt-tag"
-                                [class.opt-correct]="op.esCorrecta"
-                              >
+                              <span class="opt-tag" [class.opt-correct]="op.esCorrecta">
                                 {{ op.texto }}
                               </span>
                             }
@@ -234,16 +239,18 @@
             }
 
             <div class="upload-actions">
-              <app-button variant="ghost" (clicked)="resetFileUpload()">
-                Nuevo archivo
-              </app-button>
+              <app-button variant="ghost" (clicked)="resetFileUpload()"> Nuevo archivo </app-button>
               <app-button
                 variant="primary"
                 [disabled]="!canConfirmImport()"
                 [loading]="isImporting()"
                 (clicked)="confirmImport()"
               >
-                {{ isNewBank() ? 'Añadir a la lista' : 'Agregar ' + parseResult()?.total + ' preguntas' }}
+                {{
+                  isNewBank()
+                    ? 'Añadir a la lista'
+                    : 'Agregar ' + parseResult()?.total + ' preguntas'
+                }}
               </app-button>
             </div>
           }
@@ -259,7 +266,7 @@
           <app-button variant="ghost" size="sm" (clicked)="addManualQuestion()">
             + Nueva Pregunta
           </app-button>
-          
+
           @if (totalQuestions() > 0) {
             <div class="pagination-controls ml-4">
               <app-button
@@ -340,7 +347,9 @@
             @if (isEditing()) {
               <div class="edit-grid">
                 <div class="field">
-                  <label [for]="'q-text-' + (pregunta.preguntaId || 'new')">Texto de la pregunta</label>
+                  <label [for]="'q-text-' + (pregunta.preguntaId || 'new')"
+                    >Texto de la pregunta</label
+                  >
                   <textarea
                     [id]="'q-text-' + (pregunta.preguntaId || 'new')"
                     [(ngModel)]="pregunta.texto"
@@ -349,7 +358,6 @@
                   ></textarea>
                 </div>
                 <div class="field-row">
-                  
                   <app-input
                     label="Categoría"
                     placeholder="Ej: Cine"
@@ -375,7 +383,6 @@
                   placeholder="Explicación para respuesta incorrecta"
                   [(ngModel)]="pregunta.feedbackIncorrecto"
                 />
-
               </div>
             } @else {
               <p class="question-text">{{ pregunta.texto }}</p>
@@ -414,9 +421,7 @@
                         ✓
                       }
                     </button>
-                    <label [for]="'opt-' + $index" class="sr-only"
-                      >Opción {{ $index + 1 }}</label
-                    >
+                    <label [for]="'opt-' + $index" class="sr-only">Opción {{ $index + 1 }}</label>
                     <input
                       [id]="'opt-' + $index"
                       type="text"
@@ -457,9 +462,14 @@
         </div>
       } @else {
         <div class="empty-questions">
-          <p>Este banco no tiene preguntas registradas. Usá la sección de importación o el botón de arriba para agregar preguntas.</p>
+          <p>
+            Este banco no tiene preguntas registradas. Usá la sección de importación o el botón de
+            arriba para agregar preguntas.
+          </p>
           @if (isNewBank()) {
-             <p class="mt-2 text-sm">Podés cargar preguntas ahora y se guardarán cuando confirmes la creación del banco.</p>
+            <p class="mt-2 text-sm">
+              Podés cargar preguntas ahora y se guardarán cuando confirmes la creación del banco.
+            </p>
           }
         </div>
       }

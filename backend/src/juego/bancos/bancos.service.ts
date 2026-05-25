@@ -64,7 +64,9 @@ export class BancosService {
   }
 
   async crearPreguntas(bancoId: number, preguntas: any[]) {
-    this.logger.log(`Creando ${preguntas.length} preguntas en banco ${bancoId}`);
+    this.logger.log(
+      `Creando ${preguntas.length} preguntas en banco ${bancoId}`,
+    );
     this.validatePreguntas(preguntas);
 
     const creadas = await this.prisma.$transaction(

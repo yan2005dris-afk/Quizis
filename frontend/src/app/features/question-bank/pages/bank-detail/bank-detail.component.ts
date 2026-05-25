@@ -74,14 +74,13 @@ export class BankDetailComponent {
     return preguntas.slice(start, start + PAGE_SIZE);
   });
 
-  readonly hasParseErrors = computed(
-    () => (this.parseResult()?.errores?.length ?? 0) > 0,
-  );
+  readonly hasParseErrors = computed(() => (this.parseResult()?.errores?.length ?? 0) > 0);
 
-  readonly canConfirmImport = computed(() =>
-    this.parseResult() !== null &&
-    (this.parseResult()?.preguntas?.length ?? 0) > 0 &&
-    !this.isImporting(),
+  readonly canConfirmImport = computed(
+    () =>
+      this.parseResult() !== null &&
+      (this.parseResult()?.preguntas?.length ?? 0) > 0 &&
+      !this.isImporting(),
   );
 
   readonly fileLabel = computed(() => {
@@ -97,7 +96,7 @@ export class BankDetailComponent {
     this.route.paramMap.pipe(
       switchMap((params) => {
         const id = params.get('id');
-        
+
         if (!id || id === 'crear') {
           this.isNewBank.set(true);
           this.isEditingBank.set(true);
@@ -160,8 +159,8 @@ export class BankDetailComponent {
 
   // ── Metadata actions ───────────────────────────────
   toggleEditBank() {
-    if (this.isNewBank()) return; 
-    this.isEditingBank.update(v => !v);
+    if (this.isNewBank()) return;
+    this.isEditingBank.update((v) => !v);
     if (!this.isEditingBank()) {
       const b = this.banco();
       if (b) {
@@ -178,7 +177,7 @@ export class BankDetailComponent {
     this.isSavingBank.set(true);
 
     if (this.isNewBank()) {
-      const preguntas = this.pendingPreguntas().map(p => ({
+      const preguntas = this.pendingPreguntas().map((p) => ({
         texto: p.texto,
         categoria: p.categoria,
         nivel: p.nivel,
@@ -188,37 +187,45 @@ export class BankDetailComponent {
         tiempoLimite: p.tiempoLimite,
         opciones: p.opciones.map((o: any) => ({
           texto: o.texto,
-          esCorrecta: o.esCorrecta
-        }))
+          esCorrecta: o.esCorrecta,
+        })),
       }));
 
-      this.bancosService.createBanco(name, this.bankDesc().trim() || undefined, preguntas).subscribe({
-        next: (res: any) => {
-          this.isSavingBank.set(false);
-          this.toastService.show('Banco creado exitosamente con sus preguntas', 'success', '¡Éxito!');
-          this.router.navigate(['/bancos', res.bancoId]);
-        },
-        error: () => {
-          this.isSavingBank.set(false);
-          this.toastService.show('Error al crear el banco', 'danger', 'Error');
-        }
-      });
+      this.bancosService
+        .createBanco(name, this.bankDesc().trim() || undefined, preguntas)
+        .subscribe({
+          next: (res: any) => {
+            this.isSavingBank.set(false);
+            this.toastService.show(
+              'Banco creado exitosamente con sus preguntas',
+              'success',
+              '¡Éxito!',
+            );
+            this.router.navigate(['/bancos', res.bancoId]);
+          },
+          error: () => {
+            this.isSavingBank.set(false);
+            this.toastService.show('Error al crear el banco', 'danger', 'Error');
+          },
+        });
     } else {
-      this.bancosService.updateBanco(this.bancoId(), {
-        nombre: name,
-        descripcion: this.bankDesc().trim() || '',
-      }).subscribe({
-        next: () => {
-          this.isSavingBank.set(false);
-          this.isEditingBank.set(false);
-          this.toastService.show('Información actualizada', 'success', '¡Éxito!');
-          this.refresh$.next();
-        },
-        error: () => {
-          this.isSavingBank.set(false);
-          this.toastService.show('Error al actualizar la información', 'danger', 'Error');
-        }
-      });
+      this.bancosService
+        .updateBanco(this.bancoId(), {
+          nombre: name,
+          descripcion: this.bankDesc().trim() || '',
+        })
+        .subscribe({
+          next: () => {
+            this.isSavingBank.set(false);
+            this.isEditingBank.set(false);
+            this.toastService.show('Información actualizada', 'success', '¡Éxito!');
+            this.refresh$.next();
+          },
+          error: () => {
+            this.isSavingBank.set(false);
+            this.toastService.show('Error al actualizar la información', 'danger', 'Error');
+          },
+        });
     }
   }
 
@@ -284,7 +291,7 @@ export class BankDetailComponent {
       error: () => {
         this.isImporting.set(false);
         this.toastService.show('Error al agregar pregunta', 'danger', 'Error');
-      }
+      },
     });
   }
 
@@ -311,7 +318,7 @@ export class BankDetailComponent {
         const updated = [...prev];
         updated[this.currentQuestionIndex()] = {
           ...updated[this.currentQuestionIndex()],
-          ...cleanQuestion
+          ...cleanQuestion,
         };
         return updated;
       });

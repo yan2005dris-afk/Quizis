@@ -101,7 +101,10 @@ export class BancosController {
     @Param('bancoId', ParseIntPipe) bancoId: number,
     @Body() preguntas: any[],
   ) {
-    const totalCreadas = await this.bancosService.crearPreguntas(bancoId, preguntas);
+    const totalCreadas = await this.bancosService.crearPreguntas(
+      bancoId,
+      preguntas,
+    );
     return {
       success: true,
       message: 'Preguntas creadas exitosamente',
@@ -110,7 +113,9 @@ export class BancosController {
   }
 
   @Patch(':id')
-  @ApiOperation({ summary: 'Actualizar metadatos de un banco (nombre, descripción)' })
+  @ApiOperation({
+    summary: 'Actualizar metadatos de un banco (nombre, descripción)',
+  })
   @ApiParam({ name: 'id', type: Number })
   @ApiBody({ type: CreateBancoDto }) // Reuse CreateBancoDto for updates (fields are optional in implementation)
   @ApiResponse({ status: 200, description: 'Banco actualizado exitosamente.' })

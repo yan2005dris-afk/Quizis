@@ -64,12 +64,16 @@ export class BancosService {
       .pipe(map((res) => res.data));
   }
 
-  crearPreguntas(bancoId: number, preguntas: any[]): Observable<{ totalCreadas: number; bancoId: number }> {
+  crearPreguntas(
+    bancoId: number,
+    preguntas: any[],
+  ): Observable<{ totalCreadas: number; bancoId: number }> {
     return this.http
-      .post<{ success: boolean; message: string; data: { totalCreadas: number; bancoId: number } }>(
-        `${this.apiUrl}/${bancoId}/preguntas`,
-        preguntas,
-      )
+      .post<{
+        success: boolean;
+        message: string;
+        data: { totalCreadas: number; bancoId: number };
+      }>(`${this.apiUrl}/${bancoId}/preguntas`, preguntas)
       .pipe(map((res) => res.data));
   }
 
@@ -81,9 +85,16 @@ export class BancosService {
     return this.http.get<BancoDetalleResponse>(`${this.apiUrl}/${id}`).pipe(map((res) => res.data));
   }
 
-  updateBanco(id: number, data: { nombre?: string; descripcion?: string }): Observable<BancoPreguntas> {
+  updateBanco(
+    id: number,
+    data: { nombre?: string; descripcion?: string },
+  ): Observable<BancoPreguntas> {
     return this.http
-      .patch<{ success: boolean; message: string; data: BancoPreguntas }>(`${this.apiUrl}/${id}`, data)
+      .patch<{
+        success: boolean;
+        message: string;
+        data: BancoPreguntas;
+      }>(`${this.apiUrl}/${id}`, data)
       .pipe(map((res) => res.data));
   }
 
