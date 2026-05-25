@@ -74,7 +74,7 @@ importers:
         specifier: ^5.2.1
         version: 5.2.1
       ioredis:
-        specifier: ^5.4.1
+        specifier: ^5.10.1
         version: 5.10.1
       ms:
         specifier: ^2.1.3

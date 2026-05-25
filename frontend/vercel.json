@@ -1,13 +1,18 @@
 {
   "version": 2,
   "public": true,
-  "cleanUrls": true,
-  "trailingSlash": false,
-  "framework": "angular",
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "https://quizis-backend.onrender.com/api/:path*"
+      "destination": "https://quizis-zvhd.onrender.com/api/:path*"
+    },
+    {
+      "source": "/socket.io/:path*",
+      "destination": "https://quizis-zvhd.onrender.com/socket.io/:path*"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
     }
   ],
   "github": {
