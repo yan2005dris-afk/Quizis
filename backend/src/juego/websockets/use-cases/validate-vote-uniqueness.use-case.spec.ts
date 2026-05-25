@@ -26,7 +26,9 @@ describe('ValidateVoteUniquenessUseCase', () => {
       ],
     }).compile();
 
-    useCase = module.get<ValidateVoteUniquenessUseCase>(ValidateVoteUniquenessUseCase);
+    useCase = module.get<ValidateVoteUniquenessUseCase>(
+      ValidateVoteUniquenessUseCase,
+    );
     cacheService = module.get<CacheService>(CacheService);
   });
 
@@ -39,7 +41,7 @@ describe('ValidateVoteUniquenessUseCase', () => {
     expect(cacheService.checkAndSetDuplicate).toHaveBeenCalledWith(
       'votes:check:1:10',
       '100',
-      3600
+      3600,
     );
   });
 
@@ -52,7 +54,9 @@ describe('ValidateVoteUniquenessUseCase', () => {
   });
 
   it('debería permitir el voto si hay una falla en el caché para no arruinar la experiencia', async () => {
-    jest.spyOn(cacheService, 'checkAndSetDuplicate').mockRejectedValue(new Error('Redis Down'));
+    jest
+      .spyOn(cacheService, 'checkAndSetDuplicate')
+      .mockRejectedValue(new Error('Redis Down'));
 
     const result = await useCase.execute(1, 10, 100);
 

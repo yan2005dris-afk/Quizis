@@ -7,7 +7,11 @@ export class JoinRoomUseCase {
 
   constructor(private readonly cacheService: CacheService) {}
 
-  async execute(payload: { tokenCompartido: string; nombre: string; socketId: string }) {
+  async execute(payload: {
+    tokenCompartido: string;
+    nombre: string;
+    socketId: string;
+  }) {
     this.logger.log(
       `${payload.nombre} se unió a la sala con token: ${payload.tokenCompartido} (Socket: ${payload.socketId})`,
     );

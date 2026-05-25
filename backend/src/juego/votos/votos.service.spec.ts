@@ -24,7 +24,9 @@ describe('VotosService', () => {
 
     service = module.get<VotosService>(VotosService);
     registerUseCase = module.get<RegisterVoteUseCase>(RegisterVoteUseCase);
-    getVotesUseCase = module.get<GetVotesFromCacheUseCase>(GetVotesFromCacheUseCase);
+    getVotesUseCase = module.get<GetVotesFromCacheUseCase>(
+      GetVotesFromCacheUseCase,
+    );
     persistUseCase = module.get<PersistVotesUseCase>(PersistVotesUseCase);
   });
 

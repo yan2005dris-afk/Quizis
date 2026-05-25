@@ -464,7 +464,7 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
     entry.participants.add(value);
     return true;
   }
-  
+
   // Métodos para gestión de participantes online
   async addParticipantOnline(
     tokenCompartido: string,

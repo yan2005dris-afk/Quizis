@@ -8,7 +8,9 @@ export class AddQuestionsUseCase {
   constructor(private readonly prisma: PrismaService) {}
 
   async execute(bancoId: number, preguntas: any[]) {
-    this.logger.log(`Creando ${preguntas.length} preguntas en banco ${bancoId}`);
+    this.logger.log(
+      `Creando ${preguntas.length} preguntas en banco ${bancoId}`,
+    );
     this.validatePreguntas(preguntas);
 
     const creadas = await this.prisma.$transaction(
@@ -40,7 +42,9 @@ export class AddQuestionsUseCase {
   private validatePreguntas(preguntas: any[]) {
     for (let i = 0; i < preguntas.length; i++) {
       const pregunta = preguntas[i];
-      const correctas = pregunta.opciones.filter((op: any) => op.esCorrecta).length;
+      const correctas = pregunta.opciones.filter(
+        (op: any) => op.esCorrecta,
+      ).length;
       if (correctas !== 1) {
         throw new BadRequestException(
           `La pregunta ${i + 1} debe tener exactamente 1 opción correcta, pero tiene ${correctas}.`,

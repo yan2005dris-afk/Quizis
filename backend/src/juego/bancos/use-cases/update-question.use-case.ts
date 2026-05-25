@@ -8,11 +8,7 @@ export class UpdateQuestionUseCase {
 
   constructor(private readonly prisma: PrismaService) {}
 
-  async execute(
-    bancoId: number,
-    preguntaId: number,
-    dto: UpdatePreguntaDto,
-  ) {
+  async execute(bancoId: number, preguntaId: number, dto: UpdatePreguntaDto) {
     this.logger.log(`Actualizando pregunta ${preguntaId} del banco ${bancoId}`);
 
     const preguntaExistente = await this.prisma.preguntas.findFirst({

@@ -63,6 +63,8 @@ describe('GetSalaLifelinesUseCase', () => {
 
   it('should throw NotFoundException if token not found', async () => {
     mockPrisma.salas.findUnique.mockResolvedValue(null);
-    await expect(useCase.execute('TOKEN123')).rejects.toThrow(NotFoundException);
+    await expect(useCase.execute('TOKEN123')).rejects.toThrow(
+      NotFoundException,
+    );
   });
 });

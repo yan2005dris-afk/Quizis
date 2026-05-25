@@ -37,7 +37,9 @@ describe('BancosService', () => {
     getUseCase = module.get<GetBancoUseCase>(GetBancoUseCase);
     updateUseCase = module.get<UpdateBancoUseCase>(UpdateBancoUseCase);
     addQuestionsUseCase = module.get<AddQuestionsUseCase>(AddQuestionsUseCase);
-    updateQuestionUseCase = module.get<UpdateQuestionUseCase>(UpdateQuestionUseCase);
+    updateQuestionUseCase = module.get<UpdateQuestionUseCase>(
+      UpdateQuestionUseCase,
+    );
   });
 
   it('should call createUseCase', async () => {

@@ -1,5 +1,8 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { ProcessAudienceVoteUseCase, VotePayload } from './process-audience-vote.use-case';
+import {
+  ProcessAudienceVoteUseCase,
+  VotePayload,
+} from './process-audience-vote.use-case';
 import { ValidateVoteUniquenessUseCase } from './validate-vote-uniqueness.use-case';
 import { VotosService } from '../../votos/votos.service';
 
@@ -27,8 +30,12 @@ describe('ProcessAudienceVoteUseCase', () => {
       ],
     }).compile();
 
-    useCase = module.get<ProcessAudienceVoteUseCase>(ProcessAudienceVoteUseCase);
-    validateUniqueness = module.get<ValidateVoteUniquenessUseCase>(ValidateVoteUniquenessUseCase);
+    useCase = module.get<ProcessAudienceVoteUseCase>(
+      ProcessAudienceVoteUseCase,
+    );
+    validateUniqueness = module.get<ValidateVoteUniquenessUseCase>(
+      ValidateVoteUniquenessUseCase,
+    );
     votosService = module.get<VotosService>(VotosService);
   });
 

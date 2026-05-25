@@ -14,7 +14,9 @@ export class UpdateBancoUseCase {
     });
 
     if (!banco) {
-      throw new NotFoundException(`Banco de preguntas con ID ${id} no encontrado`);
+      throw new NotFoundException(
+        `Banco de preguntas con ID ${id} no encontrado`,
+      );
     }
 
     return this.prisma.bancoPreguntas.update({

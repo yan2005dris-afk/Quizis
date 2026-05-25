@@ -25,7 +25,9 @@ describe('SalasService', () => {
     service = module.get<SalasService>(SalasService);
     listAllUseCase = module.get<ListAllSalasUseCase>(ListAllSalasUseCase);
     getDetailUseCase = module.get<GetSalaDetailUseCase>(GetSalaDetailUseCase);
-    getLifelinesUseCase = module.get<GetSalaLifelinesUseCase>(GetSalaLifelinesUseCase);
+    getLifelinesUseCase = module.get<GetSalaLifelinesUseCase>(
+      GetSalaLifelinesUseCase,
+    );
   });
 
   it('should call listAllUseCase', async () => {

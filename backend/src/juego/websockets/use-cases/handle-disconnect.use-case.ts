@@ -7,12 +7,16 @@ export class HandleDisconnectUseCase {
 
   constructor(private readonly cacheService: CacheService) {}
 
-  async execute(info: { tokenCompartido: string; nickname: string; socketId: string }) {
+  async execute(info: {
+    tokenCompartido: string;
+    nickname: string;
+    socketId: string;
+  }) {
     await this.cacheService.removeParticipantOnline(
       info.tokenCompartido,
       info.nickname,
     );
-    
+
     this.logger.log(
       `${info.nickname} salió de la sala ${info.tokenCompartido} (Socket: ${info.socketId})`,
     );

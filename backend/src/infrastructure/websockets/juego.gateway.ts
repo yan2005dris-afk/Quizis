@@ -59,7 +59,9 @@ export class JuegoGateway implements OnGatewayConnection, OnGatewayDisconnect {
     client.join(info.tokenCompartido);
     this.socketMap.set(client.id, info);
 
-    this.server.to(info.tokenCompartido).emit('nuevo_participante', info.nickname);
+    this.server
+      .to(info.tokenCompartido)
+      .emit('nuevo_participante', info.nickname);
   }
 
   @SubscribeMessage('audience:vote')
@@ -101,19 +103,28 @@ export class JuegoGateway implements OnGatewayConnection, OnGatewayDisconnect {
   handlePreguntaLiberada(
     @MessageBody() payload: { tokenCompartido: string; pregunta: any },
   ) {
-    this.server.to(payload.tokenCompartido).emit('pregunta_liberada', payload.pregunta);
+    this.server
+      .to(payload.tokenCompartido)
+      .emit('pregunta_liberada', payload.pregunta);
   }
 
   @SubscribeMessage('temporizador_actualizado')
   handleTemporizador(
     @MessageBody() payload: { tokenCompartido: string; tiempoRestante: number },
   ) {
-    this.server.to(payload.tokenCompartido).emit('temporizador_actualizado', payload.tiempoRestante);
+    this.server
+      .to(payload.tokenCompartido)
+      .emit('temporizador_actualizado', payload.tiempoRestante);
   }
 
   @SubscribeMessage('comodin_bloqueado')
   handleComodinBloqueado(
-    @MessageBody() payload: { tokenCompartido: string; userId: string; tipoComodin: string },
+    @MessageBody()
+    payload: {
+      tokenCompartido: string;
+      userId: string;
+      tipoComodin: string;
+    },
   ) {
     this.server.to(payload.tokenCompartido).emit('comodin_bloqueado', payload);
   }

@@ -30,7 +30,8 @@ export class ProcessAudienceVoteUseCase {
     if (!votoPermitido) {
       return {
         success: false,
-        message: 'Acción bloqueada: Ya has enviado una respuesta para esta pregunta.',
+        message:
+          'Acción bloqueada: Ya has enviado una respuesta para esta pregunta.',
       };
     }
 
@@ -42,7 +43,9 @@ export class ProcessAudienceVoteUseCase {
       payload.opcionId,
     );
 
-    this.logger.log(`Voto procesado: Participante ${payload.participanteId} en sala ${payload.salaId}`);
+    this.logger.log(
+      `Voto procesado: Participante ${payload.participanteId} en sala ${payload.salaId}`,
+    );
 
     return {
       success: true,

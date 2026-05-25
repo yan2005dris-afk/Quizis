@@ -24,8 +24,12 @@ describe('WebsocketsService', () => {
 
     service = module.get<WebsocketsService>(WebsocketsService);
     joinRoomUseCase = module.get<JoinRoomUseCase>(JoinRoomUseCase);
-    handleDisconnectUseCase = module.get<HandleDisconnectUseCase>(HandleDisconnectUseCase);
-    processAudienceVoteUseCase = module.get<ProcessAudienceVoteUseCase>(ProcessAudienceVoteUseCase);
+    handleDisconnectUseCase = module.get<HandleDisconnectUseCase>(
+      HandleDisconnectUseCase,
+    );
+    processAudienceVoteUseCase = module.get<ProcessAudienceVoteUseCase>(
+      ProcessAudienceVoteUseCase,
+    );
   });
 
   it('should call joinRoomUseCase', async () => {
