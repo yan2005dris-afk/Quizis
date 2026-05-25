@@ -4,10 +4,24 @@ import { authGuard } from './core/guards/auth.guard';
 import { PageNotFoundComponent } from './core/components/page-not-found/page-not-found.component';
 
 export const routes: Routes = [
+  // Redirección inicial: si no hay ruta, va a login
+  { path: '', redirectTo: 'login', pathMatch: 'full' },
+
   // Rutas de Autenticación (Públicas, sin layout)
   {
-    path: '',
-    loadChildren: () => import('./features/auth/auth.routes').then((m) => m.AUTH_ROUTES),
+    path: 'login',
+    loadComponent: () =>
+      import('./features/auth/pages/login/login.component').then((m) => m.LoginComponent),
+  },
+  {
+    path: 'register',
+    loadComponent: () =>
+      import('./features/auth/pages/login/login.component').then((m) => m.LoginComponent),
+  },
+  {
+    path: 'privacy',
+    loadComponent: () =>
+      import('./features/auth/pages/login/login.component').then((m) => m.LoginComponent),
   },
 
   // Rutas de Sala (Públicas, sin layout o layout especial)
