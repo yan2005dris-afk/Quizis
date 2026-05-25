@@ -1,9 +1,8 @@
 import { Routes } from '@angular/router';
 import { DashboardLayoutComponent } from './layout/dashboard-layout/dashboard-layout.component';
 import { authGuard } from './core/guards/auth.guard';
-
+import { QuizAnimationDemoComponent } from './dev/quiz-animation-demo/quiz-animation-demo.component';
 import { PageNotFoundComponent } from './core/components/page-not-found/page-not-found.component';
-
 
 export const routes: Routes = [
   // Redirección inicial: si no hay ruta, va a login
@@ -35,6 +34,10 @@ export const routes: Routes = [
       import('./features/room/components/active-question/active-question.component').then(
         (m) => m.ActiveQuestionComponent,
       ),
+  },
+  {
+    path: 'quiz-animation',
+    component: QuizAnimationDemoComponent,
   },
 
   // Rutas bajo el Layout (Híbrido: Privado o Público según Auth)
