@@ -3,12 +3,18 @@ import { LoginComponent } from './features/auth/login/login.component';
 import { DashboardComponent } from './features/dashboard/dashboard.component';
 import { DashboardLayoutComponent } from './layout/dashboard-layout/dashboard-layout.component';
 import { authGuard } from './core/guards/auth.guard';
+import { QuizAnimationDemoComponent } from './dev/quiz-animation-demo/quiz-animation-demo.component';
 
 export const routes: Routes = [
   // Rutas públicas
   { path: 'login', component: LoginComponent },
   { path: 'register', component: LoginComponent }, // Placeholder para evitar 404
   { path: 'privacy', component: LoginComponent }, // Placeholder
+
+  {
+    path: 'demo-quiz',
+    component: QuizAnimationDemoComponent
+  },
 
   // Rutas privadas (Protegidas por Layout y Guard)
   {

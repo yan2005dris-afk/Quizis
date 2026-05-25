@@ -1,0 +1,72 @@
+<div class="quiz-page">
+  <header class="login-header">
+    <div class="logo">
+      <span class="logo-icon">Q</span>
+      <span class="logo-text">Quizis</span>
+    </div>
+  </header>
+
+  <main class="container">
+    <div class="top-bar">
+      <div class="info">
+        <h2>Pregunta {{ questionNumber }} / {{ totalQuestions }}</h2>
+        <p>💰 Premio: {{ prize }}</p>
+      </div>
+      <div class="timer" [class.warning]="timeLeft <= 10">
+        ⏱ {{ timeLeft }}s
+      </div>
+    </div>
+
+    <!-- QUESTION -->
+    <div class="question-box">
+      {{ question }}
+    </div>
+
+    <!-- OPTIONS -->
+    <div class="options">
+      <div
+        class="option"
+        *ngFor="let opt of options;let i = index"
+        (click)="selectOption(opt)"
+        [class.selected]="selectedOption === opt && state !== 'idle'"
+        [class.correct]="isCorrectSelected(opt)"
+        [class.wrong]="isWrongSelected(opt)"
+        [class.dim]="state !== 'idle' && selectedOption !== opt"
+        [class.locked]="state === 'revealed'"
+      >
+         <div class="option-content">
+
+          <span class="option-letter">
+            {{ ['A', 'B', 'C', 'D'][i] }}
+          </span>
+
+          <span class="option-text">
+            {{ opt }}
+          </span>
+
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- CONFIRM -->
+    <div class="actions">
+      <button (click)="confirmAnswer()"
+      [disabled]="state === 'revealed' || !selectedOption"
+      >Confirmar respuesta</button>
+    </div>
+
+    <!-- LIFELINES -->
+    <div class="lifelines">
+      <button (click)="useAudience()">📊 Público</button>
+      <button (click)="useFifty()">IA</button>
+      <button (click)="useCall()">📞 Llamada</button>
+    </div>
+  <footer class="login-footer">
+    <p class="copyright">© 2026 Quizis Inc. Todos los derechos reservados.</p>
+    <div class="footer-links">
+      <a href="#">Estado del servidor</a>
+      <a href="#">Soporte</a>
+    </div>
+  </footer>
+</div>
