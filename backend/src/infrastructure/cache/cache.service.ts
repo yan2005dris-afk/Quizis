@@ -487,7 +487,7 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
-  async getParticipantsOnline(tokenCompartido: string): Promise<string[]> {
+  async getOnlineParticipants(tokenCompartido: string): Promise<string[]> {
     const key = `online:${tokenCompartido}`;
     const participants = new Set<string>();
 
