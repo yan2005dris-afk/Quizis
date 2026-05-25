@@ -5,7 +5,7 @@ import {
   ConnectedSocket,
 } from '@nestjs/websockets';
 import { Socket } from 'socket.io';
-import { RedisJuegoService } from '../services/redis-juego.service';
+import { RedisJuegoService } from './redis-juego.service';
 import { Logger } from '@nestjs/common';
 
 @WebSocketGateway({ cors: true })

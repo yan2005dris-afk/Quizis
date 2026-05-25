@@ -427,4 +427,94 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
       }
     }
   }
+  
+  // Métodos para gestión de participantes online
+  async addParticipantOnline(
+    tokenCompartido: string,
+    nickname: string,
+  ): Promise<void> {
+    const key = `online:${tokenCompartido}`;
+
+    if (this.redisClient && this.isRedisHealthy) {
+      try {
+        await this.redisClient.sadd(key, nickname);
+        await this.redisClient.expire(key, 3600);
+        return;
+      } catch (error) {
+        const errorMsg = error instanceof Error ? error.message : String(error);
+        this.logger.warn(
+          `[CACHE:WARN] Error en Redis durante addParticipantOnline: ${errorMsg}. Usando fallback en memoria.`,
+        );
+        this.handleRedisFailure();
+      }
+    }
+
+    // Fallback en memoria
+    let entry = this.memoryOnline.get(key);
+    if (!entry) {
+      entry = {
+        participants: new Set<string>(),
+        expiresAt: Date.now() + 3600 * 1000,
+      };
+      this.memoryOnline.set(key, entry);
+    }
+    entry.participants.add(nickname);
+  }
+
+  async removeParticipantOnline(
+    tokenCompartido: string,
+    nickname: string,
+  ): Promise<void> {
+    const key = `online:${tokenCompartido}`;
+
+    if (this.redisClient && this.isRedisHealthy) {
+      try {
+        await this.redisClient.srem(key, nickname);
+        return;
+      } catch (error) {
+        const errorMsg = error instanceof Error ? error.message : String(error);
+        this.logger.warn(
+          `[CACHE:WARN] Error en Redis durante removeParticipantOnline: ${errorMsg}. Usando fallback en memoria.`,
+        );
+        this.handleRedisFailure();
+      }
+    }
+
+    // Fallback en memoria
+    const entry = this.memoryOnline.get(key);
+    if (entry) {
+      entry.participants.delete(nickname);
+    }
+  }
+
+  async getParticipantsOnline(tokenCompartido: string): Promise<string[]> {
+    const key = `online:${tokenCompartido}`;
+    const participants = new Set<string>();
+
+    // Cargar de memoria
+    const memEntry = this.memoryOnline.get(key);
+    if (memEntry) {
+      for (const p of memEntry.participants) {
+        participants.add(p);
+      }
+    }
+
+    // Cargar de Redis
+    if (this.redisClient && this.isRedisHealthy) {
+      try {
+        const data = await this.redisClient.smembers(key);
+        for (const p of data) {
+          participants.add(p);
+        }
+      } catch (error) {
+        const errorMsg = error instanceof Error ? error.message : String(error);
+        this.logger.warn(
+          `[CACHE:WARN] Error en Redis durante getParticipantsOnline: ${errorMsg}.`,
+        );
+        this.handleRedisFailure();
+      }
+    }
+
+    return Array.from(participants);
+  }
 }

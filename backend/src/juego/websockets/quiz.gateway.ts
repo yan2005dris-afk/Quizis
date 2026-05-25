@@ -7,6 +7,7 @@ import {
   ConnectedSocket,
   MessageBody,
 } from '@nestjs/websockets';
+import { CacheService } from '../../infrastructure/cache/cache.service';
 import { Server, Socket } from 'socket.io';
 
 @WebSocketGateway({ cors: { origin: '*' } })
@@ -26,7 +27,7 @@ export class QuizGateway implements OnGatewayConnection, OnGatewayDisconnect {
   constructor(private readonly cacheService: CacheService) {}
 
   handleConnection(client: Socket) {
-    console.log(`Cliente conectado: ${client.id}`);
+    console.error(`Cliente conectado: ${client.id}`);
   }
 
   async handleDisconnect(client: Socket) {
@@ -37,9 +38,9 @@ export class QuizGateway implements OnGatewayConnection, OnGatewayDisconnect {
         info.nickname,
       );
       this.socketMap.delete(client.id);
-      console.log(`${info.nickname} salió de la sala ${info.tokenCompartido}`);
+      console.error(`${info.nickname} salió de la sala ${info.tokenCompartido}`);
     } else {
-      console.log(`Cliente desconectado: ${client.id}`);
+      console.error(`Cliente desconectado: ${client.id}`);
     }
   }
 
@@ -49,7 +50,17 @@ export class QuizGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @MessageBody() payload: { tokenCompartido: string; nombre: string },
   ) {
     client.join(payload.tokenCompartido);
-    console.log(
+    // Guardar mapeo socket.id -> participante
+    this.socketMap.set(client.id, {
+      tokenCompartido: payload.tokenCompartido,
+      nickname: payload.nombre,
+    });
+    // Agregar a participantes online
+    await this.cacheService.addParticipantOnline(
+      payload.tokenCompartido,
+      payload.nombre,
+    );
+    console.error(
       `${payload.nombre} se unió a la sala con token: ${payload.tokenCompartido}`,
     );
     this.server
