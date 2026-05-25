@@ -152,6 +152,8 @@
   color: white;
   transition: all 0.2s;
   cursor: pointer;
+  padding: 0;
+  line-height: 1;
   
   &.active {
     border-color: #2563eb;

@@ -13,7 +13,7 @@ import { ButtonComponent } from '../../../../shared/ui';
   standalone: true,
   imports: [CommonModule, RouterLink, FormsModule, ButtonComponent],
   templateUrl: './bank-detail.component.html',
-  styleUrls: ['./bank-detail.component.scss']
+  styleUrls: ['./bank-detail.component.scss'],
 })
 export class BankDetailComponent {
   private readonly route = inject(ActivatedRoute);
@@ -24,7 +24,7 @@ export class BankDetailComponent {
 
   banco = toSignal(
     this.route.paramMap.pipe(
-      switchMap(params => {
+      switchMap((params) => {
         const id = params.get('id');
         if (!id) return of(null);
         return this.bancosService.getBancoById(Number(id)).pipe(
@@ -32,10 +32,10 @@ export class BankDetailComponent {
             this.currentQuestionIndex.set(0);
             this.isEditing.set(false);
           }),
-          catchError(() => of(null))
+          catchError(() => of(null)),
         );
-      })
-    )
+      }),
+    ),
   );
 
   currentQuestion = computed(() => {
@@ -51,20 +51,20 @@ export class BankDetailComponent {
 
   nextQuestion() {
     if (this.currentQuestionIndex() < this.totalQuestions() - 1) {
-      this.currentQuestionIndex.update(i => i + 1);
+      this.currentQuestionIndex.update((i) => i + 1);
       this.isEditing.set(false);
     }
   }
 
   prevQuestion() {
     if (this.currentQuestionIndex() > 0) {
-      this.currentQuestionIndex.update(i => i - 1);
+      this.currentQuestionIndex.update((i) => i - 1);
       this.isEditing.set(false);
     }
   }
 
   toggleEdit() {
-    this.isEditing.update(v => !v);
+    this.isEditing.update((v) => !v);
   }
 
   toggleCorrectOption(opcion: Opcion) {

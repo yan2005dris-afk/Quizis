@@ -38,9 +38,7 @@ export class QuizGateway implements OnGatewayConnection, OnGatewayDisconnect {
         info.nickname,
       );
       this.socketMap.delete(client.id);
-      console.log(
-        `${info.nickname} salió de la sala ${info.tokenCompartido}`,
-      );
+      console.log(`${info.nickname} salió de la sala ${info.tokenCompartido}`);
     } else {
       console.log(`Cliente desconectado: ${client.id}`);
     }

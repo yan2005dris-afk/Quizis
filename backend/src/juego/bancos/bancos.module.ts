@@ -7,4 +7,3 @@ import { BancosService } from './bancos.service';
   providers: [BancosService],
 })
 export class BancosModule {}
-

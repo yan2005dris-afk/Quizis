@@ -9,11 +9,11 @@ import { BancosService } from '../../../../core/services/bancos.service';
   standalone: true,
   imports: [CommonModule, RouterLink, LucideAngularModule],
   templateUrl: './bank-list.component.html',
-  styleUrls: ['./bank-list.component.scss']
+  styleUrls: ['./bank-list.component.scss'],
 })
 export class BankListComponent {
   private readonly bancosService = inject(BancosService);
-  
+
   readonly PlusIcon = Plus;
   readonly DatabaseIcon = Database;
 
@@ -22,9 +22,9 @@ export class BankListComponent {
       return new Promise<any[]>((resolve, reject) => {
         this.bancosService.getAllBancos().subscribe({
           next: resolve,
-          error: reject
+          error: reject,
         });
       });
-    }
+    },
   });
 }

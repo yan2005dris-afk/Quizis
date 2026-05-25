@@ -12,12 +12,12 @@ export class BancosService {
     return this.prisma.bancoPreguntas.findMany({
       include: {
         _count: {
-          select: { preguntas: true }
-        }
+          select: { preguntas: true },
+        },
       },
       orderBy: {
-        createdAt: 'desc'
-      }
+        createdAt: 'desc',
+      },
     });
   }
 
@@ -28,14 +28,16 @@ export class BancosService {
       include: {
         preguntas: {
           include: {
-            opciones: true
-          }
-        }
-      }
+            opciones: true,
+          },
+        },
+      },
     });
 
     if (!banco) {
-      throw new NotFoundException(`Banco de preguntas con ID ${id} no encontrado`);
+      throw new NotFoundException(
+        `Banco de preguntas con ID ${id} no encontrado`,
+      );
     }
 
     return banco;

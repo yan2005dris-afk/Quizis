@@ -503,9 +503,7 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
   /**
    * Retorna los nicknames de participantes online en una sala.
    */
-  async getOnlineParticipants(
-    tokenCompartido: string,
-  ): Promise<string[]> {
+  async getOnlineParticipants(tokenCompartido: string): Promise<string[]> {
     const key = this.getOnlineKey(tokenCompartido);
     if (this.redisClient && this.isRedisHealthy) {
       try {

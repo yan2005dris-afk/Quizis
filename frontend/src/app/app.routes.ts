@@ -24,23 +24,32 @@ export const routes: Routes = [
       { path: 'dashboard', component: DashboardComponent, canActivate: [authGuard] },
       { path: 'salas', component: SalasIndexComponent, canActivate: [authGuard] },
       { path: 'preguntas', component: DashboardComponent, canActivate: [authGuard] },
-      { 
-        path: 'bancos', 
+      {
+        path: 'bancos',
         canActivate: [authGuard],
         children: [
           {
             path: '',
-            loadComponent: () => import('./features/question-bank/pages/bank-list/bank-list.component').then(m => m.BankListComponent)
+            loadComponent: () =>
+              import('./features/question-bank/pages/bank-list/bank-list.component').then(
+                (m) => m.BankListComponent,
+              ),
           },
           {
             path: 'crear',
-            loadComponent: () => import('./features/question-bank/pages/bank-create/bank-create.component').then(m => m.BankCreateComponent)
+            loadComponent: () =>
+              import('./features/question-bank/pages/bank-create/bank-create.component').then(
+                (m) => m.BankCreateComponent,
+              ),
           },
           {
             path: ':id',
-            loadComponent: () => import('./features/question-bank/pages/bank-detail/bank-detail.component').then(m => m.BankDetailComponent)
-          }
-        ]
+            loadComponent: () =>
+              import('./features/question-bank/pages/bank-detail/bank-detail.component').then(
+                (m) => m.BankDetailComponent,
+              ),
+          },
+        ],
       },
       { path: 'usuarios', component: DashboardComponent, canActivate: [authGuard] },
       { path: 'configuracion', component: DashboardComponent, canActivate: [authGuard] },
