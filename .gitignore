@@ -49,3 +49,5 @@ Thumbs.db
 
 .codegraph
 /frontend/openspec
+/.agents
+skills-lock.json
