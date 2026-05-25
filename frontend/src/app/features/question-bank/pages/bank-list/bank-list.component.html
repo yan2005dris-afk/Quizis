@@ -12,7 +12,16 @@
     </div>
   </header>
 
-  @if (banks().length === 0) {
+  @if (bancosResource.isLoading()) {
+    <div class="bancos-index__loading" role="status">
+      <div class="bancos-index__spinner"></div>
+      <span class="sr-only">Cargando bancos...</span>
+    </div>
+  } @else if (bancosResource.error()) {
+    <div class="bancos-index__error" role="alert">
+      <p>No se pudieron cargar los bancos de preguntas. Intenta de nuevo más tarde.</p>
+    </div>
+  } @else if ((bancosResource.value() || []).length === 0) {
     <div class="bancos-index__empty">
       <div class="bancos-index__empty-icon">📚</div>
       <h2 class="bancos-index__empty-title">No hay bancos de preguntas</h2>
@@ -22,18 +31,17 @@
     </div>
   } @else {
     <div class="bancos-index__grid">
-      @for (bank of banks(); track bank.id) {
-        <a class="banco-card">
+      @for (bank of bancosResource.value(); track bank.bancoId) {
+        <a class="banco-card" [routerLink]="['/bancos', bank.bancoId]">
           <div class="banco-card__header">
             <div class="banco-card__title-row">
               <lucide-icon [img]="DatabaseIcon" class="banco-card__icon"></lucide-icon>
-              <h3 class="banco-card__title">{{ bank.name }}</h3>
+              <h3 class="banco-card__title">{{ bank.nombre }}</h3>
             </div>
-            <span class="banco-card__badge banco-card__badge--{{ bank.type.toLowerCase() }}">{{ bank.type }}</span>
           </div>
           <div class="banco-card__meta">
             <span class="banco-card__participants">
-              {{ bank.questionCount }} preguntas
+              {{ bank._count?.preguntas || 0 }} preguntas
             </span>
             <span class="banco-card__date">
               Creado el {{ bank.createdAt | date: 'dd/MM/yyyy' }}

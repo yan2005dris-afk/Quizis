@@ -450,4 +450,86 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
     const mem = this.memoryVotes.get(key);
     return mem ? (mem.votes.get(0) as any) : null;
   }
+
+  // ─── PARTICIPANTES ONLINE ──────────────────────────────────────────
+
+  private getOnlineKey(tokenCompartido: string): string {
+    return `sala:${tokenCompartido}:online`;
+  }
+
+  /**
+   * Marca un participante como online en una sala (Redis SET).
+   */
+  async setParticipantOnline(
+    tokenCompartido: string,
+    nickname: string,
+  ): Promise<void> {
+    const key = this.getOnlineKey(tokenCompartido);
+    if (this.redisClient && this.isRedisHealthy) {
+      try {
+        await this.redisClient.sadd(key, nickname);
+        await this.redisClient.expire(key, 7200); // TTL 2h por si queda huérfano
+        return;
+      } catch {
+        this.handleRedisFailure();
+      }
+    }
+    // Fallback memoria
+    this.memoryVotes.set(key, {
+      votes: new Map([[1, nickname]]),
+      expiresAt: Date.now() + 7200 * 1000,
+    } as any);
+  }
+
+  /**
+   * Marca un participante como offline en una sala (Redis SET).
+   */
+  async removeParticipantOnline(
+    tokenCompartido: string,
+    nickname: string,
+  ): Promise<void> {
+    const key = this.getOnlineKey(tokenCompartido);
+    if (this.redisClient && this.isRedisHealthy) {
+      try {
+        await this.redisClient.srem(key, nickname);
+        return;
+      } catch {
+        this.handleRedisFailure();
+      }
+    }
+    this.memoryVotes.delete(key);
+  }
+
+  /**
+   * Retorna los nicknames de participantes online en una sala.
+   */
+  async getOnlineParticipants(
+    tokenCompartido: string,
+  ): Promise<string[]> {
+    const key = this.getOnlineKey(tokenCompartido);
+    if (this.redisClient && this.isRedisHealthy) {
+      try {
+        return await this.redisClient.smembers(key);
+      } catch {
+        this.handleRedisFailure();
+      }
+    }
+    return [];
+  }
+
+  /**
+   * Limpia el estado online de una sala completa (ej: cuando termina).
+   */
+  async clearOnlineParticipants(tokenCompartido: string): Promise<void> {
+    const key = this.getOnlineKey(tokenCompartido);
+    if (this.redisClient && this.isRedisHealthy) {
+      try {
+        await this.redisClient.del(key);
+        return;
+      } catch {
+        this.handleRedisFailure();
+      }
+    }
+    this.memoryVotes.delete(key);
+  }
 }

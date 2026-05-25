@@ -70,6 +70,38 @@
   gap: 16px;
 }
 
+/* Loading */
+.bancos-index__loading {
+  display: flex;
+  justify-content: center;
+  padding: 48px 0;
+}
+
+.bancos-index__spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid #e2e8f0;
+  border-top-color: #2563eb;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Error */
+.bancos-index__error {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  padding: 16px;
+  color: #991b1b;
+  font-size: 14px;
+}
+
 /* Empty */
 .bancos-index__empty {
   text-align: center;

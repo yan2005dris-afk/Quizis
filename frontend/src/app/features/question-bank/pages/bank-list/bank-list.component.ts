@@ -1,7 +1,8 @@
-import { Component, signal } from '@angular/core';
+import { Component, resource, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { LucideAngularModule, Plus, Database } from 'lucide-angular';
+import { BancosService } from '../../../../core/services/bancos.service';
 
 @Component({
   selector: 'app-bank-list',
@@ -11,11 +12,19 @@ import { LucideAngularModule, Plus, Database } from 'lucide-angular';
   styleUrls: ['./bank-list.component.scss']
 })
 export class BankListComponent {
+  private readonly bancosService = inject(BancosService);
+  
   readonly PlusIcon = Plus;
   readonly DatabaseIcon = Database;
 
-  banks = signal([
-    { id: 1, name: 'Banco de Geografía', questionCount: 25, type: 'JSON', createdAt: new Date() },
-    { id: 2, name: 'Ciencias Naturales', questionCount: 40, type: 'EXCEL', createdAt: new Date() }
-  ]);
+  bancosResource = resource({
+    loader: () => {
+      return new Promise<any[]>((resolve, reject) => {
+        this.bancosService.getAllBancos().subscribe({
+          next: resolve,
+          error: reject
+        });
+      });
+    }
+  });
 }

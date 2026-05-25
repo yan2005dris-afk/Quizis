@@ -35,6 +35,10 @@ export const routes: Routes = [
           {
             path: 'crear',
             loadComponent: () => import('./features/question-bank/pages/bank-create/bank-create.component').then(m => m.BankCreateComponent)
+          },
+          {
+            path: ':id',
+            loadComponent: () => import('./features/question-bank/pages/bank-detail/bank-detail.component').then(m => m.BankDetailComponent)
           }
         ]
       },

@@ -15,14 +15,35 @@ export class QuizGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
   server!: Server;
 
+  /**
+   * Mapeo socket.id -> { tokenCompartido, nickname }
+   * Para saber quién se desconecta cuando se cierra el socket.
+   */
+  private readonly socketMap = new Map<
+    string,
+    { tokenCompartido: string; nickname: string }
+  >();
+
   constructor(private readonly cacheService: CacheService) {}
 
   handleConnection(client: Socket) {
     console.log(`Cliente conectado: ${client.id}`);
   }
 
-  handleDisconnect(client: Socket) {
-    console.log(`Cliente desconectado: ${client.id}`);
+  async handleDisconnect(client: Socket) {
+    const info = this.socketMap.get(client.id);
+    if (info) {
+      await this.cacheService.removeParticipantOnline(
+        info.tokenCompartido,
+        info.nickname,
+      );
+      this.socketMap.delete(client.id);
+      console.log(
+        `${info.nickname} salió de la sala ${info.tokenCompartido}`,
+      );
+    } else {
+      console.log(`Cliente desconectado: ${client.id}`);
+    }
   }
 
   @SubscribeMessage('unirse_sala')
@@ -31,6 +52,17 @@ export class QuizGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @MessageBody() payload: { tokenCompartido: string; nombre: string },
   ) {
     await client.join(payload.tokenCompartido);
+
+    // Trackear online en Redis
+    this.socketMap.set(client.id, {
+      tokenCompartido: payload.tokenCompartido,
+      nickname: payload.nombre,
+    });
+    await this.cacheService.setParticipantOnline(
+      payload.tokenCompartido,
+      payload.nombre,
+    );
+
     console.log(
       `${payload.nombre} se unió a la sala con token: ${payload.tokenCompartido}`,
     );
@@ -39,7 +71,6 @@ export class QuizGateway implements OnGatewayConnection, OnGatewayDisconnect {
     const activeQuestion = await this.cacheService.getActiveQuestion(
       payload.tokenCompartido,
     );
-
     if (activeQuestion) {
       client.emit('pregunta_liberada', activeQuestion);
     }
