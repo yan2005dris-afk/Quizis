@@ -8,6 +8,7 @@ import {
   MessageBody,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
+import { CacheService } from '../infrastructure/cache/cache.service';
 
 @WebSocketGateway({ cors: { origin: '*' } })
 export class QuizGateway implements OnGatewayConnection, OnGatewayDisconnect {

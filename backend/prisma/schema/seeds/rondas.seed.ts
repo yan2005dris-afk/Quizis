@@ -48,7 +48,6 @@ export const seedRondas = async (prisma: PrismaClient) => {
       salaId: sala.salaId,
       nickname: 'DamianEstudiante',
       rol: 'estudiante',
-      isOnline: true,
     },
   });
 
@@ -58,7 +57,6 @@ export const seedRondas = async (prisma: PrismaClient) => {
       salaId: sala.salaId,
       nickname: 'ProfesorObservador',
       rol: 'observador',
-      isOnline: true,
     },
   });
 
