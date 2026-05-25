@@ -1,40 +1,69 @@
 <div class="game-screen">
-
-  <div class="game-screen__background-glow"></div>
-
-  <div class="game-screen__header">
-
-    <div class="game-screen__logo">
-      QUIZ SHOW
+  <header class="game-screen__header">
+    <div class="header-left">
+      <div class="game-screen__logo">
+        <span class="logo-icon">❖</span> Quizis
+      </div>
     </div>
 
-    <app-countdown
-      [duracion]="20"
-      [activo]="true"
-      (tiempoAgotado)="onTiempoAgotado()">
-    </app-countdown>
+    <div class="header-center"></div>
 
-  </div>
-
-  @if (mensaje()) {
-    <div class="game-screen__alert">
-      <app-alert
-        type="info"
-        [message]="mensaje()">
-      </app-alert>
+    <div class="header-right">
+      <span class="game-screen__amount">$50,000</span>
+      <button class="btn-flat">Log In</button>
+      <button class="btn-primary-header">Sign Up</button>
     </div>
-  }
+  </header>
 
-  <div class="game-screen__question-container">
-
+  <main class="game-screen__question-container" style="display: flex; flex-direction: column; align-items: center;">
+    
     <app-card-pregunta
+      style="order: 1; width: 100%;"
       [pregunta]="pregunta()"
       [opciones]="opciones()"
-      [numeroPregunta]="1"
-      [totalPreguntas]="10"
-      (seleccionada)="onSeleccion($event)">
+      [esMultiple]="esMultiple()"
+      (confirmarRespuesta)="onConfirmarRespuesta($event)">
     </app-card-pregunta>
 
-  </div>
+    @if (mensaje()) {
+      <div class="game-screen__alert" style="order: 2; width: 100%; margin-top: 2rem; margin-bottom: 0rem;">
+        <app-alert [type]="tipoMensaje()" [message]="mensaje()"></app-alert>
+      </div>
+    }
+  </main>
 
+  <footer class="game-screen__comodines-container" style="margin-top: 2rem;">
+    <p class="comodines-title">COMODINES DISPONIBLES</p>
+    <div class="comodines-grid">
+      <button 
+        class="comodin-btn" 
+        [disabled]="preguntaRespondida()"
+        (click)="usarComodin('publico')">
+        <div class="comodin-icon icon-publico">
+          <span class="material-icons">groups</span>
+        </div>
+        <span class="comodin-label">PÚBLICO</span>
+      </button>
+
+      <button 
+        class="comodin-btn" 
+        [disabled]="preguntaRespondida()"
+        (click)="usarComodin('ia')">
+        <div class="comodin-icon icon-ia">
+          <span class="material-icons">smart_toy</span>
+        </div>
+        <span class="comodin-label">IA</span>
+      </button>
+
+      <button 
+        class="comodin-btn" 
+        [disabled]="preguntaRespondida()"
+        (click)="usarComodin('llamada')">
+        <div class="comodin-icon icon-llamada">
+          <span class="material-icons">call</span>
+        </div>
+        <span class="comodin-label">LLAMADA</span>
+      </button>
+    </div>
+  </footer>
 </div>

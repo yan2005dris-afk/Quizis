@@ -1,554 +1,217 @@
-.game-screen {
-  position: relative;
-
-  min-height: 100vh;
-
-  overflow: hidden;
-
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-
-  padding: 2rem;
-
-  background:
-    radial-gradient(circle at top, #304ffe 0%, #10142f 45%, #050816 100%);
-
-  color: white;
-}
-
-/* ───────────────────────────────────── */
-/* Background cinematic glow */
-/* ───────────────────────────────────── */
-
-.game-screen__background-glow {
-  position: absolute;
-
-  width: 900px;
-  height: 900px;
-
-  border-radius: 50%;
-
-  background:
-    radial-gradient(circle,
-      rgba(79, 195, 247, 0.18),
-      transparent 70%);
-
-  top: -300px;
-
-  z-index: 0;
-
-  filter: blur(40px);
-}
-
-/* ───────────────────────────────────── */
-/* Header */
-/* ───────────────────────────────────── */
-
-.game-screen__header {
-  position: relative;
-  z-index: 2;
-
-  width: 100%;
-
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-
-  gap: 1.5rem;
-
-  margin-top: 1rem;
-}
-
-/* ───────────────────────────────────── */
-/* Logo */
-/* ───────────────────────────────────── */
-
-.game-screen__logo {
-  font-size: clamp(2rem, 4vw, 4rem);
-
-  font-weight: 800;
-
-  letter-spacing: 6px;
-
-  text-transform: uppercase;
-
-  color: #ffd54f;
-
-  text-shadow:
-    0 0 10px rgba(255, 213, 79, 0.8),
-    0 0 25px rgba(255, 213, 79, 0.4);
-
-  user-select: none;
-}
-
-/* ───────────────────────────────────── */
-/* Alert */
-/* ───────────────────────────────────── */
-
-.game-screen__alert {
-  width: min(700px, 90%);
-  margin-top: 1rem;
-
-  z-index: 2;
-}
-
-/* ───────────────────────────────────── */
-/* Question container */
-/* ───────────────────────────────────── */
-
-.game-screen__question-container {
-  position: relative;
-  z-index: 2;
-
-  width: 100%;
-  max-width: 1100px;
-
-  margin-top: 3rem;
-
-  display: flex;
-  justify-content: center;
-}
-
-/* ───────────────────────────────────── */
-/* Deep styling into card-pregunta */
-/* ───────────────────────────────────── */
-
-:host ::ng-deep .card-pregunta {
-  background:
-    linear-gradient(
-      180deg,
-      rgba(28, 37, 99, 0.95),
-      rgba(11, 17, 53, 0.95)
-    );
-
-  border: 2px solid rgba(255,255,255,0.08);
-
-  border-radius: 28px;
-
-  padding: 2rem;
-
-  backdrop-filter: blur(8px);
-
-  box-shadow:
-    0 0 30px rgba(0,0,0,0.45),
-    0 0 60px rgba(79, 195, 247, 0.08);
-}
-
-/* Question text */
-
-:host ::ng-deep .card-pregunta__texto {
-
-  font-size: clamp(2rem, 3vw, 3rem);
-
-  font-weight: 800;
-
-  line-height: 1.4;
-
-  text-align: center;
-
-  color: #ffffff !important;
-
-  max-width: 850px;
-
-  margin-inline: auto;
-
-  text-shadow:
-    0 0 12px rgba(255,255,255,0.12);
-
-  letter-spacing: 0.5px;
-}
-/* Card Body*/
-:host ::ng-deep .card-pregunta__body {
-
-  padding: 2rem;
-
-  border-radius: 22px;
-
-  background:
-    linear-gradient(
-      180deg,
-      rgba(255,255,255,0.03),
-      rgba(255,255,255,0.015)
-    );
-
-  border: 1px solid rgba(255,255,255,0.06);
-
-  box-shadow:
-    inset 0 0 20px rgba(255,255,255,0.02);
-}
-/* Options grid */
-
-:host ::ng-deep .card-pregunta__opciones {
-  display: grid;
-
-  grid-template-columns: repeat(2, 1fr);
-
-  gap: 1.2rem;
-}
-
-/* Individual option */
-
-:host ::ng-deep .card-pregunta__opcion {
-  min-height: 90px;
-
-  border-radius: 18px;
-
-  border: 2px solid rgba(255,255,255,0.08);
-
-  background:
-    linear-gradient(
-      180deg,
-      rgba(52, 73, 170, 0.95),
-      rgba(23, 32, 89, 0.95)
-    );
-
-  color: white ;
-
-  font-size: 1.1rem;
-
-  font-weight: 700;
-
-  transition:
-    transform 0.2s ease,
-    box-shadow 0.2s ease,
-    border-color 0.2s ease;
-
-  box-shadow:
-    0 8px 24px rgba(0,0,0,0.35);
-}
-
-/* Hover effect */
-
-:host ::ng-deep .card-pregunta__opcion:hover:not(:disabled) {
-  transform: translateY(-4px);
-
-  border-color: rgba(255, 213, 79, 0.6);
-
-  box-shadow:
-    0 0 20px rgba(255, 213, 79, 0.25),
-    0 12px 30px rgba(0,0,0,0.45);
-}
-
-/* Selected option */
-
-:host ::ng-deep .card-pregunta__opcion--selected {
-  border-color: #ffd54f;
-
-  box-shadow:
-    0 0 25px rgba(255, 213, 79, 0.55);
-}
-
-/* Dimmed options */
-
-:host ::ng-deep .card-pregunta__opcion--dimmed {
-  opacity: 0.45;
-}
-
-/* Letters */
+// Variables de color basadas en la imagen
+$color-bg: #f4f6f9;
+$color-primary: #3b82f6; // Azul de los botones principales
+$color-primary-hover: #2563eb;
+$color-text-dark: #1e293b;
+$color-text-muted: #64748b;
+$color-white: #ffffff;
 
 .game-screen {
   position: relative;
-
   min-height: 100vh;
-
-  overflow: hidden;
-
   display: flex;
   flex-direction: column;
   align-items: center;
-
-  padding: 2rem;
-
-  background:
-    radial-gradient(circle at top, #304ffe 0%, #10142f 45%, #050816 100%);
-
-  color: white;
+  background-color: $color-bg;
+  color: $color-text-dark;
+  font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
 }
 
 /* ───────────────────────────────────── */
-/* Background cinematic glow */
+/* Header / Navbar Superior */
 /* ───────────────────────────────────── */
-
-.game-screen__background-glow {
-  position: absolute;
-
-  width: 900px;
-  height: 900px;
-
-  border-radius: 50%;
-
-  background:
-    radial-gradient(circle,
-      rgba(79, 195, 247, 0.18),
-      transparent 70%);
-
-  top: -300px;
-
-  z-index: 0;
-
-  filter: blur(40px);
-}
-
-/* ───────────────────────────────────── */
-/* Header */
-/* ───────────────────────────────────── */
-
 .game-screen__header {
-  position: relative;
-  z-index: 2;
-
   width: 100%;
-
+  height: 70px;
+  background-color: $color-white;
   display: flex;
-  flex-direction: column;
+  justify-content: space-between;
   align-items: center;
+  padding: 0 2rem;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
+  box-sizing: border-box;
 
-  gap: 1.5rem;
+  .header-left, .header-right {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex: 1;
+  }
 
-  margin-top: 1rem;
+  .header-center {
+    display: flex;
+    justify-content: center;
+    flex: 1;
+  }
+
+  .header-right {
+    justify-content: flex-end;
+  }
 }
-
-/* ───────────────────────────────────── */
-/* Logo */
-/* ───────────────────────────────────── */
 
 .game-screen__logo {
-  font-size: clamp(2rem, 4vw, 4rem);
-
-  font-weight: 800;
-
-  letter-spacing: 6px;
-
-  text-transform: uppercase;
-
-  color: #ffd54f;
-
-  text-shadow:
-    0 0 10px rgba(255, 213, 79, 0.8),
-    0 0 25px rgba(255, 213, 79, 0.4);
-
-  user-select: none;
-}
-
-/* ───────────────────────────────────── */
-/* Alert */
-/* ───────────────────────────────────── */
-
-.game-screen__alert {
-  width: min(700px, 90%);
-  margin-top: 1rem;
-
-  z-index: 2;
-}
-
-/* ───────────────────────────────────── */
-/* Question container */
-/* ───────────────────────────────────── */
-
-.game-screen__question-container {
-  position: relative;
-  z-index: 2;
-
-  width: 100%;
-  max-width: 1100px;
-
-  margin-top: 3rem;
-
-  display: flex;
-  justify-content: center;
-}
-
-/* ───────────────────────────────────── */
-/* Deep styling into card-pregunta */
-/* ───────────────────────────────────── */
-
-:host ::ng-deep .card-pregunta {
-  background:
-    linear-gradient(
-      180deg,
-      rgba(28, 37, 99, 0.95),
-      rgba(11, 17, 53, 0.95)
-    );
-
-  border: 2px solid rgba(255,255,255,0.08);
-
-  border-radius: 28px;
-
-  padding: 2rem;
-
-  backdrop-filter: blur(8px);
-
-  box-shadow:
-    0 0 30px rgba(0,0,0,0.45),
-    0 0 60px rgba(79, 195, 247, 0.08);
-}
-
-/* Question text */
-
-:host ::ng-deep .card-pregunta__texto {
-
-  font-size: clamp(2rem, 3vw, 3rem);
-
-  font-weight: 800;
-
-  line-height: 1.4;
-
-  text-align: center;
-
-  color: #ffffff;
-
-  max-width: 850px;
-
-  margin-inline: auto;
-
-  text-shadow:
-    0 0 12px rgba(255,255,255,0.12);
-
-  letter-spacing: 0.5px;
-}
-/* Card Body*/
-:host ::ng-deep .card-pregunta__body {
-
-  padding: 2rem;
-
-  border-radius: 22px;
-
-  background:
-    linear-gradient(
-      180deg,
-      rgba(255,255,255,0.03),
-      rgba(255,255,255,0.015)
-    );
-
-  border: 1px solid rgba(255,255,255,0.06);
-
-  box-shadow:
-    inset 0 0 20px rgba(255,255,255,0.02);
-}
-/* Options grid */
-
-:host ::ng-deep .card-pregunta__opciones {
-  display: grid;
-
-  grid-template-columns: repeat(2, 1fr);
-
-  gap: 1.2rem;
-}
-
-/* Individual option */
-
-:host ::ng-deep .card-pregunta__opcion {
-  min-height: 90px;
-
-  border-radius: 18px;
-
-  border: 2px solid rgba(255,255,255,0.08);
-
-  background:
-    linear-gradient(
-      180deg,
-      rgba(52, 73, 170, 0.95),
-      rgba(23, 32, 89, 0.95)
-    );
-
-  color: white;
-
-  font-size: 1.1rem;
-
+  font-size: 1.5rem;
   font-weight: 700;
-
-  transition:
-    transform 0.2s ease,
-    box-shadow 0.2s ease,
-    border-color 0.2s ease;
-
-  box-shadow:
-    0 8px 24px rgba(0,0,0,0.35);
+  color: $color-primary;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  
+  .logo-icon {
+    font-size: 1.2rem;
+  }
 }
-:host ::ng-deep .card-pregunta__opcion-texto {
 
-  color: #ffffff !important;
+.game-screen__amount {
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: #cbd5e1; // Color grisáceo del boceto de fondo
+  margin-right: 1.5rem;
+}
 
-  font-size: 1.1rem;
-
+/* Botones del Header */
+.btn-flat {
+  background: transparent;
+  border: none;
+  color: $color-text-dark;
   font-weight: 600;
-
-  letter-spacing: 0.3px;
-}
-/* Hover effect */
-
-:host ::ng-deep .card-pregunta__opcion:hover:not(:disabled) {
-  transform: translateY(-4px);
-
-  border-color: rgba(255, 213, 79, 0.6);
-
-  box-shadow:
-    0 0 20px rgba(255, 213, 79, 0.25),
-    0 12px 30px rgba(0,0,0,0.45);
+  cursor: pointer;
+  padding: 0.5rem 1rem;
+  font-size: 0.95rem;
 }
 
-/* Selected option */
+.btn-primary-header {
+  background-color: $color-primary;
+  color: $color-white;
+  border: none;
+  padding: 0.6rem 1.2rem;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 4px 6px rgba(59, 130, 246, 0.2);
+  transition: background 0.2s;
 
-:host ::ng-deep .card-pregunta__opcion--selected {
-  border-color: #ffd54f;
-
-  box-shadow:
-    0 0 25px rgba(255, 213, 79, 0.55);
+  &:hover {
+    background-color: $color-primary-hover;
+  }
 }
 
-/* Dimmed options */
+/* ───────────────────────────────────── */
+/* Contenedor de la Pregunta (Con Flexbox Dinámico) */
+/* ───────────────────────────────────── */
+.game-screen__question-container {
+  width: 100%;
+  max-width: 950px;
+  margin-top: 2.5rem;
+  padding: 0 1.5rem;
+  box-sizing: border-box;
+  
+  // Forzamos un flujo vertical para controlar el orden de los componentes hijos
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 
-:host ::ng-deep .card-pregunta__opcion--dimmed {
-  opacity: 0.45;
+  // Forzamos a la tarjeta a estar siempre arriba (Primer lugar)
+  app-card-pregunta {
+    order: 1;
+  }
 }
 
-/* Letters */
-
-:host ::ng-deep .card-pregunta__letra {
-  color: #ffd54f !important;
-
-  font-size: 1.2rem;
-
-  font-weight: 800;
+/* Ajuste para el contenedor de alertas (Segundo lugar visual) */
+.game-screen__alert {
+  width: 100%;
+  max-width: 950px; 
+  margin-top: 2rem;
+  margin-bottom: 0;
+  padding: 0; // Removido para que se alinee perfectamente al ancho de la tarjeta
+  box-sizing: border-box;
+  order: 2; // Aparece debajo de la tarjeta pero arriba de los comodines
 }
+
+/* ───────────────────────────────────── */
+/* Sección de Comodines Inferiores */
+/* ───────────────────────────────────── */
+.game-screen__comodines-container {
+  margin-top: auto; // Lo empuja al fondo de la pantalla
+  margin-bottom: 2rem;
+  background-color: $color-white;
+  border-radius: 24px;
+  padding: 1.5rem 3rem;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.04);
+  border: 1px solid rgba(0, 0, 0, 0.03);
+  text-align: center;
+  width: 100%;
+  max-width: 600px;
+
+  .comodines-title {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: $color-text-muted;
+    letter-spacing: 2px;
+    margin-bottom: 1.5rem;
+  }
+
+  .comodines-grid {
+    display: flex;
+    justify-content: center;
+    gap: 3rem;
+  }
+}
+
+.comodin-btn {
+  background: transparent;
+  border: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  transition: transform 0.2s;
+
+  &:hover {
+    transform: translateY(-3px);
+  }
+
+  .comodin-icon {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background-color: $color-primary;
+    color: $color-white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 6px 16px rgba(59, 130, 246, 0.3);
+
+    span {
+      font-size: 24px;
+    }
+  }
+
+  .comodin-label {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: $color-text-dark;
+    letter-spacing: 0.5px;
+  }
+}
+
+/* ───────────────────────────────────── */
+/* Reset de los estilos Deep viejos */
+/* ───────────────────────────────────── */
 :host ::ng-deep app-card-pregunta {
   display: block;
   width: 100%;
 }
-/* Responsive */
 
-@media (max-width: 768px) {
-
-  :host ::ng-deep .card-pregunta__opciones {
-    grid-template-columns: 1fr;
-  }
-
-  .game-screen {
-    padding: 1rem;
-  }
-
-  .game-screen__question-container {
-    margin-top: 2rem;
-  }
-}
-:host ::ng-deep app-card-pregunta {
-  display: block;
-  width: 100%;
-}
-/* Responsive */
-
-@media (max-width: 768px) {
-
-  :host ::ng-deep .card-pregunta__opciones {
-    grid-template-columns: 1fr;
-  }
-
-  .game-screen {
-    padding: 1rem;
-  }
-
-  .game-screen__question-container {
-    margin-top: 2rem;
+/* Opacidad cuando los comodines se deshabilitan al responder */
+.comodin-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  transform: none !important;
+  
+  .comodin-icon {
+    box-shadow: none !important;
+    background-color: #cbd5e1 !important;
   }
 }
