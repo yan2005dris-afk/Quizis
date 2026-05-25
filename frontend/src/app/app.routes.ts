@@ -1,66 +1,65 @@
 import { Routes } from '@angular/router';
-import { ActiveQuestionComponent } from './features/room/components/active-question/active-question.component';
-import { LoginComponent } from './features/auth/pages/login/login.component';
-import { DashboardComponent } from './features/dashboard/pages/dashboard/dashboard.component';
 import { DashboardLayoutComponent } from './layout/dashboard-layout/dashboard-layout.component';
-import { RoomComponent } from './features/room/pages/room/room.component';
-import { SalasIndexComponent } from './features/salas/pages/salas-index/salas-index.component';
 import { authGuard } from './core/guards/auth.guard';
 import { PageNotFoundComponent } from './core/components/page-not-found/page-not-found.component';
 
 export const routes: Routes = [
-  // Rutas públicas — sin auth, sin layout base (ej. login)
-  { path: 'login', component: LoginComponent },
-  { path: 'register', component: LoginComponent },
-  { path: 'privacy', component: LoginComponent },
-  { path: 'show', component: ActiveQuestionComponent },
+  // Rutas de Autenticación (Públicas, sin layout)
+  {
+    path: '',
+    loadChildren: () => import('./features/auth/auth.routes').then((m) => m.AUTH_ROUTES),
+  },
+
+  // Rutas de Sala (Públicas, sin layout o layout especial)
+  {
+    path: 'show',
+    loadComponent: () =>
+      import('./features/room/components/active-question/active-question.component').then(
+        (m) => m.ActiveQuestionComponent,
+      ),
+  },
 
   // Rutas bajo el Layout (Híbrido: Privado o Público según Auth)
   {
     path: '',
     component: DashboardLayoutComponent,
     children: [
-      // Rutas Privadas (Requieren Auth)
-      { path: 'dashboard', component: DashboardComponent, canActivate: [authGuard] },
-      { path: 'salas', component: SalasIndexComponent, canActivate: [authGuard] },
-      { path: 'preguntas', component: DashboardComponent, canActivate: [authGuard] },
+      // Rutas Privadas
+      {
+        path: 'dashboard',
+        canActivate: [authGuard],
+        loadChildren: () =>
+          import('./features/dashboard/dashboard.routes').then((m) => m.DASHBOARD_ROUTES),
+      },
+      {
+        path: 'salas',
+        canActivate: [authGuard],
+        loadChildren: () => import('./features/salas/salas.routes').then((m) => m.SALAS_ROUTES),
+      },
       {
         path: 'bancos',
         canActivate: [authGuard],
-        children: [
-          {
-            path: '',
-            loadComponent: () =>
-              import('./features/question-bank/pages/bank-list/bank-list.component').then(
-                (m) => m.BankListComponent,
-              ),
-          },
-          {
-            path: 'crear',
-            loadComponent: () =>
-              import('./features/question-bank/pages/bank-create/bank-create.component').then(
-                (m) => m.BankCreateComponent,
-              ),
-          },
-          {
-            path: ':id',
-            loadComponent: () =>
-              import('./features/question-bank/pages/bank-detail/bank-detail.component').then(
-                (m) => m.BankDetailComponent,
-              ),
-          },
-        ],
+        loadChildren: () =>
+          import('./features/question-bank/question-bank.routes').then(
+            (m) => m.QUESTION_BANK_ROUTES,
+          ),
       },
-      { path: 'usuarios', component: DashboardComponent, canActivate: [authGuard] },
-      { path: 'configuracion', component: DashboardComponent, canActivate: [authGuard] },
 
-      // Rutas Públicas bajo Layout (Se adaptan si hay auth)
-      { path: 'sala/:id', component: RoomComponent },
+      // Fallbacks para placeholders
+      { path: 'preguntas', redirectTo: 'dashboard', pathMatch: 'full' },
+      { path: 'usuarios', redirectTo: 'dashboard', pathMatch: 'full' },
+      { path: 'configuracion', redirectTo: 'dashboard', pathMatch: 'full' },
+
+      // Rutas de Sala (Públicas pero dentro del layout)
+      {
+        path: 'sala',
+        loadChildren: () => import('./features/room/room.routes').then((m) => m.ROOM_ROUTES),
+      },
 
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
     ],
   },
 
-  // Fallback mediante componente para decidir dinámicamente según estado real de auth
+  // Fallback 404
   { path: '**', component: PageNotFoundComponent },
 ];
