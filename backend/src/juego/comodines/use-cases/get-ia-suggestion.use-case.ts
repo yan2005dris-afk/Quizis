@@ -7,8 +7,8 @@ import { ConfigService } from '@nestjs/config';
 import OpenAI from 'openai';
 
 @Injectable()
-export class ComodinIaService {
-  private readonly logger = new Logger(ComodinIaService.name);
+export class GetIaSuggestionUseCase {
+  private readonly logger = new Logger(GetIaSuggestionUseCase.name);
   private readonly openai: OpenAI;
 
   constructor(private configService: ConfigService) {
@@ -16,9 +16,9 @@ export class ComodinIaService {
     this.openai = new OpenAI({ apiKey });
   }
 
-  async obtenerSugerenciaIa(pregunta: string): Promise<any> {
+  async execute(pregunta: string): Promise<any> {
     try {
-      this.logger.log('Consultando a OpenAI...');
+      this.logger.log('Consultando a OpenAI para sugerencia...');
 
       const completion = await this.openai.chat.completions.create({
         model: 'gpt-4o',
