@@ -39,7 +39,6 @@
             class="option-item"
 
             [class.option-item--selected]="opcion.fueElegida"
-            [class.option-item--suspense]="opcion.fueElegida && opcion.esCorrecta === undefined"
             [class.option-item--correct]="opcion.esCorrecta === true"
             [class.option-item--incorrect]="opcion.esCorrecta === false && opcion.fueElegida"
             [class.option-item--dimmed]="preguntaMostrada()?.respuestaDada && !opcion.fueElegida && opcion.esCorrecta !== true"

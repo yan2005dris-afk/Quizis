@@ -226,7 +226,7 @@ $color-danger-bg: #fef2f2;
   }
   .option-item__percentage { color: $color-success; }
   .option-item__progress-fill { background-color: $color-success; }
-  .option-item__badge { color: #059669; }
+  .option-item__badge { color: #059646; }
 }
 
 .option-item--incorrect {
@@ -243,15 +243,9 @@ $color-danger-bg: #fef2f2;
   }
   .option-item__percentage { color: $color-danger; }
   .option-item__progress-fill { background-color: $color-danger; }
-  .option-item__badge { color: #dc2626; }
+  .option-item__badge { color: #c22222; }
 }
 
-/* Suspenso antes del resultado */
-.option-item--suspense {
-  animation: blinkSelect 0.8s infinite;
-  transform: scale(1.02);
-  box-shadow: 0 0 14px rgba(59, 130, 246, 0.35);
-}
 /* Opciones apagadas */
 .option-item--dimmed {
   opacity: 0.4;
