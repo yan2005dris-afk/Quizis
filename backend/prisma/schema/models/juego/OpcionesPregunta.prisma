@@ -12,5 +12,6 @@ model OpcionesPregunta {
   respuestasRonda RespuestasRonda[]
   votos           VotosPublico[]
 
+  @@index([preguntaId])
   @@map("opciones_pregunta")
 }

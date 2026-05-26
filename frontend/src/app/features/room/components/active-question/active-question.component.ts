@@ -204,7 +204,9 @@ export class ActiveQuestionComponent {
     if (!respuestaDada) return null;
     return {
       esCorrecta: respuestaDada.esCorrecta,
-      feedback: respuestaDada.feedback || '',
+      feedback: respuestaDada.esCorrecta
+        ? (p.feedbackCorrecto || respuestaDada.feedback || '')
+        : (p.feedbackIncorrecto || respuestaDada.feedback || ''),
     };
   });
 

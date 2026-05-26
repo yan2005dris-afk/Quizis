@@ -18,5 +18,6 @@ model Preguntas {
   respuestasRonda   RespuestasRonda[]
   votos             VotosPublico[]
 
+  @@index([bancoId, nivel])
   @@map("preguntas")
 }

@@ -77,7 +77,17 @@ export class GetSalaDetailsUseCase {
 
       const preguntas = await this.prisma.preguntas.findMany({
         where: { preguntaId: { in: preguntasIds } },
-        include: { opciones: true },
+        select: {
+          preguntaId: true,
+          texto: true,
+          nivel: true,
+          monto: true,
+          feedbackCorrecto: true,
+          feedbackIncorrecto: true,
+          opciones: {
+            select: { opcionId: true, texto: true, esCorrecta: true },
+          },
+        },
       });
 
       const respuestas = await this.prisma.respuestasRonda.findMany({
@@ -96,10 +106,13 @@ export class GetSalaDetailsUseCase {
             texto: p.texto,
             nivel: p.nivel,
             monto: p.monto,
+            feedbackCorrecto: p.feedbackCorrecto,
+            feedbackIncorrecto: p.feedbackIncorrecto,
             opciones: p.opciones.map((o, index) => ({
               opcionId: o.opcionId,
               texto: o.texto,
               letra: String.fromCharCode(65 + index),
+              esCorrecta: o.esCorrecta,
             })),
             respuestaDada: respuesta
               ? {

@@ -264,7 +264,10 @@ export class GameSocketService {
   // Cierra la conexión limpiamente
   desconectar(): void {
     this._cancelPendingVoto();
-    this.socket?.disconnect();
+    if (this.socket) {
+      this.socket.removeAllListeners();
+      this.socket.disconnect();
+    }
     this.socket = null;
     this.conectado.set(false);
     this.rondaReiniciada.set(null);

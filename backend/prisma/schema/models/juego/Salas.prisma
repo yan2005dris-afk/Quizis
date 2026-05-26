@@ -20,5 +20,6 @@ model Salas {
   comodines        SalaComodines[]
   participantes    Participantes[]
 
+  @@index([deletedAt, estado, createdAt])
   @@map("salas")
 }

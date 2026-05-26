@@ -1,6 +1,7 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  DestroyRef,
   inject,
   signal,
   computed,
@@ -8,6 +9,7 @@ import {
   OnDestroy,
   effect,
 } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute } from '@angular/router';
 import { GameSocketService } from '../../../../core/services/game-socket.service';
 import { AuthService } from '../../../../core/services/auth.service';
@@ -56,6 +58,7 @@ export class RoomComponent implements OnInit, OnDestroy {
   protected readonly auth = inject(AuthService);
   protected readonly salasService = inject(SalasService);
   protected readonly route = inject(ActivatedRoute);
+  private readonly destroyRef = inject(DestroyRef);
 
   protected readonly activeTab = signal<'publico' | 'chat'>('publico');
   protected readonly comodines = signal<ComodinSala[]>([]);
@@ -124,21 +127,22 @@ export class RoomComponent implements OnInit, OnDestroy {
   });
 
   constructor() {
+    // Efecto ÚNICO para reaccionar al WS ronda_reiniciada
+    // NO lee salaDetalle() para evitar el loop de escritura→re-ejecución
     effect(() => {
       const reinicio = this.gameSocket.rondaReiniciada();
-      const actual = this.salaDetalle();
-      if (!reinicio?.rondaActiva || !actual) return;
+      if (!reinicio?.rondaActiva) return;
 
-      this.salaDetalle.set({
-        ...actual,
-        estado: reinicio.estado ?? 'ESPERANDO_ALUMNOS',
-        rondaActiva: reinicio.rondaActiva,
-      });
-
-      this.salasService.obtenerComodines(actual.salaId).subscribe({
-        next: (comodines) => this.comodines.set(comodines),
-        error: (err) => console.error('[WS:ronda_reiniciada] Error recargando comodines:', err),
-      });
+      // Actualiza salaDetalle sin leerlo como dependencia
+      this.salaDetalle.update((actual) =>
+        actual
+          ? {
+              ...actual,
+              estado: reinicio.estado ?? 'ESPERANDO_ALUMNOS',
+              rondaActiva: reinicio.rondaActiva,
+            }
+          : actual,
+      );
     });
   }
 
@@ -154,54 +158,66 @@ export class RoomComponent implements OnInit, OnDestroy {
   }
 
   private cargarDatosIniciales(idOrToken: string): void {
-    this.salasService.obtenerComodines(idOrToken).subscribe({
-      next: (data) => this.comodines.set(data),
-      error: (err) => console.error('Error cargando comodines:', err),
-    });
+    this.salasService.obtenerComodines(idOrToken)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (data) => this.comodines.set(data),
+        error: (err) => console.error('Error cargando comodines:', err),
+      });
 
-    this.salasService.obtenerPorId(idOrToken).subscribe({
-      next: (sala) => {
-        this.salaDetalle.set(sala);
+    this.salasService.obtenerPorId(idOrToken)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (sala) => {
+          this.salaDetalle.set(sala);
 
-        if (this.isHost()) {
-          this.salasService.getLinkInvitacion(sala.salaId).subscribe({
-            next: (res) => this.tokenInvitacion.set(res.tokenInvitacion),
-            error: (err) => console.error('Error cargando link de invitación:', err),
-          });
-        }
-
-        this.gameSocket.setEstadoInicial({
-          participantes: [],
-          infoRonda: sala.rondaActiva
-            ? {
-                ronda: sala.rondaActiva.numeroRonda,
-                totalRondas: sala.rondaActiva.historialPreguntas?.length || sala.limitePreguntas,
-                premio: '$0',
-              }
-            : null,
-          preguntaActiva: sala.rondaActiva?.preguntaActual ?? null,
-          salaHabilitada: sala.estado !== 'FINALIZADO',
-        });
-
-        const socketUrl = environment.apiUrl.replace('/api/v1', '');
-        const participantToken = localStorage.getItem('participantToken') ?? '';
-        this.gameSocket.conectar(socketUrl, participantToken);
-
-        const interval = setInterval(() => {
-          if (this.gameSocket.conectado()) {
-            const participantInfo = JSON.parse(localStorage.getItem('participantInfo') ?? '{}');
-            const nickname = this.isHost()
-              ? `Host-${sala.nombre}`
-              : (participantInfo.nickname ?? `Estudiante-${Math.floor(Math.random() * 1000)}`);
-            this.gameSocket.unirseASala(sala.tokenCompartido, nickname);
-            clearInterval(interval);
+          if (this.isHost()) {
+            this.salasService.getLinkInvitacion(sala.salaId)
+              .pipe(takeUntilDestroyed(this.destroyRef))
+              .subscribe({
+                next: (res) => this.tokenInvitacion.set(res.tokenInvitacion),
+                error: (err) => console.error('Error cargando link de invitación:', err),
+              });
           }
-        }, 100);
 
-        setTimeout(() => clearInterval(interval), 10000);
-      },
-      error: (err) => console.error('Error cargando detalles de la sala:', err),
-    });
+          this.gameSocket.setEstadoInicial({
+            participantes: [],
+            infoRonda: sala.rondaActiva
+              ? {
+                  ronda: sala.rondaActiva.numeroRonda,
+                  totalRondas: sala.rondaActiva.historialPreguntas?.length || sala.limitePreguntas,
+                  premio: '$0',
+                }
+              : null,
+            preguntaActiva: sala.rondaActiva?.preguntaActual ?? null,
+            salaHabilitada: sala.estado !== 'FINALIZADO',
+          });
+
+          const socketUrl = environment.apiUrl.replace('/api/v1', '');
+          const participantToken = localStorage.getItem('participantToken') ?? '';
+          this.gameSocket.conectar(socketUrl, participantToken);
+
+          const interval = setInterval(() => {
+            if (this.gameSocket.conectado()) {
+              const participantInfo = JSON.parse(localStorage.getItem('participantInfo') ?? '{}');
+              const nickname = this.isHost()
+                ? `Host-${sala.nombre}`
+                : (participantInfo.nickname ?? `Estudiante-${Math.floor(Math.random() * 1000)}`);
+              this.gameSocket.unirseASala(sala.tokenCompartido, nickname);
+              clearInterval(interval);
+            }
+          }, 100);
+
+          const timeout = setTimeout(() => clearInterval(interval), 10000);
+
+          // Cleanup interval + timeout si el componente se destruye antes
+          this.destroyRef.onDestroy(() => {
+            clearInterval(interval);
+            clearTimeout(timeout);
+          });
+        },
+        error: (err) => console.error('Error cargando detalles de la sala:', err),
+      });
   }
 
   /**
@@ -387,10 +403,12 @@ export class RoomComponent implements OnInit, OnDestroy {
         );
         console.log('[REINICIAR] salaDetalle.estado=', this.salaDetalle()?.estado);
 
-        this.salasService.obtenerComodines(sala.salaId).subscribe({
-          next: (comodines) => this.comodines.set(comodines),
-          error: (err) => console.error('[REINICIAR] Error recargando comodines:', err),
-        });
+        this.salasService.obtenerComodines(sala.salaId)
+          .pipe(takeUntilDestroyed(this.destroyRef))
+          .subscribe({
+            next: (comodines) => this.comodines.set(comodines),
+            error: (err) => console.error('[REINICIAR] Error recargando comodines:', err),
+          });
 
         // Broadcast to other clients via WS
         this.gameSocket.reiniciarRonda(sala.tokenCompartido, res.rondaActiva);
