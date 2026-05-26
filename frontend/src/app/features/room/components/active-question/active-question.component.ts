@@ -9,7 +9,7 @@ import {
   inject,
 } from '@angular/core';
 import { CommonModule, TitleCasePipe } from '@angular/common';
-import { GameSocketService, VotosPublico } from '../../../../core/services/game-socket.service';
+import { GameSocketService } from '../../../../core/services/game-socket.service';
 import { SalasService, ComodinSala } from '../../../../core/services/salas.service';
 import {
   LucideAngularModule,
@@ -18,7 +18,7 @@ import {
   BrainCircuit,
   Loader2,
 } from 'lucide-angular';
-import { AudienceBarsComponent, ButtonComponent } from '../../../../shared/ui';
+import { AudienceBarsComponent } from '../../../../shared/ui';
 
 export interface OpcionVoto {
   id: number;
@@ -28,6 +28,7 @@ export interface OpcionVoto {
   porcentaje: number;
   esCorrecta?: boolean;
   fueElegida?: boolean;
+  seleccionLocal?: boolean;
   estaPendiente?: boolean;
 }
 
@@ -39,7 +40,6 @@ export interface OpcionVoto {
     TitleCasePipe,
     LucideAngularModule,
     AudienceBarsComponent,
-    ButtonComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './active-question.component.html',
@@ -47,11 +47,10 @@ export interface OpcionVoto {
 })
 export class ActiveQuestionComponent {
   private readonly salasService = inject(SalasService);
-  private readonly gameSocket = inject(GameSocketService);
+  protected readonly gameSocket = inject(GameSocketService);
 
   readonly preguntaActivaId = input<number | null>(null);
   readonly preguntas = input<any[]>([]);
-  readonly votosPublico = input<VotosPublico | null>(null);
   readonly tiempoRestante = input<number | null>(null);
   readonly comodinBloqueado = input<string[]>([]);
   readonly comodines = input<ComodinSala[]>([]);
@@ -61,6 +60,7 @@ export class ActiveQuestionComponent {
 
   protected readonly currentIndex = signal(0);
   protected readonly localSelectedId = signal<number | null>(null);
+  protected readonly respuestaConfirmada = signal(false);
 
   // IA State
   protected readonly iaSugerencia = signal<{ literal: string; explicacion: string } | null>(null);
@@ -81,6 +81,7 @@ export class ActiveQuestionComponent {
       if (!activeId) {
         this.iaSugerencia.set(null);
         this.localSelectedId.set(null);
+        this.respuestaConfirmada.set(false);
         return;
       }
 
@@ -89,6 +90,7 @@ export class ActiveQuestionComponent {
         if (index !== -1) {
           this.currentIndex.set(index);
           this.localSelectedId.set(null);
+          this.respuestaConfirmada.set(false);
           this.iaSugerencia.set(null);
         }
       }
@@ -127,7 +129,7 @@ export class ActiveQuestionComponent {
 
   readonly opciones = computed<OpcionVoto[]>(() => {
     const p = this.preguntaMostrada();
-    const v = this.votosPublico();
+    const v = this.gameSocket.votosPublico();
     const result = this.gameSocket.ultimoResultado();
     const isViewingActive = p?.preguntaId === this.preguntaActivaId();
 
@@ -149,7 +151,8 @@ export class ActiveQuestionComponent {
         votos,
         porcentaje: total > 0 ? Math.round((votos / total) * 100) : 0,
         fueElegida: respuestaDada?.opcionId === o.opcionId,
-        estaPendiente: !respuestaDada && this.localSelectedId() === o.opcionId,
+        seleccionLocal: !respuestaDada && !this.respuestaConfirmada() && this.localSelectedId() === o.opcionId,
+        estaPendiente: !respuestaDada && this.respuestaConfirmada() && this.localSelectedId() === o.opcionId,
         esCorrecta: respuestaDada
           ? respuestaDada.esCorrecta && respuestaDada.opcionId === o.opcionId
           : undefined,
@@ -166,17 +169,43 @@ export class ActiveQuestionComponent {
 
     if (!p) return 'Esperando...';
     if (respondida) return 'Pregunta contestada';
+
+    if (this.interactive() && isViewingActive) {
+      if (this.respuestaConfirmada()) return 'Enviando respuesta...';
+      if (this.localSelectedId()) return 'Tocá Confirmar para enviar';
+      return 'Elegí una opción';
+    }
+
     if (isViewingActive) {
-      return this.localSelectedId()
-        ? 'Procesando respuesta...'
-        : 'El encuestado está respondiendo...';
+      return 'El encuestado está respondiendo...';
     }
     return 'Pregunta pendiente';
   });
 
   readonly comodinPublicoActivo = computed(() => {
     const isViewingActive = this.preguntaMostrada()?.preguntaId === this.preguntaActivaId();
-    return isViewingActive && this.votosPublico() !== null;
+    return isViewingActive && this.gameSocket.votosPublico() !== null;
+  });
+
+  readonly showFeedback = computed(() => {
+    const p = this.preguntaMostrada();
+    if (!p) return false;
+    const result = this.gameSocket.ultimoResultado();
+    const isViewingActive = p.preguntaId === this.preguntaActivaId();
+    return !!(p.respuestaDada || (isViewingActive && result && result.preguntaId === p.preguntaId));
+  });
+
+  readonly feedbackData = computed<{ esCorrecta: boolean; feedback: string } | null>(() => {
+    const p = this.preguntaMostrada();
+    if (!p) return null;
+    const isViewingActive = p.preguntaId === this.preguntaActivaId();
+    const result = this.gameSocket.ultimoResultado();
+    const respuestaDada = p.respuestaDada || (isViewingActive && result && result.preguntaId === p.preguntaId ? result : null);
+    if (!respuestaDada) return null;
+    return {
+      esCorrecta: respuestaDada.esCorrecta,
+      feedback: respuestaDada.feedback || '',
+    };
   });
 
   protected nextQuestion(): void {
@@ -192,9 +221,15 @@ export class ActiveQuestionComponent {
   }
 
   protected onOpcionClick(opcionId: number): void {
-    if (!this.interactive() || this.preguntaMostrada()?.respuestaDada || this.localSelectedId())
+    if (!this.interactive() || this.respuestaConfirmada() || this.preguntaMostrada()?.respuestaDada)
       return;
     this.localSelectedId.set(opcionId);
+  }
+
+  protected confirmar(): void {
+    const opcionId = this.localSelectedId();
+    if (opcionId === null) return;
+    this.respuestaConfirmada.set(true);
     this.seleccionada.emit(opcionId);
   }
 

@@ -50,7 +50,8 @@
             [class.option-item--correct]="opcion.esCorrecta === true"
             [class.option-item--incorrect]="opcion.esCorrecta === false && opcion.fueElegida"
             [class.option-item--selected]="opcion.fueElegida || opcion.estaPendiente"
-            [class.option-item--clickable]="interactive() && !p.respuestaDada && !localSelectedId()"
+            [class.option-item--pre-selected]="opcion.seleccionLocal"
+            [class.option-item--clickable]="interactive() && !respuestaConfirmada() && !p.respuestaDada"
             data-testid="option-card"
             role="button"
             tabindex="0"
@@ -87,13 +88,45 @@
           </div>
         }
       </div>
+
+      <!-- Botón Confirmar (solo en modo interactivo, después de seleccionar) -->
+      @if (interactive() && localSelectedId() && !respuestaConfirmada()) {
+        <div class="confirm-bar">
+          <button class="confirm-btn" (click)="confirmar()">
+            Confirmar respuesta
+          </button>
+        </div>
+      }
     </div>
+
+    <!-- Feedback después de responder -->
+    @if (showFeedback(); as visible) {
+      @if (feedbackData(); as fb) {
+        <div
+          class="feedback-card"
+          [class.feedback-card--correct]="fb.esCorrecta"
+          [class.feedback-card--incorrect]="!fb.esCorrecta"
+        >
+          <div class="feedback-card__icon">
+            {{ fb.esCorrecta ? '✅' : '❌' }}
+          </div>
+          <div class="feedback-card__body">
+            <p class="feedback-card__title">
+              {{ fb.esCorrecta ? '¡Respuesta Correcta!' : 'Respuesta Incorrecta' }}
+            </p>
+            @if (fb.feedback) {
+              <p class="feedback-card__text">{{ fb.feedback }}</p>
+            }
+          </div>
+        </div>
+      }
+    }
 
     <!-- Resultados del Público -->
     @if (comodinPublicoActivo()) {
       <div class="observer-audience-results">
         <p class="observer-audience-results__title">RESULTADOS DEL PÚBLICO</p>
-        <app-audience-bars [votos]="votosPublico()" />
+        <app-audience-bars [votos]="gameSocket.votosPublico()" />
       </div>
     }
 

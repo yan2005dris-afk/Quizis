@@ -1,3 +1,5 @@
+@use 'sass:color';
+
 // Variables estéticas heredadas de la línea de diseño principal
 $color-bg-canvas: #f4f6f9;
 $color-card-white: #ffffff;
@@ -250,6 +252,18 @@ $color-danger-bg: #fef2f2;
   .option-item__badge { color: #dc2626; }
 }
 
+/* Pre-seleccionado (antes de confirmar) */
+.option-item--pre-selected {
+  border-color: $color-ui-primary;
+  background-color: $color-ui-primary-light;
+  box-shadow: 0 0 0 2px rgba($color-ui-primary, 0.15);
+
+  .option-item__letter {
+    background-color: $color-ui-primary;
+    color: white;
+  }
+}
+
 /* Clickable (modo interactivo) */
 .option-item--clickable {
   cursor: pointer;
@@ -262,6 +276,37 @@ $color-danger-bg: #fef2f2;
   &:focus-visible {
     outline: 2px solid $color-ui-primary;
     outline-offset: 2px;
+  }
+}
+
+/* ─── Barra de Confirmación ──────────── */
+
+.confirm-bar {
+  display: flex;
+  justify-content: center;
+  margin-top: 0.5rem;
+}
+
+.confirm-btn {
+  padding: 0.75rem 2.5rem;
+  background-color: $color-ui-primary;
+  color: white;
+  border: none;
+  border-radius: 30px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  letter-spacing: 0.5px;
+
+  &:hover {
+    background-color: color.adjust($color-ui-primary, $lightness: -8%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba($color-ui-primary, 0.3);
+  }
+
+  &:active {
+    transform: translateY(0);
   }
 }
 
@@ -381,6 +426,60 @@ $color-danger-bg: #fef2f2;
   color: $color-text-muted;
   font-style: italic;
   margin: 0;
+}
+
+/* ─── Feedback de Respuesta ──────────── */
+
+.feedback-card {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.5rem 2rem;
+  border-radius: 24px;
+  animation: fadeIn 0.3s ease-out;
+  border: 1px solid rgba(0, 0, 0, 0.03);
+}
+
+.feedback-card--correct {
+  background-color: $color-success-bg;
+  border-color: $color-success;
+
+  .feedback-card__title {
+    color: #059669;
+  }
+}
+
+.feedback-card--incorrect {
+  background-color: $color-danger-bg;
+  border-color: $color-danger;
+
+  .feedback-card__title {
+    color: #dc2626;
+  }
+}
+
+.feedback-card__icon {
+  font-size: 2rem;
+  flex-shrink: 0;
+}
+
+.feedback-card__body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.feedback-card__title {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 800;
+}
+
+.feedback-card__text {
+  margin: 0;
+  font-size: 0.85rem;
+  color: $color-text-muted;
+  line-height: 1.4;
 }
 
 /* ─── Resultados del Público ─────────── */
