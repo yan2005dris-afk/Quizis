@@ -123,7 +123,7 @@ export class RoomComponent implements OnInit, OnDestroy {
   protected readonly shareableLink = computed(() => {
     const token = this.tokenInvitacion();
     if (!token) return null;
-    return `${window.location.origin}/join/${token}`;
+    return `${environment.appUrl}/join/${token}`;
   });
 
   constructor() {
