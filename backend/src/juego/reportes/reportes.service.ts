@@ -7,7 +7,7 @@ export class ReportsService {
   constructor(private readonly prisma: PrismaService) {}
 
   async getGameStatistics(salaId: number): Promise<ReportDataDto> {
-    const sala = await (this.prisma as any).salas.findUnique({
+    const sala = await this.prisma.salas.findUnique({
       where: { salaId },
       include: {
         admin: { select: { email: true } },

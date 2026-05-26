@@ -8,6 +8,7 @@ import { CacheModule } from './infrastructure/cache/cache.module';
 import { VotosModule } from './juego/votos/votos.module';
 import { SalasModule } from './juego/salas/salas.module';
 import { HealthModule } from './infrastructure/health/health.module';
+import { ReportesModule } from './juego/reportes/reportes.module';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { HealthModule } from './infrastructure/health/health.module';
     VotosModule,
     SalasModule,
     HealthModule,
+    ReportesModule,
   ],
   controllers: [],
   providers: [],
