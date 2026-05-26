@@ -5,7 +5,6 @@ import { SalasService } from '../juego/salas/salas.service';
 
 @Injectable()
 export class ComodinPublicoService {
-
   constructor(
     private readonly cacheService: CacheService,
     private readonly quizGateway: QuizGateway,
@@ -13,7 +12,6 @@ export class ComodinPublicoService {
   ) {}
 
   async activarComodinPublico(tokenCompartido: string) {
-
     // 1. Obtener sala activa
     const sala = await this.salasService.obtenerPorId(tokenCompartido);
     if (!sala.rondaActiva) {
@@ -38,9 +36,8 @@ export class ComodinPublicoService {
     const total = votos.length;
     const porcentajes: Record<number, number> = {};
     for (const opcionId in conteo) {
-      porcentajes[opcionId] = total === 0
-        ? 0
-        : Math.round((conteo[opcionId] / total) * 100);
+      porcentajes[opcionId] =
+        total === 0 ? 0 : Math.round((conteo[opcionId] / total) * 100);
     }
 
     // 5. Emitir resultado a toda la sala
