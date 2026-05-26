@@ -7,6 +7,8 @@ export const routes: Routes = [
   // Redirección inicial: si no hay ruta, va a login
   { path: '', redirectTo: 'login', pathMatch: 'full' },
 
+  // Rutas privadas (Protegidas por Layout y Guard)
+
   // Rutas de Autenticación (Públicas, sin layout)
   {
     path: 'login',

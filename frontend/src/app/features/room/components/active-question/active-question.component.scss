@@ -220,6 +220,11 @@ $color-danger-bg: #fef2f2;
   border-color: $color-ui-primary;
   background-color: $color-ui-primary-light;
   
+  /*Animacion agregada*/
+  transform: scale(1.05);
+  box-shadow: 0 0 15px #1f8dc0;
+  animation: blinkSelect 0.8s infinite;
+
   .option-item__letter {
     background-color: $color-ui-primary;
     color: white;
@@ -230,18 +235,26 @@ $color-danger-bg: #fef2f2;
   border-color: $color-success;
   background-color: $color-success-bg;
 
+  /*Animacion agregada*/
+  animation: pulse 0.6s ease;
+  box-shadow: 0 0 15px #3edd58;
+
   .option-item__letter {
     background-color: $color-success;
     color: white;
   }
   .option-item__percentage { color: $color-success; }
   .option-item__progress-fill { background-color: $color-success; }
-  .option-item__badge { color: #059669; }
+  .option-item__badge { color: #059646; }
 }
 
 .option-item--incorrect {
   border-color: $color-danger;
   background-color: $color-danger-bg;
+
+  /*Animacion agregada*/
+  animation: shake 0.4s ease;
+  box-shadow: 0 0 15px #e74343;
 
   .option-item__letter {
     background-color: $color-danger;
@@ -249,7 +262,14 @@ $color-danger-bg: #fef2f2;
   }
   .option-item__percentage { color: $color-danger; }
   .option-item__progress-fill { background-color: $color-danger; }
-  .option-item__badge { color: #dc2626; }
+  .option-item__badge { color: #c22222; }
+}
+
+/* Opciones apagadas */
+.option-item--dimmed {
+  opacity: 0.4;
+  transform: scale(0.98);
+  filter: blur(0.5px);
 }
 
 /* Pre-seleccionado (antes de confirmar) */
@@ -580,4 +600,33 @@ $color-danger-bg: #fef2f2;
 
 @keyframes spin {
   to { transform: rotate(360deg); }
+}
+/* ─── Animaciones adicionales ─────────── */
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-5px); }
+  50% { transform: translateX(5px); }
+  75% { transform: translateX(-5px); }
+}
+
+@keyframes blink {
+  50% { opacity: 0.3; }
+}
+
+@keyframes blinkSelect {
+  0% { transform: scale(1.05); opacity: 1; }
+  50% { transform: scale(1.08); opacity: 0.6; }
+  100% { transform: scale(1.05); opacity: 1; }
+}
+
+/* Respetar preferencia de movimiento reducido */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
