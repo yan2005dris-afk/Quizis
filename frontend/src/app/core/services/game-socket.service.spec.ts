@@ -1,5 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { io } from 'socket.io-client';
 import { GameSocketService } from './game-socket.service';
 import type {
   ChatMessage,
@@ -27,6 +28,9 @@ describe('GameSocketService (observer extension)', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    mockSocket.on.mockReturnThis();
+    mockSocket.emit.mockReturnThis();
+    vi.mocked(io).mockReturnValue(mockSocket as any);
     TestBed.configureTestingModule({
       providers: [GameSocketService],
     });
