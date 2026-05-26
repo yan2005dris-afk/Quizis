@@ -1,5 +1,5 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
-import { PrismaService } from 'src/infrastructure/database/prisma/prisma.service';
+import { PrismaService } from '../../infrastructure/database/prisma/prisma.service';
 import { ReportDataDto } from './dtos/report-data.dto';
 
 @Injectable()
@@ -42,7 +42,7 @@ export class ReportsService {
     return this.construirReporte(sala);
   }
 
-  private construirReporte(sala: any): ReportDataDto {
+  private construirReporte(sala: Record<string, any>): ReportDataDto {
     let totalCorrectasGlobal = 0;
     let totalIncorrectasGlobal = 0;
     const participantesUnicos = new Set<string>();
@@ -74,8 +74,8 @@ export class ReportsService {
             const votosCorrectosPublico = ronda.votos.filter(
               (voto: any) => voto.opcion.esCorrecta,
             ).length;
-            porcentajeVotosPublico =
-              (votosCorrectosPublico / ronda.votos.length) * 100;
+            const calculo = (votosCorrectosPublico / ronda.votos.length) * 100;
+            porcentajeVotosPublico = Number(calculo.toFixed(1));
           }
 
           return {
