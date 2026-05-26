@@ -35,12 +35,7 @@ export interface OpcionVoto {
 @Component({
   selector: 'app-active-question',
   standalone: true,
-  imports: [
-    CommonModule,
-    TitleCasePipe,
-    LucideAngularModule,
-    AudienceBarsComponent,
-  ],
+  imports: [CommonModule, TitleCasePipe, LucideAngularModule, AudienceBarsComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './active-question.component.html',
   styleUrl: './active-question.component.scss',
@@ -151,8 +146,10 @@ export class ActiveQuestionComponent {
         votos,
         porcentaje: total > 0 ? Math.round((votos / total) * 100) : 0,
         fueElegida: respuestaDada?.opcionId === o.opcionId,
-        seleccionLocal: !respuestaDada && !this.respuestaConfirmada() && this.localSelectedId() === o.opcionId,
-        estaPendiente: !respuestaDada && this.respuestaConfirmada() && this.localSelectedId() === o.opcionId,
+        seleccionLocal:
+          !respuestaDada && !this.respuestaConfirmada() && this.localSelectedId() === o.opcionId,
+        estaPendiente:
+          !respuestaDada && this.respuestaConfirmada() && this.localSelectedId() === o.opcionId,
         esCorrecta: respuestaDada
           ? respuestaDada.esCorrecta && respuestaDada.opcionId === o.opcionId
           : undefined,
@@ -200,13 +197,15 @@ export class ActiveQuestionComponent {
     if (!p) return null;
     const isViewingActive = p.preguntaId === this.preguntaActivaId();
     const result = this.gameSocket.ultimoResultado();
-    const respuestaDada = p.respuestaDada || (isViewingActive && result && result.preguntaId === p.preguntaId ? result : null);
+    const respuestaDada =
+      p.respuestaDada ||
+      (isViewingActive && result && result.preguntaId === p.preguntaId ? result : null);
     if (!respuestaDada) return null;
     return {
       esCorrecta: respuestaDada.esCorrecta,
       feedback: respuestaDada.esCorrecta
-        ? (p.feedbackCorrecto || respuestaDada.feedback || '')
-        : (p.feedbackIncorrecto || respuestaDada.feedback || ''),
+        ? p.feedbackCorrecto || respuestaDada.feedback || ''
+        : p.feedbackIncorrecto || respuestaDada.feedback || '',
     };
   });
 

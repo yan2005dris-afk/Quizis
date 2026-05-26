@@ -265,7 +265,9 @@ export class GameSocketService {
   desconectar(): void {
     this._cancelPendingVoto();
     if (this.socket) {
-      this.socket.removeAllListeners();
+      if (typeof this.socket.removeAllListeners === 'function') {
+        this.socket.removeAllListeners();
+      }
       this.socket.disconnect();
     }
     this.socket = null;

@@ -1,19 +1,12 @@
 <div class="active-question-container">
   @if (preguntaMostrada(); as p) {
-
     <div class="observer-card">
-
       <div class="observer-card__header">
-        <p class="observer-card__status">
-          <span class="status-dot"></span> {{ statusText() }}
-        </p>
+        <p class="observer-card__status"><span class="status-dot"></span> {{ statusText() }}</p>
 
         <!-- Temporizador visual -->
         @if (tiempoRestante(); as t) {
-          <div
-            class="observer-card__timer"
-            [class.observer-card__timer--low]="t <= 5"
-          >
+          <div class="observer-card__timer" [class.observer-card__timer--low]="t <= 5">
             ⏱️ {{ t }}s
           </div>
         }
@@ -27,9 +20,7 @@
           >
             <lucide-icon [name]="PrevIcon" size="16"></lucide-icon>
           </button>
-          <span class="pagination-info">
-            {{ currentIndex() + 1 }} / {{ preguntas().length }}
-          </span>
+          <span class="pagination-info"> {{ currentIndex() + 1 }} / {{ preguntas().length }} </span>
           <button
             class="pagination-btn"
             [disabled]="currentIndex() === preguntas().length - 1"
@@ -51,7 +42,9 @@
             [class.option-item--incorrect]="opcion.esCorrecta === false && opcion.fueElegida"
             [class.option-item--selected]="opcion.fueElegida || opcion.estaPendiente"
             [class.option-item--pre-selected]="opcion.seleccionLocal"
-            [class.option-item--clickable]="interactive() && !respuestaConfirmada() && !p.respuestaDada"
+            [class.option-item--clickable]="
+              interactive() && !respuestaConfirmada() && !p.respuestaDada
+            "
             data-testid="option-card"
             role="button"
             tabindex="0"
@@ -69,10 +62,7 @@
 
             @if (opcion.porcentaje > 0) {
               <div class="option-item__progress-track">
-                <div
-                  class="option-item__progress-fill"
-                  [style.width.%]="opcion.porcentaje"
-                ></div>
+                <div class="option-item__progress-fill" [style.width.%]="opcion.porcentaje"></div>
               </div>
             }
 
@@ -92,9 +82,7 @@
       <!-- Botón Confirmar (solo en modo interactivo, después de seleccionar) -->
       @if (interactive() && localSelectedId() && !respuestaConfirmada()) {
         <div class="confirm-bar">
-          <button class="confirm-btn" (click)="confirmar()">
-            Confirmar respuesta
-          </button>
+          <button class="confirm-btn" (click)="confirmar()">Confirmar respuesta</button>
         </div>
       }
     </div>
@@ -138,7 +126,8 @@
           <span>Sugerencia de la IA</span>
         </div>
         <p class="observer-ia-box__content">
-          La IA sugiere la opción <strong>{{ sug.literal }}</strong>.
+          La IA sugiere la opción <strong>{{ sug.literal }}</strong
+          >.
         </p>
         <p class="observer-ia-box__explanation">{{ sug.explicacion }}</p>
       </div>
@@ -154,7 +143,9 @@
             class="wildcard-node"
             [class.wildcard-node--active]="comodin.nombre === 'PUBLICO' && comodinPublicoActivo()"
             [class.wildcard-node--disabled]="!comodin.activo || isComodinUsado(comodin)"
-            [class.wildcard-node--clickable]="interactive() && comodin.activo && !isComodinUsado(comodin)"
+            [class.wildcard-node--clickable]="
+              interactive() && comodin.activo && !isComodinUsado(comodin)
+            "
             [title]="comodin.descripcion + ' · ' + getComodinEstadoTexto(comodin)"
             role="button"
             tabindex="0"
@@ -182,7 +173,6 @@
         }
       </div>
     </div>
-
   } @else {
     <div class="observer-empty-state">
       <div class="spinner"></div>

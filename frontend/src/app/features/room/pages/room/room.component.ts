@@ -158,21 +158,24 @@ export class RoomComponent implements OnInit, OnDestroy {
   }
 
   private cargarDatosIniciales(idOrToken: string): void {
-    this.salasService.obtenerComodines(idOrToken)
+    this.salasService
+      .obtenerComodines(idOrToken)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (data) => this.comodines.set(data),
         error: (err) => console.error('Error cargando comodines:', err),
       });
 
-    this.salasService.obtenerPorId(idOrToken)
+    this.salasService
+      .obtenerPorId(idOrToken)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (sala) => {
           this.salaDetalle.set(sala);
 
           if (this.isHost()) {
-            this.salasService.getLinkInvitacion(sala.salaId)
+            this.salasService
+              .getLinkInvitacion(sala.salaId)
               .pipe(takeUntilDestroyed(this.destroyRef))
               .subscribe({
                 next: (res) => this.tokenInvitacion.set(res.tokenInvitacion),
@@ -403,7 +406,8 @@ export class RoomComponent implements OnInit, OnDestroy {
         );
         console.log('[REINICIAR] salaDetalle.estado=', this.salaDetalle()?.estado);
 
-        this.salasService.obtenerComodines(sala.salaId)
+        this.salasService
+          .obtenerComodines(sala.salaId)
           .pipe(takeUntilDestroyed(this.destroyRef))
           .subscribe({
             next: (comodines) => this.comodines.set(comodines),
