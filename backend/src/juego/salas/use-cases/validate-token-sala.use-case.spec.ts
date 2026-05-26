@@ -11,7 +11,6 @@ describe('ValidateTokenSalaUseCase', () => {
   let useCase: ValidateTokenSalaUseCase;
   let prisma: PrismaService;
   let jwtService: JwtService;
-  let configService: ConfigService;
 
   const mockPrisma = {
     salas: {
@@ -40,7 +39,6 @@ describe('ValidateTokenSalaUseCase', () => {
     useCase = module.get<ValidateTokenSalaUseCase>(ValidateTokenSalaUseCase);
     prisma = module.get<PrismaService>(PrismaService);
     jwtService = module.get<JwtService>(JwtService);
-    configService = module.get<ConfigService>(ConfigService);
     jest.clearAllMocks();
 
     mockConfigService.getOrThrow.mockReturnValue('room-secret-key');

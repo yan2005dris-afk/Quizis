@@ -6,7 +6,6 @@ import { NotFoundException } from '@nestjs/common';
 
 describe('FindOnePermissionUseCase', () => {
   let useCase: FindOnePermissionUseCase;
-  let prisma: PrismaService;
 
   const mockPrisma = {
     permisos: {
@@ -23,7 +22,6 @@ describe('FindOnePermissionUseCase', () => {
     }).compile();
 
     useCase = module.get<FindOnePermissionUseCase>(FindOnePermissionUseCase);
-    prisma = module.get<PrismaService>(PrismaService);
   });
 
   it('should return a permission', async () => {

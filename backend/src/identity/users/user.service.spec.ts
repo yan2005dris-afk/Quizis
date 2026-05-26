@@ -4,11 +4,10 @@ import { UserService } from './user.service';
 import { PrismaService } from 'src/infrastructure/database/prisma/prisma.service';
 import { CreateUserUseCase } from './use-cases/create-user.use-case';
 import { GetEffectivePermissionsUseCase } from './use-cases/get-effective-permissions.use-case';
-import { NotFoundException, BadRequestException } from '@nestjs/common';
+import { NotFoundException } from '@nestjs/common';
 
 describe('UserService', () => {
   let service: UserService;
-  let prisma: PrismaService;
   let getEffectivePermissionsUseCase: GetEffectivePermissionsUseCase;
 
   const mockPrismaService = {
@@ -44,7 +43,6 @@ describe('UserService', () => {
     }).compile();
 
     service = module.get<UserService>(UserService);
-    prisma = module.get<PrismaService>(PrismaService);
     getEffectivePermissionsUseCase = module.get<GetEffectivePermissionsUseCase>(
       GetEffectivePermissionsUseCase,
     );

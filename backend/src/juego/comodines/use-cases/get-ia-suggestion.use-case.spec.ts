@@ -2,7 +2,6 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { GetIaSuggestionUseCase } from './get-ia-suggestion.use-case';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../../infrastructure/database/prisma/prisma.service';
-import OpenAI from 'openai';
 import {
   InternalServerErrorException,
   NotFoundException,

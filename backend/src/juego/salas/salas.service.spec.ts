@@ -27,15 +27,6 @@ describe('SalasService', () => {
   let listBancosDisponiblesUseCase: ListBancosDisponiblesUseCase;
   let getSalaDetailsUseCase: GetSalaDetailsUseCase;
   let updateConfiguracionSalaUseCase: UpdateConfiguracionSalaUseCase;
-  let listAllSalasUseCase: ListAllSalasUseCase;
-  let getSalaLifelinesUseCase: GetSalaLifelinesUseCase;
-  let regenerateRoomTokenUseCase: RegenerateRoomTokenUseCase;
-  let finalizeRoomUseCase: FinalizeRoomUseCase;
-  let joinSalaUseCase: JoinSalaUseCase;
-  let getInvitacionTokenUseCase: GetInvitacionTokenUseCase;
-  let updateParticipantRoleUseCase: UpdateParticipantRoleUseCase;
-  let getParticipantsWithRolesUseCase: GetParticipantsWithRolesUseCase;
-  let restartRoundUseCase: RestartRoundUseCase;
 
   const mockCreateSalaUseCase = {
     execute: jest.fn(),
@@ -178,26 +169,6 @@ describe('SalasService', () => {
     updateConfiguracionSalaUseCase = module.get<UpdateConfiguracionSalaUseCase>(
       UpdateConfiguracionSalaUseCase,
     );
-    listAllSalasUseCase = module.get<ListAllSalasUseCase>(ListAllSalasUseCase);
-    getSalaLifelinesUseCase = module.get<GetSalaLifelinesUseCase>(
-      GetSalaLifelinesUseCase,
-    );
-    regenerateRoomTokenUseCase = module.get<RegenerateRoomTokenUseCase>(
-      RegenerateRoomTokenUseCase,
-    );
-    finalizeRoomUseCase = module.get<FinalizeRoomUseCase>(FinalizeRoomUseCase);
-    joinSalaUseCase = module.get<JoinSalaUseCase>(JoinSalaUseCase);
-    getInvitacionTokenUseCase = module.get<GetInvitacionTokenUseCase>(
-      GetInvitacionTokenUseCase,
-    );
-    updateParticipantRoleUseCase = module.get<UpdateParticipantRoleUseCase>(
-      UpdateParticipantRoleUseCase,
-    );
-    getParticipantsWithRolesUseCase =
-      module.get<GetParticipantsWithRolesUseCase>(
-        GetParticipantsWithRolesUseCase,
-      );
-    restartRoundUseCase = module.get<RestartRoundUseCase>(RestartRoundUseCase);
     jest.clearAllMocks();
   });
 

@@ -9,7 +9,7 @@ import {
   effect,
 } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
-import { GameSocketService, Pregunta } from '../../../../core/services/game-socket.service';
+import { GameSocketService } from '../../../../core/services/game-socket.service';
 import { AuthService } from '../../../../core/services/auth.service';
 import {
   SalasService,
@@ -137,8 +137,7 @@ export class RoomComponent implements OnInit, OnDestroy {
 
       this.salasService.obtenerComodines(actual.salaId).subscribe({
         next: (comodines) => this.comodines.set(comodines),
-        error: (err) =>
-          console.error('[WS:ronda_reiniciada] Error recargando comodines:', err),
+        error: (err) => console.error('[WS:ronda_reiniciada] Error recargando comodines:', err),
       });
     });
   }
@@ -390,8 +389,7 @@ export class RoomComponent implements OnInit, OnDestroy {
 
         this.salasService.obtenerComodines(sala.salaId).subscribe({
           next: (comodines) => this.comodines.set(comodines),
-          error: (err) =>
-            console.error('[REINICIAR] Error recargando comodines:', err),
+          error: (err) => console.error('[REINICIAR] Error recargando comodines:', err),
         });
 
         // Broadcast to other clients via WS

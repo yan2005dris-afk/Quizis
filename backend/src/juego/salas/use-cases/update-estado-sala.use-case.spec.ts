@@ -3,17 +3,24 @@ import { Test } from '@nestjs/testing';
 import { NotFoundException, BadRequestException } from '@nestjs/common';
 import { UpdateEstadoSalaUseCase } from './update-estado-sala.use-case';
 import { PrismaService } from 'src/infrastructure/database/prisma/prisma.service';
+import { RoomStateCacheUseCase } from 'src/infrastructure/cache/use-cases/room-state-cache.use-case';
 import { EstadoSala } from '../dto/update-estado-sala.dto';
 
 describe('UpdateEstadoSalaUseCase', () => {
   let useCase: UpdateEstadoSalaUseCase;
-  let prisma: PrismaService;
 
   const mockPrisma = {
     salas: {
       findUnique: jest.fn(),
-      update: jest.fn(),
     },
+    preguntas: { findMany: jest.fn() },
+    participantes: { findFirst: jest.fn() },
+    rondas: { findFirst: jest.fn(), create: jest.fn() },
+  };
+
+  const mockRoomStateCache = {
+    getRoomEstado: jest.fn().mockResolvedValue(undefined),
+    setRoomEstado: jest.fn().mockResolvedValue(undefined),
   };
 
   beforeEach(async () => {
@@ -21,11 +28,11 @@ describe('UpdateEstadoSalaUseCase', () => {
       providers: [
         UpdateEstadoSalaUseCase,
         { provide: PrismaService, useValue: mockPrisma },
+        { provide: RoomStateCacheUseCase, useValue: mockRoomStateCache },
       ],
     }).compile();
 
     useCase = module.get<UpdateEstadoSalaUseCase>(UpdateEstadoSalaUseCase);
-    prisma = module.get<PrismaService>(PrismaService);
     jest.clearAllMocks();
   });
 
@@ -36,11 +43,8 @@ describe('UpdateEstadoSalaUseCase', () => {
   it('debería transicionar de BORRADOR a ESPERANDO_ALUMNOS', async () => {
     mockPrisma.salas.findUnique.mockResolvedValue({
       salaId: 1,
+      tokenCompartido: 'T1',
       estado: EstadoSala.BORRADOR,
-    });
-    mockPrisma.salas.update.mockResolvedValue({
-      salaId: 1,
-      estado: EstadoSala.ESPERANDO_ALUMNOS,
     });
 
     const result = await useCase.execute(1, {
@@ -48,60 +52,76 @@ describe('UpdateEstadoSalaUseCase', () => {
     });
 
     expect(result.estado).toBe(EstadoSala.ESPERANDO_ALUMNOS);
-    expect(prisma.salas.update).toHaveBeenCalledWith({
-      where: { salaId: 1 },
-      data: { estado: EstadoSala.ESPERANDO_ALUMNOS },
-    });
+    expect(mockRoomStateCache.setRoomEstado).toHaveBeenCalledWith(
+      'T1',
+      EstadoSala.ESPERANDO_ALUMNOS,
+    );
   });
 
   it('debería transicionar de ESPERANDO_ALUMNOS a EN_VIVO', async () => {
     mockPrisma.salas.findUnique.mockResolvedValue({
       salaId: 1,
+      tokenCompartido: 'T1',
+      bancoId: 10,
+      limitePreguntas: 5,
       estado: EstadoSala.ESPERANDO_ALUMNOS,
     });
-    mockPrisma.salas.update.mockResolvedValue({
-      salaId: 1,
-      estado: EstadoSala.EN_VIVO,
+    mockPrisma.rondas.findFirst.mockResolvedValue(null);
+    mockPrisma.participantes.findFirst.mockResolvedValue({
+      participanteId: 1,
     });
+    mockPrisma.preguntas.findMany.mockResolvedValue([
+      { preguntaId: 1 },
+      { preguntaId: 2 },
+    ]);
+    mockPrisma.rondas.create.mockResolvedValue({ rondaId: 1 });
 
     const result = await useCase.execute(1, { estado: EstadoSala.EN_VIVO });
 
     expect(result.estado).toBe(EstadoSala.EN_VIVO);
+    expect(mockRoomStateCache.setRoomEstado).toHaveBeenCalledWith(
+      'T1',
+      EstadoSala.EN_VIVO,
+    );
+    expect(mockPrisma.rondas.create).toHaveBeenCalled();
   });
 
   it('debería transicionar de EN_VIVO a FINALIZADO', async () => {
     mockPrisma.salas.findUnique.mockResolvedValue({
       salaId: 1,
+      tokenCompartido: 'T1',
       estado: EstadoSala.EN_VIVO,
-    });
-    mockPrisma.salas.update.mockResolvedValue({
-      salaId: 1,
-      estado: EstadoSala.FINALIZADO,
     });
 
     const result = await useCase.execute(1, { estado: EstadoSala.FINALIZADO });
 
     expect(result.estado).toBe(EstadoSala.FINALIZADO);
+    expect(mockRoomStateCache.setRoomEstado).toHaveBeenCalledWith(
+      'T1',
+      EstadoSala.FINALIZADO,
+    );
   });
 
   it('debería permitir retroceder de ESPERANDO_ALUMNOS a BORRADOR', async () => {
     mockPrisma.salas.findUnique.mockResolvedValue({
       salaId: 1,
+      tokenCompartido: 'T1',
       estado: EstadoSala.ESPERANDO_ALUMNOS,
-    });
-    mockPrisma.salas.update.mockResolvedValue({
-      salaId: 1,
-      estado: EstadoSala.BORRADOR,
     });
 
     const result = await useCase.execute(1, { estado: EstadoSala.BORRADOR });
 
     expect(result.estado).toBe(EstadoSala.BORRADOR);
+    expect(mockRoomStateCache.setRoomEstado).toHaveBeenCalledWith(
+      'T1',
+      EstadoSala.BORRADOR,
+    );
   });
 
   it('debería lanzar BadRequestException para transición inválida (BORRADOR → EN_VIVO)', async () => {
     mockPrisma.salas.findUnique.mockResolvedValue({
       salaId: 1,
+      tokenCompartido: 'T1',
       estado: EstadoSala.BORRADOR,
     });
 
@@ -109,23 +129,27 @@ describe('UpdateEstadoSalaUseCase', () => {
       useCase.execute(1, { estado: EstadoSala.EN_VIVO }),
     ).rejects.toThrow(BadRequestException);
 
-    expect(prisma.salas.update).not.toHaveBeenCalled();
+    expect(mockRoomStateCache.setRoomEstado).not.toHaveBeenCalled();
   });
 
   it('debería lanzar BadRequestException para transición inválida (BORRADOR → FINALIZADO)', async () => {
     mockPrisma.salas.findUnique.mockResolvedValue({
       salaId: 1,
+      tokenCompartido: 'T1',
       estado: EstadoSala.BORRADOR,
     });
 
     await expect(
       useCase.execute(1, { estado: EstadoSala.FINALIZADO }),
     ).rejects.toThrow(BadRequestException);
+
+    expect(mockRoomStateCache.setRoomEstado).not.toHaveBeenCalled();
   });
 
   it('debería lanzar BadRequestException si FINALIZADO intenta transicionar a cualquier estado', async () => {
     mockPrisma.salas.findUnique.mockResolvedValue({
       salaId: 1,
+      tokenCompartido: 'T1',
       estado: EstadoSala.FINALIZADO,
     });
 
@@ -136,6 +160,8 @@ describe('UpdateEstadoSalaUseCase', () => {
     await expect(
       useCase.execute(1, { estado: EstadoSala.EN_VIVO }),
     ).rejects.toThrow(BadRequestException);
+
+    expect(mockRoomStateCache.setRoomEstado).not.toHaveBeenCalled();
   });
 
   it('debería lanzar NotFoundException si la sala no existe', async () => {
@@ -145,6 +171,6 @@ describe('UpdateEstadoSalaUseCase', () => {
       useCase.execute(999, { estado: EstadoSala.ESPERANDO_ALUMNOS }),
     ).rejects.toThrow(NotFoundException);
 
-    expect(prisma.salas.update).not.toHaveBeenCalled();
+    expect(mockRoomStateCache.setRoomEstado).not.toHaveBeenCalled();
   });
 });

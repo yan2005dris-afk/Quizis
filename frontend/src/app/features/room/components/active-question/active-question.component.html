@@ -52,7 +52,11 @@
             [style.cursor]="
               interactive() && !p.respuestaDada && !localSelectedId() ? 'pointer' : 'default'
             "
+            role="button"
+            tabindex="0"
             (click)="onOpcionClick(opcion.id)"
+            (keyup.enter)="onOpcionClick(opcion.id)"
+            (keyup.space)="onOpcionClick(opcion.id)"
           >
             <div class="active-question__option-top">
               <span class="active-question__option-letra">{{ opcion.letra }}</span>
@@ -122,7 +126,7 @@
                 (clicked)="onComodinClick(comodin)"
                 [title]="comodin.descripcion + ' · ' + getComodinEstadoTexto(comodin)"
               >
-                <span class="active-question__wildcard-icon">{{ comodin.icono }}</span> 
+                <span class="active-question__wildcard-icon">{{ comodin.icono }}</span>
                 <span>{{ comodin.nombre | titlecase }}</span>
               </app-button>
               <span

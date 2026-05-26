@@ -6,7 +6,6 @@ import { NotFoundException } from '@nestjs/common';
 
 describe('GetEffectivePermissionsUseCase', () => {
   let useCase: GetEffectivePermissionsUseCase;
-  let prisma: PrismaService;
 
   const mockPrisma = {
     usuarios: {
@@ -28,7 +27,6 @@ describe('GetEffectivePermissionsUseCase', () => {
     useCase = module.get<GetEffectivePermissionsUseCase>(
       GetEffectivePermissionsUseCase,
     );
-    prisma = module.get<PrismaService>(PrismaService);
   });
 
   afterEach(() => {

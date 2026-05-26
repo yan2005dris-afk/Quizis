@@ -10,8 +10,6 @@ import { RemovePermissionFromRoleUseCase } from './use-cases/remove-permission-f
 describe('RolesService', () => {
   let service: RolesService;
   let createUseCase: CreateRoleUseCase;
-  let assignPermissionUseCase: AssignPermissionToRoleUseCase;
-  let removePermissionUseCase: RemovePermissionFromRoleUseCase;
   let prisma: PrismaService;
 
   const mockUseCase = { execute: jest.fn() };
@@ -38,12 +36,6 @@ describe('RolesService', () => {
 
     service = module.get<RolesService>(RolesService);
     createUseCase = module.get<CreateRoleUseCase>(CreateRoleUseCase);
-    assignPermissionUseCase = module.get<AssignPermissionToRoleUseCase>(
-      AssignPermissionToRoleUseCase,
-    );
-    removePermissionUseCase = module.get<RemovePermissionFromRoleUseCase>(
-      RemovePermissionFromRoleUseCase,
-    );
     prisma = module.get<PrismaService>(PrismaService);
   });
 

@@ -5,7 +5,6 @@ import { BadRequestException } from '@nestjs/common';
 
 describe('AddQuestionsUseCase', () => {
   let useCase: AddQuestionsUseCase;
-  let prisma: PrismaService;
 
   const mockPrisma = {
     $transaction: jest.fn((promises) => Promise.all(promises)),
@@ -26,7 +25,6 @@ describe('AddQuestionsUseCase', () => {
     }).compile();
 
     useCase = module.get<AddQuestionsUseCase>(AddQuestionsUseCase);
-    prisma = module.get<PrismaService>(PrismaService);
   });
 
   it('should add valid questions', async () => {

@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, inject, signal, OnInit } from '@ang
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { SalasService, SalaDetalle } from '../../../../core/services/salas.service';
+import { SalasService } from '../../../../core/services/salas.service';
 import { ToastService } from '../../../../core/services/toast.service';
 import { ButtonComponent, AlertComponent, InputComponent } from '../../../../shared/ui';
 import { LucideAngularModule, Users, Gamepad2 } from 'lucide-angular';

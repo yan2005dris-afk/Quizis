@@ -18,7 +18,7 @@ import {
   BrainCircuit,
   Loader2,
 } from 'lucide-angular';
-import { AudienceBarsComponent, ButtonComponent, CountdownComponent } from '../../../../shared/ui';
+import { AudienceBarsComponent, ButtonComponent } from '../../../../shared/ui';
 
 export interface OpcionVoto {
   id: number;

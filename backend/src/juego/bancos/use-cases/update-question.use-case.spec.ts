@@ -5,7 +5,6 @@ import { NotFoundException } from '@nestjs/common';
 
 describe('UpdateQuestionUseCase', () => {
   let useCase: UpdateQuestionUseCase;
-  let prisma: PrismaService;
 
   const mockPrisma = {
     $transaction: jest.fn((cb) => cb(mockPrisma)),
@@ -34,7 +33,6 @@ describe('UpdateQuestionUseCase', () => {
     }).compile();
 
     useCase = module.get<UpdateQuestionUseCase>(UpdateQuestionUseCase);
-    prisma = module.get<PrismaService>(PrismaService);
   });
 
   it('should update question and options', async () => {

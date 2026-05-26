@@ -5,7 +5,6 @@ import { NotFoundException } from '@nestjs/common';
 
 describe('UpdateBancoUseCase', () => {
   let useCase: UpdateBancoUseCase;
-  let prisma: PrismaService;
 
   const mockPrisma = {
     bancoPreguntas: {
@@ -26,7 +25,6 @@ describe('UpdateBancoUseCase', () => {
     }).compile();
 
     useCase = module.get<UpdateBancoUseCase>(UpdateBancoUseCase);
-    prisma = module.get<PrismaService>(PrismaService);
   });
 
   it('should update a banco if found', async () => {

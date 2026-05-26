@@ -10,8 +10,6 @@ import { EstadoSala } from '../dto/update-estado-sala.dto';
 describe('CreateSalaUseCase', () => {
   let useCase: CreateSalaUseCase;
   let prisma: PrismaService;
-  let jwtService: JwtService;
-  let configService: ConfigService;
 
   const mockPrisma = {
     bancoPreguntas: {
@@ -50,8 +48,6 @@ describe('CreateSalaUseCase', () => {
 
     useCase = module.get<CreateSalaUseCase>(CreateSalaUseCase);
     prisma = module.get<PrismaService>(PrismaService);
-    jwtService = module.get<JwtService>(JwtService);
-    configService = module.get<ConfigService>(ConfigService);
     jest.clearAllMocks();
 
     // Default configuration mocks

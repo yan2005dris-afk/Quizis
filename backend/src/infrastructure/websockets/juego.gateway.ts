@@ -73,7 +73,7 @@ export class JuegoGateway implements OnGatewayConnection, OnGatewayDisconnect {
       socketId: client.id,
     });
 
-    client.join(info.tokenCompartido);
+    void client.join(info.tokenCompartido);
     this.socketMap.set(client.id, {
       tokenCompartido: info.tokenCompartido,
       nickname: info.nickname,
@@ -216,7 +216,7 @@ export class JuegoGateway implements OnGatewayConnection, OnGatewayDisconnect {
       });
 
       return res;
-    } catch (error) {
+    } catch {
       return { success: false, message: 'No se pudo regenerar el token.' };
     }
   }
@@ -233,7 +233,7 @@ export class JuegoGateway implements OnGatewayConnection, OnGatewayDisconnect {
       });
 
       return res;
-    } catch (error) {
+    } catch {
       return { success: false, message: 'No se pudo finalizar la partida.' };
     }
   }

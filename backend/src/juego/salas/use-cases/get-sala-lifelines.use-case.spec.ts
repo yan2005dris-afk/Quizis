@@ -5,7 +5,6 @@ import { NotFoundException } from '@nestjs/common';
 
 describe('GetSalaLifelinesUseCase', () => {
   let useCase: GetSalaLifelinesUseCase;
-  let prisma: PrismaService;
 
   const mockPrisma = {
     salas: {
@@ -28,7 +27,6 @@ describe('GetSalaLifelinesUseCase', () => {
     }).compile();
 
     useCase = module.get<GetSalaLifelinesUseCase>(GetSalaLifelinesUseCase);
-    prisma = module.get<PrismaService>(PrismaService);
   });
 
   it('should return lifelines by ID', async () => {
