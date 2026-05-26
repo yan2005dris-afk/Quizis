@@ -1,0 +1,59 @@
+<div class="join-page">
+  <div class="join-card">
+    <header class="join-card__header">
+      <div class="join-card__icon-wrapper">
+        <lucide-icon [name]="GameIcon" size="32"></lucide-icon>
+      </div>
+      <h1 class="join-card__title">¡Te han invitado a jugar!</h1>
+      <p class="join-card__subtitle">Unite a la partida en tiempo real.</p>
+    </header>
+
+    <div class="join-card__body">
+      @if (isValidating()) {
+        <div class="join-card__loading">
+          <div class="spinner"></div>
+          <p>Validando invitación...</p>
+        </div>
+      } @else if (error()) {
+        <app-alert type="danger" [message]="error() || ''" />
+        <div class="mt-4">
+          <app-button variant="ghost" routerLink="/login" class="w-full"
+            >Volver al inicio</app-button
+          >
+        </div>
+      } @else if (salaInfo()) {
+        <div class="sala-info">
+          <p class="sala-info__label">Sala:</p>
+          <h2 class="sala-info__name">{{ salaInfo().nombre }}</h2>
+        </div>
+
+        <div class="join-form">
+          <app-input
+            label="Elegí tu Nickname"
+            placeholder="Ej: ElMillonario99"
+            [(ngModel)]="nickname"
+            [disabled]="isLoading()"
+          />
+
+          <p class="join-form__hint">
+            Este nombre será visible para el presentador y el resto de la audiencia.
+          </p>
+
+          <app-button
+            variant="primary"
+            class="w-full mt-6"
+            (clicked)="onJoin()"
+            [disabled]="!nickname().trim()"
+            [loading]="isLoading()"
+          >
+            Entrar a la Sala
+          </app-button>
+        </div>
+      }
+    </div>
+
+    <footer class="join-card__footer">
+      <p>Quizis — Plataforma de Trivias Académicas</p>
+    </footer>
+  </div>
+</div>

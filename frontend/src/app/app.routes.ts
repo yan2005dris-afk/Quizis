@@ -7,6 +7,8 @@ export const routes: Routes = [
   // Redirección inicial: si no hay ruta, va a login
   { path: '', redirectTo: 'login', pathMatch: 'full' },
 
+  // Rutas privadas (Protegidas por Layout y Guard)
+
   // Rutas de Autenticación (Públicas, sin layout)
   {
     path: 'login',
@@ -32,8 +34,22 @@ export const routes: Routes = [
         (m) => m.ActiveQuestionComponent,
       ),
   },
+  {
+    path: 'join/:token',
+    loadComponent: () =>
+      import('./features/room/pages/join-room/join-room.component').then(
+        (m) => m.JoinRoomComponent,
+      ),
+  },
 
   // Rutas bajo el Layout (Híbrido: Privado o Público según Auth)
+  {
+    path: 'salas/unirse',
+    loadComponent: () =>
+      import('./features/room/pages/join-room/join-room.component').then(
+        (m) => m.JoinRoomComponent,
+      ),
+  },
   {
     path: '',
     component: DashboardLayoutComponent,
