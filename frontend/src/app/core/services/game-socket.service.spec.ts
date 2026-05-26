@@ -9,15 +9,20 @@ import type {
   RondaInfo,
 } from '../../features/room/room.types';
 
-// Mock socket.io-client — vi.hoisted asegura que mockSocket exista antes de vi.mock
-const { mockSocket } = vi.hoisted(() => {
-  const ms = {
-    on: vi.fn().mockReturnThis(),
-    emit: vi.fn().mockReturnThis(),
-    disconnect: vi.fn(),
-  };
-  return { mockSocket: ms };
-});
+// --- Mock socket.io-client ---
+// En lugar de depender de mock.calls internos de vitest (que fallan en CI),
+// capturamos los handlers en un Map cuando mockSocket.on() se invoca.
+
+const eventHandlers = new Map<string, (...args: any[]) => void>();
+
+const mockSocket = {
+  on: vi.fn((event: string, handler: (...args: any[]) => void) => {
+    eventHandlers.set(event, handler);
+    return mockSocket;
+  }),
+  emit: vi.fn(),
+  disconnect: vi.fn(),
+};
 
 vi.mock('socket.io-client', () => ({
   io: vi.fn(() => mockSocket),
@@ -27,10 +32,12 @@ describe('GameSocketService (observer extension)', () => {
   let service: GameSocketService;
 
   beforeEach(() => {
-    vi.clearAllMocks();
-    mockSocket.on.mockReturnThis();
-    mockSocket.emit.mockReturnThis();
-    vi.mocked(io).mockReturnValue(mockSocket as any);
+    eventHandlers.clear();
+    mockSocket.on.mockClear();
+    mockSocket.emit.mockClear();
+    mockSocket.disconnect.mockClear();
+    vi.mocked(io).mockClear();
+
     TestBed.configureTestingModule({
       providers: [GameSocketService],
     });
@@ -50,14 +57,9 @@ describe('GameSocketService (observer extension)', () => {
         { usuario: 'Bob', texto: 'Hola!', timestamp: 1001, tipo: 'mensaje' },
       ];
 
-      // Simular el evento del servidor
-      const onCalls = mockSocket.on.mock.calls;
-      const mensajeChatHandler = onCalls.find(([event]) => event === 'mensaje_chat');
-      expect(mensajeChatHandler).toBeDefined();
-
-      if (mensajeChatHandler) {
-        mensajeChatHandler[1](chatMessages);
-      }
+      const handler = eventHandlers.get('mensaje_chat');
+      expect(handler).toBeDefined();
+      handler!(chatMessages);
 
       expect(service.mensajesChat()).toEqual(chatMessages);
       expect(service.mensajesChat()).toHaveLength(2);
@@ -71,13 +73,9 @@ describe('GameSocketService (observer extension)', () => {
         { tipo: 'inicio_pregunta', mensaje: 'Nueva pregunta', timestamp: 1002 },
       ];
 
-      const onCalls = mockSocket.on.mock.calls;
-      const eventoHandler = onCalls.find(([event]) => event === 'evento_sala');
-      expect(eventoHandler).toBeDefined();
-
-      if (eventoHandler) {
-        eventoHandler[1](eventos);
-      }
+      const handler = eventHandlers.get('evento_sala');
+      expect(handler).toBeDefined();
+      handler!(eventos);
 
       expect(service.eventosSala()).toEqual(eventos);
       expect(service.eventosSala()).toHaveLength(2);
@@ -92,13 +90,9 @@ describe('GameSocketService (observer extension)', () => {
         { id: '3', nombre: 'Charlie', puntaje: 72, rol: 'admin' },
       ];
 
-      const onCalls = mockSocket.on.mock.calls;
-      const participantesHandler = onCalls.find(([event]) => event === 'participantes');
-      expect(participantesHandler).toBeDefined();
-
-      if (participantesHandler) {
-        participantesHandler[1](participantes);
-      }
+      const handler = eventHandlers.get('participantes');
+      expect(handler).toBeDefined();
+      handler!(participantes);
 
       expect(service.participantes()).toEqual(participantes);
       expect(service.participantes()).toHaveLength(3);
@@ -109,13 +103,9 @@ describe('GameSocketService (observer extension)', () => {
 
       const rondaInfo: RondaInfo = { ronda: 1, totalRondas: 5, premio: '$1000' };
 
-      const onCalls = mockSocket.on.mock.calls;
-      const rondaHandler = onCalls.find(([event]) => event === 'info_ronda');
-      expect(rondaHandler).toBeDefined();
-
-      if (rondaHandler) {
-        rondaHandler[1](rondaInfo);
-      }
+      const handler = eventHandlers.get('info_ronda');
+      expect(handler).toBeDefined();
+      handler!(rondaInfo);
 
       expect(service.infoRonda()).toEqual(rondaInfo);
       expect(service.infoRonda()?.ronda).toBe(1);
