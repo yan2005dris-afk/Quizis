@@ -28,6 +28,7 @@
 
   <div class="card-pregunta__actions">
     <button
+      type="button"
       class="card-pregunta__btn-confirmar"
       [disabled]="opcionesElegidasIds().length === 0 || bloqueado()"
       (click)="enviarRespuesta()"
