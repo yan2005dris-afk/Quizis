@@ -1,0 +1,290 @@
+<div class="room">
+  <!-- Auth banner for public viewers -->
+  @if (!auth.isAuthenticated() && !gameSocket.conectado()) {
+    <div class="room__auth-banner" role="status">
+      Estás viendo la sala como público general — no podés votar.
+    </div>
+  }
+
+  <app-event-header
+    [rondaInfo]="gameSocket.infoRonda()"
+    [tiempoRestante]="gameSocket.tiempoRestante()"
+    [tituloEvento]="salaDetalle()?.nombre || 'Cargando sala...'"
+  />
+
+  <!-- ─── Host Admin Panel ─────────────────────────────────────── -->
+  @if (isHost()) {
+    <div class="room__admin-panel" aria-label="Panel de administración de sala">
+      <!-- Estado + transiciones -->
+      <section class="room__admin-section" aria-labelledby="estado-heading">
+        <h2 id="estado-heading" class="room__admin-section-title">Estado de la sala</h2>
+        <div class="room__estado-row">
+          <span
+            class="room__estado-badge"
+            [class.room__estado-badge--borrador]="isBorrador()"
+            [class.room__estado-badge--esperando]="isEsperando()"
+            [class.room__estado-badge--vivo]="isEnVivo()"
+            [class.room__estado-badge--finalizado]="isFinalizado()"
+            aria-live="polite"
+          >
+            @switch (estadoSala()) {
+              @case ('BORRADOR') {
+                Borrador
+              }
+              @case ('ESPERANDO_ALUMNOS') {
+                Esperando alumnos
+              }
+              @case ('EN_VIVO') {
+                En vivo
+              }
+              @case ('FINALIZADO') {
+                Finalizado
+              }
+              @default {
+                —
+              }
+            }
+          </span>
+
+          <div class="room__estado-actions">
+            @if (isBorrador()) {
+              <button
+                class="room__btn room__btn--primary"
+                [disabled]="cambiandoEstado()"
+                (click)="onAbrirSala()"
+                aria-label="Abrir sala para alumnos"
+              >
+                <lucide-icon [img]="UsersIcon" size="14" aria-hidden="true"></lucide-icon>
+                Abrir para alumnos
+              </button>
+            }
+            @if (isEsperando()) {
+              <button
+                class="room__btn room__btn--primary"
+                [disabled]="cambiandoEstado()"
+                (click)="onIniciarJuego()"
+                aria-label="Iniciar el juego"
+              >
+                <lucide-icon [img]="PlayIcon" size="14" aria-hidden="true"></lucide-icon>
+                Iniciar juego
+              </button>
+            }
+            @if (isEnVivo()) {
+              <button
+                class="room__btn room__btn--toggle"
+                [disabled]="cambiandoEstado()"
+                (click)="onToggleHabilitada()"
+                [attr.aria-pressed]="gameSocket.salaHabilitada()"
+                aria-label="Habilitar o pausar sala en vivo"
+              >
+                <lucide-icon
+                  [img]="gameSocket.salaHabilitada() ? PauseIcon : PowerIcon"
+                  size="14"
+                  aria-hidden="true"
+                ></lucide-icon>
+                {{ gameSocket.salaHabilitada() ? 'Pausar sala' : 'Reanudar sala' }}
+              </button>
+              <button
+                class="room__btn room__btn--secondary"
+                [disabled]="reiniciandoRonda()"
+                (click)="onReiniciarRonda()"
+                aria-label="Reiniciar ronda"
+              >
+                <lucide-icon
+                  [img]="RestartIcon"
+                  size="14"
+                  aria-hidden="true"
+                  [class.room__icon--spinning]="reiniciandoRonda()"
+                ></lucide-icon>
+                {{ reiniciandoRonda() ? 'Reiniciando...' : 'Reiniciar ronda' }}
+              </button>
+            }
+          </div>
+        </div>
+      </section>
+
+      <!-- Link de invitación -->
+      <section class="room__admin-section" aria-labelledby="link-heading">
+        <h2 id="link-heading" class="room__admin-section-title">Link de invitación</h2>
+        <div class="room__link-actions">
+          <button
+            class="room__btn room__btn--secondary"
+            [disabled]="!shareableLink() || linkCopiado() || regenerandoToken()"
+            (click)="onCopiarLink()"
+            [attr.aria-label]="linkCopiado() ? 'Link copiado' : 'Copiar link de invitación'"
+            aria-live="polite"
+          >
+            <lucide-icon
+              [img]="linkCopiado() ? CheckIcon : CopyIcon"
+              size="14"
+              aria-hidden="true"
+            ></lucide-icon>
+            {{ linkCopiado() ? 'Copiado' : 'Copiar link' }}
+          </button>
+          <button
+            class="room__btn"
+            [class.room__btn--secondary]="!tokenRegenerado()"
+            [class.room__btn--success]="tokenRegenerado()"
+            [disabled]="regenerandoToken()"
+            (click)="onRegenerarToken()"
+            aria-label="Regenerar link de invitación"
+          >
+            <lucide-icon
+              [img]="tokenRegenerado() ? CheckIcon : RefreshIcon"
+              size="14"
+              aria-hidden="true"
+              [class.room__icon--spinning]="regenerandoToken()"
+            ></lucide-icon>
+            {{ regenerandoToken() ? 'Regenerando...' : tokenRegenerado() ? 'Listo' : 'Regenerar' }}
+          </button>
+        </div>
+      </section>
+
+      <!-- Finalizar sala (destructivo) -->
+      @if (!isFinalizado()) {
+        <section
+          class="room__admin-section room__admin-section--danger"
+          aria-labelledby="finalizar-heading"
+        >
+          <h2
+            id="finalizar-heading"
+            class="room__admin-section-title room__admin-section-title--danger"
+          >
+            Finalizar
+          </h2>
+          @if (!confirmandoFinalizar()) {
+            <button
+              class="room__btn room__btn--danger"
+              [disabled]="finalizando()"
+              (click)="onFinalizarSala()"
+              aria-label="Finalizar sala definitivamente"
+            >
+              <lucide-icon [img]="StopIcon" size="14" aria-hidden="true"></lucide-icon>
+              Finalizar sala
+            </button>
+          } @else {
+            <div
+              class="room__confirm-block"
+              role="alertdialog"
+              aria-labelledby="confirm-msg"
+              aria-modal="false"
+            >
+              <p id="confirm-msg" class="room__confirm-msg">
+                Esta acción es irreversible. ¿Cerrar la sala definitivamente?
+              </p>
+              <div class="room__confirm-actions">
+                <button
+                  class="room__btn room__btn--danger"
+                  [disabled]="finalizando()"
+                  (click)="onFinalizarSala()"
+                  aria-label="Confirmar finalización de sala"
+                >
+                  {{ finalizando() ? 'Finalizando...' : 'Sí, finalizar' }}
+                </button>
+                <button
+                  class="room__btn room__btn--ghost"
+                  (click)="onCancelarFinalizar()"
+                  aria-label="Cancelar finalización"
+                >
+                  Cancelar
+                </button>
+              </div>
+            </div>
+          }
+        </section>
+      }
+    </div>
+  }
+
+  <!-- ─── Main Layout ────────────────────────────────────────────── -->
+  <div class="room__layout">
+    <div class="room__left">
+      @if (isHost()) {
+        <div class="room__host-actions">
+          <button
+            class="room__btn room__btn--primary"
+            [disabled]="!canReleaseNext() || isFinalizado()"
+            (click)="onLiberarSiguiente()"
+            aria-label="Liberar siguiente pregunta"
+          >
+            <lucide-icon [img]="PlayIcon" size="14" aria-hidden="true"></lucide-icon>
+            Liberar siguiente pregunta
+          </button>
+
+          @if (!canReleaseNext() && !isFinalizado()) {
+            <span class="room__action-hint" aria-live="polite">
+              Esperando que el estudiante responda...
+            </span>
+          }
+          @if (isFinalizado()) {
+            <span class="room__action-hint room__action-hint--danger" aria-live="polite">
+              La sala está finalizada.
+            </span>
+          }
+        </div>
+      }
+
+      <app-active-question
+        [preguntas]="salaDetalle()?.rondaActiva?.historialPreguntas || []"
+        [preguntaActivaId]="
+          gameSocket.preguntaActiva()?.preguntaId ||
+          salaDetalle()?.rondaActiva?.preguntaActualId ||
+          null
+        "
+        [tiempoRestante]="gameSocket.tiempoRestante()"
+        [comodinBloqueado]="gameSocket.comodinBloqueado()"
+        [comodines]="comodines()"
+        [tokenCompartido]="salaDetalle()?.tokenCompartido || ''"
+        [interactive]="!!preguntaActiva() && !isFinalizado()"
+        (seleccionada)="onResponder($event)"
+      />
+
+      <p class="room__footer-note">
+        {{ isHost() ? 'Estás en modo Presentador.' : 'Estás participando en la sala.' }}
+      </p>
+    </div>
+
+    <div class="room__right">
+      <div class="room__tabs" role="tablist" aria-label="Pestañas del panel lateral">
+        <button
+          class="room__tab-btn"
+          role="tab"
+          [class.room__tab-btn--active]="activeTab() === 'publico'"
+          [attr.aria-selected]="activeTab() === 'publico'"
+          (click)="activeTab.set('publico')"
+        >
+          <lucide-icon [img]="UsersIcon" size="13" aria-hidden="true"></lucide-icon>
+          Participantes ({{ gameSocket.participantes().length }})
+        </button>
+        <button
+          class="room__tab-btn"
+          role="tab"
+          [class.room__tab-btn--active]="activeTab() === 'chat'"
+          [attr.aria-selected]="activeTab() === 'chat'"
+          (click)="activeTab.set('chat')"
+        >
+          <lucide-icon [img]="ChatIcon" size="13" aria-hidden="true"></lucide-icon>
+          Chat en Vivo
+        </button>
+      </div>
+
+      <div class="room__tab-content" role="tabpanel">
+        @if (activeTab() === 'publico') {
+          <app-event-feed [eventos]="gameSocket.eventosSala()" />
+          <app-participants-list
+            [participantes]="gameSocket.participantes()"
+            [isHost]="isHost()"
+            [isEsperando]="isEsperando()"
+            (toggleRol)="onToggleRol($event)"
+          />
+        } @else {
+          <app-chat-box
+            [mensajes]="gameSocket.mensajesChat()"
+            [conectado]="gameSocket.conectado()"
+            (enviar)="onEnviarMensaje($event)"
+          />
+        }
+      </div>
+    </div>
+  </div>
+</div>

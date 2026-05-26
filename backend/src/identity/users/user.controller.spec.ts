@@ -126,9 +126,18 @@ describe('UserController', () => {
   describe('remove', () => {
     it('should call userService.softDeleteUser with correct id', async () => {
       const userId = 1;
-      const mockResult = { deleted: true };
+      const mockResult = {
+        usuarioId: 1,
+        email: 'user@example.com',
+        nombres: 'User',
+        apellidos: 'Test',
+        telefono: null,
+        avatar: null,
+      };
 
-      jest.spyOn(userService, 'softDeleteUser').mockResolvedValue(mockResult);
+      jest
+        .spyOn(userService, 'softDeleteUser')
+        .mockResolvedValue(mockResult as any);
 
       const result = await controller.remove(userId);
 

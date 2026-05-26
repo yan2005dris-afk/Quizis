@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { SessionsService } from './sessions.service';
-import { DatabaseModule } from 'src/infrastructure/database/prisma.module';
+import { DatabaseModule } from 'src/infrastructure/database/prisma/prisma.module';
 import { CreateSessionUseCase } from './use-cases/create-session.use-case';
 import { GetSessionUseCase } from './use-cases/get-session.use-case';
 import { UpdateSessionUseCase } from './use-cases/update-session.use-case';

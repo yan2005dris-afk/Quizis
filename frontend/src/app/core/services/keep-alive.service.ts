@@ -5,6 +5,7 @@ import { timer, Subscription } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { of } from 'rxjs';
 import { environment } from '../../../environments/environment';
+import { AuthService } from './auth.service';
 
 @Injectable({
   providedIn: 'root',
@@ -12,6 +13,7 @@ import { environment } from '../../../environments/environment';
 export class KeepAliveService implements OnDestroy {
   private readonly http = inject(HttpClient);
   private readonly platformId = inject(PLATFORM_ID);
+  private readonly authService = inject(AuthService);
   private subscription?: Subscription;
   private readonly PING_INTERVAL = 5 * 60 * 1000; // 5 minutes
 
@@ -21,7 +23,9 @@ export class KeepAliveService implements OnDestroy {
     }
 
     this.subscription = timer(0, this.PING_INTERVAL).subscribe(() => {
-      this.ping();
+      if (this.authService.isAuthenticated()) {
+        this.ping();
+      }
     });
   }
 

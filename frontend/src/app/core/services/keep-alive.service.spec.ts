@@ -1,9 +1,29 @@
 import { TestBed } from '@angular/core/testing';
 import { KeepAliveService } from './keep-alive.service';
+import { AuthService } from './auth.service';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting, HttpTestingController } from '@angular/common/http/testing';
 import { environment } from '../../../environments/environment';
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
+
+// Mock localStorage for AuthService dependency
+beforeEach(() => {
+  const store: Record<string, string> = {};
+  globalThis.localStorage ??= {
+    getItem: vi.fn((key: string) => store[key] ?? null),
+    setItem: vi.fn((key: string, value: string) => {
+      store[key] = value;
+    }),
+    removeItem: vi.fn((key: string) => {
+      delete store[key];
+    }),
+    clear: vi.fn(() => {
+      for (const k in store) delete store[k];
+    }),
+    length: 0,
+    key: vi.fn(() => null),
+  };
+});
 
 describe('KeepAliveService', () => {
   let service: KeepAliveService;
@@ -12,19 +32,24 @@ describe('KeepAliveService', () => {
   beforeEach(() => {
     vi.useFakeTimers();
     TestBed.configureTestingModule({
-      providers: [KeepAliveService, provideHttpClient(), provideHttpClientTesting()],
+      providers: [
+        KeepAliveService,
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        { provide: AuthService, useValue: { isAuthenticated: () => true } },
+      ],
     });
     service = TestBed.inject(KeepAliveService);
     httpMock = TestBed.inject(HttpTestingController);
   });
 
   afterEach(() => {
-    service.stop();
+    service?.stop();
     // Flush any pending requests to not affect other tests
-    const pending = httpMock.match(() => true);
+    const pending = httpMock?.match(() => true) ?? [];
     pending.forEach((req) => req.flush({}));
 
-    httpMock.verify();
+    httpMock?.verify();
     vi.clearAllTimers();
     vi.useRealTimers();
   });
