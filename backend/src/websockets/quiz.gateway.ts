@@ -127,18 +127,44 @@ export class QuizGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   @SubscribeMessage('voto_recibido')
-  handleVotoRecibido(
-    @MessageBody()
-    payload: {
-      tokenCompartido: string;
-      userId: string;
-      respuestaId: string;
-    },
-  ) {
-    this.server
-      .to(payload.tokenCompartido)
-      .emit('voto_recibido', { userId: payload.userId });
+async handleVotoRecibido(
+  @MessageBody()
+  payload: {
+    tokenCompartido: string;
+    userId: string;
+    respuestaId: string;
+    rondaId: number;
+    preguntaId: number;
+  },
+) {
+  // Confirmar al usuario que su voto llegó
+  this.server
+    .to(payload.tokenCompartido)
+    .emit('voto_recibido', { userId: payload.userId });
+
+  // Leer votos actuales de la caché y emitir totales acumulados
+  const votos = await this.cacheService.getVotes(
+    payload.rondaId,
+    payload.preguntaId,
+  );
+
+  // Contar por opcionId
+  const conteo: Record<number, number> = {};
+  for (const voto of votos) {
+    conteo[voto.opcionId] = (conteo[voto.opcionId] ?? 0) + 1;
   }
+
+  // Emitir con la estructura que espera el frontend
+  this.server
+    .to(payload.tokenCompartido)
+    .emit('votos_acumulados', {
+      A: conteo[1] ?? 0,
+      B: conteo[2] ?? 0,
+      C: conteo[3] ?? 0,
+      D: conteo[4] ?? 0,
+      total: votos.length,
+    });
+}
 
   @SubscribeMessage('comodin_bloqueado')
   handleComodinBloqueado(
