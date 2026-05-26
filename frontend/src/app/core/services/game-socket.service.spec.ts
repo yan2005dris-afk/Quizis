@@ -8,12 +8,15 @@ import type {
   RondaInfo,
 } from '../../features/room/room.types';
 
-// Mock socket.io-client
-const mockSocket = {
-  on: vi.fn().mockReturnThis(),
-  emit: vi.fn().mockReturnThis(),
-  disconnect: vi.fn(),
-};
+// Mock socket.io-client — vi.hoisted asegura que mockSocket exista antes de vi.mock
+const { mockSocket } = vi.hoisted(() => {
+  const ms = {
+    on: vi.fn().mockReturnThis(),
+    emit: vi.fn().mockReturnThis(),
+    disconnect: vi.fn(),
+  };
+  return { mockSocket: ms };
+});
 
 vi.mock('socket.io-client', () => ({
   io: vi.fn(() => mockSocket),

@@ -133,7 +133,7 @@ export class GetSalaDetailsUseCase {
       estado: estadoActual,
       limitePreguntas: sala.limitePreguntas,
       tokenCompartido: sala.tokenCompartido,
-      totalParticipantes: sala.totalParticipantes,
+      totalParticipantes: sala.participantes.length,
       createdAt: sala.createdAt,
 
       participantes: sala.participantes.map((p) => ({
