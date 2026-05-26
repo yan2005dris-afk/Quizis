@@ -9,7 +9,7 @@ import { CacheModule } from './infrastructure/cache/cache.module';
 import { SalasModule } from './juego/salas/salas.module';
 import { HealthModule } from './infrastructure/health/health.module';
 import { BancosModule } from './juego/bancos/bancos.module';
-import { ComodinPublicoModule } from './lifelines/comodin-publico.module';
+import { ComodinPublicoModule } from './comodines/comodin-publico.module';
 import { VotosModule } from './games/votos/votos.module';
 
 @Module({
