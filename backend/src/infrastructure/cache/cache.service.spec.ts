@@ -1,51 +1,52 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { CacheService } from './cache.service';
-import { ConfigService } from '@nestjs/config';
+import { RedisService } from '../database/redis/redis.service';
 
-describe('CacheService (checkAndSetDuplicate)', () => {
+describe('CacheService', () => {
   let service: CacheService;
+  let redisService: RedisService;
+
+  const mockRedisClient = {
+    get: jest.fn(),
+    set: jest.fn(),
+  };
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         CacheService,
         {
-          provide: ConfigService,
+          provide: RedisService,
           useValue: {
-            get: jest.fn().mockReturnValue(null), // Forzar fallback a memoria
+            getClient: jest.fn().mockReturnValue(mockRedisClient),
           },
         },
       ],
     }).compile();
 
     service = module.get<CacheService>(CacheService);
+    redisService = module.get<RedisService>(RedisService);
+    jest.clearAllMocks();
   });
 
-  it('debería registrar un valor nuevo y retornar true', async () => {
-    const key = 'test:set';
-    const val = 'user1';
+  it('debería delegar get al cliente redis', async () => {
+    mockRedisClient.get.mockResolvedValue('valor');
 
-    const result = await service.checkAndSetDuplicate(key, val, 60);
-    expect(result).toBe(true);
+    const result = await service.get('test:key');
+
+    expect(redisService.getClient).toHaveBeenCalled();
+    expect(mockRedisClient.get).toHaveBeenCalledWith('test:key');
+    expect(result).toBe('valor');
   });
 
-  it('debería detectar un duplicado y retornar false', async () => {
-    const key = 'test:set';
-    const val = 'user1';
+  it('debería delegar set al cliente redis con TTL', async () => {
+    await service.set('test:key', 'valor', 60);
 
-    await service.checkAndSetDuplicate(key, val, 60);
-    const result = await service.checkAndSetDuplicate(key, val, 60);
-
-    expect(result).toBe(false);
-  });
-
-  it('debería permitir valores diferentes en la misma llave', async () => {
-    const key = 'test:set';
-
-    const res1 = await service.checkAndSetDuplicate(key, 'user1', 60);
-    const res2 = await service.checkAndSetDuplicate(key, 'user2', 60);
-
-    expect(res1).toBe(true);
-    expect(res2).toBe(true);
+    expect(mockRedisClient.set).toHaveBeenCalledWith(
+      'test:key',
+      'valor',
+      'EX',
+      60,
+    );
   });
 });

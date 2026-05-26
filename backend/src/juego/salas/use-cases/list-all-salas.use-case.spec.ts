@@ -1,10 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ListAllSalasUseCase } from './list-all-salas.use-case';
-import { PrismaService } from '../../../infrastructure/database/prisma.service';
+import { PrismaService } from '../../../infrastructure/database/prisma/prisma.service';
 
 describe('ListAllSalasUseCase', () => {
   let useCase: ListAllSalasUseCase;
-  let prisma: PrismaService;
 
   const mockPrisma = {
     salas: {
@@ -24,7 +23,6 @@ describe('ListAllSalasUseCase', () => {
     }).compile();
 
     useCase = module.get<ListAllSalasUseCase>(ListAllSalasUseCase);
-    prisma = module.get<PrismaService>(PrismaService);
   });
 
   it('should list all salas', async () => {

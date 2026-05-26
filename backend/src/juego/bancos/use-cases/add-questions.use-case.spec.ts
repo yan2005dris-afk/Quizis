@@ -1,11 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { AddQuestionsUseCase } from './add-questions.use-case';
-import { PrismaService } from '../../../infrastructure/database/prisma.service';
+import { PrismaService } from '../../../infrastructure/database/prisma/prisma.service';
 import { BadRequestException } from '@nestjs/common';
 
 describe('AddQuestionsUseCase', () => {
   let useCase: AddQuestionsUseCase;
-  let prisma: PrismaService;
 
   const mockPrisma = {
     $transaction: jest.fn((promises) => Promise.all(promises)),
@@ -26,7 +25,6 @@ describe('AddQuestionsUseCase', () => {
     }).compile();
 
     useCase = module.get<AddQuestionsUseCase>(AddQuestionsUseCase);
-    prisma = module.get<PrismaService>(PrismaService);
   });
 
   it('should add valid questions', async () => {

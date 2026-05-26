@@ -1,11 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { GetBancoUseCase } from './get-banco.use-case';
-import { PrismaService } from '../../../infrastructure/database/prisma.service';
+import { PrismaService } from '../../../infrastructure/database/prisma/prisma.service';
 import { NotFoundException } from '@nestjs/common';
 
 describe('GetBancoUseCase', () => {
   let useCase: GetBancoUseCase;
-  let prisma: PrismaService;
 
   const mockPrisma = {
     bancoPreguntas: {
@@ -25,7 +24,6 @@ describe('GetBancoUseCase', () => {
     }).compile();
 
     useCase = module.get<GetBancoUseCase>(GetBancoUseCase);
-    prisma = module.get<PrismaService>(PrismaService);
   });
 
   it('should return a banco if found', async () => {

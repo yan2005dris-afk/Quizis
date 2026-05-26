@@ -3,6 +3,9 @@ import { WebsocketsService } from './websockets.service';
 import { JoinRoomUseCase } from './use-cases/join-room.use-case';
 import { HandleDisconnectUseCase } from './use-cases/handle-disconnect.use-case';
 import { ProcessAudienceVoteUseCase } from './use-cases/process-audience-vote.use-case';
+import { ReleaseQuestionUseCase } from './use-cases/release-question.use-case';
+import { SubmitAnswerUseCase } from './use-cases/submit-answer.use-case';
+import { ToggleRoomEnabledUseCase } from './use-cases/toggle-room-enabled.use-case';
 
 describe('WebsocketsService', () => {
   let service: WebsocketsService;
@@ -19,6 +22,9 @@ describe('WebsocketsService', () => {
         { provide: JoinRoomUseCase, useValue: mockUseCase },
         { provide: HandleDisconnectUseCase, useValue: mockUseCase },
         { provide: ProcessAudienceVoteUseCase, useValue: mockUseCase },
+        { provide: ReleaseQuestionUseCase, useValue: mockUseCase },
+        { provide: SubmitAnswerUseCase, useValue: mockUseCase },
+        { provide: ToggleRoomEnabledUseCase, useValue: mockUseCase },
       ],
     }).compile();
 

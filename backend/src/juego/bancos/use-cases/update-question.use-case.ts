@@ -1,5 +1,5 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
-import { PrismaService } from '../../../infrastructure/database/prisma.service';
+import { PrismaService } from '../../../infrastructure/database/prisma/prisma.service';
 import { UpdatePreguntaDto } from '../dto/update-pregunta.dto';
 
 @Injectable()
@@ -21,15 +21,7 @@ export class UpdateQuestionUseCase {
       );
     }
 
-    const {
-      opciones,
-      preguntaId: _pId,
-      bancoId: _bId,
-      createdAt: _cAt,
-      updatedAt: _uAt,
-      deletedAt: _dAt,
-      ...datosPregunta
-    } = dto;
+    const { opciones, ...datosPregunta } = dto;
 
     return this.prisma.$transaction(async (tx) => {
       await tx.preguntas.update({

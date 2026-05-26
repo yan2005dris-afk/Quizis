@@ -14,11 +14,11 @@ describe('ParticipantsIndexComponent', () => {
     fixture = TestBed.createComponent(ParticipantsIndexComponent);
   });
 
-  it('should render a list of participants with scores', () => {
+  it('should render a list of participants with their visible roles', () => {
     const participantes: Participante[] = [
-      { id: '1', nombre: 'Alice', puntaje: 100 },
-      { id: '2', nombre: 'Bob', puntaje: 85 },
-      { id: '3', nombre: 'Charlie', puntaje: 72 },
+      { id: '1', nombre: 'Alice', puntaje: 100, rol: 'estudiante' },
+      { id: '2', nombre: 'Bob', puntaje: 85, rol: 'observador' },
+      { id: '3', nombre: 'Charlie', puntaje: 72, rol: 'admin' },
     ];
     fixture.componentRef.setInput('participantes', participantes);
     fixture.detectChanges();
@@ -26,9 +26,11 @@ describe('ParticipantsIndexComponent', () => {
     const items = fixture.nativeElement.querySelectorAll('[data-testid="participant-item"]');
     expect(items).toHaveLength(3);
     expect(items[0].textContent).toContain('Alice');
-    expect(items[0].textContent).toContain('100');
+    expect(items[0].textContent).toContain('Estudiante');
     expect(items[1].textContent).toContain('Bob');
-    expect(items[1].textContent).toContain('85');
+    expect(items[1].textContent).toContain('Observador');
+    expect(items[2].textContent).toContain('Charlie');
+    expect(items[2].textContent).toContain('Admin');
   });
 
   it('should show empty state when there are no participants', () => {
@@ -36,6 +38,6 @@ describe('ParticipantsIndexComponent', () => {
     fixture.detectChanges();
 
     const el = fixture.nativeElement as HTMLElement;
-    expect(el.textContent).toContain('No hay participantes');
+    expect(el.textContent).toContain('Nadie conectado aún');
   });
 });

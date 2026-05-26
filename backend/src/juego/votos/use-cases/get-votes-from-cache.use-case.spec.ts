@@ -1,10 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { GetVotesFromCacheUseCase } from './get-votes-from-cache.use-case';
-import { CacheService } from '../../../infrastructure/cache/cache.service';
+import { VotesCacheUseCase } from '../../../infrastructure/cache/use-cases/votes-cache.use-case';
 
 describe('GetVotesFromCacheUseCase', () => {
   let useCase: GetVotesFromCacheUseCase;
-  let cache: CacheService;
+  let cache: VotesCacheUseCase;
 
   const mockCache = {
     getVotes: jest.fn(),
@@ -14,12 +14,12 @@ describe('GetVotesFromCacheUseCase', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         GetVotesFromCacheUseCase,
-        { provide: CacheService, useValue: mockCache },
+        { provide: VotesCacheUseCase, useValue: mockCache },
       ],
     }).compile();
 
     useCase = module.get<GetVotesFromCacheUseCase>(GetVotesFromCacheUseCase);
-    cache = module.get<CacheService>(CacheService);
+    cache = module.get<VotesCacheUseCase>(VotesCacheUseCase);
   });
 
   it('should call cacheService.getVotes', async () => {
