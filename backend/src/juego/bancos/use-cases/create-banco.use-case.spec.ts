@@ -1,11 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { CreateBancoUseCase } from './create-banco.use-case';
-import { PrismaService } from '../../../infrastructure/database/prisma.service';
+import { PrismaService } from '../../../infrastructure/database/prisma/prisma.service';
 import { BadRequestException } from '@nestjs/common';
 
 describe('CreateBancoUseCase', () => {
   let useCase: CreateBancoUseCase;
-  let prisma: PrismaService;
 
   const mockPrisma = {
     $transaction: jest.fn((cb) => cb(mockPrisma)),
@@ -29,7 +28,6 @@ describe('CreateBancoUseCase', () => {
     }).compile();
 
     useCase = module.get<CreateBancoUseCase>(CreateBancoUseCase);
-    prisma = module.get<PrismaService>(PrismaService);
   });
 
   afterEach(() => {

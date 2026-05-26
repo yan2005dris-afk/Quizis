@@ -1,11 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { UpdateQuestionUseCase } from './update-question.use-case';
-import { PrismaService } from '../../../infrastructure/database/prisma.service';
+import { PrismaService } from '../../../infrastructure/database/prisma/prisma.service';
 import { NotFoundException } from '@nestjs/common';
 
 describe('UpdateQuestionUseCase', () => {
   let useCase: UpdateQuestionUseCase;
-  let prisma: PrismaService;
 
   const mockPrisma = {
     $transaction: jest.fn((cb) => cb(mockPrisma)),
@@ -34,7 +33,6 @@ describe('UpdateQuestionUseCase', () => {
     }).compile();
 
     useCase = module.get<UpdateQuestionUseCase>(UpdateQuestionUseCase);
-    prisma = module.get<PrismaService>(PrismaService);
   });
 
   it('should update question and options', async () => {

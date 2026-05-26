@@ -1,10 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { GetAllBancosUseCase } from './get-all-bancos.use-case';
-import { PrismaService } from '../../../infrastructure/database/prisma.service';
+import { PrismaService } from '../../../infrastructure/database/prisma/prisma.service';
 
 describe('GetAllBancosUseCase', () => {
   let useCase: GetAllBancosUseCase;
-  let prisma: PrismaService;
 
   const mockPrisma = {
     bancoPreguntas: {
@@ -24,7 +23,6 @@ describe('GetAllBancosUseCase', () => {
     }).compile();
 
     useCase = module.get<GetAllBancosUseCase>(GetAllBancosUseCase);
-    prisma = module.get<PrismaService>(PrismaService);
   });
 
   it('should return all bancos', async () => {

@@ -1,12 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { PersistVotesUseCase } from './persist-votes.use-case';
-import { PrismaService } from '../../../infrastructure/database/prisma.service';
-import { CacheService } from '../../../infrastructure/cache/cache.service';
+import { PrismaService } from '../../../infrastructure/database/prisma/prisma.service';
+import { VotesCacheUseCase } from '../../../infrastructure/cache/use-cases/votes-cache.use-case';
 
 describe('PersistVotesUseCase', () => {
   let useCase: PersistVotesUseCase;
-  let prisma: PrismaService;
-  let cache: CacheService;
 
   const mockPrisma = {
     votosPublico: {
@@ -25,13 +23,11 @@ describe('PersistVotesUseCase', () => {
       providers: [
         PersistVotesUseCase,
         { provide: PrismaService, useValue: mockPrisma },
-        { provide: CacheService, useValue: mockCache },
+        { provide: VotesCacheUseCase, useValue: mockCache },
       ],
     }).compile();
 
     useCase = module.get<PersistVotesUseCase>(PersistVotesUseCase);
-    prisma = module.get<PrismaService>(PrismaService);
-    cache = module.get<CacheService>(CacheService);
   });
 
   afterEach(() => {

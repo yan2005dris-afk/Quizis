@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateRoleDto } from './dto/create-role.dto';
 import { UpdateRoleDto } from './dto/update-role.dto';
-import { PrismaService } from 'src/infrastructure/database/prisma.service';
+import { PrismaService } from 'src/infrastructure/database/prisma/prisma.service';
 import { CreateRoleUseCase } from './use-cases/create-role.use-case';
 import { AssignPermissionToRoleUseCase } from './use-cases/assign-permission-to-role.use-case';
 import { RemovePermissionFromRoleUseCase } from './use-cases/remove-permission-from-role.use-case';

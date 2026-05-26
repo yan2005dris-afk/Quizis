@@ -15,6 +15,7 @@ export interface Participante {
   id: string;
   nombre: string;
   puntaje: number;
+  rol: 'admin' | 'estudiante' | 'observador';
 }
 
 export interface RondaInfo {

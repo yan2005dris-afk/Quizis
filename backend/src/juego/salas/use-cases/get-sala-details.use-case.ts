@@ -1,20 +1,35 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
-import { PrismaService } from '../../../infrastructure/database/prisma.service';
-import { CacheService } from '../../../infrastructure/cache/cache.service';
+import { PrismaService } from '../../../infrastructure/database/prisma/prisma.service';
+import { ParticipantsCacheUseCase } from '../../../infrastructure/cache/use-cases/participants-cache.use-case';
+import { RoomStateCacheUseCase } from '../../../infrastructure/cache/use-cases/room-state-cache.use-case';
 
+/**
+ * Caso de uso: Obtener los detalles completos de una sala de juego.
+ *
+ * Provee una visión unificada tanto para administración como para gameplay,
+ * incluyendo participantes, rondas activas, historial y comodines.
+ */
 @Injectable()
-export class GetSalaDetailUseCase {
-  private readonly logger = new Logger(GetSalaDetailUseCase.name);
+export class GetSalaDetailsUseCase {
+  private readonly logger = new Logger(GetSalaDetailsUseCase.name);
 
   constructor(
     private readonly prisma: PrismaService,
-    private readonly cacheService: CacheService,
+    private readonly cacheService: ParticipantsCacheUseCase,
+    private readonly roomStateCache: RoomStateCacheUseCase,
   ) {}
 
+  /**
+   * Ejecuta la consulta para obtener los detalles de la sala.
+   * @param idOrToken - ID (number) o Token (string) de la sala.
+   * @throws NotFoundException si la sala no existe o está borrada.
+   */
   async execute(idOrToken: number | string) {
-    this.logger.log(`Obteniendo detalle de sala: ${idOrToken}`);
+    this.logger.log(`Obteniendo detalles de sala: ${idOrToken}`);
+
     const isToken = typeof idOrToken === 'string' && isNaN(Number(idOrToken));
 
+    // 1. Buscar la sala con todas sus relaciones necesarias
     const sala = await this.prisma.salas.findUnique({
       where: isToken
         ? { tokenCompartido: idOrToken as string }
@@ -26,6 +41,11 @@ export class GetSalaDetailUseCase {
             participanteId: true,
             nickname: true,
             rol: true,
+          },
+        },
+        comodines: {
+          include: {
+            comodin: true,
           },
         },
         rondas: {
@@ -49,6 +69,7 @@ export class GetSalaDetailUseCase {
       );
     }
 
+    // 2. Procesar historial de preguntas si hay ronda activa
     let historialPreguntas: any[] = [];
     if (sala.rondas.length > 0) {
       const ronda = sala.rondas[0];
@@ -91,24 +112,45 @@ export class GetSalaDetailUseCase {
         .filter((p) => p !== null);
     }
 
+    // 3. Estado real desde Redis (sobrescribe Postgres que puede estar desactualizado)
+    const estadoRedis = await this.roomStateCache.getRoomEstado(
+      sala.tokenCompartido,
+    );
+    const estadoActual = (estadoRedis ?? sala.estado) as string;
+
+    // 4. Obtener estado online desde Redis
     const onlineNicknames = await this.cacheService.getOnlineParticipants(
       sala.tokenCompartido,
     );
     const onlineSet = new Set(onlineNicknames);
 
+    // 4. Mapear respuesta final
     return {
       salaId: sala.salaId,
+      adminId: sala.adminId,
+      bancoId: sala.bancoId,
       nombre: sala.nombre,
-      estado: sala.estado,
+      estado: estadoActual,
       limitePreguntas: sala.limitePreguntas,
       tokenCompartido: sala.tokenCompartido,
-      creadoEn: sala.createdAt.toISOString(),
+      totalParticipantes: sala.participantes.length,
+      createdAt: sala.createdAt,
+
       participantes: sala.participantes.map((p) => ({
         participanteId: p.participanteId,
         nickname: p.nickname,
         rol: p.rol,
         isOnline: onlineSet.has(p.nickname),
       })),
+
+      comodines: sala.comodines.map((sc) => ({
+        comodinId: sc.comodin.comodinId,
+        nombre: sc.comodin.nombre,
+        descripcion: sc.comodin.descripcion,
+        icono: sc.comodin.icono,
+        activo: sc.activo,
+      })),
+
       rondaActiva:
         sala.rondas.length > 0
           ? {

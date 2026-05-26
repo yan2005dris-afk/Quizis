@@ -338,8 +338,7 @@ export class BankDetailComponent {
         this.isEditing.set(false);
         this.refresh$.next();
       },
-      error: (err) => {
-        console.error('Error al guardar:', err);
+      error: () => {
         this.toastService.show('Error al intentar actualizar la pregunta', 'danger', 'Error');
         this.isSaving.set(false);
       },
@@ -375,7 +374,7 @@ export class BankDetailComponent {
           'Errores de parseo',
         );
       }
-    } catch (err) {
+    } catch {
       this.isParsing.set(false);
       this.parseError.set('Error al procesar el archivo. Intentá de nuevo.');
       this.toastService.show('Error al procesar el archivo.', 'danger', 'Error');

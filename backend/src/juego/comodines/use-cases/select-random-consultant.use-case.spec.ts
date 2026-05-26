@@ -1,12 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { SelectRandomConsultantUseCase } from './select-random-consultant.use-case';
-import { PrismaService } from '../../../infrastructure/database/prisma.service';
-import { CacheService } from '../../../infrastructure/cache/cache.service';
+import { PrismaService } from '../../../infrastructure/database/prisma/prisma.service';
+import { ParticipantsCacheUseCase } from '../../../infrastructure/cache/use-cases/participants-cache.use-case';
 
 describe('SelectRandomConsultantUseCase', () => {
   let useCase: SelectRandomConsultantUseCase;
-  let prisma: PrismaService;
-  let cacheService: CacheService;
 
   const mockPrismaService = {
     rondas: {
@@ -26,15 +24,13 @@ describe('SelectRandomConsultantUseCase', () => {
       providers: [
         SelectRandomConsultantUseCase,
         { provide: PrismaService, useValue: mockPrismaService },
-        { provide: CacheService, useValue: mockCacheService },
+        { provide: ParticipantsCacheUseCase, useValue: mockCacheService },
       ],
     }).compile();
 
     useCase = module.get<SelectRandomConsultantUseCase>(
       SelectRandomConsultantUseCase,
     );
-    prisma = module.get<PrismaService>(PrismaService);
-    cacheService = module.get<CacheService>(CacheService);
   });
 
   it('should be defined', () => {

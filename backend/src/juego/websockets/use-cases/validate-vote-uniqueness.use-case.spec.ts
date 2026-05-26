@@ -1,18 +1,18 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ValidateVoteUniquenessUseCase } from './validate-vote-uniqueness.use-case';
-import { CacheService } from '../../../infrastructure/cache/cache.service';
 import { ConfigService } from '@nestjs/config';
+import { ParticipantsCacheUseCase } from '../../../infrastructure/cache/use-cases/participants-cache.use-case';
 
 describe('ValidateVoteUniquenessUseCase', () => {
   let useCase: ValidateVoteUniquenessUseCase;
-  let cacheService: CacheService;
+  let cacheService: ParticipantsCacheUseCase;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         ValidateVoteUniquenessUseCase,
         {
-          provide: CacheService,
+          provide: ParticipantsCacheUseCase,
           useValue: {
             checkAndSetDuplicate: jest.fn(),
           },
@@ -29,7 +29,9 @@ describe('ValidateVoteUniquenessUseCase', () => {
     useCase = module.get<ValidateVoteUniquenessUseCase>(
       ValidateVoteUniquenessUseCase,
     );
-    cacheService = module.get<CacheService>(CacheService);
+    cacheService = module.get<ParticipantsCacheUseCase>(
+      ParticipantsCacheUseCase,
+    );
   });
 
   it('debería retornar true si el voto es nuevo (no duplicado)', async () => {
