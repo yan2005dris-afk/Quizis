@@ -58,10 +58,15 @@ export class GameSocketService {
   readonly infoRonda = signal<RondaInfo | null>(null);
   readonly rondaReiniciada = signal<any | null>(null);
 
+  // Separado para poder mockearlo en tests sin depender de vi.mock
+  protected createSocketConnection(url: string, token: string): Socket {
+    return io(url, { auth: { token } });
+  }
+
   // Abre la conexión al servidor WebSocket y registra los listeners de cada evento del juego
   conectar(url: string, token: string): void {
     this.desconectar();
-    this.socket = io(url, { auth: { token } });
+    this.socket = this.createSocketConnection(url, token);
 
     // Actualiza el estado de conexión según el ciclo de vida del socket
     this.socket.on('connect', () => this.conectado.set(true));
