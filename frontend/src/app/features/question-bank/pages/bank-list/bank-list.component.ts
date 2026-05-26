@@ -5,8 +5,6 @@ import { FormsModule } from '@angular/forms';
 import { LucideAngularModule, Plus, Database } from 'lucide-angular';
 import { BancosService } from '../../../../core/services/bancos.service';
 import { ButtonComponent, AlertComponent } from '../../../../shared/ui';
-import * as XLSX from 'xlsx';
-import Papa from 'papaparse';
 
 @Component({
   selector: 'app-bank-list',
@@ -31,7 +29,7 @@ export class BankListComponent {
   // ── Template download ─────────────────────────────
   readonly templateFormat = signal<'json' | 'csv' | 'xlsx'>('json');
 
-  downloadTemplate() {
+  async downloadTemplate() {
     const format = this.templateFormat();
 
     switch (format) {
@@ -39,10 +37,10 @@ export class BankListComponent {
         this.downloadJsonTemplate();
         break;
       case 'csv':
-        this.downloadCsvTemplate();
+        await this.downloadCsvTemplate();
         break;
       case 'xlsx':
-        this.downloadXlsxTemplate();
+        await this.downloadXlsxTemplate();
         break;
     }
   }
@@ -66,38 +64,54 @@ export class BankListComponent {
   }
 
   private downloadJsonTemplate() {
-    const data = this.getTemplateData();
+    const data = [
+      {
+        texto: '¿Cuál es una ventaja de definir responsables dentro del plan de calidad?',
+        opciones: [
+          { texto: 'Reemplazar las métricas.', esCorrecta: false },
+          { texto: 'Evitar ambigüedad sobre quién realiza seguimiento o verificación.', esCorrecta: true },
+          { texto: 'Hacer el documento más largo sin utilidad.', esCorrecta: false },
+          { texto: 'Quitar autonomía a todo el equipo.', esCorrecta: false },
+        ],
+        categoria: 'Plan de calidad',
+        feedbackCorrecto: '',
+        feedbackIncorrecto:
+          'La respuesta correcta es: Evitar ambigüedad sobre quién realiza seguimiento…',
+      },
+    ];
     const jsonString = `data:text/json;charset=utf-8,${encodeURIComponent(
       JSON.stringify(data, null, 2),
     )}`;
     this.triggerDownload(jsonString, 'plantilla_carga_masiva.json');
   }
 
-  private downloadCsvTemplate() {
+  private async downloadCsvTemplate() {
+    const { default: Papa } = await import('papaparse');
     const data = this.getTemplateData();
     const csv = Papa.unparse(data, { header: true });
     const bom = '\uFEFF';
     const blob = new Blob([bom + csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     this.triggerDownload(url, 'plantilla_carga_masiva.csv');
-    URL.revokeObjectURL(url);
+    setTimeout(() => URL.revokeObjectURL(url), 0);
   }
 
-  private downloadXlsxTemplate() {
+  private async downloadXlsxTemplate() {
+    const XLSX = await import('xlsx');
     const data = this.getTemplateData();
     const ws = XLSX.utils.json_to_sheet(data);
 
     ws['!cols'] = [
-      { wch: 18 }, // categoria
-      { wch: 55 }, // pregunta
-      { wch: 6 }, // respuesta_correcta
-      { wch: 50 }, // feedback_incorrecto
-      { wch: 40 }, // feedback_correcto
-      { wch: 30 }, // opcion_a
-      { wch: 50 }, // opcion_b
-      { wch: 35 }, // opcion_c
-      { wch: 30 }, // opcion_d
-      { wch: 20 }, // opcion_e
+      { wch: 18 },
+      { wch: 55 },
+      { wch: 6 },
+      { wch: 50 },
+      { wch: 40 },
+      { wch: 30 },
+      { wch: 50 },
+      { wch: 35 },
+      { wch: 30 },
+      { wch: 20 },
     ];
 
     const wb = XLSX.utils.book_new();
