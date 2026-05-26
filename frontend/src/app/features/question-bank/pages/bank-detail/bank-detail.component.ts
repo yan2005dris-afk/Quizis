@@ -62,6 +62,7 @@ export class BankDetailComponent {
   readonly parseError = signal('');
   readonly currentPage = signal(0);
   readonly isImporting = signal(false);
+  readonly isCreatingQuestion = signal(false);
 
   readonly totalPages = computed(() => {
     const total = this.parseResult()?.total ?? 0;
@@ -280,16 +281,16 @@ export class BankDetailComponent {
     const banco = this.banco();
     if (!banco) return;
 
-    this.isImporting.set(true);
+    this.isCreatingQuestion.set(true);
     this.bancosService.crearPreguntas(banco.bancoId, this.pendingPreguntas()).subscribe({
       next: () => {
-        this.isImporting.set(false);
+        this.isCreatingQuestion.set(false);
         this.pendingPreguntas.set([]);
         this.refresh$.next();
         this.toastService.show('Pregunta agregada', 'success', '¡Éxito!');
       },
       error: () => {
-        this.isImporting.set(false);
+        this.isCreatingQuestion.set(false);
         this.toastService.show('Error al agregar pregunta', 'danger', 'Error');
       },
     });

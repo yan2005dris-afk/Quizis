@@ -76,6 +76,18 @@ export const seedPermissions = async (prisma: PrismaClient, roles: any[]) => {
       recurso: 'bancos',
       accion: 'create',
     },
+    {
+      nombre: 'Actualizar Banco',
+      descripcion: 'Permite editar la información de un banco de preguntas',
+      recurso: 'bancos',
+      accion: 'update',
+    },
+    {
+      nombre: 'Eliminar Banco',
+      descripcion: 'Permite borrar un banco de preguntas',
+      recurso: 'bancos',
+      accion: 'delete',
+    },
   ];
 
   console.log(`🔑 Procesando ${permisosList.length} permisos para el rol ADMIN...`);
