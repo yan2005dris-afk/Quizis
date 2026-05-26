@@ -126,7 +126,7 @@ export class QuizGateway implements OnGatewayConnection, OnGatewayDisconnect {
       .emit('temporizador_actualizado', payload.tiempoRestante);
   }
 
-  @SubscribeMessage('voto_recibido')
+ @SubscribeMessage('voto_recibido')
 async handleVotoRecibido(
   @MessageBody()
   payload: {
@@ -137,12 +137,7 @@ async handleVotoRecibido(
     preguntaId: number;
   },
 ) {
-  // Confirmar al usuario que su voto llegó
-  this.server
-    .to(payload.tokenCompartido)
-    .emit('voto_recibido', { userId: payload.userId });
-
-  // Leer votos actuales de la caché y emitir totales acumulados
+  // Leer votos actuales de la caché
   const votos = await this.cacheService.getVotes(
     payload.rondaId,
     payload.preguntaId,
@@ -154,10 +149,10 @@ async handleVotoRecibido(
     conteo[voto.opcionId] = (conteo[voto.opcionId] ?? 0) + 1;
   }
 
-  // Emitir con la estructura que espera el frontend
+  // Emitir distribución acumulada con estructura que espera el frontend
   this.server
     .to(payload.tokenCompartido)
-    .emit('votos_acumulados', {
+    .emit('voto_recibido', {
       A: conteo[1] ?? 0,
       B: conteo[2] ?? 0,
       C: conteo[3] ?? 0,
@@ -165,7 +160,6 @@ async handleVotoRecibido(
       total: votos.length,
     });
 }
-
   @SubscribeMessage('comodin_bloqueado')
   handleComodinBloqueado(
     @MessageBody()
