@@ -67,7 +67,16 @@ export class RestartRoundUseCase {
       where: { bancoId: sala.bancoId },
       take: sala.limitePreguntas,
       orderBy: { nivel: 'asc' },
-      include: { opciones: true },
+      select: {
+        preguntaId: true,
+        texto: true,
+        nivel: true,
+        feedbackCorrecto: true,
+        feedbackIncorrecto: true,
+        opciones: {
+          select: { opcionId: true, texto: true, esCorrecta: true },
+        },
+      },
     });
 
     if (preguntas.length === 0) {
@@ -112,10 +121,13 @@ export class RestartRoundUseCase {
       preguntaId: p.preguntaId,
       texto: p.texto,
       nivel: p.nivel,
+      feedbackCorrecto: p.feedbackCorrecto,
+      feedbackIncorrecto: p.feedbackIncorrecto,
       opciones: p.opciones.map((o, i) => ({
         opcionId: o.opcionId,
         texto: o.texto,
         letra: String.fromCharCode(65 + i),
+        esCorrecta: o.esCorrecta,
       })),
       respuestaDada: null,
     }));

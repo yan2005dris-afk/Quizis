@@ -13,5 +13,6 @@ model Participantes {
   votos           VotosPublico[]
 
   @@unique([salaId, nickname])
+  @@index([salaId, deletedAt, rol])
   @@map("participantes")
 }

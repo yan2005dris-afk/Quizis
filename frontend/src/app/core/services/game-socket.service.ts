@@ -40,6 +40,11 @@ export class GameSocketService {
   // Instancia de la conexión WebSocket; null hasta que se llame a conectar()
   private socket: Socket | null = null;
 
+  // ——— RAF batching para votos del público ———
+  // Evita sobrecargar el main thread cuando llegan muchos voto_recibido por segundo
+  private _votosPublicoPending: VotosPublico | null = null;
+  private _votosPublicoRafId: number | null = null;
+
   // Estado reactivo del juego — cualquier componente que los lea se actualiza automáticamente al cambiar
   readonly preguntaActiva = signal<Pregunta | null>(null);
   readonly tiempoRestante = signal<number | null>(null);
@@ -75,6 +80,7 @@ export class GameSocketService {
     // Al llegar una nueva pregunta, la almacena y limpia los votos/resultados anteriores
     this.socket.on('pregunta_liberada', (data: Pregunta) => {
       this.preguntaActiva.set(data);
+      this._cancelPendingVoto(); // No aplicar votos viejos después de liberar
       this.votosPublico.set(null);
       this.ultimoResultado.set(null);
     });
@@ -84,9 +90,18 @@ export class GameSocketService {
       this.tiempoRestante.set(data);
     });
 
-    // Actualiza los votos del público en tiempo real
+    // Actualiza los votos del público en tiempo real (batchteado por RAF)
     this.socket.on('voto_recibido', (data: VotosPublico) => {
-      this.votosPublico.set(data);
+      this._votosPublicoPending = data;
+      if (!this._votosPublicoRafId) {
+        this._votosPublicoRafId = requestAnimationFrame(() => {
+          this._votosPublicoRafId = null;
+          if (this._votosPublicoPending !== null) {
+            this.votosPublico.set(this._votosPublicoPending);
+            this._votosPublicoPending = null;
+          }
+        });
+      }
     });
 
     // Acumula comodines bloqueados en tiempo real
@@ -130,6 +145,7 @@ export class GameSocketService {
 
     this.socket.on('ronda_reiniciada', (data: any) => {
       console.log('[WS:ronda_reiniciada] Evento recibido', data);
+      this._cancelPendingVoto();
       this.preguntaActiva.set(null);
       this.ultimoResultado.set(null);
       this.tiempoRestante.set(null);
@@ -148,6 +164,15 @@ export class GameSocketService {
         this.comodinBloqueado(),
       );
     });
+  }
+
+  // Cancela un RAF pendiente de votos — llamado antes de resetear el estado
+  private _cancelPendingVoto(): void {
+    if (this._votosPublicoRafId !== null) {
+      cancelAnimationFrame(this._votosPublicoRafId);
+      this._votosPublicoRafId = null;
+    }
+    this._votosPublicoPending = null;
   }
 
   // Permite inicializar el estado desde datos HTTP
@@ -238,7 +263,13 @@ export class GameSocketService {
 
   // Cierra la conexión limpiamente
   desconectar(): void {
-    this.socket?.disconnect();
+    this._cancelPendingVoto();
+    if (this.socket) {
+      if (typeof this.socket.removeAllListeners === 'function') {
+        this.socket.removeAllListeners();
+      }
+      this.socket.disconnect();
+    }
     this.socket = null;
     this.conectado.set(false);
     this.rondaReiniciada.set(null);

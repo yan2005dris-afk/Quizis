@@ -1,83 +1,73 @@
 <div class="active-question-container">
   @if (preguntaMostrada(); as p) {
-    <div class="active-question">
-      <div class="active-question__header">
-        <div class="active-question__status-group">
-          <p class="active-question__status">
-            {{ statusText() }}
-          </p>
+    <div class="observer-card">
+      <div class="observer-card__header">
+        <p class="observer-card__status"><span class="status-dot"></span> {{ statusText() }}</p>
 
-          <!-- Temporizador visual -->
-          @if (tiempoRestante(); as t) {
-            <div class="active-question__timer" [class.active-question__timer--low]="t <= 5">
-              ⏱️ {{ t }}s
-            </div>
-          }
-        </div>
+        <!-- Temporizador visual -->
+        @if (tiempoRestante(); as t) {
+          <div class="observer-card__timer" [class.observer-card__timer--low]="t <= 5">
+            ⏱️ {{ t }}s
+          </div>
+        }
 
-        <div class="active-question__pagination">
+        <div class="observer-card__pagination">
           <button
-            class="active-question__nav-btn"
+            class="pagination-btn"
             [disabled]="currentIndex() === 0"
             (click)="prevQuestion()"
             title="Pregunta anterior"
           >
-            <lucide-icon [img]="PrevIcon" size="16"></lucide-icon>
+            <lucide-icon [name]="PrevIcon" size="16"></lucide-icon>
           </button>
-          <span class="active-question__page-info">
-            {{ currentIndex() + 1 }} / {{ preguntas().length }}
-          </span>
+          <span class="pagination-info"> {{ currentIndex() + 1 }} / {{ preguntas().length }} </span>
           <button
-            class="active-question__nav-btn"
+            class="pagination-btn"
             [disabled]="currentIndex() === preguntas().length - 1"
             (click)="nextQuestion()"
             title="Siguiente pregunta"
           >
-            <lucide-icon [img]="NextIcon" size="16"></lucide-icon>
+            <lucide-icon [name]="NextIcon" size="16"></lucide-icon>
           </button>
         </div>
       </div>
 
-      <h2 class="active-question__text">{{ p.texto }}</h2>
+      <h2 class="observer-card__question-text">{{ p.texto }}</h2>
 
-      <div class="active-question__options">
+      <div class="observer-card__options-grid">
         @for (opcion of opciones(); track opcion.id) {
           <div
-            class="active-question__option"
-            [class.active-question__option--correct]="opcion.esCorrecta === true"
-            [class.active-question__option--incorrect]="
-              opcion.esCorrecta === false && opcion.fueElegida
+            class="option-item"
+            [class.option-item--correct]="opcion.esCorrecta === true"
+            [class.option-item--incorrect]="opcion.esCorrecta === false && opcion.fueElegida"
+            [class.option-item--selected]="opcion.fueElegida || opcion.estaPendiente"
+            [class.option-item--pre-selected]="opcion.seleccionLocal"
+            [class.option-item--clickable]="
+              interactive() && !respuestaConfirmada() && !p.respuestaDada
             "
-            [class.active-question__option--selected]="opcion.fueElegida || opcion.estaPendiente"
-            [style.cursor]="
-              interactive() && !p.respuestaDada && !localSelectedId() ? 'pointer' : 'default'
-            "
+            data-testid="option-card"
             role="button"
             tabindex="0"
             (click)="onOpcionClick(opcion.id)"
             (keyup.enter)="onOpcionClick(opcion.id)"
-            (keyup.space)="onOpcionClick(opcion.id)"
           >
-            <div class="active-question__option-top">
-              <span class="active-question__option-letra">{{ opcion.letra }}</span>
-              <span class="active-question__option-texto">{{ opcion.texto }}</span>
+            <div class="option-item__body">
+              <span class="option-item__letter">{{ opcion.letra }}</span>
+              <span class="option-item__text">{{ opcion.texto }}</span>
 
               @if (opcion.porcentaje > 0) {
-                <span class="active-question__option-pct">{{ opcion.porcentaje }}%</span>
+                <span class="option-item__percentage">{{ opcion.porcentaje }}%</span>
               }
             </div>
 
             @if (opcion.porcentaje > 0) {
-              <div class="active-question__option-bar-track">
-                <div
-                  class="active-question__option-bar-fill"
-                  [style.width.%]="opcion.porcentaje"
-                ></div>
+              <div class="option-item__progress-track">
+                <div class="option-item__progress-fill" [style.width.%]="opcion.porcentaje"></div>
               </div>
             }
 
             @if (opcion.fueElegida || opcion.estaPendiente) {
-              <span class="active-question__choice-label">
+              <span class="option-item__badge">
                 @if (opcion.estaPendiente) {
                   Enviando respuesta...
                 } @else {
@@ -89,65 +79,104 @@
         }
       </div>
 
-      <!-- Resultados del Público (Shared Component) -->
-      @if (comodinPublicoActivo()) {
-        <div class="active-question__audience-results">
-          <p class="active-question__wildcards-label">RESULTADOS DEL PÚBLICO</p>
-          <app-audience-bars [votos]="votosPublico()" />
+      <!-- Botón Confirmar (solo en modo interactivo, después de seleccionar) -->
+      @if (interactive() && localSelectedId() && !respuestaConfirmada()) {
+        <div class="confirm-bar">
+          <button class="confirm-btn" (click)="confirmar()">Confirmar respuesta</button>
         </div>
       }
+    </div>
 
-      <!-- Sugerencia IA -->
-      @if (iaSugerencia(); as sug) {
-        <div class="active-question__ia-box" role="alert">
-          <div class="active-question__ia-header">
-            <lucide-icon [img]="IaIcon" size="16"></lucide-icon>
-            <span>Sugerencia de la IA</span>
+    <!-- Feedback después de responder -->
+    @if (showFeedback(); as visible) {
+      @if (feedbackData(); as fb) {
+        <div
+          class="feedback-card"
+          [class.feedback-card--correct]="fb.esCorrecta"
+          [class.feedback-card--incorrect]="!fb.esCorrecta"
+        >
+          <div class="feedback-card__icon">
+            {{ fb.esCorrecta ? '✅' : '❌' }}
           </div>
-          <p class="active-question__ia-content">
-            La IA sugiere la opción <strong>{{ sug.literal }}</strong
-            >.
-          </p>
-          <p class="active-question__ia-explanation">{{ sug.explicacion }}</p>
+          <div class="feedback-card__body">
+            <p class="feedback-card__title">
+              {{ fb.esCorrecta ? '¡Respuesta Correcta!' : 'Respuesta Incorrecta' }}
+            </p>
+            @if (fb.feedback) {
+              <p class="feedback-card__text">{{ fb.feedback }}</p>
+            }
+          </div>
         </div>
       }
+    }
 
-      <div class="active-question__wildcards">
-        <p class="active-question__wildcards-label">COMODINES EN ESTA RONDA</p>
+    <!-- Resultados del Público -->
+    @if (comodinPublicoActivo()) {
+      <div class="observer-audience-results">
+        <p class="observer-audience-results__title">RESULTADOS DEL PÚBLICO</p>
+        <app-audience-bars [votos]="gameSocket.votosPublico()" />
+      </div>
+    }
 
-        <div class="active-question__wildcards-list">
-          @for (comodin of comodines(); track comodin.nombre) {
-            <div class="active-question__wildcard-item">
-              <app-button
-                [variant]="comodin.nombre === 'IA' ? 'ai' : 'secondary'"
-                size="sm"
-                [disabled]="!comodin.activo || isComodinUsado(comodin)"
-                [loading]="comodin.nombre === 'IA' && cargandoIa()"
-                (clicked)="onComodinClick(comodin)"
-                [title]="comodin.descripcion + ' · ' + getComodinEstadoTexto(comodin)"
-              >
-                <span class="active-question__wildcard-icon">{{ comodin.icono }}</span>
-                <span>{{ comodin.nombre | titlecase }}</span>
-              </app-button>
-              <span
-                class="active-question__wildcard-state"
-                [class.active-question__wildcard-state--used]="isComodinUsado(comodin)"
-                [class.active-question__wildcard-state--disabled]="!comodin.activo"
-              >
-                {{ getComodinEstadoTexto(comodin) }}
-              </span>
-            </div>
-          } @empty {
-            <p class="active-question__status">No hay comodines configurados.</p>
-          }
+    <!-- Sugerencia IA -->
+    @if (iaSugerencia(); as sug) {
+      <div class="observer-ia-box" role="alert">
+        <div class="observer-ia-box__header">
+          <lucide-icon [name]="IaIcon" size="16"></lucide-icon>
+          <span>Sugerencia de la IA</span>
         </div>
+        <p class="observer-ia-box__content">
+          La IA sugiere la opción <strong>{{ sug.literal }}</strong
+          >.
+        </p>
+        <p class="observer-ia-box__explanation">{{ sug.explicacion }}</p>
+      </div>
+    }
+
+    <!-- Panel de Comodines -->
+    <div class="observer-wildcards-panel">
+      <p class="wildcards-title">COMODINES EN ESTA RONDA</p>
+
+      <div class="wildcards-grid">
+        @for (comodin of comodines(); track comodin.nombre) {
+          <div
+            class="wildcard-node"
+            [class.wildcard-node--active]="comodin.nombre === 'PUBLICO' && comodinPublicoActivo()"
+            [class.wildcard-node--disabled]="!comodin.activo || isComodinUsado(comodin)"
+            [class.wildcard-node--clickable]="
+              interactive() && comodin.activo && !isComodinUsado(comodin)
+            "
+            [title]="comodin.descripcion + ' · ' + getComodinEstadoTexto(comodin)"
+            role="button"
+            tabindex="0"
+            (click)="onComodinClick(comodin)"
+            (keyup.enter)="onComodinClick(comodin)"
+          >
+            <div class="wildcard-node__icon">
+              @if (comodin.nombre === 'IA' && cargandoIa()) {
+                <lucide-icon [name]="LoaderIcon" size="20" class="observer-spin"></lucide-icon>
+              } @else {
+                <span>{{ comodin.icono }}</span>
+              }
+            </div>
+            <span class="wildcard-node__label">{{ comodin.nombre | titlecase }}</span>
+            <span
+              class="wildcard-node__state"
+              [class.wildcard-node__state--used]="isComodinUsado(comodin)"
+              [class.wildcard-node__state--disabled]="!comodin.activo"
+            >
+              {{ getComodinEstadoTexto(comodin) }}
+            </span>
+          </div>
+        } @empty {
+          <p class="wildcards-empty">No hay comodines configurados en esta sesión.</p>
+        }
       </div>
     </div>
   } @else {
-    <div class="active-question">
-      <div class="active-question__header">
-        <p class="active-question__status">Sincronizando con el servidor...</p>
-      </div>
+    <div class="observer-empty-state">
+      <div class="spinner"></div>
+      <p>Sincronizando con el servidor...</p>
     </div>
   }
 </div>
