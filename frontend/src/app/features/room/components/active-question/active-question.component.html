@@ -38,11 +38,12 @@
         @for (opcion of opciones(); track opcion.id) {
           <div
             class="option-item"
-
             [class.option-item--selected]="opcion.fueElegida || opcion.estaPendiente"
             [class.option-item--correct]="opcion.esCorrecta === true"
             [class.option-item--incorrect]="opcion.esCorrecta === false && opcion.fueElegida"
-            [class.option-item--dimmed]="preguntaMostrada()?.respuestaDada && !opcion.fueElegida && opcion.esCorrecta !== true"
+            [class.option-item--dimmed]="
+              p.respuestaDada && !opcion.fueElegida && opcion.esCorrecta !== true
+            "
             [class.option-item--pre-selected]="opcion.seleccionLocal"
             [class.option-item--clickable]="
               interactive() && !respuestaConfirmada() && !p.respuestaDada

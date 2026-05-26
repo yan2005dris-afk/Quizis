@@ -68,7 +68,6 @@ export class ActiveQuestionComponent {
   protected readonly LoaderIcon = Loader2;
 
   constructor() {
-    console.log('preguntas:', this.preguntas());
     // Sincronizar el índice cuando cambia la pregunta activa en el socket
     effect(() => {
       const activeId = this.preguntaActivaId();
