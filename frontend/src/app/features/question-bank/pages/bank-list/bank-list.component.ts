@@ -11,7 +11,14 @@ import Papa from 'papaparse';
 @Component({
   selector: 'app-bank-list',
   standalone: true,
-  imports: [CommonModule, RouterLink, FormsModule, LucideAngularModule, ButtonComponent, AlertComponent],
+  imports: [
+    CommonModule,
+    RouterLink,
+    FormsModule,
+    LucideAngularModule,
+    ButtonComponent,
+    AlertComponent,
+  ],
   templateUrl: './bank-list.component.html',
   styleUrls: ['./bank-list.component.scss'],
 })
@@ -44,15 +51,13 @@ export class BankListComponent {
     return [
       {
         categoria: 'Plan de calidad',
-        pregunta:
-          '¿Cuál es una ventaja de definir responsables dentro del plan de calidad?',
+        pregunta: '¿Cuál es una ventaja de definir responsables dentro del plan de calidad?',
         respuesta_correcta: 'B',
         feedback_incorrecto:
           'La respuesta correcta es: Evitar ambigüedad sobre quién realiza seguimiento…',
         feedback_correcto: '',
         opcion_a: 'Reemplazar las métricas.',
-        opcion_b:
-          'Evitar ambigüedad sobre quién realiza seguimiento o verificación.',
+        opcion_b: 'Evitar ambigüedad sobre quién realiza seguimiento o verificación.',
         opcion_c: 'Hacer el documento más largo sin utilidad.',
         opcion_d: 'Quitar autonomía a todo el equipo.',
         opcion_e: '',
@@ -85,7 +90,7 @@ export class BankListComponent {
     ws['!cols'] = [
       { wch: 18 }, // categoria
       { wch: 55 }, // pregunta
-      { wch: 6 },  // respuesta_correcta
+      { wch: 6 }, // respuesta_correcta
       { wch: 50 }, // feedback_incorrecto
       { wch: 40 }, // feedback_correcto
       { wch: 30 }, // opcion_a

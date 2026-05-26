@@ -46,7 +46,6 @@
                 placeholder="De qué trata este banco..."
               ></textarea>
             </div>
-
           </div>
         } @else if (bancoValue) {
           <div class="bank-display">
@@ -311,12 +310,22 @@
                   [loading]="isSaving()"
                   >Guardar</app-button
                 >
-                <app-button variant="ghost" size="sm" (clicked)="addManualQuestion()" [loading]="isCreatingQuestion()">
+                <app-button
+                  variant="ghost"
+                  size="sm"
+                  (clicked)="addManualQuestion()"
+                  [loading]="isCreatingQuestion()"
+                >
                   + Nueva
                 </app-button>
               } @else {
                 <app-button variant="ghost" size="sm" (clicked)="toggleEdit()">Editar</app-button>
-                <app-button variant="ghost" size="sm" (clicked)="addManualQuestion()" [loading]="isCreatingQuestion()">
+                <app-button
+                  variant="ghost"
+                  size="sm"
+                  (clicked)="addManualQuestion()"
+                  [loading]="isCreatingQuestion()"
+                >
                   + Nueva Pregunta
                 </app-button>
               }
@@ -457,9 +466,7 @@
       @if (isEditingBank()) {
         <div class="form-actions mt-6">
           @if (!isNewBank()) {
-            <app-button variant="ghost" size="sm" (clicked)="toggleEditBank()"
-              >Cancelar</app-button
-            >
+            <app-button variant="ghost" size="sm" (clicked)="toggleEditBank()">Cancelar</app-button>
           }
           <app-button
             variant="primary"
@@ -470,7 +477,8 @@
           >
             {{
               isNewBank()
-                ? 'Guardar Banco' + (totalQuestions() > 0 ? ' (' + totalQuestions() + ' preguntas)' : '')
+                ? 'Guardar Banco' +
+                  (totalQuestions() > 0 ? ' (' + totalQuestions() + ' preguntas)' : '')
                 : 'Guardar Información'
             }}
           </app-button>
