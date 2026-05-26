@@ -1,190 +1,159 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
-import { PrismaService } from '../../infrastructure/database/prisma.service';
+import { Injectable } from '@nestjs/common';
+import { CreateSalaDto } from './dto/create-sala.dto';
+import { UpdateEstadoSalaDto } from './dto/update-estado-sala.dto';
+import { UpdateConfiguracionSalaDto } from './dto/update-configuracion-sala.dto';
+import { CreateSalaUseCase } from './use-cases/create-sala.use-case';
+import { UpdateEstadoSalaUseCase } from './use-cases/update-estado-sala.use-case';
+import { ValidateTokenSalaUseCase } from './use-cases/validate-token-sala.use-case';
+import { ListBancosDisponiblesUseCase } from './use-cases/list-bancos-disponibles.use-case';
+import { GetSalaDetailsUseCase } from './use-cases/get-sala-details.use-case';
+import { UpdateConfiguracionSalaUseCase } from './use-cases/update-configuracion-sala.use-case';
+import { ListAllSalasUseCase } from './use-cases/list-all-salas.use-case';
+import { GetSalaLifelinesUseCase } from './use-cases/get-sala-lifelines.use-case';
+import { RegenerateRoomTokenUseCase } from './use-cases/regenerate-room-token.use-case';
+import { FinalizeRoomUseCase } from './use-cases/finalize-room.use-case';
+import { JoinSalaUseCase } from './use-cases/join-sala.use-case';
+import { GetInvitacionTokenUseCase } from './use-cases/get-invitacion-token.use-case';
+import { UpdateParticipantRoleUseCase } from './use-cases/update-participant-role.use-case';
+import { GetParticipantsWithRolesUseCase } from './use-cases/get-participants-with-roles.use-case';
+import { RestartRoundUseCase } from './use-cases/restart-round.use-case';
 
+/**
+ * Servicio fachada para el módulo de Salas.
+ *
+ * Actúa como coordinador entre el controlador y los casos de uso.
+ */
 @Injectable()
 export class SalasService {
-  private readonly logger = new Logger(SalasService.name);
-
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly createSalaUseCase: CreateSalaUseCase,
+    private readonly updateEstadoSalaUseCase: UpdateEstadoSalaUseCase,
+    private readonly validateTokenSalaUseCase: ValidateTokenSalaUseCase,
+    private readonly listBancosDisponiblesUseCase: ListBancosDisponiblesUseCase,
+    private readonly getSalaDetailsUseCase: GetSalaDetailsUseCase,
+    private readonly updateConfiguracionSalaUseCase: UpdateConfiguracionSalaUseCase,
+    private readonly listAllSalasUseCase: ListAllSalasUseCase,
+    private readonly getSalaLifelinesUseCase: GetSalaLifelinesUseCase,
+    private readonly regenerateRoomTokenUseCase: RegenerateRoomTokenUseCase,
+    private readonly finalizeRoomUseCase: FinalizeRoomUseCase,
+    private readonly joinSalaUseCase: JoinSalaUseCase,
+    private readonly getInvitacionTokenUseCase: GetInvitacionTokenUseCase,
+    private readonly updateParticipantRoleUseCase: UpdateParticipantRoleUseCase,
+    private readonly getParticipantsWithRolesUseCase: GetParticipantsWithRolesUseCase,
+    private readonly restartRoundUseCase: RestartRoundUseCase,
+  ) {}
 
   /**
-   * Lista todas las salas con conteo de participantes.
-   * Ordenadas por estado (jugando primero) y luego por fecha de creación descendente.
+   * Crea una nueva sala de juego.
    */
-  async listarTodas() {
-    const salas = await this.prisma.salas.findMany({
-      where: { deletedAt: null },
-      include: {
-        _count: {
-          select: { participantes: true },
-        },
-      },
-      orderBy: [{ estado: 'asc' }, { createdAt: 'desc' }],
-    });
-
-    return salas.map((sala) => ({
-      salaId: sala.salaId,
-      nombre: sala.nombre,
-      estado: sala.estado,
-      participantes: sala._count.participantes,
-      creadoEn: sala.createdAt.toISOString(),
-    }));
+  async create(createSalaDto: CreateSalaDto, adminId: number) {
+    return this.createSalaUseCase.execute(createSalaDto, adminId);
   }
 
   /**
-   * Obtiene una sala por ID o Token Compartido, con participantes y ronda activa.
+   * Obtiene detalles de una sala por ID o Token.
    */
   async obtenerPorId(idOrToken: number | string) {
-    const isToken = typeof idOrToken === 'string' && isNaN(Number(idOrToken));
-
-    const sala = await this.prisma.salas.findUnique({
-      where: isToken
-        ? { tokenCompartido: idOrToken as string }
-        : { salaId: Number(idOrToken) },
-      include: {
-        participantes: {
-          where: { deletedAt: null },
-          select: {
-            participanteId: true,
-            nickname: true,
-            rol: true,
-            isOnline: true,
-          },
-        },
-        rondas: {
-          where: { estado: 'jugando' },
-          take: 1,
-          select: {
-            rondaId: true,
-            numeroRonda: true,
-            estado: true,
-            fechaInicio: true,
-            preguntaActualId: true,
-            preguntasAsignadas: true,
-          },
-        },
-      },
-    });
-
-    if (!sala || sala.deletedAt) {
-      throw new NotFoundException(
-        `Sala con ${isToken ? 'token' : 'ID'} ${idOrToken} no encontrada`,
-      );
-    }
-
-    // Si hay una ronda activa, traer los detalles de TODAS sus preguntas y respuestas
-    let historialPreguntas: any[] = [];
-    if (sala.rondas.length > 0) {
-      const ronda = sala.rondas[0];
-      const preguntasIds = (ronda.preguntasAsignadas as number[]) || [];
-
-      const preguntas = await this.prisma.preguntas.findMany({
-        where: { preguntaId: { in: preguntasIds } },
-        include: { opciones: true },
-      });
-
-      const respuestas = await this.prisma.respuestasRonda.findMany({
-        where: { rondaId: ronda.rondaId },
-      });
-
-      // Ordenamos las preguntas según el orden de preguntasAsignadas
-      historialPreguntas = preguntasIds
-        .map((id) => {
-          const p = preguntas.find((pre) => pre.preguntaId === id);
-          if (!p) return null;
-
-          const respuesta = respuestas.find((r) => r.preguntaId === id);
-
-          return {
-            preguntaId: p.preguntaId,
-            texto: p.texto,
-            nivel: p.nivel,
-            monto: p.monto,
-            opciones: p.opciones.map((o, index) => ({
-              opcionId: o.opcionId,
-              texto: o.texto,
-              letra: String.fromCharCode(65 + index),
-            })),
-            respuestaDada: respuesta
-              ? {
-                  opcionId: respuesta.opcionId,
-                  esCorrecta: respuesta.esCorrecta,
-                }
-              : null,
-          };
-        })
-        .filter((p) => p !== null);
-    }
-
-    return {
-      salaId: sala.salaId,
-      nombre: sala.nombre,
-      estado: sala.estado,
-      limitePreguntas: sala.limitePreguntas,
-      tokenCompartido: sala.tokenCompartido,
-      creadoEn: sala.createdAt.toISOString(),
-      participantes: sala.participantes.map((p) => ({
-        participanteId: p.participanteId,
-        nickname: p.nickname,
-        rol: p.rol,
-        isOnline: p.isOnline,
-      })),
-      rondaActiva:
-        sala.rondas.length > 0
-          ? {
-              rondaId: sala.rondas[0].rondaId,
-              numeroRonda: sala.rondas[0].numeroRonda,
-              estado: sala.rondas[0].estado,
-              fechaInicio: sala.rondas[0].fechaInicio?.toISOString() ?? null,
-              preguntaActualId: sala.rondas[0].preguntaActualId,
-              preguntaActual:
-                historialPreguntas.find(
-                  (p) => p.preguntaId === sala.rondas[0].preguntaActualId,
-                ) || null,
-              historialPreguntas,
-            }
-          : null,
-    };
+    return this.getSalaDetailsUseCase.execute(idOrToken);
   }
 
   /**
-   * Obtiene los comodines de una sala específica (por ID o Token).
+   * Alias para obtenerPorId usado por algunos controladores.
+   */
+  async findOne(id: number) {
+    return this.getSalaDetailsUseCase.execute(id);
+  }
+
+  /**
+   * Actualiza la configuración de la sala.
+   */
+  async updateConfiguracion(
+    id: number,
+    updateConfigDto: UpdateConfiguracionSalaDto,
+  ) {
+    return this.updateConfiguracionSalaUseCase.execute(id, updateConfigDto);
+  }
+
+  /**
+   * Actualiza el estado (waiting, playing, finished).
+   */
+  async updateEstado(id: number, updateEstadoSalaDto: UpdateEstadoSalaDto) {
+    return this.updateEstadoSalaUseCase.execute(id, updateEstadoSalaDto);
+  }
+
+  /**
+   * Valida un token JWT de invitación.
+   */
+  async validateToken(token: string) {
+    return this.validateTokenSalaUseCase.execute(token);
+  }
+
+  /**
+   * Registra a un nuevo participante en la sala.
+   */
+  async join(token: string, nickname: string) {
+    return this.joinSalaUseCase.execute(token, nickname);
+  }
+
+  /**
+   * Lista bancos de preguntas para el admin.
+   */
+  async listBancosDisponibles() {
+    return this.listBancosDisponiblesUseCase.execute();
+  }
+
+  /**
+   * Lista todas las salas.
+   */
+  async listarTodas() {
+    return this.listAllSalasUseCase.execute();
+  }
+
+  /**
+   * Obtiene los comodines de la sala.
    */
   async obtenerComodines(idOrToken: number | string) {
-    const isToken = typeof idOrToken === 'string' && isNaN(Number(idOrToken));
+    return this.getSalaLifelinesUseCase.execute(idOrToken);
+  }
 
-    // Si es token, primero necesitamos el ID real de la sala
-    let salaId: number;
+  /**
+   * Genera un nuevo token compartido.
+   */
+  async regenerarToken(salaId: number) {
+    return this.regenerateRoomTokenUseCase.execute(salaId);
+  }
 
-    if (isToken) {
-      const sala = await this.prisma.salas.findUnique({
-        where: { tokenCompartido: idOrToken as string },
-        select: { salaId: true },
-      });
-      if (!sala) throw new NotFoundException('Sala no encontrada');
-      salaId = sala.salaId;
-    } else {
-      salaId = Number(idOrToken);
-    }
+  /**
+   * Finaliza la sala y persiste estadísticas.
+   */
+  async finalizarSala(salaId: number) {
+    return this.finalizeRoomUseCase.execute(salaId);
+  }
 
-    const salaComodines = await this.prisma.salaComodines.findMany({
-      where: { salaId },
-      include: {
-        comodin: {
-          select: {
-            nombre: true,
-            descripcion: true,
-            icono: true,
-          },
-        },
-      },
-    });
+  async getInvitacionToken(salaId: number) {
+    return this.getInvitacionTokenUseCase.execute(salaId);
+  }
 
-    return salaComodines.map((sc) => ({
-      nombre: sc.comodin.nombre,
-      descripcion: sc.comodin.descripcion,
-      icono: sc.comodin.icono,
-      activo: sc.activo,
-    }));
+  async updateParticipantRole(
+    tokenCompartido: string,
+    nickname: string,
+    nuevoRol: string,
+  ) {
+    return this.updateParticipantRoleUseCase.execute(
+      tokenCompartido,
+      nickname,
+      nuevoRol,
+    );
+  }
+
+  async getParticipantsWithRoles(tokenCompartido: string, nicknames: string[]) {
+    return this.getParticipantsWithRolesUseCase.execute(
+      tokenCompartido,
+      nicknames,
+    );
+  }
+
+  async reiniciarRonda(salaId: number) {
+    return this.restartRoundUseCase.execute(salaId);
   }
 }

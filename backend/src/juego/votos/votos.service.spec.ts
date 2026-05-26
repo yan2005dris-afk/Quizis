@@ -1,145 +1,47 @@
-import { Test } from '@nestjs/testing';
+import { Test, TestingModule } from '@nestjs/testing';
 import { VotosService } from './votos.service';
-import { PrismaService } from '../../infrastructure/database/prisma.service';
-import { CacheService } from '../../infrastructure/cache/cache.service';
+import { RegisterVoteUseCase } from './use-cases/register-vote.use-case';
+import { GetVotesFromCacheUseCase } from './use-cases/get-votes-from-cache.use-case';
+import { PersistVotesUseCase } from './use-cases/persist-votes.use-case';
 
-describe('VotosService (2-Phase Persist)', () => {
+describe('VotosService', () => {
   let service: VotosService;
-  let cacheService: CacheService;
-  let prismaService: PrismaService;
+  let registerUseCase: RegisterVoteUseCase;
+  let getVotesUseCase: GetVotesFromCacheUseCase;
+  let persistUseCase: PersistVotesUseCase;
 
-  const mockCacheService = {
-    setVote: jest.fn(),
-    getVotes: jest.fn(),
-    prepareVotesForPersist: jest.fn(),
-    commitVotes: jest.fn(),
-    rollbackVotes: jest.fn(),
-  };
-
-  const mockPrismaService = {
-    votosPublico: {
-      createMany: jest.fn(),
-    },
-  };
+  const mockUseCase = { execute: jest.fn() };
 
   beforeEach(async () => {
-    const module = await Test.createTestingModule({
+    const module: TestingModule = await Test.createTestingModule({
       providers: [
         VotosService,
-        { provide: CacheService, useValue: mockCacheService },
-        { provide: PrismaService, useValue: mockPrismaService },
+        { provide: RegisterVoteUseCase, useValue: mockUseCase },
+        { provide: GetVotesFromCacheUseCase, useValue: mockUseCase },
+        { provide: PersistVotesUseCase, useValue: mockUseCase },
       ],
     }).compile();
 
     service = module.get<VotosService>(VotosService);
-    cacheService = module.get<CacheService>(CacheService);
-    prismaService = module.get<PrismaService>(PrismaService);
-
-    jest.clearAllMocks();
+    registerUseCase = module.get<RegisterVoteUseCase>(RegisterVoteUseCase);
+    getVotesUseCase = module.get<GetVotesFromCacheUseCase>(
+      GetVotesFromCacheUseCase,
+    );
+    persistUseCase = module.get<PersistVotesUseCase>(PersistVotesUseCase);
   });
 
-  it('debe estar definido', () => {
-    expect(service).toBeDefined();
+  it('should call registerUseCase', async () => {
+    await service.registrarVoto(1, 2, 3, 4);
+    expect(registerUseCase.execute).toHaveBeenCalledWith(1, 2, 3, 4);
   });
 
-  describe('registrarVoto', () => {
-    it('debe registrar el voto de manera ultra rápida en caché sin llamadas a PostgreSQL', async () => {
-      const rondaId = 1;
-      const preguntaId = 10;
-      const participanteId = 5;
-      const opcionId = 2;
-
-      await service.registrarVoto(
-        rondaId,
-        preguntaId,
-        participanteId,
-        opcionId,
-      );
-
-      expect(cacheService.setVote).toHaveBeenCalledWith(
-        rondaId,
-        preguntaId,
-        participanteId,
-        opcionId,
-      );
-      expect(prismaService.votosPublico.createMany).not.toHaveBeenCalled();
-    });
+  it('should call getVotesUseCase', async () => {
+    await service.obtenerVotosCache(1, 2);
+    expect(getVotesUseCase.execute).toHaveBeenCalledWith(1, 2);
   });
 
-  describe('persistirVotos', () => {
-    it('debe retornar count=0 si no hay votos aislados en prepareVotesForPersist', async () => {
-      const rondaId = 1;
-      const preguntaId = 10;
-      mockCacheService.prepareVotesForPersist.mockResolvedValue({
-        processingKey: 'votes:1:10:processing:12345',
-        votes: [],
-      });
-
-      const result = await service.persistirVotos(rondaId, preguntaId);
-
-      expect(cacheService.prepareVotesForPersist).toHaveBeenCalledWith(
-        rondaId,
-        preguntaId,
-      );
-      expect(prismaService.votosPublico.createMany).not.toHaveBeenCalled();
-      expect(result).toEqual({ count: 0 });
-    });
-
-    it('debe confirmar con commitVotes y retornar la cantidad si el bulk insert tiene éxito', async () => {
-      const rondaId = 1;
-      const preguntaId = 10;
-      const mockVotes = [{ participanteId: 5, opcionId: 2 }];
-      const procKey = 'votes:1:10:processing:12345';
-      mockCacheService.prepareVotesForPersist.mockResolvedValue({
-        processingKey: procKey,
-        votes: mockVotes,
-      });
-      mockPrismaService.votosPublico.createMany.mockResolvedValue({ count: 1 });
-
-      const result = await service.persistirVotos(rondaId, preguntaId);
-
-      expect(cacheService.prepareVotesForPersist).toHaveBeenCalledWith(
-        rondaId,
-        preguntaId,
-      );
-      expect(prismaService.votosPublico.createMany).toHaveBeenCalledWith({
-        data: [{ rondaId, preguntaId, participanteId: 5, opcionId: 2 }],
-        skipDuplicates: true,
-      });
-      expect(cacheService.commitVotes).toHaveBeenCalledWith(procKey);
-      expect(cacheService.rollbackVotes).not.toHaveBeenCalled();
-      expect(result).toEqual({ count: 1 });
-    });
-
-    it('debe revertir y realizar un rollback de los votos si el bulk insert a PostgreSQL falla', async () => {
-      const rondaId = 1;
-      const preguntaId = 10;
-      const mockVotes = [{ participanteId: 5, opcionId: 2 }];
-      const procKey = 'votes:1:10:processing:12345';
-
-      mockCacheService.prepareVotesForPersist.mockResolvedValue({
-        processingKey: procKey,
-        votes: mockVotes,
-      });
-      mockPrismaService.votosPublico.createMany.mockRejectedValue(
-        new Error('Postgres is down'),
-      );
-
-      await expect(service.persistirVotos(rondaId, preguntaId)).rejects.toThrow(
-        'Postgres is down',
-      );
-
-      expect(cacheService.prepareVotesForPersist).toHaveBeenCalledWith(
-        rondaId,
-        preguntaId,
-      );
-      expect(prismaService.votosPublico.createMany).toHaveBeenCalled();
-      expect(cacheService.rollbackVotes).toHaveBeenCalledWith(
-        procKey,
-        rondaId,
-        preguntaId,
-      );
-      expect(cacheService.commitVotes).not.toHaveBeenCalled();
-    });
+  it('should call persistUseCase', async () => {
+    await service.persistirVotos(1, 2);
+    expect(persistUseCase.execute).toHaveBeenCalledWith(1, 2);
   });
 });

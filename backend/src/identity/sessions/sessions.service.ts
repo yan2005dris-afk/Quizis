@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from 'src/infrastructure/database/prisma.service';
+import { PrismaService } from 'src/infrastructure/database/prisma/prisma.service';
 import { CreateSessionUseCase } from './use-cases/create-session.use-case';
 import { GetSessionUseCase } from './use-cases/get-session.use-case';
 import { UpdateSessionUseCase } from './use-cases/update-session.use-case';

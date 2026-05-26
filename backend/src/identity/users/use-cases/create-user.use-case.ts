@@ -4,7 +4,7 @@ import {
   ConflictException,
 } from '@nestjs/common';
 import * as bcrypt from 'bcryptjs';
-import { PrismaService } from 'src/infrastructure/database/prisma.service';
+import { PrismaService } from 'src/infrastructure/database/prisma/prisma.service';
 import { Prisma } from 'src/generated/prisma/client';
 import { CreateUserDto } from '../dto/create-user.dto';
 import { ValidationUtil } from 'src/infrastructure/common/utils/validation.util';

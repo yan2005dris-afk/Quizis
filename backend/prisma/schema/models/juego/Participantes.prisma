@@ -3,8 +3,7 @@ model Participantes {
   salaId          Int       @map("sala_id")
   nickname        String    @map("nickname")
   rol             String    @default("observador") @map("rol") // estudiante, observador
-  isOnline        Boolean   @default(true) @map("is_online")
-  
+
   createdAt       DateTime  @default(now()) @map("creado_en")
   updatedAt       DateTime  @updatedAt @map("actualizado_en")
   deletedAt       DateTime? @map("borrado_en")
@@ -14,5 +13,6 @@ model Participantes {
   votos           VotosPublico[]
 
   @@unique([salaId, nickname])
+  @@index([salaId, deletedAt, rol])
   @@map("participantes")
 }
