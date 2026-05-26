@@ -6,6 +6,7 @@ import {
   computed,
   OnInit,
   OnDestroy,
+  effect,
 } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { GameSocketService, Pregunta } from '../../../../core/services/game-socket.service';
@@ -121,6 +122,26 @@ export class RoomComponent implements OnInit, OnDestroy {
     if (!token) return null;
     return `${window.location.origin}/join/${token}`;
   });
+
+  constructor() {
+    effect(() => {
+      const reinicio = this.gameSocket.rondaReiniciada();
+      const actual = this.salaDetalle();
+      if (!reinicio?.rondaActiva || !actual) return;
+
+      this.salaDetalle.set({
+        ...actual,
+        estado: reinicio.estado ?? 'ESPERANDO_ALUMNOS',
+        rondaActiva: reinicio.rondaActiva,
+      });
+
+      this.salasService.obtenerComodines(actual.salaId).subscribe({
+        next: (comodines) => this.comodines.set(comodines),
+        error: (err) =>
+          console.error('[WS:ronda_reiniciada] Error recargando comodines:', err),
+      });
+    });
+  }
 
   ngOnInit(): void {
     const idOrToken = this.route.snapshot.paramMap.get('id');

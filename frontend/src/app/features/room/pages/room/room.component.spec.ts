@@ -66,7 +66,7 @@ describe('RoomComponent', () => {
     const el = fixture.nativeElement as HTMLElement;
     const buttons = el.querySelectorAll('.room__tab-btn');
     expect(buttons.length).toBe(2);
-    expect(buttons[0].textContent).toContain('Público');
+    expect(buttons[0].textContent).toContain('Participantes');
     expect(buttons[1].textContent).toContain('Chat en Vivo');
   });
 
@@ -114,6 +114,6 @@ describe('RoomComponent', () => {
     fixture.detectChanges();
 
     const el = fixture.nativeElement as HTMLElement;
-    expect(el.textContent).toContain('Estás viendo como observador');
+    expect(el.textContent).toContain('Estás participando en la sala');
   });
 });

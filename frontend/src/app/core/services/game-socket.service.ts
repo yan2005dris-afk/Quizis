@@ -56,6 +56,7 @@ export class GameSocketService {
   readonly eventosSala = signal<SalaEvento[]>([]);
   readonly participantes = signal<Participante[]>([]);
   readonly infoRonda = signal<RondaInfo | null>(null);
+  readonly rondaReiniciada = signal<any | null>(null);
 
   // Abre la conexión al servidor WebSocket y registra los listeners de cada evento del juego
   conectar(url: string, token: string): void {
@@ -129,6 +130,14 @@ export class GameSocketService {
       this.tiempoRestante.set(null);
       this.votosPublico.set(null);
       this.comodinBloqueado.set([]);
+      this.rondaReiniciada.set(data);
+      if (data?.rondaActiva) {
+        this.infoRonda.set({
+          ronda: data.rondaActiva.numeroRonda,
+          totalRondas: data.rondaActiva.historialPreguntas?.length ?? 0,
+          premio: '$0',
+        });
+      }
       console.log(
         '[WS:ronda_reiniciada] Signals reseteados. comodinBloqueado=',
         this.comodinBloqueado(),
@@ -227,5 +236,6 @@ export class GameSocketService {
     this.socket?.disconnect();
     this.socket = null;
     this.conectado.set(false);
+    this.rondaReiniciada.set(null);
   }
 }
