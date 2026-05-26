@@ -1,11 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { GetSalaLifelinesUseCase } from './get-sala-lifelines.use-case';
-import { PrismaService } from '../../../infrastructure/database/prisma.service';
+import { PrismaService } from '../../../infrastructure/database/prisma/prisma.service';
 import { NotFoundException } from '@nestjs/common';
 
 describe('GetSalaLifelinesUseCase', () => {
   let useCase: GetSalaLifelinesUseCase;
-  let prisma: PrismaService;
 
   const mockPrisma = {
     salas: {
@@ -28,7 +27,6 @@ describe('GetSalaLifelinesUseCase', () => {
     }).compile();
 
     useCase = module.get<GetSalaLifelinesUseCase>(GetSalaLifelinesUseCase);
-    prisma = module.get<PrismaService>(PrismaService);
   });
 
   it('should return lifelines by ID', async () => {

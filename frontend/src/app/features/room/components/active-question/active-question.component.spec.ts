@@ -39,7 +39,7 @@ describe('ActiveQuestionComponent', () => {
   it('should show waiting state when no questions are provided', () => {
     fixture.componentRef.setInput('preguntas', []);
     fixture.detectChanges();
-    expect(fixture.nativeElement.textContent).toContain('Sincronizando preguntas de la ronda');
+    expect(fixture.nativeElement.textContent).toContain('Sincronizando con el servidor');
   });
 
   it('should render the question text when provided', () => {
@@ -89,9 +89,6 @@ describe('ActiveQuestionComponent', () => {
     const el = fixture.nativeElement as HTMLElement;
     const pcts = el.querySelectorAll('.option-item__percentage');
     pcts.forEach((pct) => {
-      // In the new component, we only show % if > 0 in the template
-      // Let's check the code: @if (opcion.porcentaje > 0) { ... }
-      // So we expect 0 matches or empty strings if we don't pass votes
       expect(pct.textContent).toBe('');
     });
   });
@@ -104,10 +101,8 @@ describe('ActiveQuestionComponent', () => {
     fixture.detectChanges();
 
     const el = fixture.nativeElement as HTMLElement;
-    // CORRECCIÓN AQUÍ:
     const pcts = el.querySelectorAll('.option-item__percentage');
-    
-    // Verificación de seguridad antes de acceder a los índices
+
     expect(pcts.length).toBe(4);
     expect(pcts[0].textContent).toContain('50%');
     expect(pcts[1].textContent).toContain('30%');

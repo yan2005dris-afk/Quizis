@@ -1,7 +1,7 @@
 import type { TestingModule } from '@nestjs/testing';
 import { Test } from '@nestjs/testing';
 import { CreatePermissionUseCase } from './create-permission.use-case';
-import { PrismaService } from 'src/infrastructure/database/prisma.service';
+import { PrismaService } from 'src/infrastructure/database/prisma/prisma.service';
 
 describe('CreatePermissionUseCase', () => {
   let useCase: CreatePermissionUseCase;

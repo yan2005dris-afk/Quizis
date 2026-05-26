@@ -1,8 +1,8 @@
 import type { TestingModule } from '@nestjs/testing';
 import { Test } from '@nestjs/testing';
 import { AssignPermissionToRoleUseCase } from './assign-permission-to-role.use-case';
-import { PrismaService } from 'src/infrastructure/database/prisma.service';
-import { NotFoundException, ConflictException } from '@nestjs/common';
+import { PrismaService } from 'src/infrastructure/database/prisma/prisma.service';
+import { ConflictException } from '@nestjs/common';
 
 describe('AssignPermissionToRoleUseCase', () => {
   let useCase: AssignPermissionToRoleUseCase;

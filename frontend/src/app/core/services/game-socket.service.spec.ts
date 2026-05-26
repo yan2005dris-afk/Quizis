@@ -8,26 +8,44 @@ import type {
   RondaInfo,
 } from '../../features/room/room.types';
 
-// Mock socket.io-client
-const mockSocket = {
-  on: vi.fn().mockReturnThis(),
-  emit: vi.fn().mockReturnThis(),
-  disconnect: vi.fn(),
-};
+// --- Mock socket without vi.mock ---
+// Angular's @angular/build:unit-test bundles modules before vitest can
+// intercept them via vi.mock. Instead, we create a mock socket and
+// inject it via vi.spyOn(service, 'createSocketConnection').
 
-vi.mock('socket.io-client', () => ({
-  io: vi.fn(() => mockSocket),
-}));
+function createMockSocket() {
+  const handlers = new Map<string, (...args: any[]) => void>();
+  return {
+    on: vi.fn((event: string, handler: (...args: any[]) => void) => {
+      handlers.set(event, handler);
+      return handlers; // not used for chaining, but needed for type compat
+    }),
+    emit: vi.fn(),
+    disconnect: vi.fn(),
+    /** Invoke a registered handler as if the server sent the event */
+    trigger(event: string, ...args: any[]) {
+      const handler = handlers.get(event);
+      if (handler) handler(...args);
+    },
+  };
+}
+
+type MockSocket = ReturnType<typeof createMockSocket>;
 
 describe('GameSocketService (observer extension)', () => {
   let service: GameSocketService;
+  let mockSocket: MockSocket;
 
   beforeEach(() => {
-    vi.clearAllMocks();
+    mockSocket = createMockSocket();
+
     TestBed.configureTestingModule({
       providers: [GameSocketService],
     });
     service = TestBed.inject(GameSocketService);
+
+    // Replace the protected method with our mock
+    vi.spyOn(service as any, 'createSocketConnection').mockReturnValue(mockSocket);
   });
 
   afterEach(() => {
@@ -43,14 +61,7 @@ describe('GameSocketService (observer extension)', () => {
         { usuario: 'Bob', texto: 'Hola!', timestamp: 1001, tipo: 'mensaje' },
       ];
 
-      // Simular el evento del servidor
-      const onCalls = mockSocket.on.mock.calls;
-      const mensajeChatHandler = onCalls.find(([event]) => event === 'mensaje_chat');
-      expect(mensajeChatHandler).toBeDefined();
-
-      if (mensajeChatHandler) {
-        mensajeChatHandler[1](chatMessages);
-      }
+      mockSocket.trigger('mensaje_chat', chatMessages);
 
       expect(service.mensajesChat()).toEqual(chatMessages);
       expect(service.mensajesChat()).toHaveLength(2);
@@ -64,13 +75,7 @@ describe('GameSocketService (observer extension)', () => {
         { tipo: 'inicio_pregunta', mensaje: 'Nueva pregunta', timestamp: 1002 },
       ];
 
-      const onCalls = mockSocket.on.mock.calls;
-      const eventoHandler = onCalls.find(([event]) => event === 'evento_sala');
-      expect(eventoHandler).toBeDefined();
-
-      if (eventoHandler) {
-        eventoHandler[1](eventos);
-      }
+      mockSocket.trigger('evento_sala', eventos);
 
       expect(service.eventosSala()).toEqual(eventos);
       expect(service.eventosSala()).toHaveLength(2);
@@ -80,18 +85,12 @@ describe('GameSocketService (observer extension)', () => {
       service.conectar('http://test.local', 'fake-token');
 
       const participantes: Participante[] = [
-        { id: '1', nombre: 'Alice', puntaje: 100 },
-        { id: '2', nombre: 'Bob', puntaje: 85 },
-        { id: '3', nombre: 'Charlie', puntaje: 72 },
+        { id: '1', nombre: 'Alice', puntaje: 100, rol: 'estudiante' },
+        { id: '2', nombre: 'Bob', puntaje: 85, rol: 'observador' },
+        { id: '3', nombre: 'Charlie', puntaje: 72, rol: 'admin' },
       ];
 
-      const onCalls = mockSocket.on.mock.calls;
-      const participantesHandler = onCalls.find(([event]) => event === 'participantes');
-      expect(participantesHandler).toBeDefined();
-
-      if (participantesHandler) {
-        participantesHandler[1](participantes);
-      }
+      mockSocket.trigger('participantes', participantes);
 
       expect(service.participantes()).toEqual(participantes);
       expect(service.participantes()).toHaveLength(3);
@@ -102,13 +101,7 @@ describe('GameSocketService (observer extension)', () => {
 
       const rondaInfo: RondaInfo = { ronda: 1, totalRondas: 5, premio: '$1000' };
 
-      const onCalls = mockSocket.on.mock.calls;
-      const rondaHandler = onCalls.find(([event]) => event === 'info_ronda');
-      expect(rondaHandler).toBeDefined();
-
-      if (rondaHandler) {
-        rondaHandler[1](rondaInfo);
-      }
+      mockSocket.trigger('info_ronda', rondaInfo);
 
       expect(service.infoRonda()).toEqual(rondaInfo);
       expect(service.infoRonda()?.ronda).toBe(1);

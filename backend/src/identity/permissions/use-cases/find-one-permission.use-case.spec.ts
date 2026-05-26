@@ -1,12 +1,11 @@
 import type { TestingModule } from '@nestjs/testing';
 import { Test } from '@nestjs/testing';
 import { FindOnePermissionUseCase } from './find-one-permission.use-case';
-import { PrismaService } from 'src/infrastructure/database/prisma.service';
+import { PrismaService } from 'src/infrastructure/database/prisma/prisma.service';
 import { NotFoundException } from '@nestjs/common';
 
 describe('FindOnePermissionUseCase', () => {
   let useCase: FindOnePermissionUseCase;
-  let prisma: PrismaService;
 
   const mockPrisma = {
     permisos: {
@@ -23,7 +22,6 @@ describe('FindOnePermissionUseCase', () => {
     }).compile();
 
     useCase = module.get<FindOnePermissionUseCase>(FindOnePermissionUseCase);
-    prisma = module.get<PrismaService>(PrismaService);
   });
 
   it('should return a permission', async () => {

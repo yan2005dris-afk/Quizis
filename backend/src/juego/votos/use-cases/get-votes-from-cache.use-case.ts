@@ -1,9 +1,9 @@
 import { Injectable } from '@nestjs/common';
-import { CacheService } from '../../../infrastructure/cache/cache.service';
+import { VotesCacheUseCase } from '../../../infrastructure/cache/use-cases/votes-cache.use-case';
 
 @Injectable()
 export class GetVotesFromCacheUseCase {
-  constructor(private readonly cacheService: CacheService) {}
+  constructor(private readonly cacheService: VotesCacheUseCase) {}
 
   async execute(rondaId: number, preguntaId: number) {
     return this.cacheService.getVotes(rondaId, preguntaId);

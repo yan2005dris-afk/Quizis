@@ -1,12 +1,11 @@
 import type { TestingModule } from '@nestjs/testing';
 import { Test } from '@nestjs/testing';
 import { GetEffectivePermissionsUseCase } from './get-effective-permissions.use-case';
-import { PrismaService } from 'src/infrastructure/database/prisma.service';
+import { PrismaService } from 'src/infrastructure/database/prisma/prisma.service';
 import { NotFoundException } from '@nestjs/common';
 
 describe('GetEffectivePermissionsUseCase', () => {
   let useCase: GetEffectivePermissionsUseCase;
-  let prisma: PrismaService;
 
   const mockPrisma = {
     usuarios: {
@@ -28,7 +27,6 @@ describe('GetEffectivePermissionsUseCase', () => {
     useCase = module.get<GetEffectivePermissionsUseCase>(
       GetEffectivePermissionsUseCase,
     );
-    prisma = module.get<PrismaService>(PrismaService);
   });
 
   afterEach(() => {
