@@ -18,7 +18,7 @@ export class CardPreguntaComponent {
   numeroPregunta = input<number>(1);
   totalPreguntas = input<number>(1);
   bloqueado = input<boolean>(false);
-  
+
   // Flag que viene de main-screen para saber si acepta respuestas múltiples
   esMultiple = input<boolean>(false);
 
@@ -42,7 +42,7 @@ export class CardPreguntaComponent {
     if (this.esMultiple()) {
       // Si es múltiple, agregamos o removemos del arreglo
       if (seleccionadas.includes(opcion.id)) {
-        this.opcionesElegidasIds.set(seleccionadas.filter(id => id !== opcion.id));
+        this.opcionesElegidasIds.set(seleccionadas.filter((id) => id !== opcion.id));
       } else {
         this.opcionesElegidasIds.set([...seleccionadas, opcion.id]);
       }
@@ -66,12 +66,12 @@ export class CardPreguntaComponent {
     if (this.opcionesElegidasIds().length === 0 || this.bloqueado()) return;
 
     // Filtramos los objetos completos de opciones correspondientes a los IDs seleccionados
-    const opcionesFinales = this.opciones().filter(opc => 
-      this.opcionesElegidasIds().includes(opc.id)
+    const opcionesFinales = this.opciones().filter((opc) =>
+      this.opcionesElegidasIds().includes(opc.id),
     );
 
     this.confirmarRespuesta.emit(opcionesFinales);
-    
+
     // Opcional: Limpiar la selección tras enviar para la siguiente ronda/pregunta
     this.opcionesElegidasIds.set([]);
   }

@@ -1,14 +1,16 @@
 import { Module } from '@nestjs/common';
 import { IdentityModule } from './identity/identity.module';
 import { ConfigModule } from '@nestjs/config';
-import { DatabaseModule } from './infrastructure/database/prisma.module';
+import { DatabaseModule } from './infrastructure/database/prisma/prisma.module';
+import { RedisModule } from './infrastructure/database/redis/redis.module';
 import { ThrottlerModule } from '@nestjs/throttler';
-import { WebsocketsModule } from './websockets/websockets.module';
+import { JuegoModule } from './juego/juego.module';
 import { CacheModule } from './infrastructure/cache/cache.module';
+import { HealthModule } from './infrastructure/health/health.module';
+import { WebsocketsInfraModule } from './infrastructure/websockets/websockets.module';
 import { VotosModule } from './juego/votos/votos.module';
 import { SalasModule } from './juego/salas/salas.module';
-import { HealthModule } from './infrastructure/health/health.module';
-import { BancosModule } from './juego/bancos/bancos.module';
+import { RondasModule } from './juego/rondas/rondas.module';
 
 @Module({
   imports: [
@@ -18,13 +20,15 @@ import { BancosModule } from './juego/bancos/bancos.module';
     }),
     ThrottlerModule.forRoot([{ ttl: 60000, limit: 100 }]),
     DatabaseModule,
+    RedisModule,
     IdentityModule,
-    WebsocketsModule,
+    JuegoModule,
     CacheModule,
+    HealthModule,
+    WebsocketsInfraModule,
     VotosModule,
     SalasModule,
-    HealthModule,
-    BancosModule,
+    RondasModule,
   ],
   controllers: [],
   providers: [],

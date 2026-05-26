@@ -1,7 +1,8 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { signal } from '@angular/core';
 import { describe, it, expect, beforeEach } from 'vitest';
 import { ActiveQuestionComponent } from './active-question.component';
-import type { VotosPublico } from '../../../../core/services/game-socket.service';
+import { GameSocketService, VotosPublico } from '../../../../core/services/game-socket.service';
 
 const preguntasMock = [
   {
@@ -22,9 +23,19 @@ describe('ActiveQuestionComponent', () => {
   let component: ActiveQuestionComponent;
   let fixture: ComponentFixture<ActiveQuestionComponent>;
 
+  let mockVotosPublico: ReturnType<typeof signal<VotosPublico | null>>;
+
   beforeEach(async () => {
+    mockVotosPublico = signal<VotosPublico | null>(null);
+
+    const mockGameSocket = {
+      votosPublico: mockVotosPublico,
+      ultimoResultado: signal(null),
+    } as unknown as GameSocketService;
+
     await TestBed.configureTestingModule({
       imports: [ActiveQuestionComponent],
+      providers: [{ provide: GameSocketService, useValue: mockGameSocket }],
     }).compileComponents();
 
     fixture = TestBed.createComponent(ActiveQuestionComponent);
@@ -39,7 +50,7 @@ describe('ActiveQuestionComponent', () => {
   it('should show waiting state when no questions are provided', () => {
     fixture.componentRef.setInput('preguntas', []);
     fixture.detectChanges();
-    expect(fixture.nativeElement.textContent).toContain('Sincronizando preguntas de la ronda');
+    expect(fixture.nativeElement.textContent).toContain('Sincronizando con el servidor');
   });
 
   it('should render the question text when provided', () => {
@@ -89,9 +100,6 @@ describe('ActiveQuestionComponent', () => {
     const el = fixture.nativeElement as HTMLElement;
     const pcts = el.querySelectorAll('.option-item__percentage');
     pcts.forEach((pct) => {
-      // In the new component, we only show % if > 0 in the template
-      // Let's check the code: @if (opcion.porcentaje > 0) { ... }
-      // So we expect 0 matches or empty strings if we don't pass votes
       expect(pct.textContent).toBe('');
     });
   });
@@ -100,14 +108,12 @@ describe('ActiveQuestionComponent', () => {
     const votos: VotosPublico = { A: 50, B: 30, C: 15, D: 5, total: 100 };
     fixture.componentRef.setInput('preguntas', preguntasMock);
     fixture.componentRef.setInput('preguntaActivaId', 1);
-    fixture.componentRef.setInput('votosPublico', votos);
+    mockVotosPublico.set(votos);
     fixture.detectChanges();
 
     const el = fixture.nativeElement as HTMLElement;
-    // CORRECCIÓN AQUÍ:
     const pcts = el.querySelectorAll('.option-item__percentage');
-    
-    // Verificación de seguridad antes de acceder a los índices
+
     expect(pcts.length).toBe(4);
     expect(pcts[0].textContent).toContain('50%');
     expect(pcts[1].textContent).toContain('30%');
@@ -120,7 +126,7 @@ describe('ActiveQuestionComponent', () => {
     fixture.componentRef.setInput('preguntas', preguntasMock);
     fixture.componentRef.setInput('preguntaActivaId', 1);
     fixture.componentRef.setInput('comodines', comodinesMock);
-    fixture.componentRef.setInput('votosPublico', { A: 10, B: 10, C: 10, D: 10, total: 40 });
+    mockVotosPublico.set({ A: 10, B: 10, C: 10, D: 10, total: 40 });
     fixture.detectChanges();
 
     const btn = fixture.nativeElement.querySelector('.wildcard-node--active');

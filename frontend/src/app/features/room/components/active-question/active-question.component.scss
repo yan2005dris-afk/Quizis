@@ -1,3 +1,5 @@
+@use 'sass:color';
+
 // Variables estéticas heredadas de la línea de diseño principal
 $color-bg-canvas: #f4f6f9;
 $color-card-white: #ffffff;
@@ -60,6 +62,23 @@ $color-danger-bg: #fef2f2;
     display: inline-block;
     box-shadow: 0 0 8px rgba(59, 130, 246, 0.5);
   }
+}
+
+/* Temporizador */
+.observer-card__timer {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: $color-ui-primary;
+  background: $color-ui-primary-light;
+  padding: 4px 10px;
+  border-radius: 8px;
+  white-space: nowrap;
+}
+
+.observer-card__timer--low {
+  color: $color-danger;
+  background: $color-danger-bg;
+  animation: pulse 1s infinite;
 }
 
 /* Paginador Estilo UI Minimalista */
@@ -253,6 +272,64 @@ $color-danger-bg: #fef2f2;
   filter: blur(0.5px);
 }
 
+/* Pre-seleccionado (antes de confirmar) */
+.option-item--pre-selected {
+  border-color: $color-ui-primary;
+  background-color: $color-ui-primary-light;
+  box-shadow: 0 0 0 2px rgba($color-ui-primary, 0.15);
+
+  .option-item__letter {
+    background-color: $color-ui-primary;
+    color: white;
+  }
+}
+
+/* Clickable (modo interactivo) */
+.option-item--clickable {
+  cursor: pointer;
+
+  &:hover {
+    border-color: $color-ui-primary;
+    background-color: $color-ui-primary-light;
+  }
+
+  &:focus-visible {
+    outline: 2px solid $color-ui-primary;
+    outline-offset: 2px;
+  }
+}
+
+/* ─── Barra de Confirmación ──────────── */
+
+.confirm-bar {
+  display: flex;
+  justify-content: center;
+  margin-top: 0.5rem;
+}
+
+.confirm-btn {
+  padding: 0.75rem 2.5rem;
+  background-color: $color-ui-primary;
+  color: white;
+  border: none;
+  border-radius: 30px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  letter-spacing: 0.5px;
+
+  &:hover {
+    background-color: color.adjust($color-ui-primary, $lightness: -8%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba($color-ui-primary, 0.3);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+}
+
 /* ───────────────────────────────────── */
 /* Panel de Comodines Inferior */
 /* ───────────────────────────────────── */
@@ -312,6 +389,21 @@ $color-danger-bg: #fef2f2;
   letter-spacing: 0.5px;
 }
 
+.wildcard-node__state {
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: $color-text-muted;
+  margin-top: 0.15rem;
+}
+
+.wildcard-node__state--used {
+  color: #7c3aed;
+}
+
+.wildcard-node__state--disabled {
+  color: $color-danger;
+}
+
 /* Modificadores de estado de comodín desde el socket */
 .wildcard-node--active {
   .wildcard-node__icon {
@@ -334,11 +426,140 @@ $color-danger-bg: #fef2f2;
   }
 }
 
-.wildcards-empty, .observer-empty-state {
+.wildcard-node--clickable {
+  cursor: pointer;
+
+  &:hover .wildcard-node__icon {
+    background-color: $color-ui-primary-light;
+    border-color: $color-ui-primary;
+  }
+
+  &:focus-visible {
+    outline: 2px solid $color-ui-primary;
+    outline-offset: 4px;
+    border-radius: 8px;
+  }
+}
+
+.wildcards-empty {
   font-size: 0.85rem;
   color: $color-text-muted;
   font-style: italic;
   margin: 0;
+}
+
+/* ─── Feedback de Respuesta ──────────── */
+
+.feedback-card {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.5rem 2rem;
+  border-radius: 24px;
+  animation: fadeIn 0.3s ease-out;
+  border: 1px solid rgba(0, 0, 0, 0.03);
+}
+
+.feedback-card--correct {
+  background-color: $color-success-bg;
+  border-color: $color-success;
+
+  .feedback-card__title {
+    color: #059669;
+  }
+}
+
+.feedback-card--incorrect {
+  background-color: $color-danger-bg;
+  border-color: $color-danger;
+
+  .feedback-card__title {
+    color: #dc2626;
+  }
+}
+
+.feedback-card__icon {
+  font-size: 2rem;
+  flex-shrink: 0;
+}
+
+.feedback-card__body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.feedback-card__title {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 800;
+}
+
+.feedback-card__text {
+  margin: 0;
+  font-size: 0.85rem;
+  color: $color-text-muted;
+  line-height: 1.4;
+}
+
+/* ─── Resultados del Público ─────────── */
+
+.observer-audience-results {
+  background-color: $color-card-white;
+  border-radius: 24px;
+  padding: 1.5rem 2rem;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.02);
+  border: 1px solid rgba(0, 0, 0, 0.03);
+  animation: fadeIn 0.3s ease-out;
+}
+
+.observer-audience-results__title {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: $color-text-muted;
+  letter-spacing: 2px;
+  margin: 0 0 1rem 0;
+  text-transform: uppercase;
+}
+
+/* ─── Sugerencia IA ──────────────────── */
+
+.observer-ia-box {
+  background-color: #f0f9ff;
+  border: 1px solid #bae6fd;
+  border-radius: 24px;
+  padding: 1.5rem 2rem;
+  animation: fadeIn 0.3s ease-out;
+}
+
+.observer-ia-box__header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #0369a1;
+  margin-bottom: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
+
+.observer-ia-box__content {
+  margin: 0 0 4px 0;
+  font-size: 0.95rem;
+  color: #0c4a6e;
+}
+
+.observer-ia-box__explanation {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #075985;
+  line-height: 1.4;
+}
+
+.observer-spin {
+  animation: spin 1.5s linear infinite;
+  color: $color-ui-primary;
 }
 
 /* Estado de carga */
@@ -351,6 +572,9 @@ $color-danger-bg: #fef2f2;
   background-color: $color-card-white;
   border-radius: 24px;
   border: 1px solid rgba(0, 0, 0, 0.03);
+  font-size: 0.85rem;
+  color: $color-text-muted;
+  font-style: italic;
 }
 
 .spinner {
@@ -362,16 +586,22 @@ $color-danger-bg: #fef2f2;
   animation: spin 0.8s linear infinite;
 }
 
+/* Animaciones globales */
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
-
-/* ANIMACIONES */
-@keyframes pulse {
-  0% { transform: scale(1); }
-  50% { transform: scale(1.1); }
-  100% { transform: scale(1); }
-}
+/* ─── Animaciones adicionales ─────────── */
 
 @keyframes shake {
   0%, 100% { transform: translateX(0); }
@@ -384,7 +614,6 @@ $color-danger-bg: #fef2f2;
   50% { opacity: 0.3; }
 }
 
-/* PARPADEO SELECCIÓN */
 @keyframes blinkSelect {
   0% { transform: scale(1.05); opacity: 1; }
   50% { transform: scale(1.08); opacity: 0.6; }

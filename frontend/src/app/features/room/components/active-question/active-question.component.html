@@ -1,12 +1,15 @@
 <div class="active-question-container">
   @if (preguntaMostrada(); as p) {
-    
     <div class="observer-card">
-      
       <div class="observer-card__header">
-        <p class="observer-card__status">
-          <span class="status-dot"></span> {{ statusText() }}
-        </p>
+        <p class="observer-card__status"><span class="status-dot"></span> {{ statusText() }}</p>
+
+        <!-- Temporizador visual -->
+        @if (tiempoRestante(); as t) {
+          <div class="observer-card__timer" [class.observer-card__timer--low]="t <= 5">
+            ⏱️ {{ t }}s
+          </div>
+        }
 
         <div class="observer-card__pagination">
           <button
@@ -17,9 +20,7 @@
           >
             <lucide-icon [name]="PrevIcon" size="16"></lucide-icon>
           </button>
-          <span class="pagination-info">
-            {{ currentIndex() + 1 }} / {{ preguntas().length }}
-          </span>
+          <span class="pagination-info"> {{ currentIndex() + 1 }} / {{ preguntas().length }} </span>
           <button
             class="pagination-btn"
             [disabled]="currentIndex() === preguntas().length - 1"
@@ -38,12 +39,19 @@
           <div
             class="option-item"
 
-            [class.option-item--selected]="opcion.fueElegida"
+            [class.option-item--selected]="opcion.fueElegida || opcion.estaPendiente"
             [class.option-item--correct]="opcion.esCorrecta === true"
             [class.option-item--incorrect]="opcion.esCorrecta === false && opcion.fueElegida"
             [class.option-item--dimmed]="preguntaMostrada()?.respuestaDada && !opcion.fueElegida && opcion.esCorrecta !== true"
-            
+            [class.option-item--pre-selected]="opcion.seleccionLocal"
+            [class.option-item--clickable]="
+              interactive() && !respuestaConfirmada() && !p.respuestaDada
+            "
             data-testid="option-card"
+            role="button"
+            tabindex="0"
+            (click)="onOpcionClick(opcion.id)"
+            (keyup.enter)="onOpcionClick(opcion.id)"
           >
             <div class="option-item__body">
               <span class="option-item__letter">{{ opcion.letra }}</span>
@@ -56,49 +64,121 @@
 
             @if (opcion.porcentaje > 0) {
               <div class="option-item__progress-track">
-                <div
-                  class="option-item__progress-fill"
-                  [style.width.%]="opcion.porcentaje"
-                ></div>
+                <div class="option-item__progress-fill" [style.width.%]="opcion.porcentaje"></div>
               </div>
             }
 
-            @if (opcion.fueElegida) {
+            @if (opcion.fueElegida || opcion.estaPendiente) {
               <span class="option-item__badge">
-                {{ opcion.esCorrecta ? '✓ Respuesta Correcta' : '✗ Elegida por el concursante' }}
+                @if (opcion.estaPendiente) {
+                  Enviando respuesta...
+                } @else {
+                  {{ opcion.esCorrecta ? '✓ Respuesta Correcta' : '✗ Elegida por el concursante' }}
+                }
               </span>
             }
           </div>
         }
       </div>
+
+      <!-- Botón Confirmar (solo en modo interactivo, después de seleccionar) -->
+      @if (interactive() && localSelectedId() && !respuestaConfirmada()) {
+        <div class="confirm-bar">
+          <button class="confirm-btn" (click)="confirmar()">Confirmar respuesta</button>
+        </div>
+      }
     </div>
 
+    <!-- Feedback después de responder -->
+    @if (showFeedback(); as visible) {
+      @if (feedbackData(); as fb) {
+        <div
+          class="feedback-card"
+          [class.feedback-card--correct]="fb.esCorrecta"
+          [class.feedback-card--incorrect]="!fb.esCorrecta"
+        >
+          <div class="feedback-card__icon">
+            {{ fb.esCorrecta ? '✅' : '❌' }}
+          </div>
+          <div class="feedback-card__body">
+            <p class="feedback-card__title">
+              {{ fb.esCorrecta ? '¡Respuesta Correcta!' : 'Respuesta Incorrecta' }}
+            </p>
+            @if (fb.feedback) {
+              <p class="feedback-card__text">{{ fb.feedback }}</p>
+            }
+          </div>
+        </div>
+      }
+    }
+
+    <!-- Resultados del Público -->
+    @if (comodinPublicoActivo()) {
+      <div class="observer-audience-results">
+        <p class="observer-audience-results__title">RESULTADOS DEL PÚBLICO</p>
+        <app-audience-bars [votos]="gameSocket.votosPublico()" />
+      </div>
+    }
+
+    <!-- Sugerencia IA -->
+    @if (iaSugerencia(); as sug) {
+      <div class="observer-ia-box" role="alert">
+        <div class="observer-ia-box__header">
+          <lucide-icon [name]="IaIcon" size="16"></lucide-icon>
+          <span>Sugerencia de la IA</span>
+        </div>
+        <p class="observer-ia-box__content">
+          La IA sugiere la opción <strong>{{ sug.literal }}</strong
+          >.
+        </p>
+        <p class="observer-ia-box__explanation">{{ sug.explicacion }}</p>
+      </div>
+    }
+
+    <!-- Panel de Comodines -->
     <div class="observer-wildcards-panel">
       <p class="wildcards-title">COMODINES EN ESTA RONDA</p>
-      
+
       <div class="wildcards-grid">
         @for (comodin of comodines(); track comodin.nombre) {
           <div
             class="wildcard-node"
             [class.wildcard-node--active]="comodin.nombre === 'PUBLICO' && comodinPublicoActivo()"
-            [class.wildcard-node--disabled]="!comodin.activo || comodinBloqueado() === comodin.nombre"
-            [title]="comodin.descripcion"
+            [class.wildcard-node--disabled]="!comodin.activo || isComodinUsado(comodin)"
+            [class.wildcard-node--clickable]="
+              interactive() && comodin.activo && !isComodinUsado(comodin)
+            "
+            [title]="comodin.descripcion + ' · ' + getComodinEstadoTexto(comodin)"
+            role="button"
+            tabindex="0"
+            (click)="onComodinClick(comodin)"
+            (keyup.enter)="onComodinClick(comodin)"
           >
             <div class="wildcard-node__icon">
-              <span>{{ comodin.icono }}</span> 
+              @if (comodin.nombre === 'IA' && cargandoIa()) {
+                <lucide-icon [name]="LoaderIcon" size="20" class="observer-spin"></lucide-icon>
+              } @else {
+                <span>{{ comodin.icono }}</span>
+              }
             </div>
             <span class="wildcard-node__label">{{ comodin.nombre | titlecase }}</span>
+            <span
+              class="wildcard-node__state"
+              [class.wildcard-node__state--used]="isComodinUsado(comodin)"
+              [class.wildcard-node__state--disabled]="!comodin.activo"
+            >
+              {{ getComodinEstadoTexto(comodin) }}
+            </span>
           </div>
         } @empty {
           <p class="wildcards-empty">No hay comodines configurados en esta sesión.</p>
         }
       </div>
     </div>
-
   } @else {
     <div class="observer-empty-state">
       <div class="spinner"></div>
-      <p>Sincronizando preguntas de la ronda con el servidor...</p>
+      <p>Sincronizando con el servidor...</p>
     </div>
   }
 </div>

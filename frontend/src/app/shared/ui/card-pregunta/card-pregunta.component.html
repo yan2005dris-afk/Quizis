@@ -4,7 +4,6 @@
   [attr.aria-label]="'Pregunta ' + numeroPregunta() + ' de ' + totalPreguntas()"
 >
   <div class="card-pregunta__main-box">
-    
     <div class="card-pregunta__body">
       <h1 class="card-pregunta__texto">{{ pregunta() }}</h1>
     </div>
@@ -28,8 +27,9 @@
   </div>
 
   <div class="card-pregunta__actions">
-    <button 
-      class="card-pregunta__btn-confirmar" 
+    <button
+      type="button"
+      class="card-pregunta__btn-confirmar"
       [disabled]="opcionesElegidasIds().length === 0 || bloqueado()"
       (click)="enviarRespuesta()"
     >
