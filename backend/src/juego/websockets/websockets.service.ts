@@ -11,6 +11,7 @@ import {
   AnswerPayload,
 } from './use-cases/submit-answer.use-case';
 import { ToggleRoomEnabledUseCase } from './use-cases/toggle-room-enabled.use-case';
+import { SendMessageUseCase } from './use-cases/send-message.use-case';
 
 @Injectable()
 export class WebsocketsService {
@@ -21,6 +22,7 @@ export class WebsocketsService {
     private readonly releaseQuestionUseCase: ReleaseQuestionUseCase,
     private readonly submitAnswerUseCase: SubmitAnswerUseCase,
     private readonly toggleRoomEnabledUseCase: ToggleRoomEnabledUseCase,
+    private readonly sendMessageUseCase: SendMessageUseCase,
   ) {}
 
   async joinRoom(payload: {
@@ -53,5 +55,14 @@ export class WebsocketsService {
 
   async toggleRoomEnabled(token: string, enabled: boolean) {
     return this.toggleRoomEnabledUseCase.execute(token, enabled);
+  }
+
+  async sendMessage(payload: {
+    tokenCompartido: string;
+    nickname: string;
+    texto: string;
+    tipo: 'mensaje' | 'sugerencia';
+  }) {
+    return this.sendMessageUseCase.execute(payload);
   }
 }
