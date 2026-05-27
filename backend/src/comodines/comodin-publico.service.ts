@@ -1,12 +1,12 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { CacheService } from '../infrastructure/cache/cache.service';
-import { QuizGateway } from '../websockets/quiz.gateway';
+import { JuegoGateway } from '../infrastructure/websockets/juego.gateway';
 import { SalasService } from '../juego/salas/salas.service';
 @Injectable()
 export class ComodinPublicoService {
   constructor(
     private readonly cacheService: CacheService,
-    private readonly quizGateway: QuizGateway,
+    private readonly quizGateway: JuegoGateway,
     private readonly salasService: SalasService,
   ) {}
 

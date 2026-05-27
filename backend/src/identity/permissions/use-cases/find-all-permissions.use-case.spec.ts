@@ -1,11 +1,10 @@
 import type { TestingModule } from '@nestjs/testing';
 import { Test } from '@nestjs/testing';
 import { FindAllPermissionsUseCase } from './find-all-permissions.use-case';
-import { PrismaService } from 'src/infrastructure/database/prisma.service';
+import { PrismaService } from 'src/infrastructure/database/prisma/prisma.service';
 
 describe('FindAllPermissionsUseCase', () => {
   let useCase: FindAllPermissionsUseCase;
-  let prisma: PrismaService;
 
   const mockPrisma = {
     permisos: {
@@ -22,7 +21,6 @@ describe('FindAllPermissionsUseCase', () => {
     }).compile();
 
     useCase = module.get<FindAllPermissionsUseCase>(FindAllPermissionsUseCase);
-    prisma = module.get<PrismaService>(PrismaService);
   });
 
   it('should return all permissions', async () => {
