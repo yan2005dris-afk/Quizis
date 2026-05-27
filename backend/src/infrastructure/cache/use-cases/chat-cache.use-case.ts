@@ -60,7 +60,10 @@ export class ChatCacheUseCase implements OnModuleInit, OnModuleDestroy {
   }
 
   /** Agrega un mensaje al chat de la sala y retorna la lista actualizada */
-  async addMessage(token: string, message: ChatMessage): Promise<ChatMessage[]> {
+  async addMessage(
+    token: string,
+    message: ChatMessage,
+  ): Promise<ChatMessage[]> {
     const key = this.getChatKey(token);
     const client = this.redisService.getClient();
     const raw = JSON.stringify(message);
