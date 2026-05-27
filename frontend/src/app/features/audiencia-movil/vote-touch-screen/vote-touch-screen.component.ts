@@ -118,13 +118,31 @@ export class VoteTouchScreenComponent implements OnInit {
 
   private loadNewQuestion(pregunta: any): void {
     if (!pregunta) return;
-    
+
+    const opciones = Array.isArray(pregunta.opciones)
+      ? pregunta.opciones
+          .map((opcion: any) => {
+            const id = (opcion?.letra || opcion?.opcionId || opcion?.id) as VoteOptionKey | undefined;
+            const texto = opcion?.texto || opcion?.opcion || '';
+
+            if (!id || !texto) {
+              return null;
+            }
+
+            return {
+              id,
+              texto
+            } as OpcionPregunta;
+          })
+          .filter((opcion: OpcionPregunta | null): opcion is OpcionPregunta => opcion !== null)
+      : undefined;
+
     // Normalizar la pregunta recibida
     this.currentQuestion.set({
-      prompt: pregunta.prompt || pregunta.pregunta || 'Pregunta',
+      prompt: pregunta.texto || pregunta.prompt || pregunta.pregunta || 'Pregunta',
       roundLabel: pregunta.roundLabel || pregunta.ronda,
       premioActual: pregunta.premioActual || pregunta.premio,
-      opciones: pregunta.opciones
+      opciones
     });
     this.selectedOption.set(null);
     this.isVoteConfirmed.set(false);
