@@ -404,3 +404,23 @@
   font-style: italic;
   padding: 4px 0;
 }
+
+/* ─── Game Over Overlay ───────────────────── */
+
+.room__game-over-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  overflow-y: auto;
+  background: rgba(10, 12, 30, 0.92);
+  backdrop-filter: blur(6px);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  animation: fadeInOverlay 0.4s ease;
+}
+
+@keyframes fadeInOverlay {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
