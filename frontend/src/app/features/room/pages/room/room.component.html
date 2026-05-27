@@ -246,6 +246,7 @@
         [comodines]="comodines()"
         [tokenCompartido]="salaDetalle()?.tokenCompartido || ''"
         [interactive]="!!preguntaActiva() && !isFinalizado()"
+        [isAdmin]="isHost()"
         (seleccionada)="onResponder($event)"
       />
 
