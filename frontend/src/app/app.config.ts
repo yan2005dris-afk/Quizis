@@ -5,6 +5,8 @@ import { provideHttpClient, withFetch, withInterceptors } from '@angular/common/
 import { routes } from './app.routes';
 // Static SPA — no SSR, no client hydration needed
 import { authInterceptor } from './core/interceptors/auth.interceptor';
+import { environment } from '../environments/environment';
+import { SOCKET_SERVER_URL } from './core/services/socket.service';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -14,5 +16,6 @@ export const appConfig: ApplicationConfig = {
       withFetch(),
       withInterceptors([authInterceptor]), // Registramos el interceptor aquí
     ),
+    { provide: SOCKET_SERVER_URL, useValue: environment.apiUrl.replace('/api/v1', '') }
   ],
 };

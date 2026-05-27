@@ -21,10 +21,12 @@ export interface LiveQuestion {
   preguntaId?: number;
 }
 
+import { EventHeaderComponent } from '../../room/components/event-header/event-header.component';
+
 @Component({
   selector: 'app-vote-touch-screen',
   standalone: true,
-  imports: [],
+  imports: [EventHeaderComponent],
   templateUrl: './vote-touch-screen.component.html',
   styleUrls: ['./vote-touch-screen.component.scss'],
 })
@@ -63,14 +65,16 @@ export class VoteTouchScreenComponent implements OnInit {
     return this.defaultOptions;
   });
 
-  // Datos adicionales para el diseño premium
-  protected readonly roundLabel = computed(() => this.currentQuestion()?.roundLabel ?? 'Pregunta 12 / 15');
-  protected readonly premioActual = computed(() => this.currentQuestion()?.premioActual ?? '$50,000');
+  // Datos adicionales dinámicos
+  protected readonly rondaInfo = signal<{ronda: number, totalRondas: number, premio: string} | null>(null);
+  protected readonly tituloEvento = signal<string>('Cargando sala...');
 
-  private roomToken = 'SALA_DEMO';
+  private roomToken = '';
+  private pendingQuestion: any = null; // Guarda la pregunta activa hasta que se active el comodín
+  private historialPreguntas: any[] = [];
 
   ngOnInit(): void {
-    // 1. Obtener el token de la sala desde los parámetros de la URL (?token=XYZ o ?sala=XYZ)
+    // 1. Obtener el token de la sala desde la URL y generar un nombre anónimo
     this.route.queryParams
       .pipe(
         takeUntilDestroyed(this.destroyRef),
@@ -80,20 +84,43 @@ export class VoteTouchScreenComponent implements OnInit {
       .subscribe(token => {
         if (token) {
           this.roomToken = token;
+          const anonymousName = 'Audiencia Digital';
           
           // Obtener detalles de la sala para extraer salaId y rondaId
           this.salasService.obtenerPorId(token).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
             next: (sala) => {
               this.salaId = sala.salaId;
               this.rondaId = sala.rondaActiva?.rondaId;
+              this.tituloEvento.set(sala.nombre || 'Sala de Votación');
+              
+              if (sala.rondaActiva) {
+                this.historialPreguntas = sala.rondaActiva.historialPreguntas || [];
+                
+                let currentQIndex = 1;
+                if (sala.rondaActiva.preguntaActual) {
+                  const idx = this.historialPreguntas.findIndex((p: any) => p.preguntaId === sala.rondaActiva!.preguntaActualId);
+                  if (idx >= 0) currentQIndex = idx + 1;
+                }
+
+                this.rondaInfo.set({
+                  ronda: currentQIndex,
+                  totalRondas: sala.limitePreguntas || this.historialPreguntas.length || 0,
+                  premio: '---'
+                });
+                
+                // Guardamos la pregunta actual en pending por si el comodín no está activo aún
+                if (sala.rondaActiva.preguntaActual) {
+                  this.pendingQuestion = sala.rondaActiva.preguntaActual;
+                }
+              }
             },
             error: (err) => console.warn('Error al cargar la sala para la audiencia:', err)
           });
           
-          // Conectar al websocket y unirse a la sala
+          // Conectar al websocket y unirse a la sala anónimamente
           try {
             this.socketService.connect();
-            this.socketService.unirseASala(this.roomToken, 'Audiencia Móvil');
+            this.socketService.unirseASala(this.roomToken, anonymousName);
           } catch (err) {
             console.warn('No se pudo conectar al Socket.io automáticamente:', err);
           }
@@ -103,8 +130,18 @@ export class VoteTouchScreenComponent implements OnInit {
     // 2. Escuchar eventos en tiempo real desde el servidor de Sockets
     const socketQuestionSubscription = this.socketService.escucharEvento<any>('pregunta_liberada')
       .subscribe((pregunta) => {
+        // Guardamos la pregunta pero NO la mostramos hasta que se active el comodín
         if (pregunta) {
-          this.loadNewQuestion(pregunta);
+          this.pendingQuestion = pregunta;
+
+          // Actualizar el número de pregunta (ronda) en base al historial
+          const idx = this.historialPreguntas.findIndex(p => p.preguntaId === pregunta.preguntaId);
+          if (idx >= 0) {
+            const info = this.rondaInfo();
+            if (info) {
+              this.rondaInfo.set({ ...info, ronda: idx + 1 });
+            }
+          }
         }
       });
 
@@ -113,11 +150,43 @@ export class VoteTouchScreenComponent implements OnInit {
         this.timeRemaining.set(tiempo);
       });
 
+    const socketInfoRondaSubscription = this.socketService.escucharEvento<any>('info_ronda')
+      .subscribe((info) => {
+        if (info) {
+          this.rondaInfo.set({
+            ronda: info.ronda || 0,
+            totalRondas: info.totalRondas || 0,
+            premio: info.premio || '---'
+          });
+        }
+      });
+
+    // Escuchar cuando el jugador se une y le mandan los comodines que ya están bloqueados/usados
+    const socketComodinesSubscription = this.socketService.escucharEvento<string[]>('comodines_bloqueados')
+      .subscribe((bloqueados) => {
+        if (bloqueados && bloqueados.includes('PUBLICO')) {
+          if (this.pendingQuestion) {
+            this.loadNewQuestion(this.pendingQuestion);
+          }
+        }
+      });
+
+    // Escuchar el evento en vivo cuando el jugador presiona el comodín "Público"
+    const socketComodinLiveSubscription = this.socketService.escucharEvento<any>('comodin_bloqueado')
+      .subscribe((data) => {
+        if (data && data.tipoComodin === 'PUBLICO') {
+          if (this.pendingQuestion) {
+            this.loadNewQuestion(this.pendingQuestion);
+          }
+        }
+      });
+
     // 3. Mantener compatibilidad con eventos del navegador (para pruebas unitarias y manuales)
     if (typeof window !== 'undefined') {
       const onRelease = (ev: Event) => {
         const detail = (ev as any).detail;
-        this.loadNewQuestion(detail?.question);
+        this.pendingQuestion = detail?.question;
+        // Si ya estuviera activo el comodín, lo cargamos
       };
       
       const onClose = () => {
@@ -137,6 +206,9 @@ export class VoteTouchScreenComponent implements OnInit {
     this.destroyRef.onDestroy(() => {
       socketQuestionSubscription.unsubscribe();
       socketTimerSubscription.unsubscribe();
+      socketInfoRondaSubscription.unsubscribe();
+      socketComodinesSubscription.unsubscribe();
+      socketComodinLiveSubscription.unsubscribe();
     });
   }
 
@@ -165,8 +237,6 @@ export class VoteTouchScreenComponent implements OnInit {
     // Normalizar la pregunta recibida
     this.currentQuestion.set({
       prompt: pregunta.texto || pregunta.prompt || pregunta.pregunta || 'Pregunta',
-      roundLabel: pregunta.roundLabel || pregunta.ronda,
-      premioActual: pregunta.premioActual || pregunta.premio,
       opciones,
       preguntaId: pregunta.preguntaId || pregunta.id
     });

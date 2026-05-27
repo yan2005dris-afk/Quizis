@@ -127,6 +127,15 @@ export class RoomComponent implements OnInit, OnDestroy {
     return `${origin}/join/${token}`;
   });
 
+  protected readonly audienceLink = computed(() => {
+    const sala = this.salaDetalle();
+    if (!sala || !sala.tokenCompartido) return null;
+    const origin = typeof window !== 'undefined' ? window.location.origin : '';
+    return `${origin}/audiencia?token=${sala.tokenCompartido}`;
+  });
+
+  protected readonly linkAudCopiado = signal(false);
+
   constructor() {
     // Efecto ÚNICO para reaccionar al WS ronda_reiniciada
     // NO lee salaDetalle() para evitar el loop de escritura→re-ejecución
@@ -188,8 +197,13 @@ export class RoomComponent implements OnInit, OnDestroy {
             participantes: [],
             infoRonda: sala.rondaActiva
               ? {
-                  ronda: sala.rondaActiva.numeroRonda,
-                  totalRondas: sala.rondaActiva.historialPreguntas?.length || sala.limitePreguntas,
+                  ronda: (() => {
+                    const idx = sala.rondaActiva.historialPreguntas?.findIndex(
+                      (p: any) => p.preguntaId === sala.rondaActiva!.preguntaActualId
+                    );
+                    return idx !== undefined && idx >= 0 ? idx + 1 : 1;
+                  })(),
+                  totalRondas: sala.limitePreguntas || sala.rondaActiva.historialPreguntas?.length || 0,
                   premio: '$0',
                 }
               : null,
@@ -363,6 +377,16 @@ export class RoomComponent implements OnInit, OnDestroy {
     navigator.clipboard.writeText(link).then(() => {
       this.linkCopiado.set(true);
       setTimeout(() => this.linkCopiado.set(false), 2000);
+    });
+  }
+
+  public onCopiarLinkAud(): void {
+    const link = this.audienceLink();
+    if (!link) return;
+
+    navigator.clipboard.writeText(link).then(() => {
+      this.linkAudCopiado.set(true);
+      setTimeout(() => this.linkAudCopiado.set(false), 2000);
     });
   }
 

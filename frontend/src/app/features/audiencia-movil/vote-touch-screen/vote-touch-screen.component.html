@@ -1,19 +1,11 @@
 <main class="vote-screen">
   
   <!-- BARRA DE ENCABEZADO DE JUEGO (GAME METRICS) -->
-  <header class="game-header">
-    <div class="header-left">
-      <span class="round-badge">{{ roundLabel() }}</span>
-      <span class="timer-badge" [class.timer-badge--low]="timeRemaining() <= 10">
-        <span class="timer-icon">⏳</span>
-        Tiempo restante: <strong class="time-sec">{{ timeRemaining() }}s</strong>
-      </span>
-    </div>
-    <div class="header-right">
-      <span class="prize-label">PREMIO ACTUAL</span>
-      <h3 class="prize-value">{{ premioActual() }}</h3>
-    </div>
-  </header>
+  <app-event-header
+    [rondaInfo]="rondaInfo()"
+    [tiempoRestante]="timeRemaining()"
+    [tituloEvento]="tituloEvento()"
+  />
 
   <!-- CONTENEDOR DE LA PREGUNTA -->
   <section class="question-container">
@@ -86,15 +78,5 @@
       </div>
     }
   </section>
-
-  <!-- COMODINES DISPONIBLES (Sección inferior) -->
-  <footer class="comodines-footer">
-    <div class="comodines-label">COMODINES DISPONIBLES</div>
-    <div class="comodines-row">
-      <div class="comodin-badge text-fifty">50:50</div>
-      <div class="comodin-badge text-public">Público</div>
-      <div class="comodin-badge text-call">Llamada</div>
-    </div>
-  </footer>
 
 </main>
