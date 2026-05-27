@@ -20,7 +20,7 @@
 /* HEADER */
 .bancos-index__header {
   margin-bottom: 28px;
-  background: linear-gradient(135deg, #1e3a5f 0%, #2563eb 100%);
+  background: linear-gradient(135deg, #0d1231 0%, var(--color-primary) 100%);
   border-radius: 16px;
   padding: 28px 32px;
   color: white;
@@ -177,7 +177,7 @@
   width: 36px;
   height: 36px;
   border: 3px solid #e2e8f0;
-  border-top-color: #2563eb;
+  border-top-color: var(--color-primary);
   border-radius: 50%;
   animation: spin 0.6s linear infinite;
 }
@@ -232,8 +232,8 @@
   min-height: 160px;
 
   &:hover {
-    border-color: #2563eb;
-    box-shadow: 0 4px 16px rgba(37, 99, 235, 0.12);
+    border-color: var(--color-primary);
+    box-shadow: 0 4px 16px rgba(29, 38, 103, 0.12);
     transform: translateY(-2px);
   }
 }
@@ -258,7 +258,7 @@
 .banco-card__icon {
   width: 20px;
   height: 20px;
-  color: #2563eb;
+  color: var(--color-primary);
 }
 
 .banco-card__arrow {
@@ -268,7 +268,7 @@
 }
 
 .banco-card:hover .banco-card__arrow {
-  color: #2563eb;
+  color: var(--color-primary);
   transform: translateX(3px);
 }
 
@@ -312,7 +312,7 @@
 .banco-card__stat-num {
   font-size: 18px;
   font-weight: 700;
-  color: #2563eb;
+  color: var(--color-primary);
 }
 
 .banco-card__stat-label {

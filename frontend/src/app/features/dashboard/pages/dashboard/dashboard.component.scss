@@ -7,7 +7,7 @@
 
 /* BANNER */
 .welcome-banner {
-  background: linear-gradient(135deg, #1e3a5f 0%, #2563eb 100%);
+  background: linear-gradient(135deg, #0d1231 0%, var(--color-primary) 100%);
   color: white;
   padding: 2.5rem 3rem;
   border-radius: 16px;
@@ -46,7 +46,7 @@
 
   &.btn-primary {
     background: white;
-    color: #2563eb;
+    color: var(--color-primary);
 
     &:hover { background: #f0f7ff; }
   }
@@ -75,7 +75,7 @@
   width: 24px;
   height: 24px;
   border: 3px solid #e2e8f0;
-  border-top-color: #2563eb;
+  border-top-color: var(--color-primary);
   border-radius: 50%;
   animation: spin 0.6s linear infinite;
 }
@@ -116,7 +116,7 @@
   font-size: 22px;
   flex-shrink: 0;
 
-  &--blue   { background: #eff6ff; }
+  &--blue   { background: #eff6ff; color: var(--color-primary); }
   &--purple { background: #f5f3ff; }
   &--green  { background: #f0fdf4; }
   &--orange { background: #fff7ed; }
@@ -164,7 +164,7 @@
 
 .section-link {
   font-size: 13px;
-  color: #2563eb;
+  color: var(--color-primary);
   text-decoration: none;
   font-weight: 500;
 
@@ -191,8 +191,8 @@
   cursor: pointer;
 
   &:hover {
-    border-color: #2563eb;
-    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.1);
+    border-color: var(--color-primary);
+    box-shadow: 0 4px 12px rgba(29, 38, 103, 0.1);
   }
 }
 
@@ -232,7 +232,7 @@
 }
 
 .item-card:hover .item-card__arrow {
-  color: #2563eb;
+  color: var(--color-primary);
   transform: translateX(3px);
 }
 
