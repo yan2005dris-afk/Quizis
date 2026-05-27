@@ -24,6 +24,7 @@ import { EventHeaderComponent } from '../../components/event-header/event-header
 import { EventFeedComponent } from '../../components/event-feed/event-feed.component';
 import { ParticipantsIndexComponent } from '../../components/participants-index/participants-index.component';
 import { ActiveQuestionComponent } from '../../components/active-question/active-question.component';
+import { GameOverComponent } from '../game-over/game-over.component';
 import {
   LucideAngularModule,
   Users,
@@ -48,6 +49,7 @@ import { environment } from '../../../../../environments/environment';
     EventFeedComponent,
     ParticipantsIndexComponent,
     ActiveQuestionComponent,
+    GameOverComponent,
     LucideAngularModule,
   ],
   templateUrl: './room.component.html',
@@ -61,6 +63,9 @@ export class RoomComponent implements OnInit, OnDestroy {
   private readonly destroyRef = inject(DestroyRef);
 
   protected readonly activeTab = signal<'publico' | 'chat'>('publico');
+  protected readonly unreadChatCount = signal(0);
+  private mensajesLengthAtLastCheck = 0;
+  private hasChatSnapshot = false;
   protected readonly comodines = signal<ComodinSala[]>([]);
   protected readonly salaDetalle = signal<SalaDetalle | null>(null);
   protected readonly tokenInvitacion = signal<string | null>(null);
@@ -144,6 +149,30 @@ export class RoomComponent implements OnInit, OnDestroy {
             }
           : actual,
       );
+    });
+
+    // Contador de mensajes no leídos
+    effect(() => {
+      const mensajes = this.gameSocket.mensajesChat();
+      const activeTab = this.activeTab();
+
+      // Primera ejecución: solo sincroniza el snapshot sin contar como no leídos
+      if (!this.hasChatSnapshot) {
+        this.mensajesLengthAtLastCheck = mensajes.length;
+        this.hasChatSnapshot = true;
+        return;
+      }
+
+      if (activeTab === 'chat') {
+        this.unreadChatCount.set(0);
+      } else {
+        const diff = mensajes.length - this.mensajesLengthAtLastCheck;
+        if (diff > 0) {
+          this.unreadChatCount.update((c) => c + diff);
+        }
+      }
+
+      this.mensajesLengthAtLastCheck = mensajes.length;
     });
   }
 

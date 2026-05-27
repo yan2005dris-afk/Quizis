@@ -1,5 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
 import {
@@ -9,15 +8,15 @@ import {
   LogOut,
   Menu,
   X,
-  Users,
+  BarChart2,
   Database,
   PlayCircle,
 } from 'lucide-angular';
 
 @Component({
   selector: 'app-sidebar',
-  standalone: true,
-  imports: [CommonModule, RouterLink, RouterLinkActive, LucideAngularModule],
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [RouterLink, RouterLinkActive, LucideAngularModule],
   templateUrl: './sidebar.component.html',
   styleUrl: './sidebar.component.scss',
 })
@@ -29,7 +28,7 @@ export class SidebarComponent {
   // Iconos
   readonly DashboardIcon = LayoutDashboard;
   readonly PlayIcon = PlayCircle;
-  readonly UsersIcon = Users;
+  readonly ReportesIcon = BarChart2;
   readonly DatabaseIcon = Database;
   readonly SettingsIcon = Settings;
   readonly LogOutIcon = LogOut;
