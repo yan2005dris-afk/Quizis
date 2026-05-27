@@ -23,7 +23,7 @@
           <span class="pagination-info"> {{ currentIndex() + 1 }} / {{ preguntas().length }} </span>
           <button
             class="pagination-btn"
-            [disabled]="currentIndex() === preguntas().length - 1"
+            [disabled]="currentIndex() === maxVisibleIndex()"
             (click)="nextQuestion()"
             title="Siguiente pregunta"
           >

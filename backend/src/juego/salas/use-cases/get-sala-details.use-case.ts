@@ -150,6 +150,8 @@ export class GetSalaDetailsUseCase {
       createdAt: sala.createdAt,
 
       participantes: sala.participantes.map((p) => ({
+        id: p.nickname,
+        nombre: p.nickname,
         participanteId: p.participanteId,
         nickname: p.nickname,
         rol: p.rol,

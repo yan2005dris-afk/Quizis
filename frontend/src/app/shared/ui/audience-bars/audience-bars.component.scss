@@ -28,7 +28,7 @@
 
 .barra-relleno {
   height: 100%;
-  background: #3b82f6;
+  background: var(--color-primary);
   border-radius: 8px;
   transition: width 0.5s ease;
 }
