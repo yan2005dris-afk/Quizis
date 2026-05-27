@@ -7,7 +7,6 @@ import {
   output,
   signal,
   viewChild,
-  afterNextRender,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ChatMessage } from '../../room.types';
@@ -15,7 +14,6 @@ import { ChatMessage } from '../../room.types';
 @Component({
   selector: 'app-chat-box',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  standalone: true,
   imports: [FormsModule],
   templateUrl: './chat-box.component.html',
   styleUrl: './chat-box.component.scss',
@@ -34,14 +32,13 @@ export class ChatBoxComponent {
     effect((onCleanup) => {
       const msgs = this.mensajes();
       const container = this.mensajesContainer();
+
       if (container?.nativeElement && msgs.length > 0) {
-        const ref = afterNextRender(
-          { write: () => {
-              container.nativeElement.scrollTop =
-                container.nativeElement.scrollHeight;
-            } },
-        );
-        onCleanup(() => ref.destroy());
+        const id = setTimeout(() => {
+          container.nativeElement.scrollTop =
+            container.nativeElement.scrollHeight;
+        }, 0);
+        onCleanup(() => clearTimeout(id));
       }
     });
   }
