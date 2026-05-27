@@ -63,6 +63,7 @@ export class RoomComponent implements OnInit, OnDestroy {
   protected readonly activeTab = signal<'publico' | 'chat'>('publico');
   protected readonly unreadChatCount = signal(0);
   private mensajesLengthAtLastCheck = 0;
+  private hasChatSnapshot = false;
   protected readonly comodines = signal<ComodinSala[]>([]);
   protected readonly salaDetalle = signal<SalaDetalle | null>(null);
   protected readonly tokenInvitacion = signal<string | null>(null);
@@ -152,6 +153,13 @@ export class RoomComponent implements OnInit, OnDestroy {
     effect(() => {
       const mensajes = this.gameSocket.mensajesChat();
       const activeTab = this.activeTab();
+
+      // Primera ejecución: solo sincroniza el snapshot sin contar como no leídos
+      if (!this.hasChatSnapshot) {
+        this.mensajesLengthAtLastCheck = mensajes.length;
+        this.hasChatSnapshot = true;
+        return;
+      }
 
       if (activeTab === 'chat') {
         this.unreadChatCount.set(0);

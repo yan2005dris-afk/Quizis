@@ -1,12 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ChatCacheUseCase } from '../../../infrastructure/cache/use-cases/chat-cache.use-case';
-
-export interface ChatMessage {
-  usuario: string;
-  texto: string;
-  timestamp: number;
-  tipo: 'mensaje' | 'sugerencia';
-}
+import { ChatMessage } from '../types/chat.types';
 
 @Injectable()
 export class SendMessageUseCase {
@@ -27,8 +21,11 @@ export class SendMessageUseCase {
       tipo: payload.tipo,
     };
 
+    const logText = payload.texto
+      .replace(/[\n\r]/g, ' ')
+      .substring(0, 120);
     this.logger.log(
-      `[CHAT] ${payload.nickname} en sala ${payload.tokenCompartido}: ${payload.texto}`,
+      `[CHAT] ${payload.nickname} en sala ${payload.tokenCompartido}: ${logText}`,
     );
 
     return this.chatCache.addMessage(payload.tokenCompartido, message);

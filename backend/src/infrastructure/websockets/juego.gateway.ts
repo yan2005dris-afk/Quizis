@@ -289,7 +289,13 @@ export class JuegoGateway implements OnGatewayConnection, OnGatewayDisconnect {
         tipo: payload.tipo,
       });
 
-      this.server.to(info.tokenCompartido).emit('mensaje_chat', mensajes);
+      // Emitir solo el mensaje nuevo (no todo el historial)
+      const nuevoMensaje = mensajes[mensajes.length - 1];
+      if (nuevoMensaje) {
+        this.server
+          .to(info.tokenCompartido)
+          .emit('mensaje_chat_nuevo', nuevoMensaje);
+      }
       return { success: true };
     } catch (error) {
       this.logger.error(`Error en Gateway al enviar mensaje:`, error);

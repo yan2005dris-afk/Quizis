@@ -5,13 +5,7 @@ import {
   OnModuleInit,
 } from '@nestjs/common';
 import { RedisService } from '../../database/redis/redis.service';
-
-interface ChatMessage {
-  usuario: string;
-  texto: string;
-  timestamp: number;
-  tipo: 'mensaje' | 'sugerencia';
-}
+import { ChatMessage } from '../../../juego/websockets/types/chat.types';
 
 interface MemoryChatEntry {
   messages: ChatMessage[];
@@ -90,10 +84,12 @@ export class ChatCacheUseCase implements OnModuleInit, OnModuleDestroy {
     if (!entry) {
       entry = {
         messages: [],
-        expiresAt: Date.now() + this.TTL_SECONDS * 1000,
+        expiresAt: 0,
       };
       this.memoryData.set(key, entry);
     }
+    // Renovar TTL en cada mensaje, igual que Redis EXPIRE
+    entry.expiresAt = Date.now() + this.TTL_SECONDS * 1000;
     entry.messages.push(message);
 
     // Recortar en memoria si excede
@@ -136,6 +132,11 @@ export class ChatCacheUseCase implements OnModuleInit, OnModuleDestroy {
     }
 
     const entry = this.memoryData.get(key);
-    return entry ? entry.messages : [];
+    if (!entry) return [];
+    if (entry.expiresAt < Date.now()) {
+      this.memoryData.delete(key);
+      return [];
+    }
+    return entry.messages;
   }
 }

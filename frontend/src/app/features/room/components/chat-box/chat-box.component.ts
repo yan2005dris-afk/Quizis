@@ -7,6 +7,7 @@ import {
   output,
   signal,
   viewChild,
+  afterNextRender,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ChatMessage } from '../../room.types';
@@ -30,14 +31,17 @@ export class ChatBoxComponent {
 
   constructor() {
     // Auto-scroll al último mensaje cuando cambia la lista
-    effect(() => {
+    effect((onCleanup) => {
       const msgs = this.mensajes();
       const container = this.mensajesContainer();
       if (container?.nativeElement && msgs.length > 0) {
-        // Usar timeout para esperar a que Angular renderice el DOM
-        setTimeout(() => {
-          container.nativeElement.scrollTop = container.nativeElement.scrollHeight;
-        }, 0);
+        const ref = afterNextRender(
+          { write: () => {
+              container.nativeElement.scrollTop =
+                container.nativeElement.scrollHeight;
+            } },
+        );
+        onCleanup(() => ref.destroy());
       }
     });
   }
