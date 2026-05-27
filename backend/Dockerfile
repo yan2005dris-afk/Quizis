@@ -1,38 +1,62 @@
-# ─── Stage 1: Base ─────────────────────────────────────────────
-FROM node:22-alpine AS base
+# =============================================================================
+# Backend Dockerfile — NestJS + Prisma (multi-stage)
+# Build context: project root (.) — pnpm workspace needs pnpm-workspace.yaml
+# =============================================================================
+
+# Stage 1: Install all dependencies (deps)
+# -------------------------------------------------------------------------
+FROM node:22-alpine AS deps
 RUN corepack enable && corepack prepare pnpm@latest --activate
+
 WORKDIR /app
-# Configuramos pnpm para que no bloquee los builds por scripts de dependencias (pnpm 10+)
-RUN pnpm config set only-built-dependencies-file .pnpm-debug.log || true
 
-# ─── Stage 2: Dependencies ─────────────────────────────────────
-FROM base AS deps
-RUN apk add --no-cache python3 make g++
-# Copiamos solo los archivos necesarios del backend
-COPY package.json pnpm-lock.yaml* ./
-# Instalamos dependencias (sin requerir el workspace de la raíz)
-RUN pnpm install --no-frozen-lockfile --ignore-scripts
+# Copy workspace config files — needed for pnpm install --frozen-lockfile
+COPY pnpm-workspace.yaml package.json pnpm-lock.yaml .npmrc ./
+COPY backend/package.json ./backend/
 
-# ─── Stage 3: Builder ──────────────────────────────────────────
-FROM deps AS builder
-ENV NODE_ENV=production
-COPY . .
-# Limpiamos posibles artefactos locales previos y generamos Prisma
-RUN rm -rf src/generated && pnpm exec prisma generate
-RUN pnpm run build
+# Install ALL dependencies (dev + prod) for the backend workspace package
+RUN pnpm install --frozen-lockfile
 
-# ─── Stage 4: Production ───────────────────────────────────────
-FROM base AS production
-ENV NODE_ENV=production
+# Stage 2: Build the application
+# -------------------------------------------------------------------------
+FROM node:22-alpine AS build
+RUN corepack enable && corepack prepare pnpm@latest --activate
 
-COPY package.json pnpm-lock.yaml* ./
-# Instalamos solo dependencias de producción e ignoramos scripts
-RUN pnpm install --prod --no-frozen-lockfile --ignore-scripts
+WORKDIR /app
 
-# Copiamos los artefactos generados
-COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/src/generated ./src/generated
-COPY --from=builder /app/prisma ./prisma
+# Reuse installed node_modules from deps stage
+COPY --from=deps /app/node_modules ./node_modules
+COPY --from=deps /app/backend/node_modules ./backend/node_modules
 
-EXPOSE ${PORT:-3000}
-CMD ["node", "dist/src/main.js"]
+# Copy workspace configs (needed for pnpm commands)
+COPY package.json pnpm-workspace.yaml ./
+
+# Copy backend source code, configs, and Prisma schema
+COPY backend/ ./backend/
+
+# Generate Prisma client and compile NestJS
+RUN cd backend && npx prisma generate && npx nest build
+
+# Stage 3: Production runtime
+# -------------------------------------------------------------------------
+FROM node:22-alpine AS production
+
+RUN corepack enable && corepack prepare pnpm@latest --activate
+RUN apk add --no-cache curl
+
+WORKDIR /app
+
+# Copy production dependencies (installed with frozen lockfile)
+COPY pnpm-workspace.yaml package.json pnpm-lock.yaml .npmrc ./
+COPY backend/package.json ./backend/
+RUN pnpm install --frozen-lockfile
+
+# Copy built artifacts from build stage
+COPY --from=build /app/backend/dist ./backend/dist
+COPY --from=build /app/backend/prisma ./backend/prisma
+COPY --from=build /app/backend/prisma.config.ts ./backend/prisma.config.ts
+
+EXPOSE 3000
+
+# Start: apply pending migrations, then launch the NestJS server
+CMD cd backend && npx prisma migrate deploy && node dist/src/main.js

@@ -1,30 +1,42 @@
-# ─── Stage 1: Build ───────────────────────────────────────────
-FROM node:22-alpine AS builder
+# =============================================================================
+# Frontend Dockerfile — Angular (static) + Nginx (multi-stage)
+# Build context: project root (.) — pnpm workspace needs pnpm-workspace.yaml
+# =============================================================================
+
+# Stage 1: Install dependencies and build Angular app
+# -------------------------------------------------------------------------
+FROM node:22-alpine AS build
 RUN corepack enable && corepack prepare pnpm@latest --activate
+
 WORKDIR /app
 
-# Instalamos solo lo del frontend
-COPY package.json pnpm-lock.yaml* ./
-RUN pnpm install --no-frozen-lockfile --ignore-scripts
+# Copy workspace config files — needed for pnpm install --frozen-lockfile
+COPY pnpm-workspace.yaml package.json pnpm-lock.yaml .npmrc ./
+COPY frontend/package.json ./frontend/
+COPY frontend/angular.json ./frontend/
+COPY frontend/tsconfig.json ./frontend/
+COPY frontend/tsconfig.app.json ./frontend/
 
-COPY . .
-RUN pnpm run build
+# Install ALL dependencies for the frontend workspace package
+RUN pnpm install --frozen-lockfile
 
-# ─── Stage 2: Serve ───────────────────────────────────────────
-FROM nginx:alpine AS production
+# Copy the rest of the frontend source
+COPY frontend/ ./frontend/
 
-# Limpiamos el directorio por defecto de Nginx
+# Build Angular app (static output mode — no SSR server)
+RUN pnpm --filter frontend run build
+
+# Stage 2: Nginx production server
+# -------------------------------------------------------------------------
+FROM nginx:alpine
+
+# Copy custom Nginx config (already references quizis-backend:3000)
+COPY frontend/nginx.conf /etc/nginx/conf.d/default.conf
+
+# Remove default nginx welcome page so Angular's index.csr.html takes over
 RUN rm -rf /usr/share/nginx/html/*
 
-# Copiamos los archivos estáticos construidos
-COPY --from=builder /app/dist/frontend/browser /usr/share/nginx/html
-
-# Aseguramos que exista un index.html en la raíz para el fallback de Nginx
-RUN if [ ! -f /usr/share/nginx/html/index.html ] && [ -f /usr/share/nginx/html/index.csr.html ]; then \
-    cp /usr/share/nginx/html/index.csr.html /usr/share/nginx/html/index.html; \
-    fi
-
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+# Copy the static browser build output
+COPY --from=build /app/frontend/dist/frontend/browser /usr/share/nginx/html
 
 EXPOSE 80
-CMD ["nginx", "-g", "daemon off;"]
