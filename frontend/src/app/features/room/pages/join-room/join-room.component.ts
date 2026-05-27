@@ -87,7 +87,9 @@ export class JoinRoomComponent implements OnInit {
 
         // Determinar qué vista mostrar según el rol
         if (res.participante.rol === 'observador') {
-          this.router.navigate(['/audiencia'], { queryParams: { token: res.sala.tokenCompartido } });
+          this.router.navigate(['/audiencia'], {
+            queryParams: { token: res.sala.tokenCompartido },
+          });
         } else {
           this.router.navigate(['/sala', res.sala.id]);
         }

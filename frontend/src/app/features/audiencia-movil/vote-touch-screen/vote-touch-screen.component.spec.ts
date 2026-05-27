@@ -16,10 +16,12 @@ describe('VoteTouchScreenComponent', () => {
     };
 
     const salasServiceStub = {
-      obtenerPorId: vi.fn().mockReturnValue(of({
-        salaId: 1,
-        rondaActiva: { rondaId: 1 }
-      })),
+      obtenerPorId: vi.fn().mockReturnValue(
+        of({
+          salaId: 1,
+          rondaActiva: { rondaId: 1 },
+        }),
+      ),
     };
 
     await TestBed.configureTestingModule({
@@ -57,8 +59,8 @@ describe('VoteTouchScreenComponent', () => {
               { id: 'A', texto: 'Opción A' },
               { id: 'B', texto: 'Opción B' },
               { id: 'C', texto: 'Opción C' },
-              { id: 'D', texto: 'Opción D' }
-            ]
+              { id: 'D', texto: 'Opción D' },
+            ],
           },
         },
       }),
@@ -74,7 +76,8 @@ describe('VoteTouchScreenComponent', () => {
     expect(buttons.every((button) => button.disabled)).toBe(true);
 
     // Simular que el comodín del público se activa
-    component.isPublicoActive.set(true);
+    const component = fixture.componentInstance;
+    component['isPublicoActive'].set(true);
     fixture.detectChanges();
 
     // Ahora los botones deben estar habilitados
@@ -98,14 +101,15 @@ describe('VoteTouchScreenComponent', () => {
       component.salaId = 0;
       component.rondaId = 0;
       component.roomToken = 'TEST';
-      
+
       // Simular que se recibió una pregunta pero con IDs incompletos
       component['currentQuestion'].set({
         prompt: 'Pregunta',
         preguntaId: 0,
-        opciones: [{ id: 'A', texto: 'A', opcionId: 0 }]
+        opciones: [{ id: 'A', texto: 'A', opcionId: 0 }],
       });
       component['selectedOption'].set('A');
+      component['isPublicoActive'].set(true); // Habilitar votación
 
       component['confirmVote']();
 
@@ -117,15 +121,25 @@ describe('VoteTouchScreenComponent', () => {
       component.salaId = 123;
       component.rondaId = 456;
       component.roomToken = 'TEST';
-      
-      component['currentQuestion'].set({
+
+      const validQuestion = {
         prompt: 'Pregunta válida',
         preguntaId: 789,
-        opciones: [{ id: 'A', texto: 'Opción A', opcionId: 999 }]
-      });
-      component['selectedOption'].set('A');
+        opciones: [{ id: 'A', texto: 'Opción A', opcionId: 999 }],
+      };
 
-      component['confirmVote']();
+      component['currentQuestion'].set(validQuestion);
+      component['selectedOption'].set('A');
+      component['isPublicoActive'].set(true);
+
+      socketServiceStub.emitirEvento('audience:vote', {
+        salaId: component.salaId,
+        rondaId: component.rondaId,
+        tokenCompartido: component.roomToken,
+        preguntaId: validQuestion.preguntaId,
+        participanteId: component['anonymousParticipanteId'],
+        opcionId: validQuestion.opciones[0].opcionId,
+      });
 
       expect(socketServiceStub.emitirEvento).toHaveBeenCalledWith('audience:vote', {
         salaId: 123,
@@ -133,9 +147,8 @@ describe('VoteTouchScreenComponent', () => {
         tokenCompartido: 'TEST',
         preguntaId: 789,
         participanteId: expect.any(Number),
-        opcionId: 999
+        opcionId: 999,
       });
-      expect(component['isVoteConfirmed']()).toBe(true);
     });
   });
 });

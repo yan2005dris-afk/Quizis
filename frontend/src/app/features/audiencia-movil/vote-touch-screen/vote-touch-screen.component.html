@@ -1,5 +1,4 @@
 <main class="vote-screen">
-  
   <!-- BARRA DE ENCABEZADO DE JUEGO (GAME METRICS) -->
   <app-event-header
     [rondaInfo]="rondaInfo()"
@@ -44,7 +43,7 @@
             Modo Espectador. Esperando comodín del público...
           </div>
         } @else if (selectedOption()) {
-          <button 
+          <button
             type="button"
             class="confirm-btn"
             [class.confirm-btn--confirmed]="isVoteConfirmed()"
@@ -74,8 +73,10 @@
         </div>
 
         <h2 class="waiting-title">Pantalla Bloqueada</h2>
-        <p class="waiting-subtitle">Esperando a que el presentador libere la siguiente pregunta...</p>
-        
+        <p class="waiting-subtitle">
+          Esperando a que el presentador libere la siguiente pregunta...
+        </p>
+
         <div class="waiting-footer">
           <span class="waiting-status-dot"></span>
           Conectado al servidor de votación en tiempo real
@@ -83,5 +84,4 @@
       </div>
     }
   </section>
-
 </main>

@@ -139,9 +139,15 @@ export class RoomComponent implements OnInit, OnDestroy {
       const rol = this.miRol();
       const sala = this.salaDetalle();
       const participantes = this.gameSocket.participantes();
-      
+
       // Solo evaluar la redirección si ya recibimos la lista del socket
-      if (participantes.length > 0 && rol === 'observador' && !this.isHost() && sala && sala.tokenCompartido) {
+      if (
+        participantes.length > 0 &&
+        rol === 'observador' &&
+        !this.isHost() &&
+        sala &&
+        sala.tokenCompartido
+      ) {
         this.router.navigate(['/audiencia'], { queryParams: { token: sala.tokenCompartido } });
       }
     });
@@ -232,11 +238,12 @@ export class RoomComponent implements OnInit, OnDestroy {
               ? {
                   ronda: (() => {
                     const idx = sala.rondaActiva.historialPreguntas?.findIndex(
-                      (p: any) => p.preguntaId === sala.rondaActiva!.preguntaActualId
+                      (p: any) => p.preguntaId === sala.rondaActiva!.preguntaActualId,
                     );
                     return idx !== undefined && idx >= 0 ? idx + 1 : 1;
                   })(),
-                  totalRondas: sala.limitePreguntas || sala.rondaActiva.historialPreguntas?.length || 0,
+                  totalRondas:
+                    sala.limitePreguntas || sala.rondaActiva.historialPreguntas?.length || 0,
                   premio: '$0',
                 }
               : null,
@@ -412,8 +419,6 @@ export class RoomComponent implements OnInit, OnDestroy {
       setTimeout(() => this.linkCopiado.set(false), 2000);
     });
   }
-
-
 
   public onEnviarMensaje(event: { texto: string; tipo: 'mensaje' | 'sugerencia' }): void {
     this.gameSocket.enviarMensaje(event.texto, event.tipo);

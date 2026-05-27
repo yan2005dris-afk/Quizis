@@ -1,4 +1,12 @@
-import { Component, DestroyRef, inject, OnInit, signal, computed, PLATFORM_ID } from '@angular/core';
+import {
+  Component,
+  DestroyRef,
+  inject,
+  OnInit,
+  signal,
+  computed,
+  PLATFORM_ID,
+} from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { isPlatformBrowser } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -91,11 +99,9 @@ export class VoteTouchScreenComponent implements OnInit {
   protected readonly isVoteConfirmed = signal<boolean>(false);
   protected readonly timeRemaining = signal<number>(45);
   protected readonly isPublicoActive = signal<boolean>(false);
-  
-  protected readonly canVote = computed(() => 
-    this.currentQuestion() !== null && 
-    !this.isVoteConfirmed() && 
-    this.isPublicoActive()
+
+  protected readonly canVote = computed(
+    () => this.currentQuestion() !== null && !this.isVoteConfirmed() && this.isPublicoActive(),
   );
 
   // Opciones por defecto para el mockup y fallback de pruebas
@@ -116,7 +122,11 @@ export class VoteTouchScreenComponent implements OnInit {
   });
 
   // Datos adicionales dinámicos
-  protected readonly rondaInfo = signal<{ronda: number, totalRondas: number, premio: string} | null>(null);
+  protected readonly rondaInfo = signal<{
+    ronda: number;
+    totalRondas: number;
+    premio: string;
+  } | null>(null);
   protected readonly tituloEvento = signal<string>('Cargando sala...');
 
   private roomToken = '';
@@ -128,16 +138,16 @@ export class VoteTouchScreenComponent implements OnInit {
     this.route.queryParams
       .pipe(
         takeUntilDestroyed(this.destroyRef),
-        map(params => params['token'] || params['sala']),
-        filter(token => !!token),
+        map((params) => params['token'] || params['sala']),
+        filter((token) => !!token),
         distinctUntilChanged(),
-        switchMap(token => this.salasService.obtenerPorId(token))
+        switchMap((token) => this.salasService.obtenerPorId(token)),
       )
       .subscribe({
         next: (sala) => {
           this.salaId = sala.salaId;
           this.rondaId = sala.rondaActiva?.rondaId;
-          
+
           // Guardamos el tokenCompartido real (UUID) para el socket
           this.roomToken = sala.tokenCompartido;
 
@@ -152,34 +162,37 @@ export class VoteTouchScreenComponent implements OnInit {
           }
 
           this.tituloEvento.set(sala.nombre || 'Sala de Votación');
-          
+
           if (sala.rondaActiva) {
             this.historialPreguntas = sala.rondaActiva.historialPreguntas || [];
-            
+
             let currentQIndex = 1;
             if (sala.rondaActiva.preguntaActual) {
-              const idx = this.historialPreguntas.findIndex((p: any) => p.preguntaId === sala.rondaActiva!.preguntaActualId);
+              const idx = this.historialPreguntas.findIndex(
+                (p: any) => p.preguntaId === sala.rondaActiva!.preguntaActualId,
+              );
               if (idx >= 0) currentQIndex = idx + 1;
             }
 
             this.rondaInfo.set({
               ronda: currentQIndex,
               totalRondas: sala.limitePreguntas || this.historialPreguntas.length || 0,
-              premio: '---'
+              premio: '---',
             });
-            
+
             // Guardamos la pregunta actual en pending por si el comodín no está activo aún
             if (sala.rondaActiva.preguntaActual) {
               this.pendingQuestion = sala.rondaActiva.preguntaActual;
             }
           }
         },
-        error: (err) => console.warn('Error al cargar la sala para la audiencia:', err)
+        error: (err) => console.warn('Error al cargar la sala para la audiencia:', err),
       });
 
     if (isPlatformBrowser(this.platformId)) {
       // 2. Escuchar eventos en tiempo real desde el servidor de Sockets
-      const socketQuestionSubscription = this.socketService.escucharEvento<any>('pregunta_liberada')
+      const socketQuestionSubscription = this.socketService
+        .escucharEvento<any>('pregunta_liberada')
         .subscribe((pregunta) => {
           // Cargamos la pregunta inmediatamente para que el público pueda VERLA, pero sin poder interactuar aún
           if (pregunta) {
@@ -188,7 +201,9 @@ export class VoteTouchScreenComponent implements OnInit {
             this.loadNewQuestion(pregunta);
 
             // Actualizar el número de pregunta (ronda) en base al historial
-            const idx = this.historialPreguntas.findIndex(p => p.preguntaId === pregunta.preguntaId);
+            const idx = this.historialPreguntas.findIndex(
+              (p) => p.preguntaId === pregunta.preguntaId,
+            );
             if (idx >= 0) {
               const info = this.rondaInfo();
               if (info) {
@@ -198,31 +213,35 @@ export class VoteTouchScreenComponent implements OnInit {
           }
         });
 
-      const socketTimerSubscription = this.socketService.escucharEvento<number>('temporizador_actualizado')
+      const socketTimerSubscription = this.socketService
+        .escucharEvento<number>('temporizador_actualizado')
         .subscribe((tiempo) => {
           this.timeRemaining.set(tiempo);
         });
 
-      const socketInfoRondaSubscription = this.socketService.escucharEvento<any>('info_ronda')
+      const socketInfoRondaSubscription = this.socketService
+        .escucharEvento<any>('info_ronda')
         .subscribe((info) => {
           if (info) {
             this.rondaInfo.set({
               ronda: info.ronda || 0,
               totalRondas: info.totalRondas || 0,
-              premio: info.premio || '---'
+              premio: info.premio || '---',
             });
           }
         });
 
       // Escuchar cuando la pregunta es respondida por el estudiante para bloquear la pantalla
-      const socketRespondidaSubscription = this.socketService.escucharEvento<any>('pregunta_respondida')
+      const socketRespondidaSubscription = this.socketService
+        .escucharEvento<any>('pregunta_respondida')
         .subscribe(() => {
           this.isPublicoActive.set(false);
           this.clearQuestion();
         });
 
       // Escuchar cuando el jugador se une y le mandan los comodines que ya están bloqueados/usados
-      const socketComodinesSubscription = this.socketService.escucharEvento<string[]>('comodines_bloqueados')
+      const socketComodinesSubscription = this.socketService
+        .escucharEvento<string[]>('comodines_bloqueados')
         .subscribe((bloqueados) => {
           if (bloqueados && bloqueados.includes('PUBLICO')) {
             this.isPublicoActive.set(true);
@@ -233,7 +252,8 @@ export class VoteTouchScreenComponent implements OnInit {
         });
 
       // Escuchar el evento en vivo cuando el jugador presiona el comodín "Público"
-      const socketComodinLiveSubscription = this.socketService.escucharEvento<any>('comodin_bloqueado')
+      const socketComodinLiveSubscription = this.socketService
+        .escucharEvento<any>('comodin_bloqueado')
         .subscribe((data) => {
           if (data && data.tipoComodin === 'PUBLICO') {
             this.isPublicoActive.set(true);
@@ -244,7 +264,8 @@ export class VoteTouchScreenComponent implements OnInit {
         });
 
       // Escuchar cambios de rol (si de observador me pasan a estudiante)
-      const socketParticipantesSubscription = this.socketService.escucharEvento<any[]>('participantes')
+      const socketParticipantesSubscription = this.socketService
+        .escucharEvento<any[]>('participantes')
         .subscribe((participantes) => {
           const me = participantes.find((p) => p.nombre === this.participantName);
           if (me && me.rol === 'estudiante') {
@@ -262,7 +283,7 @@ export class VoteTouchScreenComponent implements OnInit {
         this.isPublicoActive.set(false);
         this.loadNewQuestion(this.pendingQuestion);
       };
-      
+
       const onClose = () => {
         this.clearQuestion();
       };
@@ -278,7 +299,7 @@ export class VoteTouchScreenComponent implements OnInit {
         socketComodinesSubscription.unsubscribe();
         socketComodinLiveSubscription.unsubscribe();
         socketRespondidaSubscription.unsubscribe();
-        
+
         window.removeEventListener('quizis:question-released', onRelease as EventListener);
         window.removeEventListener('quizis:question-closed', onClose as EventListener);
       });
@@ -317,7 +338,7 @@ export class VoteTouchScreenComponent implements OnInit {
             return {
               id,
               texto,
-              opcionId: opcion.opcionId
+              opcionId: opcion.opcionId,
             } as OpcionPregunta;
           })
           .filter((opcion: OpcionPregunta | null): opcion is OpcionPregunta => opcion !== null)
@@ -327,7 +348,7 @@ export class VoteTouchScreenComponent implements OnInit {
     this.currentQuestion.set({
       prompt: pregunta.texto || pregunta.prompt || pregunta.pregunta || 'Pregunta',
       opciones,
-      preguntaId: pregunta.preguntaId || pregunta.id
+      preguntaId: pregunta.preguntaId || pregunta.id,
     });
     this.selectedOption.set(null);
     this.isVoteConfirmed.set(false);
@@ -350,17 +371,21 @@ export class VoteTouchScreenComponent implements OnInit {
     const question = this.currentQuestion();
     if (!selected || !this.canVote() || !question) return;
 
-    const option = this.activeOptions().find(o => o.id === selected);
+    const option = this.activeOptions().find((o) => o.id === selected);
     const opcionId = option?.opcionId;
     const salaId = this.salaId;
     const rondaId = this.rondaId;
     const preguntaId = question.preguntaId;
 
     const hasValidIds =
-      Number.isInteger(salaId) && (salaId || 0) > 0 &&
-      Number.isInteger(rondaId) && (rondaId || 0) > 0 &&
-      Number.isInteger(preguntaId) && (preguntaId || 0) > 0 &&
-      Number.isInteger(opcionId) && (opcionId || 0) > 0;
+      Number.isInteger(salaId) &&
+      (salaId || 0) > 0 &&
+      Number.isInteger(rondaId) &&
+      (rondaId || 0) > 0 &&
+      Number.isInteger(preguntaId) &&
+      (preguntaId || 0) > 0 &&
+      Number.isInteger(opcionId) &&
+      (opcionId || 0) > 0;
 
     if (!hasValidIds) {
       console.warn('No se puede emitir el voto: faltan identificadores válidos.', {
@@ -382,7 +407,7 @@ export class VoteTouchScreenComponent implements OnInit {
         tokenCompartido: this.roomToken,
         preguntaId: preguntaId,
         participanteId: this.anonymousParticipanteId,
-        opcionId: opcionId
+        opcionId: opcionId,
       });
     } catch (err) {
       console.warn('Error al emitir el voto por Sockets:', err);
@@ -390,9 +415,11 @@ export class VoteTouchScreenComponent implements OnInit {
 
     // Despachar evento del navegador (compatibilidad de pruebas)
     if (typeof window !== 'undefined') {
-      window.dispatchEvent(new CustomEvent('quizis:vote-casted', { 
-        detail: { option: selected } 
-      }));
+      window.dispatchEvent(
+        new CustomEvent('quizis:vote-casted', {
+          detail: { option: selected },
+        }),
+      );
     }
   }
 }

@@ -16,6 +16,6 @@ export const appConfig: ApplicationConfig = {
       withFetch(),
       withInterceptors([authInterceptor]), // Registramos el interceptor aquí
     ),
-    { provide: SOCKET_SERVER_URL, useValue: environment.apiUrl.replace('/api/v1', '') }
+    { provide: SOCKET_SERVER_URL, useValue: environment.apiUrl.replace('/api/v1', '') },
   ],
 };

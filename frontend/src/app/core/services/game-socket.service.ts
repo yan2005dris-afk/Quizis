@@ -85,12 +85,12 @@ export class GameSocketService {
       this.ultimoResultado.set(null);
 
       // Auto-incrementar el número de pregunta (ronda) en la interfaz
-      this.infoRonda.update(info => {
+      this.infoRonda.update((info) => {
         if (!info) return info;
         // Si no hemos llegado al total, sumamos 1 a la ronda mostrada
         return {
           ...info,
-          ronda: info.ronda < info.totalRondas ? info.ronda + 1 : info.ronda
+          ronda: info.ronda < info.totalRondas ? info.ronda + 1 : info.ronda,
         };
       });
     });
@@ -170,7 +170,7 @@ export class GameSocketService {
         this.infoRonda.set({
           ronda: (() => {
             const idx = data.rondaActiva.historialPreguntas?.findIndex(
-              (p: any) => p.preguntaId === data.rondaActiva!.preguntaActualId
+              (p: any) => p.preguntaId === data.rondaActiva!.preguntaActualId,
             );
             return idx !== undefined && idx >= 0 ? idx + 1 : 1;
           })(),
