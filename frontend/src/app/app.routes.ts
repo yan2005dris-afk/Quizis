@@ -84,8 +84,18 @@ export const routes: Routes = [
 
       // Fallbacks para placeholders
       { path: 'preguntas', redirectTo: 'dashboard', pathMatch: 'full' },
-      { path: 'usuarios', redirectTo: 'dashboard', pathMatch: 'full' },
+      { path: 'usuarios', redirectTo: 'reportes', pathMatch: 'full' },
       { path: 'configuracion', redirectTo: 'dashboard', pathMatch: 'full' },
+
+      // Reportes / Analytics
+      {
+        path: 'reportes',
+        canActivate: [authGuard],
+        loadComponent: () =>
+          import('./features/room/pages/reportes-index/reportes-index.component').then(
+            (m) => m.ReportesIndexComponent,
+          ),
+      },
 
       // Rutas de Sala (Públicas pero dentro del layout)
       {
