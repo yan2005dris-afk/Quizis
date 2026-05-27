@@ -1,10 +1,4 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  inject,
-  OnInit,
-  signal,
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, OnInit, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { SalasService, SalaResumen } from '../../../../core/services/salas.service';
 import { DatePipe } from '@angular/common';
@@ -14,13 +8,7 @@ import { CreateSalaComponent } from '../../components/create-sala/create-sala.co
 @Component({
   selector: 'app-salas-index',
   standalone: true,
-  imports: [
-    RouterLink,
-    DatePipe,
-    ButtonComponent,
-    AlertComponent,
-    CreateSalaComponent,
-  ],
+  imports: [RouterLink, DatePipe, ButtonComponent, AlertComponent, CreateSalaComponent],
   templateUrl: './salas-index.component.html',
   styleUrl: './salas-index.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

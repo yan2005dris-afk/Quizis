@@ -308,7 +308,7 @@ export class RoomComponent implements OnInit, OnDestroy {
           this.salasService
             .obtenerPorId(String(updated.salaId))
             .pipe(takeUntilDestroyed(this.destroyRef))
-            .subscribe({ next: (s) => this.salaDetalle.set(s), error: () => {} });
+            .subscribe({ next: (s) => this.salaDetalle.set(s) });
         }
       },
       error: (err) => {

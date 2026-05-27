@@ -5,11 +5,15 @@
     @for (p of participantes(); track p.id) {
       <li class="pl__item" data-testid="participant-item">
         <div class="pl__avatar-container">
-          <span class="pl__avatar" aria-hidden="true">{{ (p.nombre.startsWith('Host-') ? p.nombre.slice(5) : p.nombre).charAt(0).toUpperCase() }}</span>
+          <span class="pl__avatar" aria-hidden="true">{{
+            (p.nombre.startsWith('Host-') ? p.nombre.slice(5) : p.nombre).charAt(0).toUpperCase()
+          }}</span>
           <span class="pl__online-dot" title="En línea" aria-label="En línea"></span>
         </div>
         <div class="pl__info">
-          <span class="pl__name">{{ p.nombre.startsWith('Host-') ? p.nombre.slice(5) : p.nombre }}</span>
+          <span class="pl__name">{{
+            p.nombre.startsWith('Host-') ? p.nombre.slice(5) : p.nombre
+          }}</span>
 
           @if (p.rol === 'admin') {
             <span class="pl__role-badge" title="Administrador">

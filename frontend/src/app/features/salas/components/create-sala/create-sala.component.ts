@@ -29,7 +29,7 @@ import {
 import { FileParserService, ParseError } from '../../../../core/services/file-parser.service';
 import { finalize, forkJoin, of, switchMap } from 'rxjs';
 
-type SalaForm = {
+interface SalaForm {
   nombre: string;
   descripcionBanco: string;
   estadoInicial: 'BORRADOR' | 'ESPERANDO_ALUMNOS';
@@ -37,17 +37,12 @@ type SalaForm = {
   limitePreguntas: number;
   duracionTokenHoras: number;
   comodines: Record<string, boolean>;
-};
+}
 
 @Component({
   selector: 'app-create-sala',
   standalone: true,
-  imports: [
-    FormsModule,
-    LucideAngularModule,
-    ButtonComponent,
-    AlertComponent,
-  ],
+  imports: [FormsModule, LucideAngularModule, ButtonComponent, AlertComponent],
   templateUrl: './create-sala.component.html',
   styleUrl: './create-sala.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

@@ -45,7 +45,9 @@ describe('CreateBancoUseCase', () => {
       const createdBanco = { bancoId: 1, ...dto };
       const returnedBanco = { ...createdBanco, _count: { preguntas: 0 } };
       mockPrisma.bancoPreguntas.create.mockResolvedValue(createdBanco);
-      mockPrisma.bancoPreguntas.findUniqueOrThrow.mockResolvedValue(returnedBanco);
+      mockPrisma.bancoPreguntas.findUniqueOrThrow.mockResolvedValue(
+        returnedBanco,
+      );
 
       const result = await useCase.execute(dto as any);
 
@@ -85,7 +87,9 @@ describe('CreateBancoUseCase', () => {
       const returnedBanco = { ...createdBanco, _count: { preguntas: 1 } };
       mockPrisma.bancoPreguntas.create.mockResolvedValue(createdBanco);
       mockPrisma.preguntas.create.mockResolvedValue({ preguntaId: 1 });
-      mockPrisma.bancoPreguntas.findUniqueOrThrow.mockResolvedValue(returnedBanco);
+      mockPrisma.bancoPreguntas.findUniqueOrThrow.mockResolvedValue(
+        returnedBanco,
+      );
 
       const result = await useCase.execute(dto as any);
 

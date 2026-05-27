@@ -4,6 +4,7 @@ import { NotFoundException, BadRequestException } from '@nestjs/common';
 import { UpdateEstadoSalaUseCase } from './update-estado-sala.use-case';
 import { PrismaService } from 'src/infrastructure/database/prisma/prisma.service';
 import { RoomStateCacheUseCase } from 'src/infrastructure/cache/use-cases/room-state-cache.use-case';
+import { ParticipantsCacheUseCase } from 'src/infrastructure/cache/use-cases/participants-cache.use-case';
 import { EstadoSala } from '../dto/update-estado-sala.dto';
 
 describe('UpdateEstadoSalaUseCase', () => {
@@ -14,7 +15,7 @@ describe('UpdateEstadoSalaUseCase', () => {
       findUnique: jest.fn(),
     },
     preguntas: { findMany: jest.fn() },
-    participantes: { findFirst: jest.fn() },
+    participantes: { findFirst: jest.fn(), upsert: jest.fn() },
     rondas: { findFirst: jest.fn(), create: jest.fn() },
   };
 
@@ -23,12 +24,17 @@ describe('UpdateEstadoSalaUseCase', () => {
     setRoomEstado: jest.fn().mockResolvedValue(undefined),
   };
 
+  const mockParticipantsCache = {
+    getHistoricalParticipants: jest.fn().mockResolvedValue([]),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         UpdateEstadoSalaUseCase,
         { provide: PrismaService, useValue: mockPrisma },
         { provide: RoomStateCacheUseCase, useValue: mockRoomStateCache },
+        { provide: ParticipantsCacheUseCase, useValue: mockParticipantsCache },
       ],
     }).compile();
 

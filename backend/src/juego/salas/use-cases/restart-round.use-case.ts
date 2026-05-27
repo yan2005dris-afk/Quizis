@@ -58,8 +58,11 @@ export class RestartRoundUseCase {
 
     if (!participante) {
       const cachedNicknames =
-        await this.participantsCache.getHistoricalParticipants(sala.tokenCompartido);
-      const nickname = cachedNicknames.find((n) => !n.startsWith('Host-')) ??
+        await this.participantsCache.getHistoricalParticipants(
+          sala.tokenCompartido,
+        );
+      const nickname =
+        cachedNicknames.find((n) => !n.startsWith('Host-')) ??
         cachedNicknames[0];
       if (nickname) {
         participante = await this.prisma.participantes.upsert({
