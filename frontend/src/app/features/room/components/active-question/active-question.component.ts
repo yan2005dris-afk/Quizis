@@ -51,6 +51,7 @@ export class ActiveQuestionComponent {
   readonly comodines = input<ComodinSala[]>([]);
   readonly tokenCompartido = input<string>('');
   readonly interactive = input<boolean>(false);
+  readonly isAdmin = input<boolean>(false);
   readonly seleccionada = output<number>();
 
   protected readonly currentIndex = signal(0);
@@ -115,6 +116,22 @@ export class ActiveQuestionComponent {
       }
     });
   }
+
+  readonly maxVisibleIndex = computed(() => {
+    const list = this.preguntas();
+    if (this.isAdmin()) return list.length - 1;
+
+    const activeId = this.preguntaActivaId();
+
+    // El público/estudiante solo puede ver hasta la pregunta activa o la última respondida
+    let maxIdx = 0;
+    for (let i = 0; i < list.length; i++) {
+      if (list[i].preguntaId === activeId || list[i].respuestaDada) {
+        maxIdx = i;
+      }
+    }
+    return maxIdx;
+  });
 
   readonly preguntaMostrada = computed(() => {
     const list = this.preguntas();
@@ -210,7 +227,7 @@ export class ActiveQuestionComponent {
   });
 
   protected nextQuestion(): void {
-    if (this.currentIndex() < this.preguntas().length - 1) {
+    if (this.currentIndex() < this.maxVisibleIndex()) {
       this.currentIndex.update((i) => i + 1);
     }
   }
