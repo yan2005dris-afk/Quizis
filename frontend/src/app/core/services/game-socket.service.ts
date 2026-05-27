@@ -83,6 +83,16 @@ export class GameSocketService {
       this._cancelPendingVoto(); // No aplicar votos viejos después de liberar
       this.votosPublico.set(null);
       this.ultimoResultado.set(null);
+
+      // Auto-incrementar el número de pregunta (ronda) en la interfaz
+      this.infoRonda.update((info) => {
+        if (!info) return info;
+        // Si no hemos llegado al total, sumamos 1 a la ronda mostrada
+        return {
+          ...info,
+          ronda: info.ronda < info.totalRondas ? info.ronda + 1 : info.ronda,
+        };
+      });
     });
 
     // Recibe el tiempo restante de la pregunta activa
@@ -139,6 +149,7 @@ export class GameSocketService {
     });
 
     this.socket.on('participantes', (data: Participante[]) => {
+      console.log('[GameSocketService] Participantes actualizados:', data);
       this.participantes.set(data);
     });
 
@@ -157,8 +168,13 @@ export class GameSocketService {
       this.rondaReiniciada.set(data);
       if (data?.rondaActiva) {
         this.infoRonda.set({
-          ronda: data.rondaActiva.numeroRonda,
-          totalRondas: data.rondaActiva.historialPreguntas?.length ?? 0,
+          ronda: (() => {
+            const idx = data.rondaActiva.historialPreguntas?.findIndex(
+              (p: any) => p.preguntaId === data.rondaActiva!.preguntaActualId,
+            );
+            return idx !== undefined && idx >= 0 ? idx + 1 : 1;
+          })(),
+          totalRondas: data.limitePreguntas || data.rondaActiva.historialPreguntas?.length || 0,
           premio: '$0',
         });
       }

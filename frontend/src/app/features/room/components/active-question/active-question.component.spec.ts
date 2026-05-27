@@ -147,6 +147,7 @@ describe('ActiveQuestionComponent', () => {
     ];
     fixture.componentRef.setInput('preguntas', multiplePreguntas);
     fixture.componentRef.setInput('preguntaActivaId', 1);
+    fixture.componentRef.setInput('isAdmin', true); // Permitir navegación como admin
     fixture.detectChanges();
 
     expect(fixture.nativeElement.textContent).toContain('¿Cuál es la capital de Ecuador?');

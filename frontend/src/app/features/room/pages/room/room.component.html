@@ -129,7 +129,7 @@
               size="14"
               aria-hidden="true"
             ></lucide-icon>
-            {{ linkCopiado() ? 'Copiado' : 'Copiar link' }}
+            {{ linkCopiado() ? 'Copiado' : 'Copiar Enlace' }}
           </button>
           <button
             class="room__btn"
@@ -246,6 +246,7 @@
         [comodines]="comodines()"
         [tokenCompartido]="salaDetalle()?.tokenCompartido || ''"
         [interactive]="!!preguntaActiva() && !isFinalizado()"
+        [isAdmin]="isHost()"
         (seleccionada)="onResponder($event)"
       />
 

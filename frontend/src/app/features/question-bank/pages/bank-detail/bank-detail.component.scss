@@ -190,8 +190,8 @@
   line-height: 1;
   
   &.active {
-    border-color: #2563eb;
-    background: #2563eb;
+    border-color: var(--color-primary);
+    background: var(--color-primary);
   }
 }
 
@@ -210,8 +210,8 @@
   transition: all 0.2s;
   
   &.editing {
-    border-color: #2563eb;
-    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.1);
+    border-color: var(--color-primary);
+    box-shadow: 0 4px 12px rgba(29, 38, 103, 0.1);
   }
 }
 
@@ -249,9 +249,9 @@
 }
 
 .btn-save {
-  background: #2563eb;
+  background: var(--color-primary);
   color: white;
-  &:hover { background: #1d4ed8; }
+  &:hover { background: var(--color-primary-hover); }
 }
 
 .btn-cancel {
@@ -341,8 +341,8 @@
   
   &:focus {
     outline: none;
-    border-color: #2563eb;
-    box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1);
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 2px rgba(29, 38, 103, 0.1);
   }
 }
 
@@ -356,7 +356,7 @@
   
   &:focus {
     outline: none;
-    border-color: #2563eb;
+    border-color: var(--color-primary);
   }
 }
 
@@ -464,7 +464,7 @@
   width: 32px;
   height: 32px;
   border: 3px solid #e2e8f0;
-  border-top-color: #2563eb;
+  border-top-color: var(--color-primary);
   border-radius: 50%;
   animation: spin 0.6s linear infinite;
 }
@@ -560,7 +560,7 @@
   transition: border-color 0.2s, background 0.2s;
 
   &:hover {
-    border-color: #2563eb;
+    border-color: var(--color-primary);
     background: #f8faff;
   }
 }
@@ -853,7 +853,7 @@
   transition: border-color 0.2s, background 0.2s;
 
   &:hover {
-    border-color: #2563eb;
+    border-color: var(--color-primary);
     background: #f8faff;
   }
 }
@@ -1067,4 +1067,104 @@
   align-items: center;
   justify-content: center;
   gap: 16px;
+}
+
+/* ── Mejoras de color ────────────────────── */
+
+:host {
+  background: linear-gradient(180deg, #f0f4ff 0%, #f8fafc 100%);
+}
+
+.bank-info-card {
+  border-top: 4px solid var(--color-primary);
+}
+
+.upload-card {
+  border-top: 4px solid var(--color-primary);
+}
+
+.upload-summary {
+  background: linear-gradient(135deg, #eff6ff, #ffffff);
+}
+
+.questions-list .list-header .list-title {
+  color: var(--color-primary);
+}
+
+.back-link {
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+.bank-meta span {
+  background: #eff6ff;
+  color: var(--color-primary);
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.badge-nivel {
+  background: #eff6ff;
+  color: var(--color-primary);
+}
+
+.badge-tiempo {
+  background: #f0fdf4;
+  color: #166534;
+}
+
+/* ── Color adicional ─────────────────────── */
+
+.bank-title {
+  color: #0f172a;
+}
+
+.empty-questions {
+  background: #eff6ff;
+  border-color: #bfdbfe;
+  color: #0f172a;
+}
+
+.question-textarea,
+input,
+textarea {
+  border-color: #bfdbfe;
+
+  &:focus {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px rgba(29, 38, 103, 0.1);
+  }
+}
+
+.bank-edit-form label,
+.form-group label {
+  color: #0f172a;
+}
+
+.section-label {
+  color: #0f172a;
+}
+
+.options-title {
+  color: #0f172a;
+}
+
+.divider {
+  border-color: #bfdbfe;
+}
+
+.upload-summary-icon {
+  color: var(--color-primary);
+}
+
+.back-link {
+  background: #eff6ff;
+  padding: 6px 12px;
+  border-radius: 8px;
+
+  &:hover {
+    background: #dbeafe;
+  }
 }
