@@ -161,6 +161,12 @@ export class VoteTouchScreenComponent implements OnInit {
         }
       });
 
+    // Escuchar cuando la pregunta es respondida por el estudiante para bloquear la pantalla
+    const socketRespondidaSubscription = this.socketService.escucharEvento<any>('pregunta_respondida')
+      .subscribe(() => {
+        this.clearQuestion();
+      });
+
     // Escuchar cuando el jugador se une y le mandan los comodines que ya están bloqueados/usados
     const socketComodinesSubscription = this.socketService.escucharEvento<string[]>('comodines_bloqueados')
       .subscribe((bloqueados) => {
@@ -209,6 +215,7 @@ export class VoteTouchScreenComponent implements OnInit {
       socketInfoRondaSubscription.unsubscribe();
       socketComodinesSubscription.unsubscribe();
       socketComodinLiveSubscription.unsubscribe();
+      socketRespondidaSubscription.unsubscribe();
     });
   }
 
