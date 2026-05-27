@@ -1118,20 +1118,20 @@
 /* ── Color adicional ─────────────────────── */
 
 .bank-title {
-  color: #1d4ed8;
+  color: #0f172a;
 }
 
 .empty-questions {
   background: #eff6ff;
   border-color: #bfdbfe;
-  color: #1e40af;
+  color: #0f172a;
 }
 
 .question-textarea,
 input,
 textarea {
   border-color: #bfdbfe;
-  
+
   &:focus {
     border-color: #2563eb;
     box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
@@ -1140,15 +1140,15 @@ textarea {
 
 .bank-edit-form label,
 .form-group label {
-  color: #1d4ed8;
+  color: #0f172a;
 }
 
 .section-label {
-  color: #1d4ed8;
+  color: #0f172a;
 }
 
 .options-title {
-  color: #1d4ed8;
+  color: #0f172a;
 }
 
 .divider {
@@ -1163,7 +1163,7 @@ textarea {
   background: #eff6ff;
   padding: 6px 12px;
   border-radius: 8px;
-  
+
   &:hover {
     background: #dbeafe;
   }
