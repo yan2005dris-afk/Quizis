@@ -3,11 +3,11 @@ import { ComodinPublicoService } from './comodin-publico.service';
 import { ComodinPublicoController } from './comodin-publico.controller';
 import { WebsocketsInfraModule } from '../infrastructure/websockets/websockets.module';
 import { SalasModule } from '../juego/salas/salas.module';
-import { VotesCacheUseCase } from '../infrastructure/cache/use-cases/votes-cache.use-case';
+import { CacheModule } from '../infrastructure/cache/cache.module';
 
 @Module({
-  imports: [WebsocketsInfraModule, SalasModule],
+  imports: [WebsocketsInfraModule, SalasModule, CacheModule],
   controllers: [ComodinPublicoController],
-  providers: [ComodinPublicoService, VotesCacheUseCase],
+  providers: [ComodinPublicoService],
 })
 export class ComodinPublicoModule {}
