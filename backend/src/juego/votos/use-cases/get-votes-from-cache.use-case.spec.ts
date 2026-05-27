@@ -26,5 +26,7 @@ describe('GetVotesFromCacheUseCase', () => {
     mockCache.getVotes.mockResolvedValue([]);
     await useCase.execute(1, 2);
     expect(cache.getVotes).toHaveBeenCalledWith(1, 2);
+
+    expect(cache.getVotes).toHaveBeenCalledTimes(1);
   });
 });
