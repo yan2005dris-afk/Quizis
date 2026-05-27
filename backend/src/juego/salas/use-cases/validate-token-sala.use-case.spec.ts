@@ -74,6 +74,7 @@ describe('ValidateTokenSalaUseCase', () => {
       nombre: 'Sala Test',
       estado: EstadoSala.BORRADOR,
       limitePreguntas: 15,
+      tokenCompartido: 'uuid-1234',
     });
     expect(jwtService.verifyAsync).toHaveBeenCalledWith(token, {
       secret: 'room-secret-key',
