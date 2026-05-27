@@ -1,7 +1,5 @@
 <div class="bancos-index">
-
   <header class="bancos-index__header">
-
     <div class="bancos-index__header-content">
       <div class="header-icon-title">
         <div class="header-icon">📚</div>
@@ -12,7 +10,12 @@
       </div>
       <div class="header-actions">
         <div class="template-download">
-          <select class="template-select" [ngModel]="templateFormat()" (ngModelChange)="templateFormat.set($event)" aria-label="Formato de plantilla">
+          <select
+            class="template-select"
+            [ngModel]="templateFormat()"
+            (ngModelChange)="templateFormat.set($event)"
+            aria-label="Formato de plantilla"
+          >
             <option value="json">JSON</option>
             <option value="csv">CSV</option>
             <option value="xlsx">Excel</option>
@@ -44,7 +47,6 @@
         <span class="stat-label">Último creado</span>
       </div>
     </div>
-
   </header>
 
   @if (bancosResource.isLoading()) {
@@ -90,5 +92,4 @@
       }
     </div>
   }
-
 </div>

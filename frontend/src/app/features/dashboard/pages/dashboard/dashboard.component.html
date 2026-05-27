@@ -1,5 +1,4 @@
 <div class="content-padding">
-
   <!-- BANNER -->
   <div class="welcome-banner">
     <div class="welcome-text">
@@ -8,13 +7,9 @@
     </div>
 
     <div class="welcome-actions">
-      <a class="btn-action btn-primary" routerLink="/salas">
-        ＋ Nueva Sala
-      </a>
+      <a class="btn-action btn-primary" routerLink="/salas"> ＋ Nueva Sala </a>
 
-      <a class="btn-action btn-secondary" routerLink="/bancos">
-        📚 Ver Bancos
-      </a>
+      <a class="btn-action btn-secondary" routerLink="/bancos"> 📚 Ver Bancos </a>
     </div>
   </div>
 
@@ -25,10 +20,8 @@
       <span>Cargando datos...</span>
     </div>
   } @else {
-
     <!-- STATS -->
     <div class="stats-grid">
-
       <!-- BANCOS -->
       <div class="stat-card">
         <div class="stat-icon stat-icon--blue">📚</div>
@@ -68,31 +61,20 @@
           <span class="stat-value">{{ salasActivas() }}</span>
         </div>
       </div>
-
     </div>
 
     <!-- ÚLTIMOS BANCOS -->
     @if (ultimosBancos().length > 0) {
-
       <div class="section">
-
         <div class="section-header">
           <h2 class="section-title">Últimos bancos creados</h2>
 
-          <a routerLink="/bancos" class="section-link">
-            Ver todos →
-          </a>
+          <a routerLink="/bancos" class="section-link"> Ver todos → </a>
         </div>
 
         <div class="items-grid">
-
           @for (banco of ultimosBancos(); track banco.bancoId) {
-
-            <a
-              class="item-card"
-              [routerLink]="['/bancos', banco.bancoId]"
-            >
-
+            <a class="item-card" [routerLink]="['/bancos', banco.bancoId]">
               <div class="item-card__icon">📚</div>
 
               <div class="item-card__info">
@@ -100,73 +82,45 @@
                   {{ banco.nombre }}
                 </p>
 
-                <p class="item-card__meta">
-                  {{ banco._count?.preguntas || 0 }} preguntas
-                </p>
+                <p class="item-card__meta">{{ banco._count?.preguntas || 0 }} preguntas</p>
               </div>
 
               <span class="item-card__arrow">→</span>
-
             </a>
-
           }
-
         </div>
-
       </div>
-
     }
 
     <!-- ÚLTIMAS SALAS -->
     @if (ultimasSalas().length > 0) {
-
       <div class="section">
-
         <div class="section-header">
           <h2 class="section-title">Últimas salas</h2>
 
-          <a routerLink="/salas" class="section-link">
-            Ver todas →
-          </a>
+          <a routerLink="/salas" class="section-link"> Ver todas → </a>
         </div>
 
         <div class="items-grid">
-
           @for (sala of ultimasSalas(); track sala.salaId) {
-
             <div class="item-card">
-
               <div class="item-card__icon">🎮</div>
 
               <div class="item-card__info">
-
                 <p class="item-card__title">
                   {{ sala.nombre }}
                 </p>
 
                 <p class="item-card__meta">
-
-                  <span
-                    class="badge-estado"
-                    [class]="'badge-estado--' + sala.estado"
-                  >
+                  <span class="badge-estado" [class]="'badge-estado--' + sala.estado">
                     {{ sala.estado }}
                   </span>
-
                 </p>
-
               </div>
-
             </div>
-
           }
-
         </div>
-
       </div>
-
     }
-
   }
-
 </div>

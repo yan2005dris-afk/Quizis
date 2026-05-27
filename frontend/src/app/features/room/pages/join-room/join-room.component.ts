@@ -84,7 +84,15 @@ export class JoinRoomComponent implements OnInit {
           'success',
           'Unión Exitosa',
         );
-        this.router.navigate(['/sala', res.sala.id]);
+
+        // Determinar qué vista mostrar según el rol
+        if (res.participante.rol === 'observador') {
+          this.router.navigate(['/audiencia'], {
+            queryParams: { token: res.sala.tokenCompartido },
+          });
+        } else {
+          this.router.navigate(['/sala', res.sala.id]);
+        }
       },
       error: (err) => {
         this.isLoading.set(false);

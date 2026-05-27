@@ -5,7 +5,7 @@ import { PageNotFoundComponent } from './core/components/page-not-found/page-not
 
 export const routes: Routes = [
   // Redirección inicial: si no hay ruta, va a login
- { path: '', redirectTo: 'login', pathMatch: 'full' },
+  { path: '', redirectTo: 'login', pathMatch: 'full' },
 
   // Rutas privadas (Protegidas por Layout y Guard)
 
@@ -41,6 +41,13 @@ export const routes: Routes = [
         (m) => m.JoinRoomComponent,
       ),
   },
+  {
+    path: 'audiencia',
+    loadComponent: () =>
+      import('./features/audiencia-movil/vote-touch-screen/vote-touch-screen.component').then(
+        (m) => m.VoteTouchScreenComponent,
+      ),
+  },
 
   // Rutas bajo el Layout (Híbrido: Privado o Público según Auth)
   {
@@ -55,28 +62,26 @@ export const routes: Routes = [
     component: DashboardLayoutComponent,
     children: [
       // Rutas Privadas
-   
-  {
-    path: 'dashboard',
-    canActivate: [authGuard],
-    loadChildren: () =>
-      import('./features/dashboard/dashboard.routes').then((m) => m.DASHBOARD_ROUTES),
-  },
-  {
+
+      {
+        path: 'dashboard',
+        canActivate: [authGuard],
+        loadChildren: () =>
+          import('./features/dashboard/dashboard.routes').then((m) => m.DASHBOARD_ROUTES),
+      },
+      {
         path: 'salas',
         canActivate: [authGuard],
         loadChildren: () => import('./features/salas/salas.routes').then((m) => m.SALAS_ROUTES),
       },
-  {
-    path: 'bancos',
-    canActivate: [authGuard],
-    loadChildren: () =>
-      import('./features/question-bank/question-bank.routes').then(
-        (m) => m.QUESTION_BANK_ROUTES,
-      ),
-  },
-  
-
+      {
+        path: 'bancos',
+        canActivate: [authGuard],
+        loadChildren: () =>
+          import('./features/question-bank/question-bank.routes').then(
+            (m) => m.QUESTION_BANK_ROUTES,
+          ),
+      },
 
       // Fallbacks para placeholders
       { path: 'preguntas', redirectTo: 'dashboard', pathMatch: 'full' },

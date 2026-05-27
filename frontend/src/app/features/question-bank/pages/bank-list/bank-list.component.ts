@@ -39,9 +39,7 @@ export class BankListComponent {
     if (bancos.length === 0) return '—';
 
     const ultimo = bancos.sort(
-      (a, b) =>
-        new Date(b.createdAt).getTime() -
-        new Date(a.createdAt).getTime(),
+      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
     )[0];
 
     const fecha = new Date(ultimo.createdAt);
@@ -74,15 +72,13 @@ export class BankListComponent {
     return [
       {
         categoria: 'Plan de calidad',
-        pregunta:
-          '¿Cuál es una ventaja de definir responsables dentro del plan de calidad?',
+        pregunta: '¿Cuál es una ventaja de definir responsables dentro del plan de calidad?',
         respuesta_correcta: 'B',
         feedback_incorrecto:
           'La respuesta correcta es: Evitar ambigüedad sobre quién realiza seguimiento…',
         feedback_correcto: '',
         opcion_a: 'Reemplazar las métricas.',
-        opcion_b:
-          'Evitar ambigüedad sobre quién realiza seguimiento o verificación.',
+        opcion_b: 'Evitar ambigüedad sobre quién realiza seguimiento o verificación.',
         opcion_c: 'Hacer el documento más largo sin utilidad.',
         opcion_d: 'Quitar autonomía a todo el equipo.',
         opcion_e: '',
@@ -93,13 +89,11 @@ export class BankListComponent {
   private downloadJsonTemplate() {
     const data = [
       {
-        texto:
-          '¿Cuál es una ventaja de definir responsables dentro del plan de calidad?',
+        texto: '¿Cuál es una ventaja de definir responsables dentro del plan de calidad?',
         opciones: [
           { texto: 'Reemplazar las métricas.', esCorrecta: false },
           {
-            texto:
-              'Evitar ambigüedad sobre quién realiza seguimiento o verificación.',
+            texto: 'Evitar ambigüedad sobre quién realiza seguimiento o verificación.',
             esCorrecta: true,
           },
           {
@@ -122,10 +116,7 @@ export class BankListComponent {
       JSON.stringify(data, null, 2),
     )}`;
 
-    this.triggerDownload(
-      jsonString,
-      'plantilla_carga_masiva.json',
-    );
+    this.triggerDownload(jsonString, 'plantilla_carga_masiva.json');
   }
 
   private async downloadCsvTemplate() {
@@ -145,10 +136,7 @@ export class BankListComponent {
 
     const url = URL.createObjectURL(blob);
 
-    this.triggerDownload(
-      url,
-      'plantilla_carga_masiva.csv',
-    );
+    this.triggerDownload(url, 'plantilla_carga_masiva.csv');
 
     setTimeout(() => URL.revokeObjectURL(url), 0);
   }
@@ -175,22 +163,12 @@ export class BankListComponent {
 
     const wb = XLSX.utils.book_new();
 
-    XLSX.utils.book_append_sheet(
-      wb,
-      ws,
-      'Preguntas',
-    );
+    XLSX.utils.book_append_sheet(wb, ws, 'Preguntas');
 
-    XLSX.writeFile(
-      wb,
-      'plantilla_carga_masiva.xlsx',
-    );
+    XLSX.writeFile(wb, 'plantilla_carga_masiva.xlsx');
   }
 
-  private triggerDownload(
-    url: string,
-    filename: string,
-  ) {
+  private triggerDownload(url: string, filename: string) {
     const anchor = document.createElement('a');
 
     anchor.setAttribute('href', url);
