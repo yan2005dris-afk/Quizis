@@ -1,4 +1,4 @@
-import { Component, resource, inject, signal } from '@angular/core';
+import { Component, resource, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -26,22 +26,29 @@ export class BankListComponent {
   readonly PlusIcon = Plus;
   readonly DatabaseIcon = Database;
 
-  // ── Template download ─────────────────────────────
   readonly templateFormat = signal<'json' | 'csv' | 'xlsx'>('json');
+
+  getTotalPreguntas(): number {
+    const bancos = this.bancosResource.value() || [];
+    return bancos.reduce((acc, b) => acc + (b._count?.preguntas || 0), 0);
+  }
+
+  getUltimoCreado(): string {
+    const bancos = this.bancosResource.value() || [];
+    if (bancos.length === 0) return '—';
+    const ultimo = bancos.sort(
+      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    )[0];
+    const fecha = new Date(ultimo.createdAt);
+    return fecha.toLocaleDateString('es-ES', { day: '2-digit', month: 'short' });
+  }
 
   async downloadTemplate() {
     const format = this.templateFormat();
-
     switch (format) {
-      case 'json':
-        this.downloadJsonTemplate();
-        break;
-      case 'csv':
-        await this.downloadCsvTemplate();
-        break;
-      case 'xlsx':
-        await this.downloadXlsxTemplate();
-        break;
+      case 'json': this.downloadJsonTemplate(); break;
+      case 'csv': await this.downloadCsvTemplate(); break;
+      case 'xlsx': await this.downloadXlsxTemplate(); break;
     }
   }
 
@@ -51,8 +58,7 @@ export class BankListComponent {
         categoria: 'Plan de calidad',
         pregunta: '¿Cuál es una ventaja de definir responsables dentro del plan de calidad?',
         respuesta_correcta: 'B',
-        feedback_incorrecto:
-          'La respuesta correcta es: Evitar ambigüedad sobre quién realiza seguimiento…',
+        feedback_incorrecto: 'La respuesta correcta es: Evitar ambigüedad sobre quién realiza seguimiento…',
         feedback_correcto: '',
         opcion_a: 'Reemplazar las métricas.',
         opcion_b: 'Evitar ambigüedad sobre quién realiza seguimiento o verificación.',
@@ -75,13 +81,10 @@ export class BankListComponent {
         ],
         categoria: 'Plan de calidad',
         feedbackCorrecto: '',
-        feedbackIncorrecto:
-          'La respuesta correcta es: Evitar ambigüedad sobre quién realiza seguimiento…',
+        feedbackIncorrecto: 'La respuesta correcta es: Evitar ambigüedad sobre quién realiza seguimiento…',
       },
     ];
-    const jsonString = `data:text/json;charset=utf-8,${encodeURIComponent(
-      JSON.stringify(data, null, 2),
-    )}`;
+    const jsonString = `data:text/json;charset=utf-8,${encodeURIComponent(JSON.stringify(data, null, 2))}`;
     this.triggerDownload(jsonString, 'plantilla_carga_masiva.json');
   }
 
@@ -100,20 +103,11 @@ export class BankListComponent {
     const XLSX = await import('xlsx');
     const data = this.getTemplateData();
     const ws = XLSX.utils.json_to_sheet(data);
-
     ws['!cols'] = [
-      { wch: 18 },
-      { wch: 55 },
-      { wch: 6 },
-      { wch: 50 },
-      { wch: 40 },
-      { wch: 30 },
-      { wch: 50 },
-      { wch: 35 },
-      { wch: 30 },
-      { wch: 20 },
+      { wch: 18 }, { wch: 55 }, { wch: 6 }, { wch: 50 },
+      { wch: 40 }, { wch: 30 }, { wch: 50 }, { wch: 35 },
+      { wch: 30 }, { wch: 20 },
     ];
-
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Preguntas');
     XLSX.writeFile(wb, 'plantilla_carga_masiva.xlsx');

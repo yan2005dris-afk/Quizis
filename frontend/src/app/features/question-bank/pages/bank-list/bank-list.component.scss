@@ -1,8 +1,8 @@
 :host {
   display: block;
-  background: #f8fafc;
+  background: #f1f5f9;
   min-height: 100%;
-  padding: 24px;
+  padding: 28px;
 }
 
 .sr-only {
@@ -17,14 +17,37 @@
   border: 0;
 }
 
+/* HEADER */
 .bancos-index__header {
-  margin-bottom: 24px;
+  margin-bottom: 28px;
+  background: linear-gradient(135deg, #1e3a5f 0%, #2563eb 100%);
+  border-radius: 16px;
+  padding: 28px 32px;
+  color: white;
 }
 
 .bancos-index__header-content {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  margin-bottom: 24px;
+}
+
+.header-icon-title {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.header-icon {
+  width: 52px;
+  height: 52px;
+  background: rgba(255,255,255,0.15);
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 26px;
 }
 
 .header-actions {
@@ -33,8 +56,44 @@
   gap: 10px;
 }
 
-/* ── Template Download ─────────────────────────── */
+/* STATS BAR */
+.stats-bar {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  background: rgba(255,255,255,0.12);
+  border-radius: 12px;
+  padding: 16px 24px;
+}
 
+.stat-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+}
+
+.stat-number {
+  font-size: 28px;
+  font-weight: 700;
+  color: white;
+  line-height: 1;
+}
+
+.stat-label {
+  font-size: 12px;
+  color: rgba(255,255,255,0.7);
+  margin-top: 4px;
+}
+
+.stat-divider {
+  width: 1px;
+  height: 40px;
+  background: rgba(255,255,255,0.2);
+  margin: 0 16px;
+}
+
+/* TEMPLATE DOWNLOAD */
 .template-download {
   display: flex;
   align-items: center;
@@ -42,46 +101,43 @@
 }
 
 .template-select {
-  padding: 6px 10px;
-  border: 1px solid #d1d5db;
-  border-radius: 6px;
+  padding: 7px 10px;
+  border: 1px solid rgba(255,255,255,0.3);
+  border-radius: 8px;
   font-size: 13px;
   font-weight: 500;
-  color: #374151;
-  background: #ffffff;
+  color: white;
+  background: rgba(255,255,255,0.15);
   cursor: pointer;
   outline: none;
 
+  option {
+    color: #1e293b;
+    background: white;
+  }
+
   &:focus-visible {
-    border-color: #2563eb;
-    box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);
+    border-color: white;
   }
 }
 
 .btn-download-template {
-  background-color: #f3f4f6;
-  border: 1px solid #d1d5db;
-  color: #374151;
-  padding: 6px 14px;
-  border-radius: 6px;
+  background: rgba(255,255,255,0.15);
+  border: 1px solid rgba(255,255,255,0.3);
+  color: white;
+  padding: 7px 14px;
+  border-radius: 8px;
   font-weight: 500;
   font-size: 13px;
   cursor: pointer;
   display: flex;
   align-items: center;
   gap: 6px;
-  transition: all 0.2s ease-in-out;
+  transition: all 0.2s;
   white-space: nowrap;
 
   &:hover {
-    background-color: #e5e7eb;
-    color: #111827;
-    border-color: #9ca3af;
-  }
-
-  &:focus-visible {
-    outline: 2px solid #2563eb;
-    outline-offset: 2px;
+    background: rgba(255,255,255,0.25);
   }
 }
 
@@ -91,34 +147,35 @@
 }
 
 .bancos-index__title {
-  font-size: 24px;
+  font-size: 26px;
   font-weight: 700;
-  color: #1e293b;
+  color: white;
   margin: 0;
 }
 
 .bancos-index__subtitle {
   font-size: 14px;
-  color: #64748b;
+  color: rgba(255,255,255,0.75);
   margin: 4px 0 0;
 }
 
+/* GRID */
 .bancos-index__grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 16px;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 18px;
 }
 
-/* Loading */
+/* LOADING */
 .bancos-index__loading {
   display: flex;
   justify-content: center;
-  padding: 48px 0;
+  padding: 64px 0;
 }
 
 .bancos-index__spinner {
-  width: 32px;
-  height: 32px;
+  width: 36px;
+  height: 36px;
   border: 3px solid #e2e8f0;
   border-top-color: #2563eb;
   border-radius: 50%;
@@ -126,28 +183,26 @@
 }
 
 @keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
+  to { transform: rotate(360deg); }
 }
 
-/* Empty */
+/* EMPTY */
 .bancos-index__empty {
   text-align: center;
-  padding: 64px 24px;
-  background: #ffffff;
+  padding: 80px 24px;
+  background: white;
   border: 1px solid #e2e8f0;
-  border-radius: 12px;
+  border-radius: 16px;
 }
 
 .bancos-index__empty-icon {
-  font-size: 48px;
+  font-size: 56px;
   margin-bottom: 16px;
 }
 
 .bancos-index__empty-title {
-  font-size: 18px;
-  font-weight: 600;
+  font-size: 20px;
+  font-weight: 700;
   color: #1e293b;
   margin: 0 0 8px;
 }
@@ -155,90 +210,138 @@
 .bancos-index__empty-text {
   font-size: 14px;
   color: #64748b;
-  margin: 0;
+  margin: 0 0 24px;
 }
 
-/* Card */
+.empty-action {
+  display: flex;
+  justify-content: center;
+}
+
+/* CARD */
 .banco-card {
-  display: block;
-  background: #ffffff;
+  display: flex;
+  flex-direction: column;
+  background: white;
   border: 1px solid #e2e8f0;
-  border-radius: 10px;
-  padding: 16px;
+  border-radius: 14px;
+  padding: 20px;
   text-decoration: none;
   cursor: pointer;
-  transition:
-    box-shadow 0.15s,
-    border-color 0.15s;
+  transition: all 0.2s;
+  min-height: 160px;
+
+  &:hover {
+    border-color: #2563eb;
+    box-shadow: 0 4px 16px rgba(37, 99, 235, 0.12);
+    transform: translateY(-2px);
+  }
 }
 
-.banco-card:hover {
-  border-color: #bfdbfe;
-  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.08);
-}
-
-.banco-card__header {
+.banco-card__top {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 12px;
+  margin-bottom: 14px;
 }
 
-.banco-card__title-row {
+.banco-card__icon-wrap {
+  width: 42px;
+  height: 42px;
+  background: #eff6ff;
+  border-radius: 10px;
   display: flex;
   align-items: center;
-  gap: 8px;
+  justify-content: center;
 }
 
 .banco-card__icon {
-  width: 18px;
-  height: 18px;
+  width: 20px;
+  height: 20px;
   color: #2563eb;
+}
+
+.banco-card__arrow {
+  font-size: 18px;
+  color: #cbd5e1;
+  transition: color 0.2s, transform 0.2s;
+}
+
+.banco-card:hover .banco-card__arrow {
+  color: #2563eb;
+  transform: translateX(3px);
+}
+
+.banco-card__body {
+  flex: 1;
+  margin-bottom: 16px;
 }
 
 .banco-card__title {
   font-size: 16px;
-  font-weight: 600;
-  color: #1e293b;
-  margin: 0;
-}
-
-.banco-card__badge {
-  font-size: 11px;
   font-weight: 700;
-  padding: 3px 8px;
-  border-radius: 6px;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
+  color: #1e293b;
+  margin: 0 0 6px;
 }
 
-.banco-card__badge--json {
-  background: #fef9c3;
-  color: #854d0e;
+.banco-card__desc {
+  font-size: 13px;
+  color: #64748b;
+  margin: 0;
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
-
-.banco-card__badge--excel {
-  background: #dcfce7;
-  color: #166534;
-}
-
-.banco-card__badge--csv {
-  background: #f1f5f9;
-  color: #475569;
-}
-
-.banco-card__meta {
+.banco-card__footer {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  font-size: 13px;
-  color: #64748b;
+  padding-top: 14px;
+  border-top: 1px solid #f1f5f9;
 }
 
-.banco-card__participants {
-  font-weight: 500;
+.banco-card__stat {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+}
+
+.banco-card__stat-num {
+  font-size: 18px;
+  font-weight: 700;
+  color: #2563eb;
+}
+
+.banco-card__stat-label {
+  font-size: 12px;
+  color: #94a3b8;
 }
 
 .banco-card__date {
+  font-size: 12px;
   color: #94a3b8;
+}
+
+/* RESPONSIVE */
+@media (max-width: 768px) {
+  :host { padding: 16px; }
+
+  .bancos-index__header {
+    padding: 20px;
+  }
+
+  .bancos-index__header-content {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+
+  .stats-bar {
+    padding: 12px 16px;
+  }
+
+  .stat-number { font-size: 22px; }
 }
