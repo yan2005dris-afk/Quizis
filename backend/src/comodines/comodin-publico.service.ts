@@ -44,11 +44,19 @@ export class ComodinPublicoService {
         total === 0 ? 0 : Math.round((count / total) * 100);
     }
 
-    // 5. Emitir resultado a toda la sala
+    // 5. Emitir resultado a toda la sala con estructura A/B/C/D
+    const resultado = {
+      A: porcentajes[1] ?? 0,
+      B: porcentajes[2] ?? 0,
+      C: porcentajes[3] ?? 0,
+      D: porcentajes[4] ?? 0,
+      total,
+    };
+
     this.juegoGateway.server
       .to(tokenCompartido)
-      .emit('comodin_publico_resultado', { porcentajes, totalVotos: total });
+      .emit('comodin_publico_resultado', resultado);
 
-    return { porcentajes, totalVotos: total };
+    return resultado;
   }
 }
