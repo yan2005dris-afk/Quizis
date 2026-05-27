@@ -90,8 +90,17 @@ export class GameOverComponent implements OnInit {
               ...new Set([...existing.comodinesUsados, ...ronda.comodinesUsados]),
             ];
           } else {
-            mapa.set(ronda.participanteNickname, { ...ronda });
+            mapa.set(ronda.participanteNickname, {
+              nickname: ronda.participanteNickname,
+              totalPreguntas: ronda.totalPreguntas,
+              correctas: ronda.correctas,
+              incorrectas: ronda.incorrectas,
+              porcentajeAcierto: ronda.porcentajeAcierto,
+              comodinesUsados: [...ronda.comodinesUsados],
+              numeroRonda: ronda.numeroRonda,
+            });
           }
+
         }
         // Recalcular porcentaje consolidado
         const list: GameOverParticipant[] = [];
