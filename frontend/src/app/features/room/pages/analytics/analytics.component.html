@@ -1,0 +1,213 @@
+<div class="analytics">
+
+  <!-- ── Header ── -->
+  <header class="an-header">
+    <div class="an-header__left">
+      <h1 class="an-header__title">
+        <lucide-icon [img]="TrendIcon" size="22" />
+        Reportes de la Sala
+      </h1>
+      @if (data(); as d) {
+        <p class="an-header__sub">{{ d.nombreSala }} · {{ d.docente }}</p>
+      }
+    </div>
+
+    <!-- Botones de exportación -->
+    <div class="an-export-btns">
+      <button
+        class="an-export an-export--excel"
+        [class.loading]="exporting() === 'excel'"
+        [disabled]="!!exporting() || loading()"
+        (click)="onExportExcel()"
+        title="Descargar como Excel (CSV)">
+        <lucide-icon [img]="ExcelIcon" size="18" />
+        <span>Excel</span>
+        @if (exporting() === 'excel') { <span class="an-spinner"></span> }
+      </button>
+
+      <button
+        class="an-export an-export--pdf"
+        [class.loading]="exporting() === 'pdf'"
+        [disabled]="!!exporting() || loading()"
+        (click)="onExportPdf()"
+        title="Generar informe PDF">
+        <lucide-icon [img]="PdfIcon" size="18" />
+        <span>PDF</span>
+        @if (exporting() === 'pdf') { <span class="an-spinner"></span> }
+      </button>
+    </div>
+  </header>
+
+  <!-- ── Cargando ── -->
+  @if (loading()) {
+    <div class="an-loader">
+      <div class="an-loader__ring"></div>
+      <p>Cargando estadísticas…</p>
+    </div>
+  }
+
+  <!-- ── Error ── -->
+  @if (error()) {
+    <div class="an-error">{{ error() }}</div>
+  }
+
+  @if (!loading() && !error() && data(); as d) {
+
+    <!-- ── KPIs ── -->
+    <div class="an-kpis">
+      <div class="an-kpi an-kpi--primary">
+        <lucide-icon [img]="TrendIcon" size="20" class="an-kpi__icon" />
+        <span class="an-kpi__val">{{ d.resumenGeneral.porcentajeGlobal }}%</span>
+        <span class="an-kpi__lbl">Promedio global</span>
+      </div>
+      <div class="an-kpi">
+        <lucide-icon [img]="UsersIcon" size="20" class="an-kpi__icon" />
+        <span class="an-kpi__val">{{ d.resumenGeneral.participantes.length }}</span>
+        <span class="an-kpi__lbl">Participantes</span>
+      </div>
+      <div class="an-kpi an-kpi--ok">
+        <lucide-icon [img]="OkIcon" size="20" class="an-kpi__icon" />
+        <span class="an-kpi__val">{{ d.resumenGeneral.totalCorrectas }}</span>
+        <span class="an-kpi__lbl">Correctas</span>
+      </div>
+      <div class="an-kpi an-kpi--fail">
+        <lucide-icon [img]="FailIcon" size="20" class="an-kpi__icon" />
+        <span class="an-kpi__val">{{ d.resumenGeneral.totalIncorrectas }}</span>
+        <span class="an-kpi__lbl">Incorrectas</span>
+      </div>
+      <div class="an-kpi">
+        <lucide-icon [img]="BookIcon" size="20" class="an-kpi__icon" />
+        <span class="an-kpi__val">{{ d.resumenGeneral.totalRondas }}</span>
+        <span class="an-kpi__lbl">Rondas</span>
+      </div>
+    </div>
+
+    <!-- ── Buscador + tabla ── -->
+    <div class="an-table-wrap">
+      <div class="an-table-toolbar">
+        <div class="an-search">
+          <lucide-icon [img]="FilterIcon" size="15" />
+          <input
+            type="text"
+            placeholder="Buscar participante…"
+            (input)="onSearch($event)"
+            class="an-search__input" />
+        </div>
+        <span class="an-table-count">{{ filteredRows().length }} participantes</span>
+      </div>
+
+      <div class="an-table-scroll">
+        <table class="an-table">
+          <thead>
+            <tr>
+              <th class="col-rank">#</th>
+              <th class="col-nick sortable" (click)="onSort('nickname')">
+                Participante
+                <lucide-icon [img]="SortIcon" size="12" [class.active]="sortField()==='nickname'" />
+              </th>
+              <th class="col-num">Rondas</th>
+              <th class="col-num sortable" (click)="onSort('correctas')">
+                ✓
+                <lucide-icon [img]="SortIcon" size="12" [class.active]="sortField()==='correctas'" />
+              </th>
+              <th class="col-num sortable" (click)="onSort('incorrectas')">
+                ✗
+                <lucide-icon [img]="SortIcon" size="12" [class.active]="sortField()==='incorrectas'" />
+              </th>
+              <th class="col-bar sortable" (click)="onSort('porcentaje')">
+                Rendimiento
+                <lucide-icon [img]="SortIcon" size="12" [class.active]="sortField()==='porcentaje'" />
+              </th>
+              <th class="col-num sortable" (click)="onSort('comodines')">
+                Comodines
+                <lucide-icon [img]="SortIcon" size="12" [class.active]="sortField()==='comodines'" />
+              </th>
+              <th class="col-expand"></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (row of filteredRows(); track row.nickname; let i = $index) {
+              <tr
+                class="an-row"
+                [class.expanded]="expandedNick() === row.nickname"
+                [class.row-top]="i < 3"
+                (click)="onToggleExpand(row.nickname)">
+                <td class="col-rank">
+                  @if (i === 0) { <span class="rank-medal">🥇</span> }
+                  @else if (i === 1) { <span class="rank-medal">🥈</span> }
+                  @else if (i === 2) { <span class="rank-medal">🥉</span> }
+                  @else { <span class="rank-num">{{ i + 1 }}</span> }
+                </td>
+                <td class="col-nick">
+                  <div class="an-avatar">{{ row.nickname | slice:0:2 | uppercase }}</div>
+                  <span class="an-nick">{{ row.nickname }}</span>
+                </td>
+                <td class="col-num">{{ row.rondas }}</td>
+                <td class="col-num ok">{{ row.correctas }}</td>
+                <td class="col-num fail">{{ row.incorrectas }}</td>
+                <td class="col-bar">
+                  <div class="pct-cell">
+                    <div class="pct-bar-wrap">
+                      <div
+                        class="pct-bar"
+                        [style.width.%]="row.porcentaje"
+                        [class.pct-high]="row.porcentaje >= 75"
+                        [class.pct-mid]="row.porcentaje >= 50 && row.porcentaje < 75"
+                        [class.pct-low]="row.porcentaje < 50">
+                      </div>
+                    </div>
+                    <span class="pct-label">{{ row.porcentaje }}%</span>
+                  </div>
+                </td>
+                <td class="col-num comodines-count">{{ row.comodines }}</td>
+                <td class="col-expand">
+                  <span class="chevron" [class.open]="expandedNick() === row.nickname">›</span>
+                </td>
+              </tr>
+
+              <!-- Detalle expandido -->
+              @if (expandedNick() === row.nickname) {
+                <tr class="an-detail-row">
+                  <td colspan="8">
+                    <div class="an-detail">
+                      <h4 class="an-detail__title">Detalle por ronda</h4>
+                      @for (ronda of getRondasDeParticipante(row.nickname); track ronda.numeroRonda) {
+                        <div class="an-detail__ronda">
+                          <div class="an-detail__ronda-header">
+                            <strong>Ronda {{ ronda.numeroRonda }}</strong>
+                            <span class="an-detail__ronda-stat ok">{{ ronda.correctas }} correctas</span>
+                            <span class="an-detail__ronda-stat fail">{{ ronda.incorrectas }} incorrectas</span>
+                            @if (ronda.comodinesUsados.length) {
+                              <span class="an-detail__ronda-stat comodin">{{ ronda.comodinesUsados.join(', ') }}</span>
+                            }
+                          </div>
+                          <ul class="an-detail__preguntas">
+                            @for (p of ronda.preguntas; track p.numero) {
+                              <li [class.p-ok]="p.esCorrecta" [class.p-fail]="!p.esCorrecta">
+                                <span class="p-icon">{{ p.esCorrecta ? '✓' : '✗' }}</span>
+                                <span class="p-texto">{{ p.texto | slice:0:80 }}…</span>
+                                <span class="p-resp">{{ p.respuestaElegida }}</span>
+                                @if (p.comodinUsado) {
+                                  <span class="p-comodin">🃏 {{ p.comodinUsado }}</span>
+                                }
+                              </li>
+                            }
+                          </ul>
+                        </div>
+                      }
+                    </div>
+                  </td>
+                </tr>
+              }
+            }
+          </tbody>
+        </table>
+      </div>
+
+      @if (!filteredRows().length) {
+        <p class="an-empty">No se encontraron participantes.</p>
+      }
+    </div>
+
+  }
+</div>
