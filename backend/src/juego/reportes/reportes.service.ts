@@ -3,10 +3,10 @@ import { PrismaService } from '../../infrastructure/database/prisma/prisma.servi
 import { ReportDataDto } from './dtos/report-data.dto';
 
 @Injectable()
-export class ReportsService {
+export class ReportesService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async getGameStatistics(salaId: number): Promise<ReportDataDto> {
+  async obtenerEstadisticas(salaId: number): Promise<ReportDataDto> {
     const sala = await this.prisma.salas.findUnique({
       where: { salaId },
       include: {
@@ -16,7 +16,7 @@ export class ReportsService {
             participante: { select: { nickname: true } },
             respuestas: {
               include: {
-                pregunta: { select: { texto: true } },
+                pregunta: { select: { preguntaId: true, texto: true } },
                 opcion: { select: { texto: true, esCorrecta: true } },
               },
             },
@@ -70,12 +70,17 @@ export class ReportsService {
 
           let porcentajeVotosPublico: number | undefined;
 
-          if (respuesta.comodinUsado === 'publico' && ronda.votos.length > 0) {
-            const votosCorrectosPublico = ronda.votos.filter(
-              (voto: any) => voto.opcion.esCorrecta,
-            ).length;
-            const calculo = (votosCorrectosPublico / ronda.votos.length) * 100;
-            porcentajeVotosPublico = Number(calculo.toFixed(1));
+          if (respuesta.comodinUsado === 'publico') {
+            const votosPregunta = ronda.votos.filter(
+              (v: any) => v.preguntaId === respuesta.pregunta.preguntaId,
+            );
+            if (votosPregunta.length > 0) {
+              const votosCorrectosPublico = votosPregunta.filter(
+                (voto: any) => voto.opcion.esCorrecta,
+              ).length;
+              const calculo = (votosCorrectosPublico / votosPregunta.length) * 100;
+              porcentajeVotosPublico = Number(calculo.toFixed(1));
+            }
           }
 
           return {

@@ -29,7 +29,6 @@ import { RondasModule } from './juego/rondas/rondas.module';
     WebsocketsInfraModule,
     VotosModule,
     SalasModule,
-    HealthModule,
     ReportesModule,
     RondasModule,
   ],
