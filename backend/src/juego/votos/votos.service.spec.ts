@@ -6,42 +6,75 @@ import { PersistVotesUseCase } from './use-cases/persist-votes.use-case';
 
 describe('VotosService', () => {
   let service: VotosService;
-  let registerUseCase: RegisterVoteUseCase;
-  let getVotesUseCase: GetVotesFromCacheUseCase;
-  let persistUseCase: PersistVotesUseCase;
+  const mockRegisterUseCase = {
+    execute: jest.fn(),
+  };
 
-  const mockUseCase = { execute: jest.fn() };
+  const mockGetVotesUseCase = {
+    execute: jest.fn(),
+  };
+
+  const mockPersistUseCase = {
+    execute: jest.fn(),
+  };
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         VotosService,
-        { provide: RegisterVoteUseCase, useValue: mockUseCase },
-        { provide: GetVotesFromCacheUseCase, useValue: mockUseCase },
-        { provide: PersistVotesUseCase, useValue: mockUseCase },
+        {
+          provide: RegisterVoteUseCase,
+          useValue: mockRegisterUseCase,
+        },
+        {
+          provide: GetVotesFromCacheUseCase,
+          useValue: mockGetVotesUseCase,
+        },
+        {
+          provide: PersistVotesUseCase,
+          useValue: mockPersistUseCase,
+        },
       ],
     }).compile();
 
     service = module.get<VotosService>(VotosService);
-    registerUseCase = module.get<RegisterVoteUseCase>(RegisterVoteUseCase);
-    getVotesUseCase = module.get<GetVotesFromCacheUseCase>(
-      GetVotesFromCacheUseCase,
-    );
-    persistUseCase = module.get<PersistVotesUseCase>(PersistVotesUseCase);
+
+    jest.clearAllMocks();
   });
 
-  it('should call registerUseCase', async () => {
-    await service.registrarVoto(1, 2, 3, 4);
-    expect(registerUseCase.execute).toHaveBeenCalledWith(1, 2, 3, 4);
+  describe('registrarVoto', () => {
+    it('should call RegisterVoteUseCase with correct params', async () => {
+      await service.registrarVoto(1, 2, 3, 4);
+
+      expect(mockRegisterUseCase.execute).toHaveBeenCalledWith(
+        1,
+        2,
+        3,
+        4,
+      );
+
+      expect(mockRegisterUseCase.execute).toHaveBeenCalledTimes(1);
+    });
   });
 
-  it('should call getVotesUseCase', async () => {
-    await service.obtenerVotosCache(1, 2);
-    expect(getVotesUseCase.execute).toHaveBeenCalledWith(1, 2);
+  describe('obtenerVotosCache', () => {
+    it('should call GetVotesFromCacheUseCase', async () => {
+      await service.obtenerVotosCache(1, 2);
+
+      expect(mockGetVotesUseCase.execute).toHaveBeenCalledWith(1, 2);
+
+      expect(mockGetVotesUseCase.execute).toHaveBeenCalledTimes(1);
+    });
   });
 
-  it('should call persistUseCase', async () => {
-    await service.persistirVotos(1, 2);
-    expect(persistUseCase.execute).toHaveBeenCalledWith(1, 2);
+  describe('persistirVotos', () => {
+    it('should call PersistVotesUseCase', async () => {
+      await service.persistirVotos(1, 2);
+
+      expect(mockPersistUseCase.execute).toHaveBeenCalledWith(1, 2);
+
+      expect(mockPersistUseCase.execute).toHaveBeenCalledTimes(1);
+    });
   });
+
 });
