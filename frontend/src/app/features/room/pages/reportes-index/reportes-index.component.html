@@ -1,12 +1,9 @@
 <div class="reportes">
-
   <!-- ── Vista de Analytics de sala seleccionada ── -->
   @if (salaSeleccionada(); as sala) {
     <div class="reportes__analytics-view">
       <div class="reportes__analytics-header">
-        <button class="reportes__back-btn" (click)="onVolver()">
-          ← Volver a Reportes
-        </button>
+        <button class="reportes__back-btn" (click)="onVolver()">← Volver a Reportes</button>
         <h2 class="reportes__analytics-title">{{ sala.nombre }}</h2>
       </div>
       <app-analytics [salaId]="sala.salaId" />
@@ -16,14 +13,15 @@
   <!-- ── Selector de sala ── -->
   @if (!salaSeleccionada()) {
     <div class="reportes__selector">
-
       <!-- Header -->
       <header class="reportes__header">
         <div class="reportes__header-left">
           <lucide-icon [img]="ChartIcon" size="26" class="reportes__header-icon" />
           <div>
             <h1 class="reportes__title">Reportes</h1>
-            <p class="reportes__subtitle">Selecciona una sala para ver sus analíticas y exportar datos</p>
+            <p class="reportes__subtitle">
+              Selecciona una sala para ver sus analíticas y exportar datos
+            </p>
           </div>
         </div>
       </header>
@@ -59,7 +57,14 @@
         } @else {
           <ul class="reportes__list">
             @for (sala of salasFiltradas(); track sala.salaId) {
-              <li class="reportes__item" (click)="onSeleccionarSala(sala)">
+              <li
+                class="reportes__item"
+                (click)="onSeleccionarSala(sala)"
+                (keydown.enter)="onSeleccionarSala(sala)"
+                (keydown.space)="onSeleccionarSala(sala); $event.preventDefault()"
+                tabindex="0"
+                role="button"
+              >
                 <div class="reportes__item-info">
                   <span class="reportes__item-nombre">{{ sala.nombre }}</span>
                   <div class="reportes__item-meta">
@@ -68,7 +73,7 @@
                     </span>
                     <span class="reportes__item-date">
                       <lucide-icon [img]="ClockIcon" size="12" />
-                      {{ sala.creadoEn | date:'dd/MM/yyyy' }}
+                      {{ sala.creadoEn | date: 'dd/MM/yyyy' }}
                     </span>
                     @if (sala.participantesCount) {
                       <span class="reportes__item-participants">
@@ -92,5 +97,4 @@
       }
     </div>
   }
-
 </div>

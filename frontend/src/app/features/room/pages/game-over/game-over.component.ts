@@ -100,9 +100,7 @@ export class GameOverComponent implements OnInit {
           const list: GameOverParticipant[] = [];
           mapa.forEach((p) => {
             p.porcentajeAcierto =
-              p.totalPreguntas > 0
-                ? Math.round((p.correctas / p.totalPreguntas) * 100)
-                : 0;
+              p.totalPreguntas > 0 ? Math.round((p.correctas / p.totalPreguntas) * 100) : 0;
             list.push(p);
           });
           this.participants.set(list);

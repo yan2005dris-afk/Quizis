@@ -9,7 +9,7 @@ export interface ReportDataDto {
   nombreSala: string;
   docente: string;
   fechaCreacion: Date;
-  rondas: Array<{
+  rondas: {
     numeroRonda: number;
     participanteNickname: string;
     totalPreguntas: number;
@@ -17,15 +17,15 @@ export interface ReportDataDto {
     incorrectas: number;
     porcentajeAcierto: number;
     comodinesUsados: string[];
-    preguntas: Array<{
+    preguntas: {
       numero: number;
       texto: string;
       respuestaElegida: string;
       esCorrecta: boolean;
       comodinUsado?: string;
       porcentajeVotosPublico?: number;
-    }>;
-  }>;
+    }[];
+  }[];
   resumenGeneral: {
     totalRondas: number;
     participantes: string[];

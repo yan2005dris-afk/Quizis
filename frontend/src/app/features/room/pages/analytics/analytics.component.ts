@@ -8,7 +8,7 @@ import {
   signal,
 } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { DecimalPipe, PercentPipe, SlicePipe, UpperCasePipe} from '@angular/common';
+import { SlicePipe, UpperCasePipe } from '@angular/common';
 import {
   LucideAngularModule,
   FileSpreadsheet,
@@ -20,7 +20,6 @@ import {
   BookOpen,
   Filter,
   ArrowUpDown,
-  
 } from 'lucide-angular';
 import { environment } from '../../../../../environments/environment';
 
@@ -38,7 +37,7 @@ export interface AnalyticsData {
     totalIncorrectas: number;
     porcentajeGlobal: number;
   };
-  rondas: Array<{
+  rondas: {
     numeroRonda: number;
     participanteNickname: string;
     totalPreguntas: number;
@@ -46,19 +45,19 @@ export interface AnalyticsData {
     incorrectas: number;
     porcentajeAcierto: number;
     comodinesUsados: string[];
-    preguntas: Array<{
+    preguntas: {
       numero: number;
       texto: string;
       respuestaElegida: string;
       esCorrecta: boolean;
       comodinUsado?: string;
       porcentajeVotosPublico?: number;
-    }>;
-  }>;
+    }[];
+  }[];
 }
 
 type SortField = 'nickname' | 'correctas' | 'incorrectas' | 'porcentaje' | 'comodines';
-type SortDir   = 'asc' | 'desc';
+type SortDir = 'asc' | 'desc';
 
 /** Fila consolidada por participante */
 interface ParticipantRow {
@@ -84,25 +83,25 @@ export class AnalyticsComponent implements OnInit {
   private readonly http = inject(HttpClient);
 
   // ── Icons ──────────────────────────────────
-  protected readonly ExcelIcon   = FileSpreadsheet;
-  protected readonly PdfIcon     = FileText;
-  protected readonly TrendIcon   = TrendingUp;
-  protected readonly UsersIcon   = Users;
-  protected readonly OkIcon      = CheckCircle;
-  protected readonly FailIcon    = XCircle;
-  protected readonly BookIcon    = BookOpen;
-  protected readonly FilterIcon  = Filter;
-  protected readonly SortIcon    = ArrowUpDown;
+  protected readonly ExcelIcon = FileSpreadsheet;
+  protected readonly PdfIcon = FileText;
+  protected readonly TrendIcon = TrendingUp;
+  protected readonly UsersIcon = Users;
+  protected readonly OkIcon = CheckCircle;
+  protected readonly FailIcon = XCircle;
+  protected readonly BookIcon = BookOpen;
+  protected readonly FilterIcon = Filter;
+  protected readonly SortIcon = ArrowUpDown;
 
   // ── State ──────────────────────────────────
-  protected readonly loading        = signal(true);
-  protected readonly exporting      = signal<'excel' | 'pdf' | null>(null);
-  protected readonly error          = signal<string | null>(null);
-  protected readonly data           = signal<AnalyticsData | null>(null);
-  protected readonly sortField      = signal<SortField>('porcentaje');
-  protected readonly sortDir        = signal<SortDir>('desc');
-  protected readonly searchQuery    = signal('');
-  protected readonly expandedNick   = signal<string | null>(null);
+  protected readonly loading = signal(true);
+  protected readonly exporting = signal<'excel' | 'pdf' | null>(null);
+  protected readonly error = signal<string | null>(null);
+  protected readonly data = signal<AnalyticsData | null>(null);
+  protected readonly sortField = signal<SortField>('porcentaje');
+  protected readonly sortDir = signal<SortDir>('desc');
+  protected readonly searchQuery = signal('');
+  protected readonly expandedNick = signal<string | null>(null);
 
   // ── Computed ──────────────────────────────
   protected readonly rows = computed<ParticipantRow[]>(() => {
@@ -115,27 +114,26 @@ export class AnalyticsComponent implements OnInit {
       if (e) {
         e.rondas++;
         e.totalPreguntas += r.totalPreguntas;
-        e.correctas      += r.correctas;
-        e.incorrectas    += r.incorrectas;
-        e.comodines      += r.comodinesUsados.length;
+        e.correctas += r.correctas;
+        e.incorrectas += r.incorrectas;
+        e.comodines += r.comodinesUsados.length;
       } else {
         mapa.set(r.participanteNickname, {
-          nickname:      r.participanteNickname,
-          rondas:        1,
+          nickname: r.participanteNickname,
+          rondas: 1,
           totalPreguntas: r.totalPreguntas,
-          correctas:     r.correctas,
-          incorrectas:   r.incorrectas,
-          porcentaje:    r.porcentajeAcierto,
-          comodines:     r.comodinesUsados.length,
+          correctas: r.correctas,
+          incorrectas: r.incorrectas,
+          porcentaje: r.porcentajeAcierto,
+          comodines: r.comodinesUsados.length,
         });
       }
     }
     // Recalcular porcentaje consolidado
     const list: ParticipantRow[] = [];
     mapa.forEach((row) => {
-      row.porcentaje = row.totalPreguntas > 0
-        ? Math.round((row.correctas / row.totalPreguntas) * 100)
-        : 0;
+      row.porcentaje =
+        row.totalPreguntas > 0 ? Math.round((row.correctas / row.totalPreguntas) * 100) : 0;
       list.push(row);
     });
     return list;
@@ -143,18 +141,34 @@ export class AnalyticsComponent implements OnInit {
 
   protected readonly filteredRows = computed(() => {
     const q = this.searchQuery().toLowerCase();
-    let r = q ? this.rows().filter(x => x.nickname.toLowerCase().includes(q)) : [...this.rows()];
+    const r = q
+      ? this.rows().filter((x) => x.nickname.toLowerCase().includes(q))
+      : [...this.rows()];
 
     const field = this.sortField();
-    const dir   = this.sortDir();
+    const dir = this.sortDir();
     r.sort((a, b) => {
       let av: number | string, bv: number | string;
       switch (field) {
-        case 'nickname':   av = a.nickname;   bv = b.nickname;   break;
-        case 'correctas':  av = a.correctas;  bv = b.correctas;  break;
-        case 'incorrectas':av = a.incorrectas;bv = b.incorrectas;break;
-        case 'comodines':  av = a.comodines;  bv = b.comodines;  break;
-        default:           av = a.porcentaje; bv = b.porcentaje;
+        case 'nickname':
+          av = a.nickname;
+          bv = b.nickname;
+          break;
+        case 'correctas':
+          av = a.correctas;
+          bv = b.correctas;
+          break;
+        case 'incorrectas':
+          av = a.incorrectas;
+          bv = b.incorrectas;
+          break;
+        case 'comodines':
+          av = a.comodines;
+          bv = b.comodines;
+          break;
+        default:
+          av = a.porcentaje;
+          bv = b.porcentaje;
       }
       const cmp = av < bv ? -1 : av > bv ? 1 : 0;
       return dir === 'asc' ? cmp : -cmp;
@@ -177,19 +191,24 @@ export class AnalyticsComponent implements OnInit {
   });
 
   ngOnInit(): void {
-    this.http.post<AnalyticsData>(
-      `${environment.apiUrl}/reportes/generar`,
-      { salaId: this.salaId() },
-    ).subscribe({
-      next:  (d) => { this.data.set(d); this.loading.set(false); },
-      error: ()  => { this.error.set('No se pudo cargar el reporte.'); this.loading.set(false); },
-    });
+    this.http
+      .post<AnalyticsData>(`${environment.apiUrl}/reportes/generar`, { salaId: this.salaId() })
+      .subscribe({
+        next: (d) => {
+          this.data.set(d);
+          this.loading.set(false);
+        },
+        error: () => {
+          this.error.set('No se pudo cargar el reporte.');
+          this.loading.set(false);
+        },
+      });
   }
 
   // ── Ordenamiento ──────────────────────────
   protected onSort(field: SortField): void {
     if (this.sortField() === field) {
-      this.sortDir.update(d => d === 'asc' ? 'desc' : 'asc');
+      this.sortDir.update((d) => (d === 'asc' ? 'desc' : 'asc'));
     } else {
       this.sortField.set(field);
       this.sortDir.set('desc');
@@ -201,11 +220,11 @@ export class AnalyticsComponent implements OnInit {
   }
 
   protected onToggleExpand(nick: string): void {
-    this.expandedNick.update(n => n === nick ? null : nick);
+    this.expandedNick.update((n) => (n === nick ? null : nick));
   }
 
   protected getRondasDeParticipante(nick: string) {
-    return this.data()?.rondas.filter(r => r.participanteNickname === nick) ?? [];
+    return this.data()?.rondas.filter((r) => r.participanteNickname === nick) ?? [];
   }
 
   // ── Exportación ───────────────────────────
@@ -216,14 +235,35 @@ export class AnalyticsComponent implements OnInit {
     if (!d) return;
 
     // Genera CSV → descarga como .xlsx compatible
-    const header = ['Participante', 'Rondas', 'Preguntas', 'Correctas', 'Incorrectas', '% Acierto', 'Comodines'];
-    const rows   = this.rows().map(r => [
-      r.nickname, r.rondas, r.totalPreguntas, r.correctas, r.incorrectas,
-      `${r.porcentaje}%`, r.comodines,
+    const header = [
+      'Participante',
+      'Rondas',
+      'Preguntas',
+      'Correctas',
+      'Incorrectas',
+      '% Acierto',
+      'Comodines',
+    ];
+    const rows = this.rows().map((r) => [
+      r.nickname,
+      r.rondas,
+      r.totalPreguntas,
+      r.correctas,
+      r.incorrectas,
+      `${r.porcentaje}%`,
+      r.comodines,
     ]);
 
     // Hoja de detalle por ronda
-    const detailHeader = ['Ronda', 'Participante', 'Pregunta', 'Respuesta', '¿Correcta?', 'Comodín', '% Votos Público'];
+    const detailHeader = [
+      'Ronda',
+      'Participante',
+      'Pregunta',
+      'Respuesta',
+      '¿Correcta?',
+      'Comodín',
+      '% Votos Público',
+    ];
     const detailRows: any[][] = [];
     for (const ronda of d.rondas) {
       for (const p of ronda.preguntas) {
@@ -247,11 +287,11 @@ export class AnalyticsComponent implements OnInit {
       '',
       'RESUMEN POR PARTICIPANTE',
       header.join(','),
-      ...rows.map(r => r.map(v => `"${v}"`).join(',')),
+      ...rows.map((r) => r.map((v) => `"${v}"`).join(',')),
       '',
       'DETALLE POR RONDA',
       detailHeader.join(','),
-      ...detailRows.map(r => r.map(v => `"${v}"`).join(',')),
+      ...detailRows.map((r) => r.map((v) => `"${v}"`).join(',')),
     ].join('\n');
 
     this.downloadFile(
@@ -268,12 +308,16 @@ export class AnalyticsComponent implements OnInit {
     const d = this.data();
     if (!d) return;
 
-    const rows  = this.rows();
+    const rows = this.rows();
     const fecha = new Date(d.fechaCreacion).toLocaleDateString('es-EC', {
-      day: '2-digit', month: 'long', year: 'numeric',
+      day: '2-digit',
+      month: 'long',
+      year: 'numeric',
     });
 
-    const rowsHtml = rows.map((r, i) => `
+    const rowsHtml = rows
+      .map(
+        (r, i) => `
       <tr class="${i % 2 === 0 ? 'even' : ''}">
         <td>${i + 1}</td>
         <td><strong>${r.nickname}</strong></td>
@@ -283,7 +327,9 @@ export class AnalyticsComponent implements OnInit {
         <td class="fail">${r.incorrectas}</td>
         <td><span class="badge" style="background:${this.pctColor(r.porcentaje)}">${r.porcentaje}%</span></td>
         <td>${r.comodines}</td>
-      </tr>`).join('');
+      </tr>`,
+      )
+      .join('');
 
     const html = `<!DOCTYPE html>
 <html lang="es">
@@ -340,10 +386,13 @@ export class AnalyticsComponent implements OnInit {
 </html>`;
 
     const blob = new Blob([html], { type: 'text/html;charset=utf-8;' });
-    const url  = URL.createObjectURL(blob);
-    const win  = window.open(url, '_blank');
+    const url = URL.createObjectURL(blob);
+    const win = window.open(url, '_blank');
     if (win) {
-      win.onload = () => { win.print(); this.exporting.set(null); };
+      win.onload = () => {
+        win.print();
+        this.exporting.set(null);
+      };
     } else {
       this.downloadFile(html, `reporte_${d.nombreSala.replace(/\s+/g, '_')}.html`, 'text/html');
       this.exporting.set(null);
@@ -358,9 +407,9 @@ export class AnalyticsComponent implements OnInit {
 
   private downloadFile(content: string, filename: string, type: string): void {
     const blob = new Blob([content], { type });
-    const url  = URL.createObjectURL(blob);
-    const a    = document.createElement('a');
-    a.href     = url;
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
     a.download = filename;
     a.click();
     URL.revokeObjectURL(url);

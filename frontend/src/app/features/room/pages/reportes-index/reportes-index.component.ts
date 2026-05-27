@@ -55,31 +55,27 @@ export class ReportesIndexComponent implements OnInit {
 
   protected readonly salasFiltradas = computed(() => {
     const q = this.busqueda().toLowerCase();
-    return q
-      ? this.salas().filter((s) => s.nombre.toLowerCase().includes(q))
-      : this.salas();
+    return q ? this.salas().filter((s) => s.nombre.toLowerCase().includes(q)) : this.salas();
   });
 
   ngOnInit(): void {
-    this.http
-      .get<any>(`${environment.apiUrl}/salas`)
-      .subscribe({
-        next: (res) => {
-          const data: SalaItem[] = (res.data ?? res ?? []).map((s: any) => ({
-            salaId: s.salaId,
-            nombre: s.nombre,
-            estado: s.estado,
-            participantesCount: s.participantes ?? s.participantesCount ?? 0,
-            creadoEn: s.creadoEn,
-          }));
-          this.salas.set(data);
-          this.loading.set(false);
-        },
-        error: () => {
-          this.error.set('No se pudieron cargar las salas.');
-          this.loading.set(false);
-        },
-      });
+    this.http.get<any>(`${environment.apiUrl}/salas`).subscribe({
+      next: (res) => {
+        const data: SalaItem[] = (res.data ?? res ?? []).map((s: any) => ({
+          salaId: s.salaId,
+          nombre: s.nombre,
+          estado: s.estado,
+          participantesCount: s.participantes ?? s.participantesCount ?? 0,
+          creadoEn: s.creadoEn,
+        }));
+        this.salas.set(data);
+        this.loading.set(false);
+      },
+      error: () => {
+        this.error.set('No se pudieron cargar las salas.');
+        this.loading.set(false);
+      },
+    });
   }
 
   protected onSeleccionarSala(sala: SalaItem): void {

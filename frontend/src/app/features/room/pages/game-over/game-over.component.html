@@ -1,12 +1,11 @@
 <section class="game-over" [class.revealed]="revealed()">
-
   <!-- ── Fondo animado ── -->
   <div class="go-bg">
     <div class="go-bg__orb go-bg__orb--1"></div>
     <div class="go-bg__orb go-bg__orb--2"></div>
     <div class="go-bg__orb go-bg__orb--3"></div>
     <div class="go-bg__stars" aria-hidden="true">
-      @for (s of [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20]; track s) {
+      @for (s of [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]; track s) {
         <span class="star" [style.--i]="s"></span>
       }
     </div>
@@ -39,7 +38,6 @@
 
   <!-- ── Contenido principal ── -->
   @if (!loading() && !error()) {
-
     <!-- Métrica global -->
     <div class="go-metric">
       <span class="go-metric__value">{{ promedioGlobal() }}%</span>
@@ -48,13 +46,14 @@
 
     <!-- Podio -->
     <div class="go-podio" aria-label="Podio de ganadores">
-
       @if (podio().length >= 2) {
         <!-- 2.º lugar -->
         <div class="go-podio__slot go-podio__slot--2 slot-entry">
           <div class="go-podio__avatar">
             <span class="go-podio__medalla">🥈</span>
-            <span class="go-podio__initials">{{ podio()[1].nickname | slice:0:2 | uppercase }}</span>
+            <span class="go-podio__initials">{{
+              podio()[1].nickname | slice: 0 : 2 | uppercase
+            }}</span>
           </div>
           <p class="go-podio__nombre">{{ podio()[1].nickname }}</p>
           <p class="go-podio__pct">{{ podio()[1].porcentajeAcierto }}%</p>
@@ -70,7 +69,9 @@
           <div class="go-podio__crown">👑</div>
           <div class="go-podio__avatar go-podio__avatar--champion">
             <span class="go-podio__medalla">🥇</span>
-            <span class="go-podio__initials">{{ podio()[0].nickname | slice:0:2 | uppercase }}</span>
+            <span class="go-podio__initials">{{
+              podio()[0].nickname | slice: 0 : 2 | uppercase
+            }}</span>
           </div>
           <p class="go-podio__nombre go-podio__nombre--champion">{{ podio()[0].nickname }}</p>
           <p class="go-podio__pct go-podio__pct--champion">{{ podio()[0].porcentajeAcierto }}%</p>
@@ -85,7 +86,9 @@
         <div class="go-podio__slot go-podio__slot--3 slot-entry">
           <div class="go-podio__avatar">
             <span class="go-podio__medalla">🥉</span>
-            <span class="go-podio__initials">{{ podio()[2].nickname | slice:0:2 | uppercase }}</span>
+            <span class="go-podio__initials">{{
+              podio()[2].nickname | slice: 0 : 2 | uppercase
+            }}</span>
           </div>
           <p class="go-podio__nombre">{{ podio()[2].nickname }}</p>
           <p class="go-podio__pct">{{ podio()[2].porcentajeAcierto }}%</p>
@@ -94,7 +97,6 @@
           </div>
         </div>
       }
-
     </div>
 
     <!-- Tabla de posiciones restantes -->
@@ -128,7 +130,5 @@
         Volver al inicio
       </button>
     </div>
-
   }
-
 </section>

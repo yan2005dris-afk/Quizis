@@ -1,6 +1,5 @@
 import { Routes } from '@angular/router';
 
-
 export const ROOM_ROUTES: Routes = [
   {
     path: ':id',
