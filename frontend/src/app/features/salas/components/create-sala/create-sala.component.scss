@@ -111,8 +111,8 @@
 
 .field input:focus,
 .field select:focus {
-  border-color: #3b6ef8;
-  box-shadow: 0 0 0 3px rgba(59, 110, 248, 0.1);
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(29, 38, 103, 0.1);
 }
 
 .field-grid {
@@ -141,7 +141,7 @@
   justify-content: center;
   border-radius: 8px;
   background: #eef2ff;
-  color: #3b6ef8;
+  color: var(--color-primary);
 }
 
 .toggle-row__icon lucide-icon {
@@ -203,7 +203,7 @@
 }
 
 .toggle input:checked + .toggle__track {
-  background: #3b6ef8;
+  background: var(--color-primary);
 }
 
 .toggle input:checked + .toggle__track::before {
@@ -225,7 +225,7 @@
 .upload-zone__icon {
   width: 32px;
   height: 32px;
-  color: #3b6ef8;
+  color: var(--color-primary);
 }
 
 .upload-zone strong {
@@ -262,7 +262,7 @@
   padding: 4px 9px;
   border-radius: 999px;
   background: #eef2ff;
-  color: #3b6ef8;
+  color: var(--color-primary);
   font-size: 11px;
   font-weight: 700;
 }
@@ -374,13 +374,13 @@
 }
 
 .primary-button {
-  border-color: #3b6ef8;
-  background: #3b6ef8;
+  border-color: var(--color-primary);
+  background: var(--color-primary);
   color: #ffffff;
 }
 
 .primary-button:hover {
-  background: #2d5de0;
+  background: var(--color-primary-hover);
 }
 
 .ghost-button:disabled,

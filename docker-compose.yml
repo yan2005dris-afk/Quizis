@@ -60,10 +60,11 @@ services:
       - "3000:3000"
     env_file:
       - .env
-      - .env.docker
     environment:
       - NODE_ENV=production
       - PORT=3000
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-quizisuser}:${POSTGRES_PASSWORD:-quizispass}@postgres:5432/${POSTGRES_DB:-quizisdb}
+      - REDIS_URL=redis://redis:6379
     depends_on:
       postgres:
         condition: service_healthy
