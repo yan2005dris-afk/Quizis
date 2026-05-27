@@ -24,6 +24,7 @@ import { EventHeaderComponent } from '../../components/event-header/event-header
 import { EventFeedComponent } from '../../components/event-feed/event-feed.component';
 import { ParticipantsIndexComponent } from '../../components/participants-index/participants-index.component';
 import { ActiveQuestionComponent } from '../../components/active-question/active-question.component';
+import { GameOverComponent } from '../game-over/game-over.component';
 import {
   LucideAngularModule,
   Users,
@@ -48,6 +49,7 @@ import { environment } from '../../../../../environments/environment';
     EventFeedComponent,
     ParticipantsIndexComponent,
     ActiveQuestionComponent,
+    GameOverComponent,
     LucideAngularModule,
   ],
   templateUrl: './room.component.html',
