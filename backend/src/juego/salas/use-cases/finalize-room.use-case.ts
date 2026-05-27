@@ -2,6 +2,7 @@ import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../../infrastructure/database/prisma/prisma.service';
 import { ParticipantsCacheUseCase } from '../../../infrastructure/cache/use-cases/participants-cache.use-case';
 import { RoomStateCacheUseCase } from '../../../infrastructure/cache/use-cases/room-state-cache.use-case';
+import { ChatCacheUseCase } from '../../../infrastructure/cache/use-cases/chat-cache.use-case';
 import { EstadoSala } from '../dto/update-estado-sala.dto';
 
 @Injectable()
@@ -12,6 +13,7 @@ export class FinalizeRoomUseCase {
     private readonly prisma: PrismaService,
     private readonly participantsCache: ParticipantsCacheUseCase,
     private readonly roomStateCache: RoomStateCacheUseCase,
+    private readonly chatCache: ChatCacheUseCase,
   ) {}
 
   async execute(salaId: number) {
@@ -55,6 +57,9 @@ export class FinalizeRoomUseCase {
 
     // 4. Marcar sala como deshabilitada en cache
     await this.roomStateCache.setRoomEnabled(sala.tokenCompartido, false);
+
+    // 5. Limpiar cache de chat (los mensajes ya no son necesarios)
+    await this.chatCache.clearMessages(sala.tokenCompartido);
 
     this.logger.log(
       `Sala ${salaId} finalizada. ${participantesReales.length} participantes persistidos.`,

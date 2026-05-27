@@ -61,6 +61,8 @@ export class RoomComponent implements OnInit, OnDestroy {
   private readonly destroyRef = inject(DestroyRef);
 
   protected readonly activeTab = signal<'publico' | 'chat'>('publico');
+  protected readonly unreadChatCount = signal(0);
+  private mensajesLengthAtLastCheck = 0;
   protected readonly comodines = signal<ComodinSala[]>([]);
   protected readonly salaDetalle = signal<SalaDetalle | null>(null);
   protected readonly tokenInvitacion = signal<string | null>(null);
@@ -144,6 +146,23 @@ export class RoomComponent implements OnInit, OnDestroy {
             }
           : actual,
       );
+    });
+
+    // Contador de mensajes no leídos
+    effect(() => {
+      const mensajes = this.gameSocket.mensajesChat();
+      const activeTab = this.activeTab();
+
+      if (activeTab === 'chat') {
+        this.unreadChatCount.set(0);
+      } else {
+        const diff = mensajes.length - this.mensajesLengthAtLastCheck;
+        if (diff > 0) {
+          this.unreadChatCount.update((c) => c + diff);
+        }
+      }
+
+      this.mensajesLengthAtLastCheck = mensajes.length;
     });
   }
 

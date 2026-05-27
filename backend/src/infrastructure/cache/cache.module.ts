@@ -4,6 +4,7 @@ import { RedisModule } from '../database/redis/redis.module';
 import { VotesCacheUseCase } from './use-cases/votes-cache.use-case';
 import { ParticipantsCacheUseCase } from './use-cases/participants-cache.use-case';
 import { RoomStateCacheUseCase } from './use-cases/room-state-cache.use-case';
+import { ChatCacheUseCase } from './use-cases/chat-cache.use-case';
 
 @Global()
 @Module({
@@ -13,12 +14,14 @@ import { RoomStateCacheUseCase } from './use-cases/room-state-cache.use-case';
     VotesCacheUseCase,
     ParticipantsCacheUseCase,
     RoomStateCacheUseCase,
+    ChatCacheUseCase,
   ],
   exports: [
     CacheService,
     VotesCacheUseCase,
     ParticipantsCacheUseCase,
     RoomStateCacheUseCase,
+    ChatCacheUseCase,
   ],
 })
 export class CacheModule {}

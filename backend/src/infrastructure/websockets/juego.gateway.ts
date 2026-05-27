@@ -15,6 +15,7 @@ import * as SubmitAnswer from '../../juego/websockets/use-cases/submit-answer.us
 import { SalasService } from '../../juego/salas/salas.service';
 import { RoomStateCacheUseCase } from '../cache/use-cases/room-state-cache.use-case';
 import { ParticipantsCacheUseCase } from '../cache/use-cases/participants-cache.use-case';
+import { ChatCacheUseCase } from '../cache/use-cases/chat-cache.use-case';
 
 @WebSocketGateway({ cors: { origin: '*' } })
 export class JuegoGateway implements OnGatewayConnection, OnGatewayDisconnect {
@@ -36,6 +37,7 @@ export class JuegoGateway implements OnGatewayConnection, OnGatewayDisconnect {
     private readonly salasService: SalasService,
     private readonly roomStateCache: RoomStateCacheUseCase,
     private readonly participantsCache: ParticipantsCacheUseCase,
+    private readonly chatCache: ChatCacheUseCase,
   ) {}
 
   handleConnection(client: Socket) {
@@ -89,6 +91,12 @@ export class JuegoGateway implements OnGatewayConnection, OnGatewayDisconnect {
       info.tokenCompartido,
     );
     client.emit('comodines_bloqueados', bloqueados);
+
+    // Enviar historial de chat al usuario que se une
+    const mensajesChat = await this.chatCache.getMessages(info.tokenCompartido);
+    if (mensajesChat.length > 0) {
+      client.emit('mensaje_chat', mensajesChat);
+    }
   }
 
   @SubscribeMessage('cambiar_rol_participante')
@@ -260,6 +268,32 @@ export class JuegoGateway implements OnGatewayConnection, OnGatewayDisconnect {
     } catch (error) {
       this.logger.error(`[WS:REINICIAR_RONDA] Error:`, error);
       return { success: false, message: 'No se pudo reiniciar la ronda.' };
+    }
+  }
+
+  @SubscribeMessage('enviar_mensaje')
+  async handleChatMessage(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() payload: { texto: string; tipo: 'mensaje' | 'sugerencia' },
+  ) {
+    const info = this.socketMap.get(client.id);
+    if (!info) {
+      return { success: false, message: 'No estás conectado a una sala.' };
+    }
+
+    try {
+      const mensajes = await this.websocketsService.sendMessage({
+        tokenCompartido: info.tokenCompartido,
+        nickname: info.nickname,
+        texto: payload.texto,
+        tipo: payload.tipo,
+      });
+
+      this.server.to(info.tokenCompartido).emit('mensaje_chat', mensajes);
+      return { success: true };
+    } catch (error) {
+      this.logger.error(`Error en Gateway al enviar mensaje:`, error);
+      return { success: false, message: 'Error al enviar mensaje.' };
     }
   }
 

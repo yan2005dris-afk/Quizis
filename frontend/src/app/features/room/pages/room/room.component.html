@@ -265,6 +265,9 @@
         >
           <lucide-icon [img]="ChatIcon" size="13" aria-hidden="true"></lucide-icon>
           Chat en Vivo
+          @if (unreadChatCount() > 0) {
+            <span class="room__unread-badge" data-testid="unread-badge">{{ unreadChatCount() }}</span>
+          }
         </button>
       </div>
 
