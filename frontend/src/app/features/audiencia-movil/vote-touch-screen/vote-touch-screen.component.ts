@@ -1,7 +1,7 @@
 import { Component, DestroyRef, inject, OnInit, signal, computed, PLATFORM_ID } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { isPlatformBrowser } from '@angular/common';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { map, distinctUntilChanged, switchMap, filter, tap } from 'rxjs';
 import { SocketService } from '../../../core/services/socket.service';
 import { SalasService } from '../../../core/services/salas.service';
@@ -36,6 +36,7 @@ export class VoteTouchScreenComponent implements OnInit {
   private readonly socketService = inject(SocketService);
   private readonly salasService = inject(SalasService);
   private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
   private readonly platformId = inject(PLATFORM_ID);
 
@@ -47,14 +48,37 @@ export class VoteTouchScreenComponent implements OnInit {
     this.initAudienceId();
   }
 
+  private participantName = 'Audiencia Digital';
+
   private initAudienceId(): void {
     if (typeof window !== 'undefined' && window.localStorage) {
-      const storedId = localStorage.getItem('quizis_audience_id');
-      if (storedId) {
-        this.anonymousParticipanteId = parseInt(storedId, 10);
-      } else {
-        this.anonymousParticipanteId = Math.floor(Math.random() * 1000000);
-        localStorage.setItem('quizis_audience_id', this.anonymousParticipanteId.toString());
+      // Intentar leer la información real generada por JoinRoomComponent
+      const participantInfoStr = localStorage.getItem('participantInfo');
+      if (participantInfoStr) {
+        try {
+          const participantInfo = JSON.parse(participantInfoStr);
+          if (participantInfo.id) {
+            this.anonymousParticipanteId = participantInfo.id;
+          }
+          if (participantInfo.nickname) {
+            this.participantName = participantInfo.nickname;
+          } else if (participantInfo.nombre) {
+            this.participantName = participantInfo.nombre;
+          }
+        } catch (e) {
+          console.warn('Error parseando participantInfo', e);
+        }
+      }
+
+      // Fallback si no hay participantInfo (acceso directo a /audiencia)
+      if (!this.anonymousParticipanteId) {
+        const storedId = localStorage.getItem('quizis_audience_id');
+        if (storedId) {
+          this.anonymousParticipanteId = parseInt(storedId, 10);
+        } else {
+          this.anonymousParticipanteId = Math.floor(Math.random() * 1000000);
+          localStorage.setItem('quizis_audience_id', this.anonymousParticipanteId.toString());
+        }
       }
     } else {
       this.anonymousParticipanteId = Math.floor(Math.random() * 1000000);
@@ -66,7 +90,13 @@ export class VoteTouchScreenComponent implements OnInit {
   protected readonly selectedOption = signal<VoteOptionKey | null>(null);
   protected readonly isVoteConfirmed = signal<boolean>(false);
   protected readonly timeRemaining = signal<number>(45);
-  protected readonly canVote = computed(() => this.currentQuestion() !== null && !this.isVoteConfirmed());
+  protected readonly isPublicoActive = signal<boolean>(false);
+  
+  protected readonly canVote = computed(() => 
+    this.currentQuestion() !== null && 
+    !this.isVoteConfirmed() && 
+    this.isPublicoActive()
+  );
 
   // Opciones por defecto para el mockup y fallback de pruebas
   protected readonly defaultOptions: OpcionPregunta[] = [
@@ -101,26 +131,26 @@ export class VoteTouchScreenComponent implements OnInit {
         map(params => params['token'] || params['sala']),
         filter(token => !!token),
         distinctUntilChanged(),
-        tap(token => {
-          this.roomToken = token;
-          const anonymousName = 'Audiencia Digital';
-          
-          // Conectar al websocket y unirse a la sala anónimamente
-          if (isPlatformBrowser(this.platformId)) {
-            try {
-              this.socketService.connect();
-              this.socketService.unirseASala(this.roomToken, anonymousName);
-            } catch (err) {
-              console.warn('No se pudo conectar al Socket.io automáticamente:', err);
-            }
-          }
-        }),
         switchMap(token => this.salasService.obtenerPorId(token))
       )
       .subscribe({
         next: (sala) => {
           this.salaId = sala.salaId;
           this.rondaId = sala.rondaActiva?.rondaId;
+          
+          // Guardamos el tokenCompartido real (UUID) para el socket
+          this.roomToken = sala.tokenCompartido;
+
+          // Conectar al websocket y unirse a la sala con el nombre real
+          if (isPlatformBrowser(this.platformId)) {
+            try {
+              this.socketService.connect();
+              this.socketService.unirseASala(this.roomToken, this.participantName);
+            } catch (err) {
+              console.warn('No se pudo conectar al Socket.io automáticamente:', err);
+            }
+          }
+
           this.tituloEvento.set(sala.nombre || 'Sala de Votación');
           
           if (sala.rondaActiva) {
@@ -151,9 +181,11 @@ export class VoteTouchScreenComponent implements OnInit {
       // 2. Escuchar eventos en tiempo real desde el servidor de Sockets
       const socketQuestionSubscription = this.socketService.escucharEvento<any>('pregunta_liberada')
         .subscribe((pregunta) => {
-          // Guardamos la pregunta pero NO la mostramos hasta que se active el comodín
+          // Cargamos la pregunta inmediatamente para que el público pueda VERLA, pero sin poder interactuar aún
           if (pregunta) {
             this.pendingQuestion = pregunta;
+            this.isPublicoActive.set(false); // Inicia bloqueado (solo lectura)
+            this.loadNewQuestion(pregunta);
 
             // Actualizar el número de pregunta (ronda) en base al historial
             const idx = this.historialPreguntas.findIndex(p => p.preguntaId === pregunta.preguntaId);
@@ -185,6 +217,7 @@ export class VoteTouchScreenComponent implements OnInit {
       // Escuchar cuando la pregunta es respondida por el estudiante para bloquear la pantalla
       const socketRespondidaSubscription = this.socketService.escucharEvento<any>('pregunta_respondida')
         .subscribe(() => {
+          this.isPublicoActive.set(false);
           this.clearQuestion();
         });
 
@@ -192,6 +225,7 @@ export class VoteTouchScreenComponent implements OnInit {
       const socketComodinesSubscription = this.socketService.escucharEvento<string[]>('comodines_bloqueados')
         .subscribe((bloqueados) => {
           if (bloqueados && bloqueados.includes('PUBLICO')) {
+            this.isPublicoActive.set(true);
             if (this.pendingQuestion) {
               this.loadNewQuestion(this.pendingQuestion);
             }
@@ -202,8 +236,21 @@ export class VoteTouchScreenComponent implements OnInit {
       const socketComodinLiveSubscription = this.socketService.escucharEvento<any>('comodin_bloqueado')
         .subscribe((data) => {
           if (data && data.tipoComodin === 'PUBLICO') {
+            this.isPublicoActive.set(true);
             if (this.pendingQuestion) {
               this.loadNewQuestion(this.pendingQuestion);
+            }
+          }
+        });
+
+      // Escuchar cambios de rol (si de observador me pasan a estudiante)
+      const socketParticipantesSubscription = this.socketService.escucharEvento<any[]>('participantes')
+        .subscribe((participantes) => {
+          const me = participantes.find((p) => p.nombre === this.participantName);
+          if (me && me.rol === 'estudiante') {
+            // El admin me promovió a estudiante, redirigir a la vista de sala
+            if (this.salaId) {
+              this.router.navigate(['/sala', this.salaId]);
             }
           }
         });
@@ -212,7 +259,8 @@ export class VoteTouchScreenComponent implements OnInit {
       const onRelease = (ev: Event) => {
         const detail = (ev as any).detail;
         this.pendingQuestion = detail?.question;
-        // Si ya estuviera activo el comodín, lo cargamos
+        this.isPublicoActive.set(false);
+        this.loadNewQuestion(this.pendingQuestion);
       };
       
       const onClose = () => {

@@ -10,7 +10,7 @@ import {
   effect,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { GameSocketService } from '../../../../core/services/game-socket.service';
 import { AuthService } from '../../../../core/services/auth.service';
 import {
@@ -60,6 +60,7 @@ export class RoomComponent implements OnInit, OnDestroy {
   protected readonly auth = inject(AuthService);
   protected readonly salasService = inject(SalasService);
   protected readonly route = inject(ActivatedRoute);
+  protected readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
 
   protected readonly activeTab = signal<'publico' | 'chat'>('publico');
@@ -132,16 +133,19 @@ export class RoomComponent implements OnInit, OnDestroy {
     return `${origin}/join/${token}`;
   });
 
-  protected readonly audienceLink = computed(() => {
-    const sala = this.salaDetalle();
-    if (!sala || !sala.tokenCompartido) return null;
-    const origin = typeof window !== 'undefined' ? window.location.origin : '';
-    return `${origin}/audiencia?token=${sala.tokenCompartido}`;
-  });
-
-  protected readonly linkAudCopiado = signal(false);
-
   constructor() {
+    // Efecto para redirigir a la vista de audiencia si pasamos a ser observadores
+    effect(() => {
+      const rol = this.miRol();
+      const sala = this.salaDetalle();
+      const participantes = this.gameSocket.participantes();
+      
+      // Solo evaluar la redirección si ya recibimos la lista del socket
+      if (participantes.length > 0 && rol === 'observador' && !this.isHost() && sala && sala.tokenCompartido) {
+        this.router.navigate(['/audiencia'], { queryParams: { token: sala.tokenCompartido } });
+      }
+    });
+
     // Efecto ÚNICO para reaccionar al WS ronda_reiniciada
     // NO lee salaDetalle() para evitar el loop de escritura→re-ejecución
     effect(() => {
@@ -409,15 +413,7 @@ export class RoomComponent implements OnInit, OnDestroy {
     });
   }
 
-  public onCopiarLinkAud(): void {
-    const link = this.audienceLink();
-    if (!link) return;
 
-    navigator.clipboard.writeText(link).then(() => {
-      this.linkAudCopiado.set(true);
-      setTimeout(() => this.linkAudCopiado.set(false), 2000);
-    });
-  }
 
   public onEnviarMensaje(event: { texto: string; tipo: 'mensaje' | 'sugerencia' }): void {
     this.gameSocket.enviarMensaje(event.texto, event.tipo);

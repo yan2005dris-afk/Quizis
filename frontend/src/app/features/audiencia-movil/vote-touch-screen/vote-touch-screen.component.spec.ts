@@ -68,9 +68,16 @@ describe('VoteTouchScreenComponent', () => {
 
     buttons = Array.from(element.querySelectorAll('.option-btn')) as HTMLButtonElement[];
 
-    // Al recibir la pregunta se oculta el estado de espera y aparecen los 4 botones habilitados
+    // Al recibir la pregunta se oculta el estado de espera y aparecen los 4 botones, pero DESHABILITADOS
     expect(element.querySelector('.waiting-card')).toBeNull();
     expect(buttons).toHaveLength(4);
+    expect(buttons.every((button) => button.disabled)).toBe(true);
+
+    // Simular que el comodín del público se activa
+    component.isPublicoActive.set(true);
+    fixture.detectChanges();
+
+    // Ahora los botones deben estar habilitados
     expect(buttons.every((button) => !button.disabled)).toBe(true);
   });
 

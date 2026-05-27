@@ -149,6 +149,7 @@ export class GameSocketService {
     });
 
     this.socket.on('participantes', (data: Participante[]) => {
+      console.log('[GameSocketService] Participantes actualizados:', data);
       this.participantes.set(data);
     });
 

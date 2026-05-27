@@ -129,21 +129,7 @@
               size="14"
               aria-hidden="true"
             ></lucide-icon>
-            {{ linkCopiado() ? 'Copiado' : 'Link Alumnos' }}
-          </button>
-          <button
-            class="room__btn room__btn--secondary"
-            [disabled]="!audienceLink() || linkAudCopiado()"
-            (click)="onCopiarLinkAud()"
-            [attr.aria-label]="linkAudCopiado() ? 'Link copiado' : 'Copiar link para público'"
-            aria-live="polite"
-          >
-            <lucide-icon
-              [img]="linkAudCopiado() ? CheckIcon : CopyIcon"
-              size="14"
-              aria-hidden="true"
-            ></lucide-icon>
-            {{ linkAudCopiado() ? 'Copiado' : 'Link Público' }}
+            {{ linkCopiado() ? 'Copiado' : 'Copiar Enlace' }}
           </button>
           <button
             class="room__btn"

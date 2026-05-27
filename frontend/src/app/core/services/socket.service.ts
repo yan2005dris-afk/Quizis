@@ -14,7 +14,16 @@ export class SocketService {
 
   connect(): Socket {
     if (!this.socket) {
+      console.log('[SocketService] Inicializando nueva conexión a', this.serverUrl || 'default');
       this.socket = this.serverUrl ? io(this.serverUrl) : io();
+      
+      this.socket.on('connect', () => {
+        console.log('[SocketService] Conectado exitosamente con ID:', this.socket?.id);
+      });
+      
+      this.socket.on('disconnect', () => {
+        console.log('[SocketService] Desconectado');
+      });
     }
 
     return this.socket;
@@ -25,7 +34,18 @@ export class SocketService {
   }
 
   unirseASala(tokenCompartido: string, nombre: string): void {
-    this.getSocket().emit('unirse_sala', { tokenCompartido, nombre });
+    const socket = this.getSocket();
+    const payload = { tokenCompartido, nombre };
+    console.log('[SocketService] Intentando unirse a sala con payload:', payload);
+    
+    if (socket.connected) {
+      socket.emit('unirse_sala', payload);
+    } else {
+      socket.once('connect', () => {
+        console.log('[SocketService] Socket conectado, emitiendo unirse_sala');
+        socket.emit('unirse_sala', payload);
+      });
+    }
   }
 
   emitirEvento(evento: string, payload: any): void {

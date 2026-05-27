@@ -38,7 +38,12 @@
         </div>
 
         <!-- Botón de Confirmación de Voto -->
-        @if (selectedOption()) {
+        @if (!isPublicoActive()) {
+          <div class="comodin-locked-message">
+            <span class="locked-icon">🔒</span>
+            Modo Espectador. Esperando comodín del público...
+          </div>
+        } @else if (selectedOption()) {
           <button 
             type="button"
             class="confirm-btn"
