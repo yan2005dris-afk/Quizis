@@ -19,6 +19,8 @@ import {
   SalaDetalle,
   EstadoSala,
 } from '../../../../core/services/salas.service';
+import { ToastService } from '../../../../core/services/toast.service'; 
+import { ConfirmModalComponent } from '../../../../shared/ui/confirm-modal/confirm-modal.component';
 import { ChatBoxComponent } from '../../components/chat-box/chat-box.component';
 import { EventHeaderComponent } from '../../components/event-header/event-header.component';
 import { EventFeedComponent } from '../../components/event-feed/event-feed.component';
@@ -51,6 +53,7 @@ import { environment } from '../../../../../environments/environment';
     ActiveQuestionComponent,
     GameOverComponent,
     LucideAngularModule,
+    ConfirmModalComponent, 
   ],
   templateUrl: './room.component.html',
   styleUrl: './room.component.scss',
@@ -61,6 +64,7 @@ export class RoomComponent implements OnInit, OnDestroy {
   protected readonly salasService = inject(SalasService);
   protected readonly route = inject(ActivatedRoute);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly toastService = inject(ToastService); 
 
   protected readonly activeTab = signal<'publico' | 'chat'>('publico');
   protected readonly unreadChatCount = signal(0);
@@ -78,6 +82,7 @@ export class RoomComponent implements OnInit, OnDestroy {
   protected readonly linkCopiado = signal(false);
   protected readonly confirmandoFinalizar = signal(false);
   protected readonly reiniciandoRonda = signal(false);
+  protected readonly mostrandoModalRegenerar = signal(false); 
 
   // Lucide icons
   protected readonly UsersIcon = Users;
@@ -134,12 +139,10 @@ export class RoomComponent implements OnInit, OnDestroy {
 
   constructor() {
     // Efecto ÚNICO para reaccionar al WS ronda_reiniciada
-    // NO lee salaDetalle() para evitar el loop de escritura→re-ejecución
     effect(() => {
       const reinicio = this.gameSocket.rondaReiniciada();
       if (!reinicio?.rondaActiva) return;
 
-      // Actualiza salaDetalle sin leerlo como dependencia
       this.salaDetalle.update((actual) =>
         actual
           ? {
@@ -156,7 +159,6 @@ export class RoomComponent implements OnInit, OnDestroy {
       const mensajes = this.gameSocket.mensajesChat();
       const activeTab = this.activeTab();
 
-      // Primera ejecución: solo sincroniza el snapshot sin contar como no leídos
       if (!this.hasChatSnapshot) {
         this.mensajesLengthAtLastCheck = mensajes.length;
         this.hasChatSnapshot = true;
@@ -243,7 +245,6 @@ export class RoomComponent implements OnInit, OnDestroy {
 
           const timeout = setTimeout(() => clearInterval(interval), 10000);
 
-          // Cleanup interval + timeout si el componente se destruye antes
           this.destroyRef.onDestroy(() => {
             clearInterval(interval);
             clearTimeout(timeout);
@@ -253,17 +254,10 @@ export class RoomComponent implements OnInit, OnDestroy {
       });
   }
 
-  /**
-   * Transitions the room to ESPERANDO_ALUMNOS (open for participants).
-   * Uses the HTTP estado endpoint with the correct backend enum value.
-   */
   public onAbrirSala(): void {
     this.cambiarEstado('ESPERANDO_ALUMNOS');
   }
 
-  /**
-   * Transitions the room to EN_VIVO (game in progress).
-   */
   public onIniciarJuego(): void {
     this.cambiarEstado('EN_VIVO');
   }
@@ -286,9 +280,6 @@ export class RoomComponent implements OnInit, OnDestroy {
     });
   }
 
-  /**
-   * Enable/disable the room live — uses WebSocket (no HTTP endpoint for this).
-   */
   public onToggleHabilitada(): void {
     const sala = this.salaDetalle();
     if (!sala) return;
@@ -296,11 +287,17 @@ export class RoomComponent implements OnInit, OnDestroy {
     this.gameSocket.cambiarEstadoSala(sala.tokenCompartido, nueva);
   }
 
+  
   public onRegenerarToken(): void {
-    const sala = this.salaDetalle();
-    if (!sala || this.regenerandoToken()) return;
+    if (!this.salaDetalle() || this.regenerandoToken()) return;
+    this.mostrandoModalRegenerar.set(true);
+  }
 
-    if (!confirm('¿Regenerar el link de invitación? El link anterior dejará de funcionar.')) return;
+  
+  public confirmarRegenerarToken(): void {
+    this.mostrandoModalRegenerar.set(false); 
+    const sala = this.salaDetalle();
+    if (!sala) return;
 
     this.regenerandoToken.set(true);
     this.salasService.regenerarToken(sala.salaId).subscribe({
@@ -309,11 +306,16 @@ export class RoomComponent implements OnInit, OnDestroy {
         this.tokenInvitacion.set(res.tokenInvitacion);
         this.regenerandoToken.set(false);
         this.tokenRegenerado.set(true);
+        
+        this.toastService.show('El link anterior ha sido invalidado y el nuevo se ha generado.', 'success', '¡Link regenerado!');
+
         setTimeout(() => this.tokenRegenerado.set(false), 2000);
       },
       error: (err) => {
         console.error('Error regenerando token:', err);
         this.regenerandoToken.set(false);
+        
+        this.toastService.show('Hubo un problema de conexión al regenerar el link.', 'danger', 'Error');
       },
     });
   }
@@ -378,7 +380,7 @@ export class RoomComponent implements OnInit, OnDestroy {
           rondaId: sala.rondaActiva.rondaId,
           tokenCompartido: sala.tokenCompartido,
           preguntaId: pregunta.preguntaId,
-          participanteId: participantInfo.id || 0, // Necesita ID real, si no lo tiene, fallará. El id debería venir del backend.
+          participanteId: participantInfo.id || 0,
           opcionId,
         });
       }
@@ -420,21 +422,15 @@ export class RoomComponent implements OnInit, OnDestroy {
           res.rondaActiva?.rondaId,
         );
 
-        // Reset local state immediately — don't wait for WS echo
         this.gameSocket.preguntaActiva.set(null);
         this.gameSocket.ultimoResultado.set(null);
         this.gameSocket.tiempoRestante.set(null);
         this.gameSocket.votosPublico.set(null);
         this.gameSocket.comodinBloqueado.set([]);
-        console.log(
-          '[REINICIAR] Signals reseteados. comodinBloqueado=',
-          this.gameSocket.comodinBloqueado(),
-        );
-
+        
         this.salaDetalle.update((s) =>
           s ? { ...s, estado: res.estado, rondaActiva: res.rondaActiva } : s,
         );
-        console.log('[REINICIAR] salaDetalle.estado=', this.salaDetalle()?.estado);
 
         this.salasService
           .obtenerComodines(sala.salaId)
@@ -444,7 +440,6 @@ export class RoomComponent implements OnInit, OnDestroy {
             error: (err) => console.error('[REINICIAR] Error recargando comodines:', err),
           });
 
-        // Broadcast to other clients via WS
         this.gameSocket.reiniciarRonda(sala.tokenCompartido, res.rondaActiva);
         this.reiniciandoRonda.set(false);
       },
