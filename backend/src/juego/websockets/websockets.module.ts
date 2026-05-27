@@ -3,6 +3,7 @@ import { WebsocketsService } from './websockets.service';
 import { CacheModule } from '../../infrastructure/cache/cache.module';
 import { VotosModule } from '../votos/votos.module';
 import { RespuestasModule } from '../respuestas/respuestas.module';
+import { ComodinesModule } from '../comodines/comodines.module';
 import { ValidateVoteUniquenessUseCase } from './use-cases/validate-vote-uniqueness.use-case';
 import { JoinRoomUseCase } from './use-cases/join-room.use-case';
 import { HandleDisconnectUseCase } from './use-cases/handle-disconnect.use-case';
@@ -11,9 +12,11 @@ import { ReleaseQuestionUseCase } from './use-cases/release-question.use-case';
 import { SubmitAnswerUseCase } from './use-cases/submit-answer.use-case';
 import { ToggleRoomEnabledUseCase } from './use-cases/toggle-room-enabled.use-case';
 import { SendMessageUseCase } from './use-cases/send-message.use-case';
+import { ActivateCallJokerUseCase } from './use-cases/activate-call-joker.use-case';
+import { SendHintUseCase } from './use-cases/send-hint.use-case';
 
 @Module({
-  imports: [CacheModule, VotosModule, RespuestasModule],
+  imports: [CacheModule, VotosModule, RespuestasModule, ComodinesModule],
   providers: [
     WebsocketsService,
     ValidateVoteUniquenessUseCase,
@@ -24,6 +27,8 @@ import { SendMessageUseCase } from './use-cases/send-message.use-case';
     SubmitAnswerUseCase,
     ToggleRoomEnabledUseCase,
     SendMessageUseCase,
+    ActivateCallJokerUseCase,
+    SendHintUseCase,
   ],
   exports: [WebsocketsService],
 })

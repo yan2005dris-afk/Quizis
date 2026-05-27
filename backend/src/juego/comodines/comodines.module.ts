@@ -17,6 +17,6 @@ import { VotosModule } from '../votos/votos.module';
     SelectRandomConsultantUseCase,
     GetPublicVoteResultsUseCase,
   ],
-  exports: [ComodinesService],
+  exports: [ComodinesService, SelectRandomConsultantUseCase],
 })
 export class ComodinesModule {}
