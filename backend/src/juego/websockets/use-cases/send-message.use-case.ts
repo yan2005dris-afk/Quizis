@@ -21,9 +21,7 @@ export class SendMessageUseCase {
       tipo: payload.tipo,
     };
 
-    const logText = payload.texto
-      .replace(/[\n\r]/g, ' ')
-      .substring(0, 120);
+    const logText = payload.texto.replace(/[\n\r]/g, ' ').substring(0, 120);
     this.logger.log(
       `[CHAT] ${payload.nickname} en sala ${payload.tokenCompartido}: ${logText}`,
     );

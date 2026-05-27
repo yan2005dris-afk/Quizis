@@ -35,8 +35,7 @@ export class ChatBoxComponent {
 
       if (container?.nativeElement && msgs.length > 0) {
         const id = setTimeout(() => {
-          container.nativeElement.scrollTop =
-            container.nativeElement.scrollHeight;
+          container.nativeElement.scrollTop = container.nativeElement.scrollHeight;
         }, 0);
         onCleanup(() => clearTimeout(id));
       }

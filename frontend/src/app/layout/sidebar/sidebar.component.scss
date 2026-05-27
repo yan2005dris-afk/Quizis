@@ -1,8 +1,8 @@
 .sidebar {
   width: 260px;
   height: 100vh;
-  background-color: #ffffff;
-  border-right: 1px solid #e1e4e8;
+  background-color: var(--color-surface);
+  border-right: 1px solid var(--color-border);
   display: flex;
   flex-direction: column;
   transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -25,38 +25,39 @@
       gap: 0.75rem;
 
       .logo-icon {
-        background-color: #3b97ff;
-        color: white;
+        background-color: var(--color-primary);
+        color: #fff;
         width: 32px;
         height: 32px;
-        border-radius: 6px;
+        border-radius: var(--radius-md);
         display: flex;
         align-items: center;
         justify-content: center;
-        font-weight: bold;
+        font-weight: 700;
         flex-shrink: 0;
       }
 
       .logo-text {
         font-weight: 700;
         font-size: 1.2rem;
-        color: #1a1a1a;
+        color: var(--color-text);
       }
     }
 
     .toggle-btn {
       background: none;
       border: none;
-      color: #999;
+      color: var(--color-sub);
       cursor: pointer;
       display: flex;
       align-items: center;
       padding: 5px;
-      border-radius: 4px;
-      
+      border-radius: var(--radius-sm);
+      transition: background var(--transition), color var(--transition);
+
       &:hover {
-        background-color: #f0f2f5;
-        color: #3b97ff;
+        background-color: var(--color-bg);
+        color: var(--color-primary);
       }
     }
   }
@@ -71,7 +72,7 @@
 
   .sidebar-footer {
     padding: 1rem;
-    border-top: 1px solid #eee;
+    border-top: 1px solid var(--color-border);
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
@@ -82,22 +83,22 @@
     align-items: center;
     gap: 1rem;
     padding: 0.75rem 1rem;
-    border-radius: 8px;
-    color: #666;
+    border-radius: var(--radius-md);
+    color: var(--color-sub);
     text-decoration: none;
     font-weight: 600;
-    font-size: 0.95rem;
-    transition: all 0.2s;
+    font-size: var(--text-sm);
+    transition: background var(--transition), color var(--transition);
     white-space: nowrap;
 
     &:hover {
       background-color: #f8faff;
-      color: #3b97ff;
+      color: var(--color-primary);
     }
 
     &.active {
       background-color: #eff6ff;
-      color: #3b97ff;
+      color: var(--color-primary);
     }
 
     lucide-icon {
@@ -112,11 +113,11 @@
       background: none;
       border: none;
       cursor: pointer;
-      font-family: inherit;
+      font-family: var(--font-sans);
 
       &:hover {
         background-color: #fff5f5;
-        color: #e53e3e;
+        color: var(--color-danger);
       }
     }
   }

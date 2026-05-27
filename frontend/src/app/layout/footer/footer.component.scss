@@ -1,13 +1,14 @@
 .footer {
-  padding: 1.5rem 2rem;
+  padding: 1.25rem 2rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border-top: 1px solid #e1e4e8;
-  background-color: #ffffff;
-  font-size: 0.75rem;
-  color: #999;
+  border-top: 1px solid var(--color-border);
+  background-color: var(--color-surface);
+  font-size: var(--text-xs);
+  color: var(--color-sub);
   margin-top: auto;
+  font-family: var(--font-sans);
 
   .footer-links {
     display: flex;
@@ -17,10 +18,10 @@
       color: inherit;
       text-decoration: none;
       font-weight: 700;
-      transition: color 0.2s;
+      transition: color var(--transition);
 
       &:hover {
-        color: #3b97ff;
+        color: var(--color-primary);
       }
     }
   }
@@ -35,8 +36,8 @@
     flex-direction: column;
     gap: 1rem;
     text-align: center;
-    padding: 2rem 1rem;
-    
+    padding: 1.5rem 1rem;
+
     .footer-links {
       justify-content: center;
     }
