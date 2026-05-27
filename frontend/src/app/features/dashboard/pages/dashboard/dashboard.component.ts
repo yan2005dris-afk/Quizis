@@ -1,13 +1,16 @@
-import { Component, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  inject,
+} from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { AuthService } from '../../../../core/services/auth.service';
 import { LucideAngularModule, BarChart2, Play, Database } from 'lucide-angular';
 
 @Component({
   selector: 'app-dashboard',
-  standalone: true,
-  imports: [CommonModule, RouterLink, LucideAngularModule],
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [RouterLink, LucideAngularModule],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.scss',
 })

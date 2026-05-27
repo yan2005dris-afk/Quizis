@@ -6,55 +6,59 @@
 }
 
 .welcome-banner {
-  background: linear-gradient(135deg, #3b97ff 0%, #1e69cc 100%);
-  color: white;
-  padding: 3rem;
-  border-radius: 16px;
+  background: linear-gradient(135deg, var(--color-primary) 0%, #16205a 100%);
+  color: #fff;
+  padding: 2.5rem 3rem;
+  border-radius: var(--radius-xl);
   margin-bottom: 2rem;
-  box-shadow: 0 10px 20px rgba(59, 151, 255, 0.2);
+  box-shadow: 0 10px 20px rgba(29, 38, 103, 0.2);
 
   h1 {
-    font-size: 2.2rem;
-    margin-bottom: 0.5rem;
+    font-size: 1.75rem;
+    font-weight: 700;
+    margin: 0 0 .5rem;
+    font-family: var(--font-sans);
   }
   p {
-    opacity: 0.9;
-    font-size: 1.1rem;
+    opacity: .9;
+    font-size: var(--text-base);
+    margin: 0;
+    font-family: var(--font-sans);
   }
 }
 
 .stats-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: 1.5rem;
+  gap: 1.25rem;
 
   .stat-card {
-    background-color: white;
-    padding: 1.5rem;
-    border-radius: 12px;
-    border: 1px solid #e1e4e8;
+    background: var(--color-surface);
+    padding: 1.25rem 1.5rem;
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--color-border);
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
-    transition: transform 0.2s;
+    gap: .35rem;
+    transition: transform var(--transition), box-shadow var(--transition);
 
     &:hover {
-      transform: translateY(-4px);
-      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.05);
+      transform: translateY(-3px);
+      box-shadow: var(--shadow-md);
     }
 
     .stat-label {
-      color: #666;
-      font-size: 0.85rem;
+      color: var(--color-sub);
+      font-size: var(--text-xs);
       font-weight: 600;
       text-transform: uppercase;
-      letter-spacing: 0.5px;
+      letter-spacing: .05em;
     }
 
     .stat-value {
-      font-size: 2rem;
+      font-size: 1.75rem;
       font-weight: 800;
-      color: #3b97ff;
+      color: var(--color-primary);
     }
   }
 }
@@ -63,27 +67,28 @@
   .content-padding {
     padding: 1rem;
   }
-  
+
   .welcome-banner {
-    padding: 2rem 1.5rem;
-    h1 { font-size: 1.8rem; }
-    p { font-size: 1rem; }
+    padding: 1.5rem;
+    h1 { font-size: 1.35rem; }
+    p { font-size: var(--text-sm); }
   }
 }
 
 /* ─── Accesos rápidos ────────────────────── */
 
 .quick-access {
-  margin-top: 32px;
+  margin-top: 2rem;
 }
 
 .quick-access__title {
-  font-size: 14px;
-  font-weight: 600;
-  color: #64748b;
+  font-size: var(--text-xs);
+  font-weight: 700;
+  color: var(--color-sub);
   text-transform: uppercase;
   letter-spacing: .08em;
-  margin: 0 0 14px;
+  margin: 0 0 1rem;
+  font-family: var(--font-sans);
 }
 
 .quick-access__grid {
@@ -96,48 +101,47 @@
   display: flex;
   align-items: center;
   gap: 14px;
-  background: #1e293b;
-  border: 1px solid #334155;
-  border-radius: 10px;
-  padding: 16px 18px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: 1rem 1.15rem;
   text-decoration: none;
-  transition: all 0.2s;
+  transition: border-color var(--transition), box-shadow var(--transition), transform var(--transition-fast);
 
   &:hover {
-    border-color: #60a5fa;
-    background: #1d3256;
+    border-color: var(--color-primary);
     transform: translateY(-2px);
-    box-shadow: 0 4px 20px rgba(96, 165, 250, 0.15);
+    box-shadow: var(--shadow-md);
   }
 
   &--highlight {
-    border-color: #3b82f6;
-    background: rgba(59, 130, 246, 0.08);
+    border-color: var(--color-primary);
+    background: #eef2ff;
 
     &:hover {
-      background: rgba(59, 130, 246, 0.15);
-      box-shadow: 0 4px 20px rgba(59, 130, 246, 0.25);
+      background: #e0e7ff;
+      box-shadow: 0 4px 16px rgba(29, 38, 103, 0.15);
     }
   }
 }
 
 .quick-card__icon {
   flex-shrink: 0;
-  &--chart { color: #60a5fa; }
-  &--play  { color: #34d399; }
-  &--bank  { color: #a78bfa; }
+  &--chart { color: var(--color-primary); }
+  &--play  { color: var(--color-success); }
+  &--bank  { color: var(--color-ai); }
 }
 
 .quick-card__name {
   display: block;
-  font-size: 14px;
+  font-size: var(--text-sm);
   font-weight: 600;
-  color: #e2e8f0;
+  color: var(--color-text);
   margin-bottom: 2px;
 }
 
 .quick-card__desc {
   display: block;
   font-size: 12px;
-  color: #64748b;
+  color: var(--color-sub);
 }

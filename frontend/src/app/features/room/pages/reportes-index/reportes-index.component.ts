@@ -1,6 +1,7 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  computed,
   inject,
   OnInit,
   signal,
@@ -31,7 +32,6 @@ interface SalaItem {
 @Component({
   selector: 'app-reportes-index',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  standalone: true,
   imports: [LucideAngularModule, DatePipe, AnalyticsComponent],
   templateUrl: './reportes-index.component.html',
   styleUrl: './reportes-index.component.scss',
@@ -53,12 +53,12 @@ export class ReportesIndexComponent implements OnInit {
   protected readonly salaSeleccionada = signal<SalaItem | null>(null);
   protected readonly busqueda = signal('');
 
-  protected readonly salasFiltradas = () => {
+  protected readonly salasFiltradas = computed(() => {
     const q = this.busqueda().toLowerCase();
     return q
       ? this.salas().filter((s) => s.nombre.toLowerCase().includes(q))
       : this.salas();
-  };
+  });
 
   ngOnInit(): void {
     this.http

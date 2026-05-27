@@ -1,12 +1,15 @@
-import { Component, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  inject,
+} from '@angular/core';
 import { AuthService } from '../../core/services/auth.service';
 import { LucideAngularModule, Bell, Search } from 'lucide-angular';
 
 @Component({
   selector: 'app-navbar',
-  standalone: true,
-  imports: [CommonModule, LucideAngularModule],
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [LucideAngularModule],
   templateUrl: './navbar.component.html',
   styleUrl: './navbar.component.scss',
 })
