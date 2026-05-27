@@ -74,7 +74,7 @@ interface ParticipantRow {
 @Component({
   selector: 'app-analytics',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [LucideAngularModule, DecimalPipe, SlicePipe, UpperCasePipe],
+  imports: [LucideAngularModule, SlicePipe, UpperCasePipe],
   templateUrl: './analytics.component.html',
   styleUrl: './analytics.component.scss',
 })
