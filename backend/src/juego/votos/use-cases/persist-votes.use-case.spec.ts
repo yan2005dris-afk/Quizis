@@ -70,5 +70,9 @@ describe('PersistVotesUseCase', () => {
 
     await expect(useCase.execute(1, 1)).rejects.toThrow('DB Error');
     expect(mockCache.rollbackVotes).toHaveBeenCalledWith('key', 1, 1);
+
+    expect(mockCache.rollbackVotes).toHaveBeenCalledTimes(1);
+
+    expect(mockCache.commitVotes).not.toHaveBeenCalled();
   });
 });

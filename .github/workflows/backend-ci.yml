@@ -14,6 +14,38 @@ jobs:
   backend-ci:
     name: Backend CI
     runs-on: ubuntu-latest
+
+    # ─── Servicios externos requeridos por integration tests ──────────────────
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: quizis_test
+          POSTGRES_USER: admin
+          POSTGRES_PASSWORD: root123
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
+
+    # ─── Variables de entorno para todo el job ────────────────────────────────
+    env:
+      DATABASE_URL: postgresql://admin:root123@localhost:5432/quizis_test
+      JWT_ACCESS_SECRET: test-access-secret-ci
+      JWT_ACCESS_EXPIRES_IN: 15m
+      JWT_REFRESH_SECRET: test-refresh-secret-ci
+      JWT_REFRESH_EXPIRES_IN: 7d
+      JWT_ROOM_SECRET: test-room-secret-ci
+      JWT_ROOM_EXPIRES_IN: 1h
+      NODE_ENV: test
+      PORT: 3001
+      CORS_ORIGIN: http://localhost:4200
+      REDIS_URL: redis://localhost:6379
+      OPENAI_API_KEY: test-key
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -30,7 +62,7 @@ jobs:
           cache: "pnpm"
 
       - name: Install dependencies
-        run: pnpm install 
+        run: pnpm install
         working-directory: backend
 
       - name: Generate Prisma Client
@@ -41,8 +73,16 @@ jobs:
         run: pnpm run lint
         working-directory: backend
 
-      - name: Run Tests
+      - name: Run Unit Tests
         run: pnpm run test
+        working-directory: backend
+
+      - name: Run Prisma Migrations (test DB)
+        run: pnpm exec prisma migrate deploy
+        working-directory: backend
+
+      - name: Run Integration Tests
+        run: pnpm run test:integration
         working-directory: backend
 
       - name: Run Build

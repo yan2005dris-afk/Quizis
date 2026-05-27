@@ -25,5 +25,6 @@ describe('RegisterVoteUseCase', () => {
   it('should call cacheService.setVote', async () => {
     await useCase.execute(1, 2, 3, 4);
     expect(cache.setVote).toHaveBeenCalledWith(1, 2, 3, 4);
+    expect(cache.setVote).toHaveBeenCalledTimes(1);
   });
 });
