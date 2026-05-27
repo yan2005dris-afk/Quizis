@@ -10,6 +10,7 @@ import { ProcessAudienceVoteUseCase } from './use-cases/process-audience-vote.us
 import { ReleaseQuestionUseCase } from './use-cases/release-question.use-case';
 import { SubmitAnswerUseCase } from './use-cases/submit-answer.use-case';
 import { ToggleRoomEnabledUseCase } from './use-cases/toggle-room-enabled.use-case';
+import { SendMessageUseCase } from './use-cases/send-message.use-case';
 
 @Module({
   imports: [CacheModule, VotosModule, RespuestasModule],
@@ -22,6 +23,7 @@ import { ToggleRoomEnabledUseCase } from './use-cases/toggle-room-enabled.use-ca
     ReleaseQuestionUseCase,
     SubmitAnswerUseCase,
     ToggleRoomEnabledUseCase,
+    SendMessageUseCase,
   ],
   exports: [WebsocketsService],
 })

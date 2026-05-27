@@ -1,7 +1,7 @@
 .top-navbar {
   height: 80px;
-  background-color: #ffffff;
-  border-bottom: 1px solid #e1e4e8;
+  background-color: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
   padding: 0 2rem;
   display: flex;
   align-items: center;
@@ -17,24 +17,28 @@
       .search-icon {
         position: absolute;
         left: 12px;
-        color: #999;
+        color: var(--color-sub);
         width: 18px;
         height: 18px;
       }
 
       input {
-        padding: 10px 12px 10px 40px;
-        border: 1.5px solid #f0f2f5;
-        background-color: #f9fafb;
-        border-radius: 8px;
+        padding: .65rem .75rem .65rem 2.5rem;
+        border: 1.5px solid var(--color-border);
+        background-color: var(--color-bg);
+        border-radius: var(--radius-md);
         width: 300px;
-        font-size: 0.9rem;
-        transition: all 0.2s;
+        font-family: var(--font-sans);
+        font-size: var(--text-sm);
+        color: var(--color-text);
+        transition: border-color var(--transition), background var(--transition), width var(--transition);
+
+        &::placeholder { color: var(--color-sub); }
 
         &:focus {
           outline: none;
-          background-color: white;
-          border-color: #3b97ff;
+          background-color: var(--color-surface);
+          border-color: var(--color-primary);
           width: 340px;
         }
       }
@@ -49,7 +53,7 @@
     .icon-btn {
       background: none;
       border: none;
-      color: #666;
+      color: var(--color-sub);
       cursor: pointer;
       position: relative;
       padding: 8px;
@@ -57,11 +61,11 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      transition: background-color 0.2s;
+      transition: background var(--transition), color var(--transition);
 
       &:hover {
-        background-color: #f0f2f5;
-        color: #3b97ff;
+        background-color: var(--color-bg);
+        color: var(--color-primary);
       }
 
       lucide-icon {
@@ -75,16 +79,16 @@
         right: 6px;
         width: 8px;
         height: 8px;
-        background-color: #ff4d4f;
+        background-color: var(--color-danger);
         border-radius: 50%;
-        border: 2px solid white;
+        border: 2px solid var(--color-surface);
       }
     }
 
     .divider {
       width: 1px;
       height: 24px;
-      background-color: #e1e4e8;
+      background-color: var(--color-border);
     }
 
     .user-profile {
@@ -99,12 +103,12 @@
 
         .user-name {
           font-weight: 700;
-          font-size: 0.9rem;
-          color: #333;
+          font-size: var(--text-sm);
+          color: var(--color-text);
         }
         .user-role {
-          font-size: 0.75rem;
-          color: #888;
+          font-size: var(--text-xs);
+          color: var(--color-sub);
         }
       }
 
@@ -113,7 +117,7 @@
         height: 40px;
         border-radius: 50%;
         object-fit: cover;
-        border: 2px solid #3b97ff;
+        border: 2px solid var(--color-primary);
       }
     }
   }
