@@ -1,49 +1,172 @@
 <div class="content-padding">
+
+  <!-- BANNER -->
   <div class="welcome-banner">
-    <h1>¡Listo para una nueva ronda!</h1>
-    <p>Gestiona tus salas de quiz y bancos de preguntas desde este panel.</p>
-  </div>
+    <div class="welcome-text">
+      <h1>🚀 ¡Listo para una nueva ronda!</h1>
+      <p>Gestiona tus salas de juego y bancos de preguntas desde este panel.</p>
+    </div>
 
-  <div class="stats-grid">
-    <div class="stat-card">
-      <span class="stat-label">Salas Creadas</span>
-      <span class="stat-value">12</span>
-    </div>
-    <div class="stat-card">
-      <span class="stat-label">Preguntas Totales</span>
-      <span class="stat-value">145</span>
-    </div>
-    <div class="stat-card">
-      <span class="stat-label">Participantes Hoy</span>
-      <span class="stat-value">84</span>
+    <div class="welcome-actions">
+      <a class="btn-action btn-primary" routerLink="/salas">
+        ＋ Nueva Sala
+      </a>
+
+      <a class="btn-action btn-secondary" routerLink="/bancos">
+        📚 Ver Bancos
+      </a>
     </div>
   </div>
 
-  <!-- Accesos rápidos -->
-  <div class="quick-access">
-    <h2 class="quick-access__title">Accesos rápidos</h2>
-    <div class="quick-access__grid">
-      <a routerLink="/salas" class="quick-card">
-        <lucide-icon [img]="PlayIcon" size="24" class="quick-card__icon quick-card__icon--play" />
-        <div>
-          <span class="quick-card__name">Salas</span>
-          <span class="quick-card__desc">Crea y gestiona tus salas de juego</span>
-        </div>
-      </a>
-      <a routerLink="/reportes" class="quick-card quick-card--highlight">
-        <lucide-icon [img]="ChartIcon" size="24" class="quick-card__icon quick-card__icon--chart" />
-        <div>
-          <span class="quick-card__name">Reportes</span>
-          <span class="quick-card__desc">Analíticas y exportación por sala</span>
-        </div>
-      </a>
-      <a routerLink="/bancos" class="quick-card">
-        <lucide-icon [img]="BankIcon" size="24" class="quick-card__icon quick-card__icon--bank" />
-        <div>
-          <span class="quick-card__name">Banco de Preguntas</span>
-          <span class="quick-card__desc">Administra tus preguntas</span>
-        </div>
-      </a>
+  <!-- LOADING -->
+  @if (isLoading()) {
+    <div class="loading-state">
+      <div class="spinner"></div>
+      <span>Cargando datos...</span>
     </div>
-  </div>
+  } @else {
+
+    <!-- STATS -->
+    <div class="stats-grid">
+
+      <!-- BANCOS -->
+      <div class="stat-card">
+        <div class="stat-icon stat-icon--blue">📚</div>
+
+        <div class="stat-info">
+          <span class="stat-label">Bancos de Preguntas</span>
+          <span class="stat-value">{{ totalBancos() }}</span>
+        </div>
+      </div>
+
+      <!-- PREGUNTAS -->
+      <div class="stat-card">
+        <div class="stat-icon stat-icon--purple">❓</div>
+
+        <div class="stat-info">
+          <span class="stat-label">Preguntas Totales</span>
+          <span class="stat-value">{{ totalPreguntas() }}</span>
+        </div>
+      </div>
+
+      <!-- SALAS -->
+      <div class="stat-card">
+        <div class="stat-icon stat-icon--green">🎮</div>
+
+        <div class="stat-info">
+          <span class="stat-label">Salas de Juego</span>
+          <span class="stat-value">{{ totalSalas() }}</span>
+        </div>
+      </div>
+
+      <!-- ACTIVAS -->
+      <div class="stat-card">
+        <div class="stat-icon stat-icon--orange">🔴</div>
+
+        <div class="stat-info">
+          <span class="stat-label">Salas Activas</span>
+          <span class="stat-value">{{ salasActivas() }}</span>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ÚLTIMOS BANCOS -->
+    @if (ultimosBancos().length > 0) {
+
+      <div class="section">
+
+        <div class="section-header">
+          <h2 class="section-title">Últimos bancos creados</h2>
+
+          <a routerLink="/bancos" class="section-link">
+            Ver todos →
+          </a>
+        </div>
+
+        <div class="items-grid">
+
+          @for (banco of ultimosBancos(); track banco.bancoId) {
+
+            <a
+              class="item-card"
+              [routerLink]="['/bancos', banco.bancoId]"
+            >
+
+              <div class="item-card__icon">📚</div>
+
+              <div class="item-card__info">
+                <p class="item-card__title">
+                  {{ banco.nombre }}
+                </p>
+
+                <p class="item-card__meta">
+                  {{ banco._count?.preguntas || 0 }} preguntas
+                </p>
+              </div>
+
+              <span class="item-card__arrow">→</span>
+
+            </a>
+
+          }
+
+        </div>
+
+      </div>
+
+    }
+
+    <!-- ÚLTIMAS SALAS -->
+    @if (ultimasSalas().length > 0) {
+
+      <div class="section">
+
+        <div class="section-header">
+          <h2 class="section-title">Últimas salas</h2>
+
+          <a routerLink="/salas" class="section-link">
+            Ver todas →
+          </a>
+        </div>
+
+        <div class="items-grid">
+
+          @for (sala of ultimasSalas(); track sala.salaId) {
+
+            <div class="item-card">
+
+              <div class="item-card__icon">🎮</div>
+
+              <div class="item-card__info">
+
+                <p class="item-card__title">
+                  {{ sala.nombre }}
+                </p>
+
+                <p class="item-card__meta">
+
+                  <span
+                    class="badge-estado"
+                    [class]="'badge-estado--' + sala.estado"
+                  >
+                    {{ sala.estado }}
+                  </span>
+
+                </p>
+
+              </div>
+
+            </div>
+
+          }
+
+        </div>
+
+      </div>
+
+    }
+
+  }
+
 </div>
