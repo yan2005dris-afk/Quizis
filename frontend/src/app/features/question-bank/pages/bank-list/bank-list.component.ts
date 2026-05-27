@@ -75,7 +75,10 @@ export class BankListComponent {
         texto: '¿Cuál es una ventaja de definir responsables dentro del plan de calidad?',
         opciones: [
           { texto: 'Reemplazar las métricas.', esCorrecta: false },
-          { texto: 'Evitar ambigüedad sobre quién realiza seguimiento o verificación.', esCorrecta: true },
+          {
+            texto: 'Evitar ambigüedad sobre quién realiza seguimiento o verificación.',
+            esCorrecta: true,
+          },
           { texto: 'Hacer el documento más largo sin utilidad.', esCorrecta: false },
           { texto: 'Quitar autonomía a todo el equipo.', esCorrecta: false },
         ],
