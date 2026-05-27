@@ -9,7 +9,7 @@ import {
   LogOut,
   Menu,
   X,
-  Users,
+  BarChart2,
   Database,
   PlayCircle,
 } from 'lucide-angular';
@@ -29,7 +29,7 @@ export class SidebarComponent {
   // Iconos
   readonly DashboardIcon = LayoutDashboard;
   readonly PlayIcon = PlayCircle;
-  readonly UsersIcon = Users;
+  readonly ReportesIcon = BarChart2;
   readonly DatabaseIcon = Database;
   readonly SettingsIcon = Settings;
   readonly LogOutIcon = LogOut;

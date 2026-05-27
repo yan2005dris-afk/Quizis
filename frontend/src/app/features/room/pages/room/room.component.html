@@ -1,4 +1,14 @@
 <div class="room">
+  <!-- ── Game Over Overlay ── -->
+  @if (isFinalizado()) {
+    <div class="room__game-over-overlay">
+      <app-game-over
+        [salaId]="salaDetalle()!.salaId"
+        [nombreSala]="salaDetalle()?.nombre || 'Sala de Juego'"
+      />
+    </div>
+  }
+
   <!-- Auth banner for public viewers -->
   @if (!auth.isAuthenticated() && !gameSocket.conectado()) {
     <div class="room__auth-banner" role="status">

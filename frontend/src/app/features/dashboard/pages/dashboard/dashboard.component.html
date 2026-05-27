@@ -18,4 +18,32 @@
       <span class="stat-value">84</span>
     </div>
   </div>
+
+  <!-- Accesos rápidos -->
+  <div class="quick-access">
+    <h2 class="quick-access__title">Accesos rápidos</h2>
+    <div class="quick-access__grid">
+      <a routerLink="/salas" class="quick-card">
+        <lucide-icon [img]="PlayIcon" size="24" class="quick-card__icon quick-card__icon--play" />
+        <div>
+          <span class="quick-card__name">Salas</span>
+          <span class="quick-card__desc">Crea y gestiona tus salas de juego</span>
+        </div>
+      </a>
+      <a routerLink="/reportes" class="quick-card quick-card--highlight">
+        <lucide-icon [img]="ChartIcon" size="24" class="quick-card__icon quick-card__icon--chart" />
+        <div>
+          <span class="quick-card__name">Reportes</span>
+          <span class="quick-card__desc">Analíticas y exportación por sala</span>
+        </div>
+      </a>
+      <a routerLink="/bancos" class="quick-card">
+        <lucide-icon [img]="BankIcon" size="24" class="quick-card__icon quick-card__icon--bank" />
+        <div>
+          <span class="quick-card__name">Banco de Preguntas</span>
+          <span class="quick-card__desc">Administra tus preguntas</span>
+        </div>
+      </a>
+    </div>
+  </div>
 </div>
