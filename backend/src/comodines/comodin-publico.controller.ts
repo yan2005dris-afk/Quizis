@@ -8,7 +8,6 @@ import { ComodinPublicoService } from './comodin-publico.service';
 @UseGuards(JwtAuthGuard)
 @Controller('lifelines')
 export class ComodinPublicoController {
-
   constructor(private readonly service: ComodinPublicoService) {}
 
   @Post(':token/publico')
