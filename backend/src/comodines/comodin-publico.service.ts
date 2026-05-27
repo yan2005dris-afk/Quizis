@@ -35,9 +35,9 @@ export class ComodinPublicoService {
     // 4. Calcular porcentajes
     const total = votos.length;
     const porcentajes: Record<number, number> = {};
-    for (const opcionId in conteo) {
-      porcentajes[opcionId] =
-        total === 0 ? 0 : Math.round((conteo[opcionId] / total) * 100);
+    for (const [opcionIdStr, count] of Object.entries(conteo)) {
+      const opcionId = Number(opcionIdStr);
+      porcentajes[opcionId] = total === 0 ? 0 : Math.round((count / total) * 100);
     }
 
     // 5. Emitir resultado a toda la sala
