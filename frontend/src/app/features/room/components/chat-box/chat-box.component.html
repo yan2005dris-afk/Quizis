@@ -5,7 +5,7 @@
       <span class="chat-box__offline" data-testid="offline-badge">Sin conexión</span>
     }
   </div>
-  <div class="chat-box__messages">
+  <div class="chat-box__messages" #messagesContainer>
     @if (mensajes().length > 0) {
       @for (msg of mensajes(); track msg.timestamp) {
         <div class="chat-box__message" data-testid="chat-message">

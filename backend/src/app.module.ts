@@ -10,6 +10,7 @@ import { HealthModule } from './infrastructure/health/health.module';
 import { WebsocketsInfraModule } from './infrastructure/websockets/websockets.module';
 import { VotosModule } from './juego/votos/votos.module';
 import { SalasModule } from './juego/salas/salas.module';
+import { ReportesModule } from './juego/reportes/reportes.module';
 import { RondasModule } from './juego/rondas/rondas.module';
 import { ComodinPublicoModule } from './comodines/comodin-publico.module';
 
@@ -29,6 +30,7 @@ import { ComodinPublicoModule } from './comodines/comodin-publico.module';
     WebsocketsInfraModule,
     VotosModule,
     SalasModule,
+    ReportesModule,
     RondasModule,
     ComodinPublicoModule,
   ],

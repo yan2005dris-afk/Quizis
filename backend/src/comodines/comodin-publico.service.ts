@@ -24,7 +24,10 @@ export class ComodinPublicoService {
     }
 
     // 2. Leer votos de la caché
-    const votos = await this.votesCacheUseCase.getVotes(rondaId, preguntaActualId);
+    const votos = await this.votesCacheUseCase.getVotes(
+      rondaId,
+      preguntaActualId,
+    );
 
     // 3. Contar votos por opción
     const conteo: Record<number, number> = {};
@@ -32,12 +35,13 @@ export class ComodinPublicoService {
       conteo[voto.opcionId] = (conteo[voto.opcionId] ?? 0) + 1;
     }
 
-    // 4. Calcular porcentajes
+    // 4. Calcular porcentajes con tipado fuerte
     const total = votos.length;
     const porcentajes: Record<number, number> = {};
-    for (const opcionId in conteo) {
+    for (const [opcionIdStr, count] of Object.entries(conteo)) {
+      const opcionId = Number(opcionIdStr);
       porcentajes[opcionId] =
-        total === 0 ? 0 : Math.round((conteo[opcionId] / total) * 100);
+        total === 0 ? 0 : Math.round((count / total) * 100);
     }
 
     // 5. Emitir resultado a toda la sala

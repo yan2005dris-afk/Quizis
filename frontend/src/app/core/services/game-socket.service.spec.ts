@@ -67,6 +67,28 @@ describe('GameSocketService (observer extension)', () => {
       expect(service.mensajesChat()).toHaveLength(2);
     });
 
+    it('should append mensajesChat signal when mensaje_chat_nuevo event is received', () => {
+      service.conectar('http://test.local', 'fake-token');
+
+      // Start with existing messages
+      const initial: ChatMessage[] = [
+        { usuario: 'Alice', texto: 'Hola', timestamp: 1000, tipo: 'mensaje' },
+      ];
+      mockSocket.trigger('mensaje_chat', initial);
+
+      // New message arrives
+      const nuevo: ChatMessage = {
+        usuario: 'Bob',
+        texto: 'Hola!',
+        timestamp: 1001,
+        tipo: 'mensaje',
+      };
+      mockSocket.trigger('mensaje_chat_nuevo', nuevo);
+
+      expect(service.mensajesChat()).toHaveLength(2);
+      expect(service.mensajesChat()[1]).toEqual(nuevo);
+    });
+
     it('should update eventosSala signal when evento_sala event is received', () => {
       service.conectar('http://test.local', 'fake-token');
 

@@ -1,0 +1,134 @@
+<section class="game-over" [class.revealed]="revealed()">
+  <!-- ── Fondo animado ── -->
+  <div class="go-bg">
+    <div class="go-bg__orb go-bg__orb--1"></div>
+    <div class="go-bg__orb go-bg__orb--2"></div>
+    <div class="go-bg__orb go-bg__orb--3"></div>
+    <div class="go-bg__stars" aria-hidden="true">
+      @for (s of [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]; track s) {
+        <span class="star" [style.--i]="s"></span>
+      }
+    </div>
+  </div>
+
+  <!-- ── Header ── -->
+  <header class="go-header">
+    <div class="go-header__badge">
+      <lucide-icon [img]="TrophyIcon" size="28" />
+      <span>FIN DEL JUEGO</span>
+    </div>
+    <h1 class="go-header__title">{{ nombreSala() }}</h1>
+    <p class="go-header__sub">Resultados finales de la sesión</p>
+  </header>
+
+  <!-- ── Cargando ── -->
+  @if (loading()) {
+    <div class="go-loader">
+      <div class="go-loader__ring"></div>
+      <p>Calculando resultados…</p>
+    </div>
+  }
+
+  <!-- ── Error ── -->
+  @if (error()) {
+    <div class="go-error">
+      <p>{{ error() }}</p>
+    </div>
+  }
+
+  <!-- ── Contenido principal ── -->
+  @if (!loading() && !error()) {
+    <!-- Métrica global -->
+    <div class="go-metric">
+      <span class="go-metric__value">{{ promedioGlobal() }}%</span>
+      <span class="go-metric__label">Promedio global del grupo</span>
+    </div>
+
+    <!-- Podio -->
+    <div class="go-podio" aria-label="Podio de ganadores">
+      @if (podio().length >= 2) {
+        <!-- 2.º lugar -->
+        <div class="go-podio__slot go-podio__slot--2 slot-entry">
+          <div class="go-podio__avatar">
+            <span class="go-podio__medalla">🥈</span>
+            <span class="go-podio__initials">{{
+              podio()[1].nickname | slice: 0 : 2 | uppercase
+            }}</span>
+          </div>
+          <p class="go-podio__nombre">{{ podio()[1].nickname }}</p>
+          <p class="go-podio__pct">{{ podio()[1].porcentajeAcierto }}%</p>
+          <div class="go-podio__block go-podio__block--2">
+            <span class="go-podio__puesto">2°</span>
+          </div>
+        </div>
+      }
+
+      @if (podio().length >= 1) {
+        <!-- 1.er lugar (centro) -->
+        <div class="go-podio__slot go-podio__slot--1 slot-entry slot-entry--champion">
+          <div class="go-podio__crown">👑</div>
+          <div class="go-podio__avatar go-podio__avatar--champion">
+            <span class="go-podio__medalla">🥇</span>
+            <span class="go-podio__initials">{{
+              podio()[0].nickname | slice: 0 : 2 | uppercase
+            }}</span>
+          </div>
+          <p class="go-podio__nombre go-podio__nombre--champion">{{ podio()[0].nickname }}</p>
+          <p class="go-podio__pct go-podio__pct--champion">{{ podio()[0].porcentajeAcierto }}%</p>
+          <div class="go-podio__block go-podio__block--1">
+            <span class="go-podio__puesto">1°</span>
+          </div>
+        </div>
+      }
+
+      @if (podio().length >= 3) {
+        <!-- 3.er lugar -->
+        <div class="go-podio__slot go-podio__slot--3 slot-entry">
+          <div class="go-podio__avatar">
+            <span class="go-podio__medalla">🥉</span>
+            <span class="go-podio__initials">{{
+              podio()[2].nickname | slice: 0 : 2 | uppercase
+            }}</span>
+          </div>
+          <p class="go-podio__nombre">{{ podio()[2].nickname }}</p>
+          <p class="go-podio__pct">{{ podio()[2].porcentajeAcierto }}%</p>
+          <div class="go-podio__block go-podio__block--3">
+            <span class="go-podio__puesto">3°</span>
+          </div>
+        </div>
+      }
+    </div>
+
+    <!-- Tabla de posiciones restantes -->
+    @if (restantes().length) {
+      <div class="go-tabla">
+        <h2 class="go-tabla__title">Clasificación completa</h2>
+        <ul class="go-tabla__list">
+          @for (p of restantes(); track p.nickname; let i = $index) {
+            <li class="go-tabla__row">
+              <span class="go-tabla__puesto">{{ i + 4 }}°</span>
+              <span class="go-tabla__nick">{{ p.nickname }}</span>
+              <span class="go-tabla__bar-wrap">
+                <span class="go-tabla__bar" [style.width.%]="p.porcentajeAcierto"></span>
+              </span>
+              <span class="go-tabla__pct">{{ p.porcentajeAcierto }}%</span>
+              <span class="go-tabla__stats">{{ p.correctas }}/{{ p.totalPreguntas }}</span>
+            </li>
+          }
+        </ul>
+      </div>
+    }
+
+    <!-- Acciones -->
+    <div class="go-actions">
+      <button class="go-btn go-btn--analytics" (click)="onVerAnaliticas()">
+        <lucide-icon [img]="ChartIcon" size="18" />
+        Ver analíticas del grupo
+      </button>
+      <button class="go-btn go-btn--home" (click)="onVolver()">
+        <lucide-icon [img]="HomeIcon" size="18" />
+        Volver al inicio
+      </button>
+    </div>
+  }
+</section>
