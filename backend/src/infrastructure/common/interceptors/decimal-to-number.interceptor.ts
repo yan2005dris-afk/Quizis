@@ -17,6 +17,10 @@ function transformDecimals(obj: unknown): unknown {
   }
 
   if (typeof obj === 'object') {
+    if (obj instanceof Date) {
+      return obj;
+    }
+
     const result: Record<string, unknown> = {};
     for (const [key, value] of Object.entries(obj as Record<string, unknown>)) {
       // Detectar si es un Decimal de Prisma (tipo objeto con propiedad _isDecimal o similar)

@@ -6,7 +6,8 @@
     "start": "ng serve",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
-    "test": "ng test",
+    "test": "ng test --watch=false",
+    "test:watch": "ng test",
     "lint": "eslint . --fix",
     "serve:ssr:frontend": "node dist/frontend/server/server.mjs"
   },
@@ -23,9 +24,11 @@
     "@lucide/angular": "^1.16.0",
     "express": "^5.1.0",
     "lucide-angular": "^1.0.0",
+    "papaparse": "^5.5.3",
     "rxjs": "~7.8.0",
     "socket.io-client": "^4.8.3",
-    "tslib": "^2.3.0"
+    "tslib": "^2.3.0",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@angular-devkit/core": "^21.2.12",
@@ -40,6 +43,7 @@
     "@eslint/js": "^9.39.4",
     "@types/express": "^5.0.1",
     "@types/node": "^20.17.19",
+    "@types/papaparse": "^5.5.2",
     "@typescript-eslint/eslint-plugin": "^8.59.4",
     "@typescript-eslint/parser": "^8.59.4",
     "angular-eslint": "^21.4.0",

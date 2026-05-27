@@ -40,7 +40,8 @@ export const authInterceptor: HttpInterceptorFn = (
       if (
         error.status === 401 &&
         !req.url.includes('auth/login') &&
-        !req.url.includes('auth/refresh')
+        !req.url.includes('auth/refresh') &&
+        !req.url.includes('/health')
       ) {
         return handle401Error(authReq, next, authService);
       }

@@ -6,6 +6,7 @@ model Rondas {
   numeroRonda        Int    @map("numero_ronda") // Intento 1, 2, 3... en la sala
   estado             String @default("pendiente") @map("estado") // pendiente, jugando, completado, cancelado
   preguntasAsignadas Json?  @map("preguntas_asignadas") // IDs de preguntas elegidas del banco
+  preguntaActualId   Int?    @map("pregunta_actual_id")
   
   fechaInicio        DateTime? @map("fecha_inicio")
   fechaFin           DateTime? @map("fecha_fin")
@@ -17,5 +18,6 @@ model Rondas {
   respuestas         RespuestasRonda[]
   votos              VotosPublico[]
 
+  @@index([salaId, estado])
   @@map("rondas")
 }

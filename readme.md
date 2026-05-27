@@ -4,21 +4,21 @@ Sistema interactivo de quizzes estilo "¿Quién quiere ser millonario?" con sala
 
 ## Stack
 
-| Capa                    | Tecnología                                  |
-| ----------------------- | ------------------------------------------- |
+| Capa                          | Tecnología                                 |
+| ----------------------------- | ------------------------------------------- |
 | **Frontend**            | Angular 21 (Standalone Components, Signals) |
 | **Backend**             | NestJS 11                                   |
 | **Base de datos**       | PostgreSQL 16                               |
 | **Cache / Tiempo real** | Redis (Pub/Sub + estado de partida)         |
 | **Auth (solo admin)**   | JWT (Access + Refresh tokens)               |
-| **Acceso público**      | Token de sala único + nickname              |
+| **Acceso público**     | Token de sala único + nickname             |
 | **Infra**               | Docker Compose                              |
 
 ## Roles
 
-| Rol                         | Descripción                                                                                                                          |
-| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
-| **Admin / Ingeniero**       | Crea la sala, sube las preguntas, elige al encuestado, configura los comodines habilitados                                           |
+| Rol                               | Descripción                                                                                                                           |
+| --------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| **Admin / Ingeniero**       | Crea la sala, sube las preguntas, elige al encuestado, configura los comodines habilitados                                             |
 | **Encuestado / Estudiante** | Juega la partida: responde preguntas, decide cuándo usar comodines. Entra con link público y elige su nickname.                      |
 | **Observador**              | Se suscribe a la sala en vivo, puede participar en comodines como "pregunta al público". Entra con link público y elige su nickname. |
 
@@ -44,11 +44,11 @@ Sistema interactivo de quizzes estilo "¿Quién quiere ser millonario?" con sala
 
 Cada comodín se configura como booleano (habilitado/deshabilitado) por partida:
 
-| Comodín                    | Descripción                                                                                                                                                      |
-| -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **🗳️ Pregunta al público** | Los observadores suscriptos votan por una opción. La más votada se muestra como sugerencia.                                                                      |
-| **🤖 Respuesta por IA**    | El sistema consulta una IA (vía API key configurada) y devuelve una respuesta sugerida.                                                                          |
-| **📞 Llamada**             | El estudiante elige un observador de la lista de conectados; ese observador recibe notificación y sugiere una respuesta; el estudiante confirma si la toma o no. |
+| Comodín                            | Descripción                                                                                                                                                      |
+| ----------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **🗳️ Pregunta al público** | Los observadores suscriptos votan por una opción. La más votada se muestra como sugerencia.                                                                     |
+| **🤖 Respuesta por IA**       | El sistema consulta una IA (vía API key configurada) y devuelve una respuesta sugerida.                                                                          |
+| **📞 Llamada**                | El estudiante elige un observador de la lista de conectados; ese observador recibe notificación y sugiere una respuesta; el estudiante confirma si la toma o no. |
 
 ## Requerimientos funcionales
 
@@ -93,14 +93,7 @@ Cada comodín se configura como booleano (habilitado/deshabilitado) por partida:
 - El nuevo estudiante empieza fresco — las preguntas se vuelven a mostrar
 - Los comodines se resetean para cada ronda (cada estudiante tiene sus 3 comodines disponibles)
 - El admin puede cambiar la configuración entre rondas (cantidad de preguntas, comodines habilitados)
-- El admin puede configurar que las preguntas ya usadas en rondas anteriores se excluyan, forzando que cada ronda use preguntas distintas del banco
-
-## Infraestructura y Despliegue
-
-### 📡 Health Check & Keep-Alive
-Para evitar la suspensión de la instancia de Backend en entornos como Render (plan gratuito):
-- **Endpoint de salud**: `GET /api/v1/health` (Público).
-- **Mecanismo de Keep-Alive**: El frontend realiza un "ping" automático cada 14 minutos al endpoint de salud para mantener la instancia activa.
+- **Opcional**: el admin puede configurar que las preguntas ya usadas en rondas anteriores se excluyan, forzando que cada ronda use preguntas distintas del banco
 
 ### Sala en vivo (WebSocket + Redis Pub/Sub)
 
@@ -153,9 +146,10 @@ Para evitar la suspensión de la instancia de Backend en entornos como Render (p
 # Clonar e instalar (desde la raíz del monorepo)
 git clone <repo-url>
 cd Quizis
+pnpm install
 
 # Infraestructura
-docker compose up -d --build
+docker compose up -d --build 
 
 # Backend (dev)
 pnpm --filter backend run start:dev

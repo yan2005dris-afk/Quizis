@@ -13,5 +13,7 @@ model RespuestasRonda {
   pregunta Preguntas         @relation(fields: [preguntaId], references: [preguntaId])
   opcion   OpcionesPregunta? @relation(fields: [opcionId], references: [opcionId])
 
+  @@index([rondaId])
+  @@index([preguntaId])
   @@map("respuestas_ronda")
 }

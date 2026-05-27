@@ -1,0 +1,42 @@
+.audience-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+}
+
+.barra-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.letra {
+  font-size: 1.2rem;
+  font-weight: bold;
+  width: 20px;
+  color: white;
+}
+
+.barra-contenedor {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  height: 32px;
+  overflow: hidden;
+}
+
+.barra-relleno {
+  height: 100%;
+  background: #3b82f6;
+  border-radius: 8px;
+  transition: width 0.5s ease;
+}
+
+.porcentaje {
+  font-size: 1rem;
+  font-weight: bold;
+  width: 40px;
+  text-align: right;
+  color: white;
+}

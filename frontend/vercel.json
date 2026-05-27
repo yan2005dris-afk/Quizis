@@ -1,10 +1,5 @@
 {
   "version": 2,
-  "public": true,
-  "cleanUrls": true,
-  "trailingSlash": false,
-  "framework": "angular",
-  "buildCommand": "pnpm --filter frontend run build",
   "outputDirectory": "dist/frontend/browser",
   "rewrites": [
     {
@@ -12,11 +7,12 @@
       "destination": "https://quizis-zvhd.onrender.com/api/:path*"
     },
     {
+      "source": "/socket.io/:path*",
+      "destination": "https://quizis-zvhd.onrender.com/socket.io/:path*"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }
-  ],
-  "github": {
-    "silent": true
-  }
+  ]
 }
