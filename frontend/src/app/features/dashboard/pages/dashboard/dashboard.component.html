@@ -4,102 +4,169 @@
   <div class="welcome-banner">
     <div class="welcome-text">
       <h1>🚀 ¡Listo para una nueva ronda!</h1>
-      <p>Gestiona tus salas de quiz y bancos de preguntas desde este panel.</p>
+      <p>Gestiona tus salas de juego y bancos de preguntas desde este panel.</p>
     </div>
+
     <div class="welcome-actions">
       <a class="btn-action btn-primary" routerLink="/salas">
         ＋ Nueva Sala
       </a>
+
       <a class="btn-action btn-secondary" routerLink="/bancos">
         📚 Ver Bancos
       </a>
     </div>
   </div>
 
-  <!-- STATS -->
+  <!-- LOADING -->
   @if (isLoading()) {
     <div class="loading-state">
       <div class="spinner"></div>
       <span>Cargando datos...</span>
     </div>
   } @else {
+
+    <!-- STATS -->
     <div class="stats-grid">
+
+      <!-- BANCOS -->
       <div class="stat-card">
-        <div class="stat-icon stat-icon--blue">🏦</div>
+        <div class="stat-icon stat-icon--blue">📚</div>
+
         <div class="stat-info">
-          <span class="stat-label">Bancos Creados</span>
+          <span class="stat-label">Bancos de Preguntas</span>
           <span class="stat-value">{{ totalBancos() }}</span>
         </div>
       </div>
+
+      <!-- PREGUNTAS -->
       <div class="stat-card">
         <div class="stat-icon stat-icon--purple">❓</div>
+
         <div class="stat-info">
           <span class="stat-label">Preguntas Totales</span>
           <span class="stat-value">{{ totalPreguntas() }}</span>
         </div>
       </div>
+
+      <!-- SALAS -->
       <div class="stat-card">
-        <div class="stat-icon stat-icon--green">🏠</div>
+        <div class="stat-icon stat-icon--green">🎮</div>
+
         <div class="stat-info">
-          <span class="stat-label">Salas Creadas</span>
+          <span class="stat-label">Salas de Juego</span>
           <span class="stat-value">{{ totalSalas() }}</span>
         </div>
       </div>
+
+      <!-- ACTIVAS -->
       <div class="stat-card">
         <div class="stat-icon stat-icon--orange">🔴</div>
+
         <div class="stat-info">
           <span class="stat-label">Salas Activas</span>
           <span class="stat-value">{{ salasActivas() }}</span>
         </div>
       </div>
+
     </div>
 
     <!-- ÚLTIMOS BANCOS -->
     @if (ultimosBancos().length > 0) {
+
       <div class="section">
+
         <div class="section-header">
           <h2 class="section-title">Últimos bancos creados</h2>
-          <a routerLink="/bancos" class="section-link">Ver todos →</a>
+
+          <a routerLink="/bancos" class="section-link">
+            Ver todos →
+          </a>
         </div>
+
         <div class="items-grid">
+
           @for (banco of ultimosBancos(); track banco.bancoId) {
-            <a class="item-card" [routerLink]="['/bancos', banco.bancoId]">
+
+            <a
+              class="item-card"
+              [routerLink]="['/bancos', banco.bancoId]"
+            >
+
               <div class="item-card__icon">📚</div>
+
               <div class="item-card__info">
-                <p class="item-card__title">{{ banco.nombre }}</p>
-                <p class="item-card__meta">{{ banco._count?.preguntas || 0 }} preguntas</p>
+                <p class="item-card__title">
+                  {{ banco.nombre }}
+                </p>
+
+                <p class="item-card__meta">
+                  {{ banco._count?.preguntas || 0 }} preguntas
+                </p>
               </div>
+
               <span class="item-card__arrow">→</span>
+
             </a>
+
           }
+
         </div>
+
       </div>
+
     }
 
     <!-- ÚLTIMAS SALAS -->
     @if (ultimasSalas().length > 0) {
+
       <div class="section">
+
         <div class="section-header">
           <h2 class="section-title">Últimas salas</h2>
-          <a routerLink="/salas" class="section-link">Ver todas →</a>
+
+          <a routerLink="/salas" class="section-link">
+            Ver todas →
+          </a>
         </div>
+
         <div class="items-grid">
+
           @for (sala of ultimasSalas(); track sala.salaId) {
+
             <div class="item-card">
-              <div class="item-card__icon">🏠</div>
+
+              <div class="item-card__icon">🎮</div>
+
               <div class="item-card__info">
-                <p class="item-card__title">{{ sala.nombre }}</p>
+
+                <p class="item-card__title">
+                  {{ sala.nombre }}
+                </p>
+
                 <p class="item-card__meta">
-                  <span class="badge-estado" [class]="'badge-estado--' + sala.estado">
+
+                  <span
+                    class="badge-estado"
+                    [class]="'badge-estado--' + sala.estado"
+                  >
                     {{ sala.estado }}
                   </span>
+
                 </p>
+
               </div>
+
             </div>
+
           }
+
         </div>
+
       </div>
+
     }
+
   }
 
 </div>
