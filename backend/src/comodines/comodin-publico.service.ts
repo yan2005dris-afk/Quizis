@@ -1,12 +1,13 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { CacheService } from '../infrastructure/cache/cache.service';
+import { VotesCacheUseCase } from '../infrastructure/cache/use-cases/votes-cache.use-case';
 import { JuegoGateway } from '../infrastructure/websockets/juego.gateway';
 import { SalasService } from '../juego/salas/salas.service';
+
 @Injectable()
 export class ComodinPublicoService {
   constructor(
-    private readonly cacheService: CacheService,
-    private readonly quizGateway: JuegoGateway,
+    private readonly votesCacheUseCase: VotesCacheUseCase,
+    private readonly juegoGateway: JuegoGateway,
     private readonly salasService: SalasService,
   ) {}
 
@@ -23,7 +24,7 @@ export class ComodinPublicoService {
     }
 
     // 2. Leer votos de la caché
-    const votos = await this.cacheService.getVotes(rondaId, preguntaActualId);
+    const votos = await this.votesCacheUseCase.getVotes(rondaId, preguntaActualId);
 
     // 3. Contar votos por opción
     const conteo: Record<number, number> = {};
@@ -40,7 +41,7 @@ export class ComodinPublicoService {
     }
 
     // 5. Emitir resultado a toda la sala
-    this.quizGateway.server
+    this.juegoGateway.server
       .to(tokenCompartido)
       .emit('comodin_publico_resultado', { porcentajes, totalVotos: total });
 
