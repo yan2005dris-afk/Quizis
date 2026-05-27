@@ -8,7 +8,7 @@
   },
   "moduleNameMapper": {
     "^src/(.*)$": "<rootDir>/src/$1",
-    "^(\\.\\.\\.?/.*)\\.js$": "$1"
+    "^(\\.\\.?/.*)\\.js$": "$1"
   },
   "testTimeout": 30000
 }
