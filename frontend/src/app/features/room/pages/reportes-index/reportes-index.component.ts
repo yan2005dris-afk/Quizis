@@ -6,7 +6,6 @@ import {
   OnInit,
   signal,
 } from '@angular/core';
-import { Router } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { DatePipe } from '@angular/common';
 import {
@@ -38,7 +37,6 @@ interface SalaItem {
 })
 export class ReportesIndexComponent implements OnInit {
   private readonly http = inject(HttpClient);
-  private readonly router = inject(Router);
 
   protected readonly ChartIcon = BarChart2;
   protected readonly ChevronIcon = ChevronRight;

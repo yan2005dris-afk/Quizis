@@ -7,7 +7,6 @@ import {
   OnInit,
   signal,
 } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
 import { SlicePipe, UpperCasePipe } from '@angular/common';
 import {
   LucideAngularModule,
@@ -21,40 +20,7 @@ import {
   Filter,
   ArrowUpDown,
 } from 'lucide-angular';
-import { environment } from '../../../../../environments/environment';
-
-/** Forma local del reporte */
-export interface AnalyticsData {
-  salaId: number;
-  nombreSala: string;
-  docente: string;
-  fechaCreacion: Date;
-  resumenGeneral: {
-    totalRondas: number;
-    participantes: string[];
-    totalPreguntasRespondidas: number;
-    totalCorrectas: number;
-    totalIncorrectas: number;
-    porcentajeGlobal: number;
-  };
-  rondas: {
-    numeroRonda: number;
-    participanteNickname: string;
-    totalPreguntas: number;
-    correctas: number;
-    incorrectas: number;
-    porcentajeAcierto: number;
-    comodinesUsados: string[];
-    preguntas: {
-      numero: number;
-      texto: string;
-      respuestaElegida: string;
-      esCorrecta: boolean;
-      comodinUsado?: string;
-      porcentajeVotosPublico?: number;
-    }[];
-  }[];
-}
+import { ReportDataDto, ReportesService } from '../../../../core/services/reportes.service';
 
 type SortField = 'nickname' | 'correctas' | 'incorrectas' | 'porcentaje' | 'comodines';
 type SortDir = 'asc' | 'desc';
@@ -80,7 +46,7 @@ interface ParticipantRow {
 export class AnalyticsComponent implements OnInit {
   readonly salaId = input.required<number>();
 
-  private readonly http = inject(HttpClient);
+  private readonly reportesService = inject(ReportesService);
 
   // ── Icons ──────────────────────────────────
   protected readonly ExcelIcon = FileSpreadsheet;
@@ -97,7 +63,7 @@ export class AnalyticsComponent implements OnInit {
   protected readonly loading = signal(true);
   protected readonly exporting = signal<'excel' | 'pdf' | null>(null);
   protected readonly error = signal<string | null>(null);
-  protected readonly data = signal<AnalyticsData | null>(null);
+  protected readonly data = signal<ReportDataDto | null>(null);
   protected readonly sortField = signal<SortField>('porcentaje');
   protected readonly sortDir = signal<SortDir>('desc');
   protected readonly searchQuery = signal('');
@@ -191,18 +157,16 @@ export class AnalyticsComponent implements OnInit {
   });
 
   ngOnInit(): void {
-    this.http
-      .post<AnalyticsData>(`${environment.apiUrl}/reportes/generar`, { salaId: this.salaId() })
-      .subscribe({
-        next: (d) => {
-          this.data.set(d);
-          this.loading.set(false);
-        },
-        error: () => {
-          this.error.set('No se pudo cargar el reporte.');
-          this.loading.set(false);
-        },
-      });
+    this.reportesService.generarReporte(this.salaId()).subscribe({
+      next: (d) => {
+        this.data.set(d);
+        this.loading.set(false);
+      },
+      error: () => {
+        this.error.set('No se pudo cargar el reporte.');
+        this.loading.set(false);
+      },
+    });
   }
 
   // ── Ordenamiento ──────────────────────────
@@ -230,9 +194,9 @@ export class AnalyticsComponent implements OnInit {
   // ── Exportación ───────────────────────────
   protected onExportExcel(): void {
     if (this.exporting()) return;
-    this.exporting.set('excel');
     const d = this.data();
     if (!d) return;
+    this.exporting.set('excel');
 
     // Genera CSV → descarga como .xlsx compatible
     const header = [
@@ -287,11 +251,11 @@ export class AnalyticsComponent implements OnInit {
       '',
       'RESUMEN POR PARTICIPANTE',
       header.join(','),
-      ...rows.map((r) => r.map((v) => `"${v}"`).join(',')),
+      ...rows.map((r) => r.map(sanitizeCsvCell).join(',')),
       '',
       'DETALLE POR RONDA',
       detailHeader.join(','),
-      ...detailRows.map((r) => r.map((v) => `"${v}"`).join(',')),
+      ...detailRows.map((r) => r.map(sanitizeCsvCell).join(',')),
     ].join('\n');
 
     this.downloadFile(
@@ -304,9 +268,9 @@ export class AnalyticsComponent implements OnInit {
 
   protected onExportPdf(): void {
     if (this.exporting()) return;
-    this.exporting.set('pdf');
     const d = this.data();
     if (!d) return;
+    this.exporting.set('pdf');
 
     const rows = this.rows();
     const fecha = new Date(d.fechaCreacion).toLocaleDateString('es-EC', {
@@ -320,7 +284,7 @@ export class AnalyticsComponent implements OnInit {
         (r, i) => `
       <tr class="${i % 2 === 0 ? 'even' : ''}">
         <td>${i + 1}</td>
-        <td><strong>${r.nickname}</strong></td>
+        <td><strong>${escapeHtml(r.nickname)}</strong></td>
         <td>${r.rondas}</td>
         <td>${r.totalPreguntas}</td>
         <td class="ok">${r.correctas}</td>
@@ -335,7 +299,7 @@ export class AnalyticsComponent implements OnInit {
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<title>Reporte — ${d.nombreSala}</title>
+<title>Reporte — ${escapeHtml(d.nombreSala)}</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
   * { margin:0; padding:0; box-sizing:border-box; }
@@ -362,10 +326,10 @@ export class AnalyticsComponent implements OnInit {
   <div class="header">
     <div>
       <h1>Reporte de Rendimiento</h1>
-      <p style="font-size:14px;color:#64748B;margin-top:4px">${d.nombreSala}</p>
+      <p style="font-size:14px;color:#64748B;margin-top:4px">${escapeHtml(d.nombreSala)}</p>
     </div>
     <div class="meta">
-      <div>Docente: ${d.docente}</div>
+      <div>Docente: ${escapeHtml(d.docente)}</div>
       <div>Fecha: ${fecha}</div>
       <div>Rondas: ${d.resumenGeneral.totalRondas} · Participantes: ${d.resumenGeneral.participantes.length}</div>
     </div>
@@ -414,4 +378,24 @@ export class AnalyticsComponent implements OnInit {
     a.click();
     URL.revokeObjectURL(url);
   }
+}
+
+/** Limpia celdas CSV para evitar problemas con comas y saltos de línea. */
+function sanitizeCsvCell(val: any): string {
+  if (val == null) return '';
+  let s = String(val).replace(/"/g, '""');
+  if (s.includes(',') || s.includes('\n') || s.includes('"')) {
+    s = `"${s}"`;
+  }
+  return s;
+}
+
+/** Escapa caracteres HTML para prevenir XSS en strings interpolados. */
+function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
 }

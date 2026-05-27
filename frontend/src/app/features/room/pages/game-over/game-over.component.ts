@@ -8,10 +8,9 @@ import {
   signal,
 } from '@angular/core';
 import { Router } from '@angular/router';
-import { HttpClient } from '@angular/common/http';
 import { SlicePipe, UpperCasePipe } from '@angular/common';
 import { LucideAngularModule, Trophy, Medal, Award, Star, Home, BarChart2 } from 'lucide-angular';
-import { environment } from '../../../../../environments/environment';
+import { ReportesService } from '../../../../core/services/reportes.service';
 
 export interface GameOverParticipant {
   nickname: string;
@@ -35,7 +34,7 @@ export class GameOverComponent implements OnInit {
   readonly salaId = input.required<number>();
   readonly nombreSala = input<string>('Sala de Juego');
 
-  private readonly http = inject(HttpClient);
+  private readonly reportesService = inject(ReportesService);
   private readonly router = inject(Router);
 
   protected readonly TrophyIcon = Trophy;
@@ -77,42 +76,40 @@ export class GameOverComponent implements OnInit {
   }
 
   private cargarEstadisticas(): void {
-    this.http
-      .post<any>(`${environment.apiUrl}/reportes/generar`, { salaId: this.salaId() })
-      .subscribe({
-        next: (data) => {
-          // Consolidar por participante (puede tener múltiples rondas)
-          const mapa = new Map<string, GameOverParticipant>();
-          for (const ronda of data.rondas) {
-            const existing = mapa.get(ronda.participanteNickname);
-            if (existing) {
-              existing.correctas += ronda.correctas;
-              existing.incorrectas += ronda.incorrectas;
-              existing.totalPreguntas += ronda.totalPreguntas;
-              existing.comodinesUsados = [
-                ...new Set([...existing.comodinesUsados, ...ronda.comodinesUsados]),
-              ];
-            } else {
-              mapa.set(ronda.participanteNickname, { ...ronda });
-            }
+    this.reportesService.generarReporte(this.salaId()).subscribe({
+      next: (data) => {
+        // Consolidar por participante (puede tener múltiples rondas)
+        const mapa = new Map<string, GameOverParticipant>();
+        for (const ronda of data.rondas) {
+          const existing = mapa.get(ronda.participanteNickname);
+          if (existing) {
+            existing.correctas += ronda.correctas;
+            existing.incorrectas += ronda.incorrectas;
+            existing.totalPreguntas += ronda.totalPreguntas;
+            existing.comodinesUsados = [
+              ...new Set([...existing.comodinesUsados, ...ronda.comodinesUsados]),
+            ];
+          } else {
+            mapa.set(ronda.participanteNickname, { ...ronda });
           }
-          // Recalcular porcentaje consolidado
-          const list: GameOverParticipant[] = [];
-          mapa.forEach((p) => {
-            p.porcentajeAcierto =
-              p.totalPreguntas > 0 ? Math.round((p.correctas / p.totalPreguntas) * 100) : 0;
-            list.push(p);
-          });
-          this.participants.set(list);
-          this.loading.set(false);
-          // Lanzar animación de reveal con delay
-          setTimeout(() => this.revealed.set(true), 200);
-        },
-        error: () => {
-          this.error.set('No se pudieron cargar los resultados.');
-          this.loading.set(false);
-        },
-      });
+        }
+        // Recalcular porcentaje consolidado
+        const list: GameOverParticipant[] = [];
+        mapa.forEach((p) => {
+          p.porcentajeAcierto =
+            p.totalPreguntas > 0 ? Math.round((p.correctas / p.totalPreguntas) * 100) : 0;
+          list.push(p);
+        });
+        this.participants.set(list);
+        this.loading.set(false);
+        // Lanzar animación de reveal con delay
+        setTimeout(() => this.revealed.set(true), 200);
+      },
+      error: () => {
+        this.error.set('No se pudieron cargar los resultados.');
+        this.loading.set(false);
+      },
+    });
   }
 
   protected onVerAnaliticas(): void {
