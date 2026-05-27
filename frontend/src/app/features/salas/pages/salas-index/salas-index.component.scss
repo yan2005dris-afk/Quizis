@@ -62,7 +62,7 @@
   width: 32px;
   height: 32px;
   border: 3px solid #e2e8f0;
-  border-top-color: #2563eb;
+  border-top-color: var(--color-primary);
   border-radius: 50%;
   animation: spin 0.6s linear infinite;
 }
@@ -115,7 +115,7 @@
 
 .sala-card:hover {
   border-color: #bfdbfe;
-  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.08);
+  box-shadow: 0 2px 8px rgba(29, 38, 103, 0.08);
 }
 
 .sala-card__header {

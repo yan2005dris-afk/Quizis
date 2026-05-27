@@ -5,14 +5,15 @@
         <h1 class="salas-index__title">Salas</h1>
         <p class="salas-index__subtitle">Todas las salas activas del sistema</p>
       </div>
-      <app-button (clicked)="onCrearSala()">
-        <lucide-icon [img]="PlusIcon" class="icon-sm"></lucide-icon>
-        Crear Sala
-      </app-button>
+      @if (!createOpen()) {
+        <app-button (clicked)="onCrearSala()">Crear Sala</app-button>
+      }
     </div>
   </header>
 
-  @if (loading()) {
+  @if (createOpen()) {
+    <app-create-sala (success)="onSalaCreada()" (closed)="cerrarCrearSala()" />
+  } @else if (loading()) {
     <div class="salas-index__loading" role="status">
       <div class="salas-index__spinner"></div>
       <span class="sr-only">Cargando salas...</span>
