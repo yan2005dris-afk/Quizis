@@ -2,7 +2,7 @@ import type { TestingModule } from '@nestjs/testing';
 import { Test } from '@nestjs/testing';
 import { NotFoundException } from '@nestjs/common';
 import { RolesService } from './roles.service';
-import { PrismaService } from 'src/infrastructure/database/prisma.service';
+import { PrismaService } from 'src/infrastructure/database/prisma/prisma.service';
 import { CreateRoleUseCase } from './use-cases/create-role.use-case';
 import { AssignPermissionToRoleUseCase } from './use-cases/assign-permission-to-role.use-case';
 import { RemovePermissionFromRoleUseCase } from './use-cases/remove-permission-from-role.use-case';
@@ -10,8 +10,6 @@ import { RemovePermissionFromRoleUseCase } from './use-cases/remove-permission-f
 describe('RolesService', () => {
   let service: RolesService;
   let createUseCase: CreateRoleUseCase;
-  let assignPermissionUseCase: AssignPermissionToRoleUseCase;
-  let removePermissionUseCase: RemovePermissionFromRoleUseCase;
   let prisma: PrismaService;
 
   const mockUseCase = { execute: jest.fn() };
@@ -38,12 +36,6 @@ describe('RolesService', () => {
 
     service = module.get<RolesService>(RolesService);
     createUseCase = module.get<CreateRoleUseCase>(CreateRoleUseCase);
-    assignPermissionUseCase = module.get<AssignPermissionToRoleUseCase>(
-      AssignPermissionToRoleUseCase,
-    );
-    removePermissionUseCase = module.get<RemovePermissionFromRoleUseCase>(
-      RemovePermissionFromRoleUseCase,
-    );
     prisma = module.get<PrismaService>(PrismaService);
   });
 

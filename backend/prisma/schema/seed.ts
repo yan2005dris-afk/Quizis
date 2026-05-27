@@ -4,9 +4,11 @@ import * as path from 'path';
 import { Pool } from 'pg';
 import { PrismaClient } from '../../src/generated/prisma/client';
 import { seedRoles } from './seeds/role.seed';
+import { seedPermissions } from './seeds/permissions.seed';
 import { seedUSers } from './seeds/user.seed';
 import { seedComodines } from './seeds/comodines.seed';
-import { seedSalaDemo } from './seeds/sala-demo.seed';
+import { seedPreguntas } from './seeds/preguntas.seed';
+import { seedRondas } from './seeds/rondas.seed';
 
 // Cargar env desde el root de forma explícita
 dotenv.config({ path: path.join(__dirname, '../../../.env') });
@@ -53,6 +55,11 @@ async function main() {
   const roles = await seedRoles(prisma);
   console.log('✅ Roles creados correctamente.');
 
+  // Permisos
+  console.log('🔑 Creando y asignando permisos...');
+  await seedPermissions(prisma, roles);
+  console.log('✅ Permisos asignados correctamente.');
+
   // Comodines
   console.log('🃏 Creando catálogo de comodines...');
   await seedComodines(prisma);
@@ -63,11 +70,15 @@ async function main() {
   await seedUSers(prisma, roles);
   console.log('✅ Usuarios creados correctamente.');
 
-  // Sala demo
-  console.log('🏠 Creando sala demo...');
-  const salaDemo = await seedSalaDemo(prisma);
-  console.log('✅ Sala demo creada correctamente.');
-  console.log(`   📍 Visitá /sala/${salaDemo.salaId} para verla`);
+  // Bancos y Preguntas
+  console.log('📚 Creando bancos de preguntas y preguntas...');
+  await seedPreguntas(prisma);
+  console.log('✅ Bancos de preguntas y preguntas creados.');
+
+  // Rondas
+  console.log('🔄 Creando salas de juego, participantes y rondas...');
+  await seedRondas(prisma);
+  console.log('✅ Rondas y participantes creados.');
 
   console.log('✅ Seed completado exitosamente.');
 }

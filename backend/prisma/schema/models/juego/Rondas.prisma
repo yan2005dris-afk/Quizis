@@ -18,5 +18,6 @@ model Rondas {
   respuestas         RespuestasRonda[]
   votos              VotosPublico[]
 
+  @@index([salaId, estado])
   @@map("rondas")
 }

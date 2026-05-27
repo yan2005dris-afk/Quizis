@@ -11,6 +11,312 @@
   gap: 16px;
 }
 
+/* ─── Auth banner ──────────────────────────── */
+
+.room__auth-banner {
+  padding: 10px 16px;
+  background: #fef3c7;
+  border: 1px solid #f59e0b;
+  border-radius: 8px;
+  color: #92400e;
+  font-size: 13px;
+  font-weight: 500;
+  text-align: center;
+}
+
+/* ─── Admin panel ──────────────────────────── */
+
+.room__admin-panel {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 16px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+}
+
+.room__admin-section {
+  flex: 1 1 240px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px 16px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+
+  &--danger {
+    background: #fff5f5;
+    border-color: #fecaca;
+  }
+}
+
+.room__admin-section-title {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #64748b;
+
+  &--danger {
+    color: #dc2626;
+  }
+}
+
+/* ─── Estado badge ─────────────────────────── */
+
+.room__estado-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.room__estado-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 700;
+  background: #f1f5f9;
+  color: #475569;
+  border: 1px solid #e2e8f0;
+
+  &--borrador {
+    background: #f1f5f9;
+    color: #475569;
+    border-color: #cbd5e1;
+  }
+
+  &--esperando {
+    background: #eff6ff;
+    color: #1d4ed8;
+    border-color: #bfdbfe;
+  }
+
+  &--vivo {
+    background: #dcfce7;
+    color: #166534;
+    border-color: #bbf7d0;
+  }
+
+  &--finalizado {
+    background: #fee2e2;
+    color: #991b1b;
+    border-color: #fecaca;
+  }
+}
+
+.room__estado-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* ─── Link de invitación ───────────────────── */
+
+.room__link-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.room__link-code {
+  flex: 1 1 0;
+  min-width: 0;
+  font-family: monospace;
+  font-size: 12px;
+  color: #2563eb;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 6px;
+  padding: 6px 10px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: text;
+  user-select: all;
+}
+
+.room__link-empty {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.room__link-hint {
+  margin: 0;
+  font-size: 13px;
+  color: #94a3b8;
+  font-style: italic;
+}
+
+/* ─── Confirm block ────────────────────────── */
+
+.room__confirm-block {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.room__confirm-msg {
+  margin: 0;
+  font-size: 13px;
+  color: #dc2626;
+  font-weight: 500;
+}
+
+.room__confirm-actions {
+  display: flex;
+  gap: 8px;
+}
+
+/* ─── Buttons ──────────────────────────────── */
+
+.room__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border-radius: 7px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: background 0.15s, opacity 0.15s;
+  white-space: nowrap;
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  &--primary {
+    background: #2563eb;
+    color: #ffffff;
+    border-color: #1d4ed8;
+
+    &:hover:not(:disabled) {
+      background: #1d4ed8;
+    }
+  }
+
+  &--secondary {
+    background: #ffffff;
+    color: #374151;
+    border-color: #d1d5db;
+
+    &:hover:not(:disabled) {
+      background: #f9fafb;
+    }
+  }
+
+  &--toggle {
+    background: #f0fdf4;
+    color: #166534;
+    border-color: #86efac;
+
+    &:hover:not(:disabled) {
+      background: #dcfce7;
+    }
+
+    &[aria-pressed='false'] {
+      background: #fff7ed;
+      color: #9a3412;
+      border-color: #fdba74;
+
+      &:hover:not(:disabled) {
+        background: #ffedd5;
+      }
+    }
+  }
+
+  &--danger {
+    background: #dc2626;
+    color: #ffffff;
+    border-color: #b91c1c;
+
+    &:hover:not(:disabled) {
+      background: #b91c1c;
+    }
+  }
+
+  &--ghost {
+    background: transparent;
+    color: #6b7280;
+    border-color: #d1d5db;
+
+    &:hover:not(:disabled) {
+      background: #f3f4f6;
+    }
+  }
+
+  &--success {
+    background: #f0fdf4;
+    color: #166534;
+    border-color: #86efac;
+
+    &:hover:not(:disabled) {
+      background: #dcfce7;
+    }
+  }
+}
+
+/* ─── Icon spin animation ──────────────────── */
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+.room__icon--spinning {
+  display: inline-flex;
+  animation: spin 0.7s linear infinite;
+}
+
+.room__btn--icon {
+  padding: 7px;
+  background: #f1f5f9;
+  color: #475569;
+  border-color: #e2e8f0;
+  border-radius: 7px;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: background 0.15s;
+
+  &:hover:not(:disabled) {
+    background: #e2e8f0;
+  }
+}
+
+/* ─── Host action bar ──────────────────────── */
+
+.room__host-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #ffffff;
+  padding: 14px 16px;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+}
+
+.room__action-hint {
+  font-size: 12px;
+  color: #64748b;
+  font-style: italic;
+
+  &--danger {
+    color: #dc2626;
+  }
+}
+
+/* ─── Layout ───────────────────────────────── */
+
 .room__layout {
   display: flex;
   gap: 16px;
@@ -31,6 +337,8 @@
   gap: 12px;
 }
 
+/* ─── Tabs ─────────────────────────────────── */
+
 .room__tabs {
   display: flex;
   gap: 0;
@@ -42,7 +350,11 @@
 
 .room__tab-btn {
   flex: 1;
-  padding: 10px 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px 14px;
   border: none;
   background: transparent;
   font-size: 13px;
@@ -50,16 +362,31 @@
   color: #64748b;
   cursor: pointer;
   transition: background 0.15s, color 0.15s;
+
+  &:hover {
+    background: #f1f5f9;
+  }
+
+  &--active {
+    background: #eff6ff;
+    color: #2563eb;
+    font-weight: 700;
+  }
 }
 
-.room__tab-btn:hover {
-  background: #f1f5f9;
-}
-
-.room__tab-btn--active {
-  background: #eff6ff;
-  color: #2563eb;
+.room__unread-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 9px;
+  background: #ef4444;
+  color: #ffffff;
+  font-size: 11px;
   font-weight: 700;
+  line-height: 1;
 }
 
 .room__tab-content {
@@ -68,16 +395,7 @@
   gap: 12px;
 }
 
-.room__auth-banner {
-  padding: 10px 16px;
-  background: #fef3c7;
-  border: 1px solid #f59e0b;
-  border-radius: 8px;
-  color: #92400e;
-  font-size: 13px;
-  font-weight: 500;
-  text-align: center;
-}
+/* ─── Footer ───────────────────────────────── */
 
 .room__footer-note {
   margin: 0;
@@ -85,4 +403,24 @@
   color: #94a3b8;
   font-style: italic;
   padding: 4px 0;
+}
+
+/* ─── Game Over Overlay ───────────────────── */
+
+.room__game-over-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  overflow-y: auto;
+  background: rgba(10, 12, 30, 0.92);
+  backdrop-filter: blur(6px);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  animation: fadeInOverlay 0.4s ease;
+}
+
+@keyframes fadeInOverlay {
+  from { opacity: 0; }
+  to   { opacity: 1; }
 }
