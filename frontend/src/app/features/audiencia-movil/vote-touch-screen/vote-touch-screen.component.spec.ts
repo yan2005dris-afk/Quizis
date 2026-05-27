@@ -1,23 +1,51 @@
 import { TestBed } from '@angular/core/testing';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { VoteTouchScreenComponent } from './vote-touch-screen.component';
+import { ActivatedRoute } from '@angular/router';
+import { of, EMPTY } from 'rxjs';
+import { SocketService } from '../../../core/services/socket.service';
+import { SalasService } from '../../../core/services/salas.service';
 
 describe('VoteTouchScreenComponent', () => {
   beforeEach(async () => {
+    const socketServiceStub = {
+      connect: vi.fn(),
+      unirseASala: vi.fn(),
+      escucharEvento: vi.fn().mockReturnValue(EMPTY),
+      emitirEvento: vi.fn(),
+    };
+
+    const salasServiceStub = {
+      obtenerPorId: vi.fn().mockReturnValue(of({
+        salaId: 1,
+        rondaActiva: { rondaId: 1 }
+      })),
+    };
+
     await TestBed.configureTestingModule({
       imports: [VoteTouchScreenComponent],
+      providers: [
+        {
+          provide: ActivatedRoute,
+          useValue: { queryParams: of({ token: 'TEST_TOKEN' }) },
+        },
+        { provide: SocketService, useValue: socketServiceStub },
+        { provide: SalasService, useValue: salasServiceStub },
+      ],
     }).compileComponents();
   });
 
-  it('keeps buttons disabled until the question is released', () => {
+  it('shows waiting card initially and enables buttons when question is released', () => {
     const fixture = TestBed.createComponent(VoteTouchScreenComponent);
     fixture.detectChanges();
 
     const element = fixture.nativeElement as HTMLElement;
-    const buttons = Array.from(element.querySelectorAll('button')) as HTMLButtonElement[];
+    let buttons = Array.from(element.querySelectorAll('.option-btn')) as HTMLButtonElement[];
+    const waitingCard = element.querySelector('.waiting-card');
 
-    expect(buttons).toHaveLength(4);
-    expect(buttons.every((button) => button.disabled)).toBe(true);
+    // Inicialmente no debe haber botones de opción y se debe mostrar la pantalla de espera
+    expect(buttons).toHaveLength(0);
+    expect(waitingCard).not.toBeNull();
 
     window.dispatchEvent(
       new CustomEvent('quizis:question-released', {
@@ -25,6 +53,12 @@ describe('VoteTouchScreenComponent', () => {
           question: {
             prompt: 'Pregunta liberada',
             roundLabel: 'Ronda 1',
+            opciones: [
+              { id: 'A', texto: 'Opción A' },
+              { id: 'B', texto: 'Opción B' },
+              { id: 'C', texto: 'Opción C' },
+              { id: 'D', texto: 'Opción D' }
+            ]
           },
         },
       }),
@@ -32,6 +66,11 @@ describe('VoteTouchScreenComponent', () => {
 
     fixture.detectChanges();
 
+    buttons = Array.from(element.querySelectorAll('.option-btn')) as HTMLButtonElement[];
+
+    // Al recibir la pregunta se oculta el estado de espera y aparecen los 4 botones habilitados
+    expect(element.querySelector('.waiting-card')).toBeNull();
+    expect(buttons).toHaveLength(4);
     expect(buttons.every((button) => !button.disabled)).toBe(true);
   });
 });

@@ -1,12 +1,16 @@
 import { Component, DestroyRef, inject, OnInit, signal, computed } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute } from '@angular/router';
+import { map, distinctUntilChanged } from 'rxjs';
 import { SocketService } from '../../../core/services/socket.service';
+import { SalasService } from '../../../core/services/salas.service';
 
 type VoteOptionKey = 'A' | 'B' | 'C' | 'D';
 
 export interface OpcionPregunta {
   id: VoteOptionKey;
   texto: string;
+  opcionId?: number;
 }
 
 export interface LiveQuestion {
@@ -14,6 +18,7 @@ export interface LiveQuestion {
   roundLabel?: string;
   premioActual?: string;
   opciones?: OpcionPregunta[];
+  preguntaId?: number;
 }
 
 @Component({
@@ -26,8 +31,13 @@ export interface LiveQuestion {
 export class VoteTouchScreenComponent implements OnInit {
   // Servicios inyectados
   private readonly socketService = inject(SocketService);
+  private readonly salasService = inject(SalasService);
   private readonly route = inject(ActivatedRoute);
   private readonly destroyRef = inject(DestroyRef);
+
+  private salaId?: number;
+  private rondaId?: number;
+  private readonly anonymousParticipanteId = Math.floor(Math.random() * 1000000);
 
   // Señales reactivas
   protected readonly currentQuestion = signal<LiveQuestion | null>(null);
@@ -61,20 +71,34 @@ export class VoteTouchScreenComponent implements OnInit {
 
   ngOnInit(): void {
     // 1. Obtener el token de la sala desde los parámetros de la URL (?token=XYZ o ?sala=XYZ)
-    this.route.queryParams.subscribe(params => {
-      const token = params['token'] || params['sala'];
-      if (token) {
-        this.roomToken = token;
-      }
-      
-      // Conectar al websocket y unirse a la sala
-      try {
-        this.socketService.connect();
-        this.socketService.unirseASala(this.roomToken, 'Audiencia Móvil');
-      } catch (err) {
-        console.warn('No se pudo conectar al Socket.io automáticamente:', err);
-      }
-    });
+    this.route.queryParams
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        map(params => params['token'] || params['sala']),
+        distinctUntilChanged()
+      )
+      .subscribe(token => {
+        if (token) {
+          this.roomToken = token;
+          
+          // Obtener detalles de la sala para extraer salaId y rondaId
+          this.salasService.obtenerPorId(token).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+            next: (sala) => {
+              this.salaId = sala.salaId;
+              this.rondaId = sala.rondaActiva?.rondaId;
+            },
+            error: (err) => console.warn('Error al cargar la sala para la audiencia:', err)
+          });
+          
+          // Conectar al websocket y unirse a la sala
+          try {
+            this.socketService.connect();
+            this.socketService.unirseASala(this.roomToken, 'Audiencia Móvil');
+          } catch (err) {
+            console.warn('No se pudo conectar al Socket.io automáticamente:', err);
+          }
+        }
+      });
 
     // 2. Escuchar eventos en tiempo real desde el servidor de Sockets
     const socketQuestionSubscription = this.socketService.escucharEvento<any>('pregunta_liberada')
@@ -131,7 +155,8 @@ export class VoteTouchScreenComponent implements OnInit {
 
             return {
               id,
-              texto
+              texto,
+              opcionId: opcion.opcionId
             } as OpcionPregunta;
           })
           .filter((opcion: OpcionPregunta | null): opcion is OpcionPregunta => opcion !== null)
@@ -142,7 +167,8 @@ export class VoteTouchScreenComponent implements OnInit {
       prompt: pregunta.texto || pregunta.prompt || pregunta.pregunta || 'Pregunta',
       roundLabel: pregunta.roundLabel || pregunta.ronda,
       premioActual: pregunta.premioActual || pregunta.premio,
-      opciones
+      opciones,
+      preguntaId: pregunta.preguntaId || pregunta.id
     });
     this.selectedOption.set(null);
     this.isVoteConfirmed.set(false);
@@ -162,16 +188,23 @@ export class VoteTouchScreenComponent implements OnInit {
 
   protected confirmVote(): void {
     const selected = this.selectedOption();
-    if (!selected || !this.canVote()) return;
+    const question = this.currentQuestion();
+    if (!selected || !this.canVote() || !question) return;
 
     this.isVoteConfirmed.set(true);
 
+    const option = this.activeOptions().find(o => o.id === selected);
+    const opcionId = option?.opcionId || 0;
+
     // Emitir el voto al servidor por Sockets
     try {
-      this.socketService.emitirEvento('voto_recibido', {
+      this.socketService.emitirEvento('audience:vote', {
+        salaId: this.salaId || 0,
+        rondaId: this.rondaId || 0,
         tokenCompartido: this.roomToken,
-        userId: 'audiencia_anonima',
-        respuestaId: selected
+        preguntaId: question.preguntaId || 0,
+        participanteId: this.anonymousParticipanteId,
+        opcionId: opcionId
       });
     } catch (err) {
       console.warn('Error al emitir el voto por Sockets:', err);

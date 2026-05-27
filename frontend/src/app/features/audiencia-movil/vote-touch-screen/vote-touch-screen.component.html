@@ -45,27 +45,25 @@
           }
         </div>
 
-        <!-- Botón de Confirmación de Voto (Hecho con div role="button" para no interferir con las expectativas del test unitario de 4 botones) -->
+        <!-- Botón de Confirmación de Voto -->
         @if (selectedOption()) {
-          <div 
-            role="button"
-            tabindex="0"
+          <button 
+            type="button"
             class="confirm-btn"
             [class.confirm-btn--confirmed]="isVoteConfirmed()"
-            [class.confirm-btn--disabled]="isVoteConfirmed()"
+            [disabled]="isVoteConfirmed()"
             (click)="confirmVote()"
-            (keydown.enter)="confirmVote()"
           >
             @if (isVoteConfirmed()) {
               <span class="confirm-icon">✓</span> ¡Voto Registrado con Éxito!
             } @else {
               Confirmar Respuesta
             }
-          </div>
+          </button>
         } @else {
-          <div class="confirm-btn confirm-btn--disabled">
+          <button type="button" class="confirm-btn confirm-btn--disabled" disabled>
             Selecciona una opción
-          </div>
+          </button>
         }
       </div>
     } @else {
