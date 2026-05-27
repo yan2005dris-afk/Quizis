@@ -61,6 +61,7 @@ export class JoinSalaUseCase {
       sala: {
         id: salaInfo.salaId,
         nombre: salaInfo.nombre,
+        tokenCompartido: salaInfo.tokenCompartido,
       },
     };
   }

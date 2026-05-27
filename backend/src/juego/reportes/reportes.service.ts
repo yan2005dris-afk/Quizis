@@ -78,7 +78,8 @@ export class ReportesService {
               const votosCorrectosPublico = votosPregunta.filter(
                 (voto: any) => voto.opcion.esCorrecta,
               ).length;
-              const calculo = (votosCorrectosPublico / votosPregunta.length) * 100;
+              const calculo =
+                (votosCorrectosPublico / votosPregunta.length) * 100;
               porcentajeVotosPublico = Number(calculo.toFixed(1));
             }
           }

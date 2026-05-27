@@ -29,6 +29,7 @@ export class GetSalaLifelinesUseCase {
       include: {
         comodin: {
           select: {
+            comodinId: true,
             nombre: true,
             descripcion: true,
             icono: true,
@@ -38,6 +39,7 @@ export class GetSalaLifelinesUseCase {
     });
 
     return salaComodines.map((sc) => ({
+      comodinId: sc.comodin.comodinId,
       nombre: sc.comodin.nombre,
       descripcion: sc.comodin.descripcion,
       icono: sc.comodin.icono,

@@ -38,10 +38,31 @@ export interface SalaDetalle {
 }
 
 export interface ComodinSala {
+  comodinId: number;
   nombre: string;
   descripcion: string;
   icono: string;
   activo: boolean;
+}
+
+export interface CreateSalaPayload {
+  bancoId: number;
+  nombre: string;
+  limitePreguntas?: number;
+  duracionTokenHoras?: number;
+}
+
+export interface SalaCreada {
+  salaId: number;
+  nombre: string;
+  estado: EstadoSala;
+  tokenCompartido: string;
+  tokenInvitacion: string;
+  tokenExpiraEn: string | null;
+  invitacionUrl: string;
+  limitePreguntas: number;
+  preguntasSeleccionadas: number[];
+  totalPreguntasBanco: number;
 }
 
 @Injectable({
@@ -61,6 +82,21 @@ export class SalasService {
 
   obtenerComodines(idOrToken: number | string): Observable<ComodinSala[]> {
     return this.http.get<ComodinSala[]>(`${this.apiUrl}/salas/${idOrToken}/comodines`);
+  }
+
+  crearSala(payload: CreateSalaPayload): Observable<SalaCreada> {
+    return this.http.post<SalaCreada>(`${this.apiUrl}/salas`, payload);
+  }
+
+  updateConfiguracion(
+    salaId: number,
+    data: {
+      nombre?: string;
+      limitePreguntas?: number;
+      comodines?: { comodinId: number; activo: boolean }[];
+    },
+  ): Observable<SalaDetalle> {
+    return this.http.patch<SalaDetalle>(`${this.apiUrl}/salas/${salaId}/configuracion`, data);
   }
 
   validateToken(token: string): Observable<any> {

@@ -2,13 +2,13 @@ import { ChangeDetectionStrategy, Component, inject, OnInit, signal } from '@ang
 import { RouterLink } from '@angular/router';
 import { SalasService, SalaResumen } from '../../../../core/services/salas.service';
 import { DatePipe } from '@angular/common';
-import { LucideAngularModule, Plus } from 'lucide-angular';
 import { ButtonComponent, AlertComponent } from '../../../../shared/ui';
+import { CreateSalaComponent } from '../../components/create-sala/create-sala.component';
 
 @Component({
   selector: 'app-salas-index',
   standalone: true,
-  imports: [RouterLink, DatePipe, LucideAngularModule, ButtonComponent, AlertComponent],
+  imports: [RouterLink, DatePipe, ButtonComponent, AlertComponent, CreateSalaComponent],
   templateUrl: './salas-index.component.html',
   styleUrl: './salas-index.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -16,17 +16,26 @@ import { ButtonComponent, AlertComponent } from '../../../../shared/ui';
 export class SalasIndexComponent implements OnInit {
   private readonly salasService = inject(SalasService);
 
-  protected readonly PlusIcon = Plus;
   protected readonly salas = signal<SalaResumen[]>([]);
   protected readonly loading = signal(true);
   protected readonly error = signal(false);
+  protected readonly createOpen = signal(false);
 
   ngOnInit(): void {
     this.cargarSalas();
   }
 
   protected onCrearSala(): void {
-    console.log('Crear sala clickeado');
+    this.createOpen.set(true);
+  }
+
+  protected cerrarCrearSala(): void {
+    this.createOpen.set(false);
+  }
+
+  protected onSalaCreada(): void {
+    this.createOpen.set(false);
+    this.cargarSalas();
   }
 
   private cargarSalas(): void {

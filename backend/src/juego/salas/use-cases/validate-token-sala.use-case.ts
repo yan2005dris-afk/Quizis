@@ -97,6 +97,7 @@ export class ValidateTokenSalaUseCase {
       nombre: sala.nombre,
       estado: sala.estado,
       limitePreguntas: sala.limitePreguntas,
+      tokenCompartido: sala.tokenCompartido,
     };
   }
 }
