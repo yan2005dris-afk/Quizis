@@ -9,5 +9,6 @@ import { CacheModule } from '../infrastructure/cache/cache.module';
   imports: [WebsocketsInfraModule, SalasModule, CacheModule],
   controllers: [ComodinPublicoController],
   providers: [ComodinPublicoService],
+  exports: [ComodinPublicoService],
 })
 export class ComodinPublicoModule {}
