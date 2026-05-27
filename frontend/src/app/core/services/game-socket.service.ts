@@ -130,6 +130,9 @@ export class GameSocketService {
     this.socket.on('mensaje_chat', (data: ChatMessage[]) => {
       this.mensajesChat.set(data);
     });
+    this.socket.on('mensaje_chat_nuevo', (data: ChatMessage) => {
+      this.mensajesChat.update((prev) => [...prev, data]);
+    });
 
     this.socket.on('evento_sala', (data: SalaEvento[]) => {
       this.eventosSala.set(data);
