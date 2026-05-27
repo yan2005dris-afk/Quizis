@@ -1,67 +1,69 @@
+# =============================================================================
+# Docker Compose — Quizis local development environment
+# 4 services: postgres, redis, backend (NestJS), frontend (Angular + Nginx)
+# Bridge network for service discovery + healthchecks for startup gating
+# =============================================================================
+
 services:
+  # ---------------------------------------------------------------------------
+  # PostgreSQL 16 — primary database
+  # ---------------------------------------------------------------------------
   postgres:
-    image: postgres:16.3-alpine
+    image: postgres:16-alpine
     container_name: quizis-postgres
     restart: unless-stopped
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-quizuser}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-quizpass}
       POSTGRES_DB: ${POSTGRES_DB:-quizisdb}
+      POSTGRES_USER: ${POSTGRES_USER:-quizisuser}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-quizispass}
+    ports:
+      - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    ports:
-      - "${POSTGRES_PORT:-5432}:5432"
     healthcheck:
-      test: ["CMD", "pg_isready", "-U", "${POSTGRES_USER:-quizuser}", "-d", "${POSTGRES_DB:-quizisdb}"]
-      interval: 10s
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-quizisuser} -d ${POSTGRES_DB:-quizisdb}"]
+      interval: 5s
       timeout: 5s
       retries: 5
     networks:
       - quizis-network
-    deploy:
-      resources:
-        limits:
-          cpus: "1.0"
-          memory: 1G
 
+  # ---------------------------------------------------------------------------
+  # Redis 7 — cache / session store
+  # ---------------------------------------------------------------------------
   redis:
-    image: redis:7.2-alpine
+    image: redis:7-alpine
     container_name: quizis-redis
     restart: unless-stopped
     ports:
       - "6379:6379"
+    volumes:
+      - redis_data:/data
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 5s
+      interval: 5s
+      timeout: 3s
       retries: 5
     networks:
       - quizis-network
-    deploy:
-      resources:
-        limits:
-          cpus: "0.5"
-          memory: 512M
 
-  backend:
+  # ---------------------------------------------------------------------------
+  # Backend — NestJS API server (port 3000)
+  # ---------------------------------------------------------------------------
+  quizis-backend:
     build:
-      context: ./backend
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: backend/Dockerfile
     container_name: quizis-backend
     restart: unless-stopped
-    env_file: .env
-    environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER:-quizuser}:${POSTGRES_PASSWORD:-quizpass}@postgres:5432/${POSTGRES_DB:-quizisdb}
-      POSTGRES_HOST: postgres
-      REDIS_HOST: redis
-      REDIS_PORT: 6379
-      MINIO_ENDPOINT: minio
-      NODE_ENV: production
-      PORT: 3000
-      OTEL_EXPORTER_OTLP_ENDPOINT: http://tempo:4318
-      OTEL_METRICS_ENABLED: "true"
     ports:
       - "3000:3000"
+    env_file:
+      - .env
+      - .env.docker
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
     depends_on:
       postgres:
         condition: service_healthy
@@ -69,34 +71,33 @@ services:
         condition: service_healthy
     networks:
       - quizis-network
-    deploy:
-      resources:
-        limits:
-          cpus: "1.0"
-          memory: 1G
 
-  frontend:
+  # ---------------------------------------------------------------------------
+  # Frontend — Angular SPA served by Nginx (port 80)
+  # ---------------------------------------------------------------------------
+  quizis-frontend:
     build:
-      context: ./frontend
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: frontend/Dockerfile
     container_name: quizis-frontend
     restart: unless-stopped
     ports:
-      - "4200:80"
+      - "80:80"
     depends_on:
-      - backend
+      - quizis-backend
     networks:
       - quizis-network
-    deploy:
-      resources:
-        limits:
-          cpus: "0.5"
-          memory: 512M
 
-networks:
-  quizis-network:
-    name: quizis-network
-    driver: bridge
-
+# ---------------------------------------------------------------------------
+# Persistent storage for stateful services
+# ---------------------------------------------------------------------------
 volumes:
   postgres_data:
+  redis_data:
+
+# ---------------------------------------------------------------------------
+# Isolated bridge network with built-in DNS resolution
+# ---------------------------------------------------------------------------
+networks:
+  quizis-network:
+    driver: bridge
