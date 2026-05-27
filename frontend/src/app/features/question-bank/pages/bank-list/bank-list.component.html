@@ -5,10 +5,27 @@
         <h1 class="bancos-index__title">Banco de Preguntas</h1>
         <p class="bancos-index__subtitle">Gestiona y organiza todas tus preguntas</p>
       </div>
-      <app-button routerLink="/bancos/crear">
-        <lucide-icon [img]="PlusIcon" class="icon-sm"></lucide-icon>
-        Crear Banco
-      </app-button>
+      <div class="header-actions">
+        <div class="template-download">
+          <select
+            class="template-select"
+            [ngModel]="templateFormat()"
+            (ngModelChange)="templateFormat.set($event)"
+            aria-label="Formato de plantilla"
+          >
+            <option value="json">JSON</option>
+            <option value="csv">CSV</option>
+            <option value="xlsx">Excel</option>
+          </select>
+          <button class="btn-download-template" type="button" (click)="downloadTemplate()">
+            📥 Descargar Plantilla
+          </button>
+        </div>
+        <app-button routerLink="/bancos/crear">
+          <lucide-icon [img]="PlusIcon" class="icon-sm"></lucide-icon>
+          Crear Banco
+        </app-button>
+      </div>
     </div>
   </header>
 
