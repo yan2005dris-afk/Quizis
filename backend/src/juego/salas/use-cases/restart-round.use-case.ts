@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../../../infrastructure/database/prisma/prisma.service';
 import { RoomStateCacheUseCase } from '../../../infrastructure/cache/use-cases/room-state-cache.use-case';
+import { ParticipantsCacheUseCase } from '../../../infrastructure/cache/use-cases/participants-cache.use-case';
 
 @Injectable()
 export class RestartRoundUseCase {
@@ -14,6 +15,7 @@ export class RestartRoundUseCase {
   constructor(
     private readonly prisma: PrismaService,
     private readonly roomStateCache: RoomStateCacheUseCase,
+    private readonly participantsCache: ParticipantsCacheUseCase,
   ) {}
 
   async execute(salaId: number) {
@@ -46,13 +48,33 @@ export class RestartRoundUseCase {
       );
     }
 
-    const participante =
+    let participante =
       (await this.prisma.participantes.findFirst({
         where: { salaId, deletedAt: null, rol: 'estudiante' },
       })) ??
       (await this.prisma.participantes.findFirst({
         where: { salaId, deletedAt: null },
       }));
+
+    if (!participante) {
+      const cachedNicknames =
+        await this.participantsCache.getHistoricalParticipants(
+          sala.tokenCompartido,
+        );
+      const nickname =
+        cachedNicknames.find((n) => !n.startsWith('Host-')) ??
+        cachedNicknames[0];
+      if (nickname) {
+        participante = await this.prisma.participantes.upsert({
+          where: { salaId_nickname: { salaId, nickname } },
+          update: {},
+          create: { salaId, nickname, rol: 'observador' },
+        });
+        this.logger.log(
+          `[RESTART] Participante creado desde cache: nickname=${nickname}`,
+        );
+      }
+    }
 
     if (!participante) {
       this.logger.error(`[RESTART] No hay participantes en sala ${salaId}`);
