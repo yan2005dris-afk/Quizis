@@ -9,40 +9,6 @@
   width: 100%;
 
   .navbar-left {
-    .search-wrapper {
-      position: relative;
-      display: flex;
-      align-items: center;
-
-      .search-icon {
-        position: absolute;
-        left: 12px;
-        color: var(--color-sub);
-        width: 18px;
-        height: 18px;
-      }
-
-      input {
-        padding: .65rem .75rem .65rem 2.5rem;
-        border: 1.5px solid var(--color-border);
-        background-color: var(--color-bg);
-        border-radius: var(--radius-md);
-        width: 300px;
-        font-family: var(--font-sans);
-        font-size: var(--text-sm);
-        color: var(--color-text);
-        transition: border-color var(--transition), background var(--transition), width var(--transition);
-
-        &::placeholder { color: var(--color-sub); }
-
-        &:focus {
-          outline: none;
-          background-color: var(--color-surface);
-          border-color: var(--color-primary);
-          width: 340px;
-        }
-      }
-    }
   }
 
   .navbar-right {

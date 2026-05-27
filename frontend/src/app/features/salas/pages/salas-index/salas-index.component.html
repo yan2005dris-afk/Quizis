@@ -5,14 +5,281 @@
         <h1 class="salas-index__title">Salas</h1>
         <p class="salas-index__subtitle">Todas las salas activas del sistema</p>
       </div>
-      <app-button (clicked)="onCrearSala()">
-        <lucide-icon [img]="PlusIcon" class="icon-sm"></lucide-icon>
-        Crear Sala
-      </app-button>
+      @if (!createOpen()) {
+        <app-button (clicked)="onCrearSala()">Crear Sala</app-button>
+      }
     </div>
   </header>
 
-  @if (loading()) {
+  @if (createOpen()) {
+    <section class="create-page" aria-label="Crear nueva sala">
+      <header class="create-page__header">
+        <div>
+          <h2 class="create-page__title">Crear Nueva Sala</h2>
+          <p class="create-page__subtitle">
+            Configura el evento, conecta un banco de preguntas y define las ayudas disponibles.
+          </p>
+        </div>
+        <button
+          class="ghost-button"
+          type="button"
+          [disabled]="creating()"
+          (click)="cerrarCrearSala()"
+        >
+          Volver a salas
+        </button>
+      </header>
+
+      @if (createError()) {
+        <app-alert type="danger" [message]="createError()!" />
+      }
+
+      <div class="create-page__content">
+        <div class="create-page__left">
+          <section class="form-card">
+            <div class="form-card__section">
+              <h3 class="form-card__title">Informacion General</h3>
+              <p class="form-card__subtitle">Define el nombre, estado y duracion del enlace.</p>
+
+              <label class="field">
+                <span>Titulo de la sala</span>
+                <input
+                  type="text"
+                  placeholder="Ej: Gran final de Historia"
+                  [ngModel]="form().nombre"
+                  (ngModelChange)="actualizarCampo('nombre', $event)"
+                />
+              </label>
+
+              <label class="field">
+                <span>Estado inicial</span>
+                <select
+                  [ngModel]="form().estadoInicial"
+                  (ngModelChange)="actualizarCampo('estadoInicial', $event)"
+                >
+                  <option value="BORRADOR">Borrador</option>
+                  <option value="ESPERANDO_ALUMNOS">Esperando alumnos</option>
+                </select>
+              </label>
+
+              <div class="field-grid">
+                <label class="field">
+                  <span>Preguntas por ronda</span>
+                  <input
+                    type="number"
+                    min="1"
+                    [ngModel]="form().limitePreguntas"
+                    (ngModelChange)="actualizarCampo('limitePreguntas', +$event)"
+                  />
+                </label>
+
+                <label class="field">
+                  <span>Validez del link</span>
+                  <input
+                    type="number"
+                    min="1"
+                    max="168"
+                    [ngModel]="form().duracionTokenHoras"
+                    (ngModelChange)="actualizarCampo('duracionTokenHoras', +$event)"
+                  />
+                </label>
+              </div>
+            </div>
+          </section>
+
+          <section class="form-card">
+            <div class="form-card__section">
+              <h3 class="form-card__title">Comodines Activos</h3>
+              <p class="form-card__subtitle">Activa o desactiva las ayudas de la sala.</p>
+            </div>
+
+            <div class="toggle-list">
+              @for (
+                comodin of ['PUBLICO', 'IA', 'LLAMADA', '50_50', 'SALTA_OPCION', 'TIEMPO_EXTRA'];
+                track comodin
+              ) {
+                <label class="toggle-row">
+                  <span class="toggle-row__icon">
+                    <lucide-icon [img]="comodinIcons[comodin]"></lucide-icon>
+                  </span>
+                  <span class="toggle-row__info">
+                    <strong>{{ comodin }}</strong>
+                    <small>
+                      @switch (comodin) {
+                        @case ('PUBLICO') {
+                          Votacion en tiempo real de observadores.
+                        }
+                        @case ('IA') {
+                          Sugerencia generada por inteligencia artificial.
+                        }
+                        @case ('LLAMADA') {
+                          Ayuda de un participante elegido.
+                        }
+                        @case ('50_50') {
+                          Elimina dos opciones incorrectas.
+                        }
+                        @case ('SALTA_OPCION') {
+                          Permite saltar una pregunta.
+                        }
+                        @default {
+                          Agrega tiempo extra al temporizador.
+                        }
+                      }
+                    </small>
+                  </span>
+                  <span class="toggle">
+                    <input
+                      type="checkbox"
+                      [checked]="form().comodines[comodin]"
+                      (change)="actualizarComodin(comodin, $any($event.target).checked)"
+                    />
+                    <span class="toggle__track"></span>
+                  </span>
+                </label>
+              }
+            </div>
+          </section>
+        </div>
+
+        <div class="create-page__right">
+          <section class="form-card">
+            <div class="form-card__section">
+              <h3 class="form-card__title">Banco de Preguntas</h3>
+              <p class="form-card__subtitle">Usa un banco existente o importa uno nuevo.</p>
+
+              <label class="field">
+                <span>Banco cargado</span>
+                <select
+                  [disabled]="loadingBancos()"
+                  [ngModel]="form().bancoId"
+                  (ngModelChange)="seleccionarBanco(+$event)"
+                >
+                  <option [ngValue]="0">
+                    {{ loadingBancos() ? 'Cargando bancos...' : 'Selecciona un banco' }}
+                  </option>
+                  @for (banco of bancos(); track banco.bancoId) {
+                    <option [ngValue]="banco.bancoId">
+                      {{ banco.nombre }} - {{ banco._count?.preguntas || 0 }} preguntas
+                    </option>
+                  }
+                </select>
+              </label>
+
+              <div class="upload-zone">
+                <lucide-icon [img]="FileUpIcon" class="upload-zone__icon"></lucide-icon>
+                <strong>Subir preguntas</strong>
+                <span>JSON, CSV o Excel. Se creara un banco automaticamente.</span>
+                <input
+                  #fileInput
+                  type="file"
+                  accept=".json,.csv,.xlsx,.xls"
+                  hidden
+                  (change)="onArchivoSeleccionado($event)"
+                />
+                <button class="ghost-button" type="button" (click)="fileInput.click()">
+                  Seleccionar archivo
+                </button>
+                @if (selectedFileName()) {
+                  <small>{{ selectedFileName() }}</small>
+                }
+              </div>
+
+              @if (uploadErrors().length > 0) {
+                <div class="upload-errors">
+                  {{ uploadErrors().length }} filas fueron omitidas por errores de formato.
+                </div>
+              }
+            </div>
+          </section>
+
+          <section class="form-card questions-card">
+            <div class="questions-card__header">
+              <div>
+                <h3 class="form-card__title">Preguntas Importadas</h3>
+                <p class="form-card__subtitle">Vista previa del banco seleccionado.</p>
+              </div>
+              <span class="badge"> {{ bancoDetalle()?.preguntas?.length || 0 }} preguntas </span>
+            </div>
+
+            @if (!bancoDetalle()) {
+              <div class="questions-empty">
+                <lucide-icon [img]="DatabaseIcon"></lucide-icon>
+                Selecciona un banco para previsualizar sus preguntas.
+              </div>
+            } @else {
+              <div class="questions-table">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Pregunta</th>
+                      <th>Respuesta</th>
+                      <th>Mapeo</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (pregunta of preguntasPaginadas(); track pregunta.preguntaId) {
+                      <tr>
+                        <td>{{ pregunta.texto }}</td>
+                        <td>{{ respuestaCorrecta(pregunta.opciones) }}</td>
+                        <td>
+                          <span class="status-ok">
+                            <lucide-icon [img]="CheckIcon"></lucide-icon>
+                            OK
+                          </span>
+                        </td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+              <div class="questions-pagination">
+                <span> Pagina {{ preguntasPage() + 1 }} de {{ preguntasTotalPages() }} </span>
+                <div class="questions-pagination__actions">
+                  <button
+                    class="ghost-button"
+                    type="button"
+                    [disabled]="preguntasPage() === 0"
+                    (click)="paginaAnteriorPreguntas()"
+                  >
+                    Anterior
+                  </button>
+                  <button
+                    class="ghost-button"
+                    type="button"
+                    [disabled]="preguntasPage() + 1 >= preguntasTotalPages()"
+                    (click)="paginaSiguientePreguntas()"
+                  >
+                    Siguiente
+                  </button>
+                </div>
+              </div>
+            }
+          </section>
+        </div>
+      </div>
+
+      <footer class="create-page__footer">
+        <div class="create-page__actions">
+          <button
+            class="ghost-button"
+            type="button"
+            [disabled]="creating()"
+            (click)="guardarSala(false)"
+          >
+            Guardar borrador
+          </button>
+          <button
+            class="primary-button"
+            type="button"
+            [disabled]="creating()"
+            (click)="guardarSala(true)"
+          >
+            {{ creating() ? 'Creando...' : 'Iniciar sala' }}
+          </button>
+        </div>
+      </footer>
+    </section>
+  } @else if (loading()) {
     <div class="salas-index__loading" role="status">
       <div class="salas-index__spinner"></div>
       <span class="sr-only">Cargando salas...</span>

@@ -47,7 +47,14 @@ export class CreateBancoUseCase {
         );
       }
 
-      return banco;
+      return tx.bancoPreguntas.findUniqueOrThrow({
+        where: { bancoId: banco.bancoId },
+        include: {
+          _count: {
+            select: { preguntas: true },
+          },
+        },
+      });
     });
   }
 
