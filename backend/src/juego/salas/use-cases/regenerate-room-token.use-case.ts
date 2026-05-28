@@ -1,6 +1,6 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../../infrastructure/database/prisma/prisma.service';
-import { v4 as uuidv4 } from 'uuid';
+import { randomUUID } from 'crypto';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 
@@ -25,7 +25,7 @@ export class RegenerateRoomTokenUseCase {
       throw new NotFoundException(`Sala con ID ${salaId} no encontrada`);
     }
 
-    const nuevoTokenUUID = uuidv4();
+    const nuevoTokenUUID = randomUUID();
 
     const actualizada = await this.prisma.salas.update({
       where: { salaId },
