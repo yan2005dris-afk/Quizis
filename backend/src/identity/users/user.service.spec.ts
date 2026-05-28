@@ -4,7 +4,7 @@ import { UserService } from './user.service';
 import { PrismaService } from 'src/infrastructure/database/prisma/prisma.service';
 import { CreateUserUseCase } from './use-cases/create-user.use-case';
 import { GetEffectivePermissionsUseCase } from './use-cases/get-effective-permissions.use-case';
-import { NotFoundException } from '@nestjs/common';
+import { NotFoundException, BadRequestException } from '@nestjs/common';
 
 describe('UserService', () => {
   let service: UserService;
@@ -93,6 +93,31 @@ describe('UserService', () => {
   });
 
   describe('updateUser', () => {
+    it('should throw NotFoundException if user not found', async () => {
+      mockPrismaService.usuarios.findUnique.mockResolvedValue(null);
+
+      await expect(
+        service.updateUser({
+          where: { usuarioId: 999 },
+          data: { nombres: 'New Name' },
+        }),
+      ).rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw BadRequestException if user is soft-deleted', async () => {
+      mockPrismaService.usuarios.findUnique.mockResolvedValue({
+        usuarioId: 1,
+        deletedAt: new Date(),
+      });
+
+      await expect(
+        service.updateUser({
+          where: { usuarioId: 1 },
+          data: { nombres: 'New Name' },
+        }),
+      ).rejects.toThrow(BadRequestException);
+    });
+
     it('should throw NotFoundException if rolId is invalid (not found)', async () => {
       mockPrismaService.usuarios.findUnique.mockResolvedValue({
         usuarioId: 1,

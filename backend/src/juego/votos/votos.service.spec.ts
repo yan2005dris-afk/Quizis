@@ -46,12 +46,7 @@ describe('VotosService', () => {
     it('should call RegisterVoteUseCase with correct params', async () => {
       await service.registrarVoto(1, 2, 3, 4);
 
-      expect(mockRegisterUseCase.execute).toHaveBeenCalledWith(
-        1,
-        2,
-        3,
-        4,
-      );
+      expect(mockRegisterUseCase.execute).toHaveBeenCalledWith(1, 2, 3, 4);
 
       expect(mockRegisterUseCase.execute).toHaveBeenCalledTimes(1);
     });
@@ -76,5 +71,4 @@ describe('VotosService', () => {
       expect(mockPersistUseCase.execute).toHaveBeenCalledTimes(1);
     });
   });
-
 });

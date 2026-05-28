@@ -65,4 +65,13 @@ describe('GetEffectivePermissionsUseCase', () => {
 
     await expect(useCase.execute(1)).rejects.toThrow(NotFoundException);
   });
+
+  it('should throw NotFoundException if user exists but is soft-deleted', async () => {
+    mockPrisma.usuarios.findUnique.mockResolvedValue({
+      usuarioId: 1,
+      deletedAt: new Date(),
+    });
+
+    await expect(useCase.execute(1)).rejects.toThrow(NotFoundException);
+  });
 });

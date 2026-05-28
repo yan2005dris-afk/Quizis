@@ -147,6 +147,23 @@ describe('CreateUserUseCase', () => {
     ).rejects.toThrow('Rol no encontrado o eliminado');
   });
 
+  it('should throw NotFoundException if provided rolId is soft-deleted', async () => {
+    mockPrisma.usuarios.findUnique.mockResolvedValue(null);
+    mockPrisma.roles.findUnique.mockResolvedValue({
+      rolId: 2,
+      deletedAt: new Date(),
+    });
+    await expect(
+      useCase.execute({
+        email: 't@t.com',
+        nombres: 'Test',
+        apellidos: 'User',
+        telefono: '0991234567',
+        rolId: 2,
+      }),
+    ).rejects.toThrow('Rol no encontrado o eliminado');
+  });
+
   it('should throw BadRequestException for invalid Ecuador phone', async () => {
     mockPrisma.usuarios.findUnique.mockResolvedValue(null);
     await expect(

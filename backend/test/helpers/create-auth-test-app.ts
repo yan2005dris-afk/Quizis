@@ -25,7 +25,9 @@ import { resolve } from 'path';
 
 const ENV_TEST_PATH = resolve(process.cwd(), '.env.test');
 const hasEnvFile = existsSync(ENV_TEST_PATH);
-const hasEnvVars = Boolean(process.env.DATABASE_URL && process.env.JWT_ACCESS_SECRET);
+const hasEnvVars = Boolean(
+  process.env.DATABASE_URL && process.env.JWT_ACCESS_SECRET,
+);
 
 if (!hasEnvFile && !hasEnvVars) {
   throw new Error(
