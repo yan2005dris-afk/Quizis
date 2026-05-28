@@ -190,10 +190,25 @@ $color-danger-bg: #fef2f2;
     }
   }
 
+  // Result states
+  &--correct {
+    background-color: #dcfce7 !important;
+    border-color: #16a34a !important;
+    .option-letter-wrapper { background-color: #16a34a !important; .option-letter { color: #fff !important; } }
+    .option-texto { color: #14532d !important; }
+  }
+
+  &--wrong {
+    background-color: #fee2e2 !important;
+    border-color: #dc2626 !important;
+    .option-letter-wrapper { background-color: #dc2626 !important; .option-letter { color: #fff !important; } }
+    .option-texto { color: #7f1d1d !important; }
+  }
+
   // Disabled State
   &:disabled {
     cursor: default;
-    &:not(.option-btn--selected) {
+    &:not(.option-btn--selected):not(.option-btn--correct):not(.option-btn--wrong) {
       opacity: 0.6;
     }
   }

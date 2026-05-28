@@ -26,11 +26,11 @@ describe('GetBancoUseCase', () => {
     useCase = module.get<GetBancoUseCase>(GetBancoUseCase);
   });
 
-  it('should return a banco if found', async () => {
-    const banco = { bancoId: 1, nombre: 'B1', preguntas: [] };
+  it('should return a banco if found and owned by user', async () => {
+    const banco = { bancoId: 1, nombre: 'B1', usuarioId: 1, preguntas: [] };
     mockPrisma.bancoPreguntas.findUnique.mockResolvedValue(banco);
 
-    const result = await useCase.execute(1);
+    const result = await useCase.execute(1, 1);
 
     expect(result).toEqual(banco);
     expect(mockPrisma.bancoPreguntas.findUnique).toHaveBeenCalledWith({
@@ -47,6 +47,13 @@ describe('GetBancoUseCase', () => {
   it('should throw NotFoundException if banco not found', async () => {
     mockPrisma.bancoPreguntas.findUnique.mockResolvedValue(null);
 
-    await expect(useCase.execute(1)).rejects.toThrow(NotFoundException);
+    await expect(useCase.execute(1, 1)).rejects.toThrow(NotFoundException);
+  });
+
+  it('should throw NotFoundException if banco belongs to another user', async () => {
+    const banco = { bancoId: 1, nombre: 'B1', usuarioId: 2, preguntas: [] };
+    mockPrisma.bancoPreguntas.findUnique.mockResolvedValue(banco);
+
+    await expect(useCase.execute(1, 1)).rejects.toThrow(NotFoundException);
   });
 });

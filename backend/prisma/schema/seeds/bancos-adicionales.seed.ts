@@ -1,6 +1,9 @@
 import { PrismaClient } from '../../../src/generated/prisma/client';
 
-export const seedBancosAdicionales = async (prisma: PrismaClient) => {
+export const seedBancosAdicionales = async (
+  prisma: PrismaClient,
+  usuarioId: number,
+) => {
   const bancosData = [
     {
       nombre: 'Tecnología y Programación',
@@ -126,6 +129,7 @@ export const seedBancosAdicionales = async (prisma: PrismaClient) => {
       data: {
         nombre: bancoData.nombre,
         descripcion: bancoData.descripcion,
+        usuarioId,
       },
     });
 

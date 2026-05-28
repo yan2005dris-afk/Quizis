@@ -13,6 +13,7 @@ model Usuarios {
   sesiones  Sesiones[]
   rol       Roles?     @relation(fields: [rolId], references: [rolId])
   salas     Salas[]
+  bancosPreguntas BancoPreguntas[]
 
   @@map("usuarios")
 }
