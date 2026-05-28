@@ -16,18 +16,38 @@ type CookieParserMiddleware = (
 ) => void;
 type CookieParserFactory = () => CookieParserMiddleware;
 
+// ─── Guard: requiere .env.test o vars de entorno explícitas (CI) ─────────────
+// En local: debe existir backend/.env.test
+// En CI: las vars llegan vía process.env (inyectadas por el workflow)
+// Sin este check, ConfigModule podría cargar .env de dev silenciosamente.
+import { existsSync } from 'fs';
+import { resolve } from 'path';
+
+const ENV_TEST_PATH = resolve(process.cwd(), '.env.test');
+const hasEnvFile = existsSync(ENV_TEST_PATH);
+const hasEnvVars = Boolean(process.env.DATABASE_URL && process.env.JWT_ACCESS_SECRET);
+
+if (!hasEnvFile && !hasEnvVars) {
+  throw new Error(
+    `[create-auth-test-app] Falta configuración para integration tests.\n` +
+      `  Local: crea backend/.env.test (ver backend/.env-example).\n` +
+      `  CI: inyecta DATABASE_URL y JWT_ACCESS_SECRET como variables de entorno.\n` +
+      `  No se usa .env como fallback para evitar correr tests contra la DB de desarrollo.`,
+  );
+}
+
 /**
  * Crea una instancia de NestJS lista para integration tests de auth.
  *
  * Carga solo los módulos necesarios para auth — sin Redis, WebSockets ni Juego.
- * Env vars se leen de .env.test primero, luego .env como fallback.
+ * Solo lee .env.test — sin fallback a .env para evitar uso accidental de la DB de dev.
  */
 export async function createAuthTestApp(): Promise<INestApplication> {
   const moduleFixture: TestingModule = await Test.createTestingModule({
     imports: [
       ConfigModule.forRoot({
         isGlobal: true,
-        envFilePath: ['.env.test', '.env'],
+        envFilePath: ['.env.test'],
       }),
       ThrottlerModule.forRoot([{ ttl: 60000, limit: 1000 }]),
       DatabaseModule,
