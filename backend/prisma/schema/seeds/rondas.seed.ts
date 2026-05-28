@@ -7,19 +7,13 @@ import { PrismaClient } from '../../../src/generated/prisma/client';
  * y genera una ronda de juego activa para que pueda ser testeada
  * directamente desde clientes HTTP/WebSocket (ej: Insomnia).
  */
-export const seedRondas = async (prisma: PrismaClient) => {
-  // 1. Obtener el usuario administrador (profesor)
-  const admin = await prisma.usuarios.findFirst({
-    where: { email: 'admin@quizis.com' },
-  });
-
-  if (!admin) {
-    throw new Error('Usuario admin@quizis.com no encontrado para el seed de rondas');
-  }
-
-  // 2. Obtener el banco de preguntas de Cultura General y sus preguntas
+export const seedRondas = async (
+  prisma: PrismaClient,
+  adminId: number,
+) => {
+  // 1. Obtener el banco de preguntas de Cultura General y sus preguntas
   const banco = await prisma.bancoPreguntas.findFirst({
-    where: { nombre: 'Cultura General' },
+    where: { nombre: 'Cultura General', usuarioId: adminId },
     include: { preguntas: true },
   });
 
@@ -38,7 +32,7 @@ export const seedRondas = async (prisma: PrismaClient) => {
   // 4. Crear una sala activa de prueba con tokenCompartido (UUID) fijo para facilitar el testeo
   const sala = await prisma.salas.create({
     data: {
-      adminId: admin.usuarioId,
+      adminId,
       bancoId: banco.bancoId,
       nombre: 'Sala de Demostración de Rondas',
       tokenCompartido: 'de9b23b3-8b77-4f6c-8438-e6b8a8b11111',

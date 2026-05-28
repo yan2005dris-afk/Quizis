@@ -44,35 +44,41 @@ describe('BancosService', () => {
 
   it('should call createUseCase', async () => {
     const dto = { nombre: 'Test' };
-    await service.create(dto as any);
-    expect(createUseCase.execute).toHaveBeenCalledWith(dto);
+    const usuarioId = 1;
+    await service.create(dto as any, usuarioId);
+    expect(createUseCase.execute).toHaveBeenCalledWith(usuarioId, dto);
   });
 
   it('should call getAllUseCase', async () => {
-    await service.findAll();
-    expect(getAllUseCase.execute).toHaveBeenCalled();
+    const usuarioId = 1;
+    await service.findAll(usuarioId);
+    expect(getAllUseCase.execute).toHaveBeenCalledWith(usuarioId);
   });
 
   it('should call getUseCase', async () => {
-    await service.findOne(1);
-    expect(getUseCase.execute).toHaveBeenCalledWith(1);
+    const usuarioId = 1;
+    await service.findOne(1, usuarioId);
+    expect(getUseCase.execute).toHaveBeenCalledWith(1, usuarioId);
   });
 
   it('should call updateUseCase', async () => {
     const dto = { nombre: 'New' };
-    await service.update(1, dto);
-    expect(updateUseCase.execute).toHaveBeenCalledWith(1, dto);
+    const usuarioId = 1;
+    await service.update(1, dto, usuarioId);
+    expect(updateUseCase.execute).toHaveBeenCalledWith(1, dto, usuarioId);
   });
 
   it('should call addQuestionsUseCase', async () => {
     const questions = [{ texto: 'Q1' }];
-    await service.crearPreguntas(1, questions);
-    expect(addQuestionsUseCase.execute).toHaveBeenCalledWith(1, questions);
+    const usuarioId = 1;
+    await service.crearPreguntas(1, questions, usuarioId);
+    expect(addQuestionsUseCase.execute).toHaveBeenCalledWith(1, questions, usuarioId);
   });
 
   it('should call updateQuestionUseCase', async () => {
     const dto = { texto: 'Updated' };
-    await service.updatePregunta(1, 1, dto as any);
-    expect(updateQuestionUseCase.execute).toHaveBeenCalledWith(1, 1, dto);
+    const usuarioId = 1;
+    await service.updatePregunta(1, 1, dto as any, usuarioId);
+    expect(updateQuestionUseCase.execute).toHaveBeenCalledWith(1, 1, dto, usuarioId);
   });
 });

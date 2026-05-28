@@ -7,7 +7,7 @@ export class GetBancoUseCase {
 
   constructor(private readonly prisma: PrismaService) {}
 
-  async execute(id: number) {
+  async execute(id: number, usuarioId: number) {
     this.logger.log(`Buscando banco de preguntas con ID: ${id}`);
     const banco = await this.prisma.bancoPreguntas.findUnique({
       where: { bancoId: id },
@@ -23,7 +23,7 @@ export class GetBancoUseCase {
       },
     });
 
-    if (!banco) {
+    if (!banco || banco.usuarioId !== usuarioId) {
       throw new NotFoundException(
         `Banco de preguntas con ID ${id} no encontrado`,
       );

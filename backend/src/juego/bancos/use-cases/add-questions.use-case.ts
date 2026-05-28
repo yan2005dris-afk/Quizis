@@ -1,4 +1,4 @@
-import { Injectable, Logger, BadRequestException } from '@nestjs/common';
+import { Injectable, Logger, BadRequestException, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../../infrastructure/database/prisma/prisma.service';
 
 @Injectable()
@@ -7,10 +7,21 @@ export class AddQuestionsUseCase {
 
   constructor(private readonly prisma: PrismaService) {}
 
-  async execute(bancoId: number, preguntas: any[]) {
+  async execute(bancoId: number, preguntas: any[], usuarioId: number) {
     this.logger.log(
       `Creando ${preguntas.length} preguntas en banco ${bancoId}`,
     );
+
+    // Verify bank exists and is owned by the user
+    const banco = await this.prisma.bancoPreguntas.findUnique({
+      where: { bancoId },
+    });
+    if (!banco || banco.usuarioId !== usuarioId) {
+      throw new NotFoundException(
+        `Banco de preguntas con ID ${bancoId} no encontrado`,
+      );
+    }
+
     this.validatePreguntas(preguntas);
 
     const creadas = await this.prisma.$transaction(
