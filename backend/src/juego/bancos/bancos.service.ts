@@ -19,31 +19,36 @@ export class BancosService {
     private readonly updateQuestionUseCase: UpdateQuestionUseCase,
   ) {}
 
-  async create(dto: CreateBancoDto) {
-    return this.createBancoUseCase.execute(dto);
+  async create(dto: CreateBancoDto, usuarioId: number) {
+    return this.createBancoUseCase.execute(usuarioId, dto);
   }
 
-  async crearPreguntas(bancoId: number, preguntas: any[]) {
-    return this.addQuestionsUseCase.execute(bancoId, preguntas);
+  async crearPreguntas(bancoId: number, preguntas: any[], usuarioId: number) {
+    return this.addQuestionsUseCase.execute(bancoId, preguntas, usuarioId);
   }
 
-  async findAll() {
-    return this.getAllBancosUseCase.execute();
+  async findAll(usuarioId: number) {
+    return this.getAllBancosUseCase.execute(usuarioId);
   }
 
-  async findOne(id: number) {
-    return this.getBancoUseCase.execute(id);
+  async findOne(id: number, usuarioId: number) {
+    return this.getBancoUseCase.execute(id, usuarioId);
   }
 
-  async update(id: number, dto: { nombre?: string; descripcion?: string }) {
-    return this.updateBancoUseCase.execute(id, dto);
+  async update(
+    id: number,
+    dto: { nombre?: string; descripcion?: string },
+    usuarioId: number,
+  ) {
+    return this.updateBancoUseCase.execute(id, dto, usuarioId);
   }
 
   async updatePregunta(
     bancoId: number,
     preguntaId: number,
     dto: UpdatePreguntaDto,
+    usuarioId: number,
   ) {
-    return this.updateQuestionUseCase.execute(bancoId, preguntaId, dto);
+    return this.updateQuestionUseCase.execute(bancoId, preguntaId, dto, usuarioId);
   }
 }

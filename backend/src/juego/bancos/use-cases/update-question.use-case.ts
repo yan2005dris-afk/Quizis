@@ -8,8 +8,23 @@ export class UpdateQuestionUseCase {
 
   constructor(private readonly prisma: PrismaService) {}
 
-  async execute(bancoId: number, preguntaId: number, dto: UpdatePreguntaDto) {
+  async execute(
+    bancoId: number,
+    preguntaId: number,
+    dto: UpdatePreguntaDto,
+    usuarioId: number,
+  ) {
     this.logger.log(`Actualizando pregunta ${preguntaId} del banco ${bancoId}`);
+
+    // Verify bank exists and is owned by the user
+    const banco = await this.prisma.bancoPreguntas.findUnique({
+      where: { bancoId },
+    });
+    if (!banco || banco.usuarioId !== usuarioId) {
+      throw new NotFoundException(
+        `Banco de preguntas con ID ${bancoId} no encontrado`,
+      );
+    }
 
     const preguntaExistente = await this.prisma.preguntas.findFirst({
       where: { preguntaId, bancoId },

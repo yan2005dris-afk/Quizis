@@ -7,9 +7,10 @@ export class GetAllBancosUseCase {
 
   constructor(private readonly prisma: PrismaService) {}
 
-  async execute() {
-    this.logger.log('Buscando todos los bancos de preguntas');
+  async execute(usuarioId: number) {
+    this.logger.log(`Buscando bancos de preguntas para usuario ${usuarioId}`);
     return this.prisma.bancoPreguntas.findMany({
+      where: { usuarioId, deletedAt: null },
       include: {
         _count: {
           select: { preguntas: true },

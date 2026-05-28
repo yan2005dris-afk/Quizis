@@ -99,6 +99,12 @@ export class VoteTouchScreenComponent implements OnInit {
   protected readonly isVoteConfirmed = signal<boolean>(false);
   protected readonly timeRemaining = signal<number>(45);
   protected readonly isPublicoActive = signal<boolean>(false);
+  protected readonly juegoEnVivo = signal<boolean>(false);
+  protected readonly resultadoRespondida = signal<{
+    opcionId: number;
+    esCorrecta: boolean;
+    feedback?: string;
+  } | null>(null);
 
   protected readonly canVote = computed(
     () => this.currentQuestion() !== null && !this.isVoteConfirmed() && this.isPublicoActive(),
@@ -163,6 +169,10 @@ export class VoteTouchScreenComponent implements OnInit {
 
           this.tituloEvento.set(sala.nombre || 'Sala de Votación');
 
+          if (sala.estado === 'EN_VIVO') {
+            this.juegoEnVivo.set(true);
+          }
+
           if (sala.rondaActiva) {
             this.historialPreguntas = sala.rondaActiva.historialPreguntas || [];
 
@@ -196,6 +206,8 @@ export class VoteTouchScreenComponent implements OnInit {
         .subscribe((pregunta) => {
           // Cargamos la pregunta inmediatamente para que el público pueda VERLA, pero sin poder interactuar aún
           if (pregunta) {
+            this.juegoEnVivo.set(true);
+            this.resultadoRespondida.set(null);
             this.pendingQuestion = pregunta;
             this.isPublicoActive.set(false); // Inicia bloqueado (solo lectura)
             this.loadNewQuestion(pregunta);
@@ -231,12 +243,16 @@ export class VoteTouchScreenComponent implements OnInit {
           }
         });
 
-      // Escuchar cuando la pregunta es respondida por el estudiante para bloquear la pantalla
+      // Escuchar cuando la pregunta es respondida — mantener visible con resultado
       const socketRespondidaSubscription = this.socketService
         .escucharEvento<any>('pregunta_respondida')
-        .subscribe(() => {
+        .subscribe((data) => {
           this.isPublicoActive.set(false);
-          this.clearQuestion();
+          this.resultadoRespondida.set({
+            opcionId: data?.opcionId ?? null,
+            esCorrecta: data?.esCorrecta ?? false,
+            feedback: data?.feedback ?? undefined,
+          });
         });
 
       // Escuchar cuando el jugador se une y le mandan los comodines que ya están bloqueados/usados
@@ -291,6 +307,16 @@ export class VoteTouchScreenComponent implements OnInit {
       window.addEventListener('quizis:question-released', onRelease as EventListener);
       window.addEventListener('quizis:question-closed', onClose as EventListener);
 
+      const socketRondaReiniciadaSubscription = this.socketService
+        .escucharEvento<any>('ronda_reiniciada')
+        .subscribe(() => {
+          this.juegoEnVivo.set(false);
+          this.clearQuestion();
+          this.resultadoRespondida.set(null);
+          this.pendingQuestion = null;
+          this.isPublicoActive.set(false);
+        });
+
       // Limpieza de suscripciones de sockets al destruir el componente
       this.destroyRef.onDestroy(() => {
         socketQuestionSubscription.unsubscribe();
@@ -299,6 +325,7 @@ export class VoteTouchScreenComponent implements OnInit {
         socketComodinesSubscription.unsubscribe();
         socketComodinLiveSubscription.unsubscribe();
         socketRespondidaSubscription.unsubscribe();
+        socketRondaReiniciadaSubscription.unsubscribe();
 
         window.removeEventListener('quizis:question-released', onRelease as EventListener);
         window.removeEventListener('quizis:question-closed', onClose as EventListener);

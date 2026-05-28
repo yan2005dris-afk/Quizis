@@ -20,6 +20,7 @@ import {
 import { JwtAuthGuard } from '../../identity/auth/guards/jwt-auth.guard';
 import { PermissionsGuard } from '../../infrastructure/common/guards/permissions.guard';
 import { RequiredPermission } from '../../infrastructure/common/decorators/require-permission.decorator';
+import { AuthUserId } from '../../infrastructure/common/decorators/auth-user-id.decorator';
 import { CreateBancoDto } from './dto/create-banco.dto';
 import { UpdatePreguntaDto } from './dto/update-pregunta.dto';
 
@@ -37,8 +38,8 @@ export class BancosController {
     description: 'Lista de bancos retornada exitosamente.',
   })
   @RequiredPermission('bancos', 'read')
-  async findAll() {
-    const bancos = await this.bancosService.findAll();
+  async findAll(@AuthUserId() usuarioId: number) {
+    const bancos = await this.bancosService.findAll(usuarioId);
     return {
       success: true,
       message: 'Bancos recuperados exitosamente',
@@ -51,8 +52,11 @@ export class BancosController {
   @ApiBody({ type: CreateBancoDto })
   @ApiResponse({ status: 201, description: 'Banco creado exitosamente.' })
   @RequiredPermission('bancos', 'create')
-  async create(@Body() dto: CreateBancoDto) {
-    const banco = await this.bancosService.create(dto);
+  async create(
+    @Body() dto: CreateBancoDto,
+    @AuthUserId() usuarioId: number,
+  ) {
+    const banco = await this.bancosService.create(dto, usuarioId);
     return {
       success: true,
       message: 'Banco creado exitosamente',
@@ -79,8 +83,11 @@ export class BancosController {
     description: 'Banco de preguntas no encontrado.',
   })
   @RequiredPermission('bancos', 'read')
-  async findOne(@Param('id', ParseIntPipe) id: number) {
-    const banco = await this.bancosService.findOne(id);
+  async findOne(
+    @Param('id', ParseIntPipe) id: number,
+    @AuthUserId() usuarioId: number,
+  ) {
+    const banco = await this.bancosService.findOne(id, usuarioId);
     return {
       success: true,
       message: 'Banco recuperado exitosamente',
@@ -100,10 +107,12 @@ export class BancosController {
   async crearPreguntas(
     @Param('bancoId', ParseIntPipe) bancoId: number,
     @Body() preguntas: any[],
+    @AuthUserId() usuarioId: number,
   ) {
     const totalCreadas = await this.bancosService.crearPreguntas(
       bancoId,
       preguntas,
+      usuarioId,
     );
     return {
       success: true,
@@ -123,8 +132,9 @@ export class BancosController {
   async update(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: CreateBancoDto,
+    @AuthUserId() usuarioId: number,
   ) {
-    const banco = await this.bancosService.update(id, dto);
+    const banco = await this.bancosService.update(id, dto, usuarioId);
     return {
       success: true,
       message: 'Banco actualizado exitosamente',
@@ -142,11 +152,13 @@ export class BancosController {
     @Param('bancoId', ParseIntPipe) bancoId: number,
     @Param('preguntaId', ParseIntPipe) preguntaId: number,
     @Body() dto: UpdatePreguntaDto,
+    @AuthUserId() usuarioId: number,
   ) {
     const bancoActualizado = await this.bancosService.updatePregunta(
       bancoId,
       preguntaId,
       dto,
+      usuarioId,
     );
     return {
       success: true,

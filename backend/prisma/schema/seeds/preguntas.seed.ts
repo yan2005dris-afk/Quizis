@@ -1,11 +1,12 @@
 import { PrismaClient } from '../../../src/generated/prisma/client';
 
-export const seedPreguntas = async (prisma: PrismaClient) => {
+export const seedPreguntas = async (prisma: PrismaClient, adminUserId: number) => {
   // 1. Crear Banco 1: Cultura General
   const bancoCultura = await prisma.bancoPreguntas.create({
     data: {
       nombre: 'Cultura General',
       descripcion: 'Preguntas variadas sobre geografía, historia, ciencia y arte.',
+      usuarioId: adminUserId,
     },
   });
 
@@ -231,6 +232,7 @@ export const seedPreguntas = async (prisma: PrismaClient) => {
     data: {
       nombre: 'Matemáticas',
       descripcion: 'Preguntas de aritmética, álgebra y lógica.',
+      usuarioId: adminUserId,
     },
   });
 

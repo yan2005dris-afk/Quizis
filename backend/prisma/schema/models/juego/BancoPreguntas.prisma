@@ -2,13 +2,16 @@ model BancoPreguntas {
   bancoId     Int       @id @default(autoincrement()) @map("banco_id")
   nombre      String    @map("nombre")
   descripcion String?   @map("descripcion")
-  
+  usuarioId   Int       @map("usuario_id")
+
   createdAt   DateTime  @default(now()) @map("creado_en")
   updatedAt   DateTime  @updatedAt @map("actualizado_en")
   deletedAt   DateTime? @map("borrado_en")
 
   preguntas   Preguntas[]
   salas       Salas[]
+  admin       Usuarios  @relation(fields: [usuarioId], references: [usuarioId])
 
+  @@index([usuarioId])
   @@map("banco_preguntas")
 }

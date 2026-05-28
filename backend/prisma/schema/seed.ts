@@ -9,6 +9,7 @@ import { seedUSers } from './seeds/user.seed';
 import { seedComodines } from './seeds/comodines.seed';
 import { seedPreguntas } from './seeds/preguntas.seed';
 import { seedRondas } from './seeds/rondas.seed';
+import { seedUserData } from './seeds/user-data.seed';
 
 // Cargar env desde el root de forma explícita
 dotenv.config({ path: path.join(__dirname, '../../../.env') });
@@ -70,15 +71,28 @@ async function main() {
   await seedUSers(prisma, roles);
   console.log('✅ Usuarios creados correctamente.');
 
-  // Bancos y Preguntas
+  // Get the admin user for data ownership
+  const adminUser = await prisma.usuarios.findUnique({
+    where: { email: 'admin@quizis.com' },
+  });
+  if (!adminUser) {
+    throw new Error('Admin user not found after seeding users');
+  }
+
+  // Bancos y Preguntas (assigned to admin)
   console.log('📚 Creando bancos de preguntas y preguntas...');
-  await seedPreguntas(prisma);
+  await seedPreguntas(prisma, adminUser.usuarioId);
   console.log('✅ Bancos de preguntas y preguntas creados.');
 
-  // Rondas
+  // Rondas (for admin's data)
   console.log('🔄 Creando salas de juego, participantes y rondas...');
-  await seedRondas(prisma);
+  await seedRondas(prisma, adminUser.usuarioId);
   console.log('✅ Rondas y participantes creados.');
+
+  // Per-user data distribution
+  console.log('👤 Distribuyendo datos por usuario...');
+  await seedUserData(prisma);
+  console.log('✅ Datos por usuario distribuidos.');
 
   console.log('✅ Seed completado exitosamente.');
 }
