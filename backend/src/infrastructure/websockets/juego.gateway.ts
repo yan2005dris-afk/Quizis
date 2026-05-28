@@ -81,10 +81,41 @@ export class JuegoGateway implements OnGatewayConnection, OnGatewayDisconnect {
       nickname: info.nickname,
     });
 
+    // Si el participante se reconecta con rol 'estudiante' pero ya no hay cupo,
+    // se le reasigna como 'observador' automáticamente
+    const onlineNicknames = info.participants;
     const participantesDb = await this.salasService.getParticipantsWithRoles(
       info.tokenCompartido,
-      info.participants,
+      onlineNicknames,
     );
+    const yo = participantesDb.find((p: any) => p.nombre === info.nickname);
+    if (yo?.rol === 'estudiante') {
+      const sala = await this.salasService.obtenerPorId(info.tokenCompartido);
+      if (sala) {
+        const onlineStudents = participantesDb.filter(
+          (p: any) => p.rol === 'estudiante' && p.nombre !== info.nickname,
+        ).length;
+        if (onlineStudents >= sala.maxEstudiantes) {
+          this.logger.log(
+            `[JOIN] Cupo de estudiantes alcanzado. ${info.nickname} pasa a observador.`,
+          );
+          await this.salasService.updateParticipantRole(
+            info.tokenCompartido,
+            info.nickname,
+            'observador',
+            onlineNicknames,
+          );
+          // Refrescar lista tras el cambio
+          const updatedList = await this.salasService.getParticipantsWithRoles(
+            info.tokenCompartido,
+            onlineNicknames,
+          );
+          this.server.to(info.tokenCompartido).emit('participantes', updatedList);
+          return;
+        }
+      }
+    }
+
     this.server.to(info.tokenCompartido).emit('participantes', participantesDb);
 
     const bloqueados = await this.roomStateCache.getBlockedComodines(
@@ -109,16 +140,21 @@ export class JuegoGateway implements OnGatewayConnection, OnGatewayDisconnect {
     },
   ) {
     try {
-      await this.salasService.updateParticipantRole(
-        payload.tokenCompartido,
-        payload.nickname,
-        payload.nuevoRol,
-      );
-
+      // Obtener online nicknames ANTES de validar el límite
       const onlineNicknames =
         await this.participantsCache.getOnlineParticipants(
           payload.tokenCompartido,
         );
+
+      // Validar límite solo contra estudiantes ONLINE
+      await this.salasService.updateParticipantRole(
+        payload.tokenCompartido,
+        payload.nickname,
+        payload.nuevoRol,
+        onlineNicknames,
+      );
+
+      // Refrescar lista después del cambio
       const participantesDb = await this.salasService.getParticipantsWithRoles(
         payload.tokenCompartido,
         onlineNicknames,
@@ -131,7 +167,7 @@ export class JuegoGateway implements OnGatewayConnection, OnGatewayDisconnect {
       return { success: true };
     } catch (e: any) {
       this.logger.error(`Error cambiando rol:`, e);
-      return { success: false, message: 'Error al cambiar rol' };
+      return { success: false, message: e.message || 'Error al cambiar rol' };
     }
   }
 

@@ -6,10 +6,11 @@ import {
   input,
   OnInit,
   signal,
+  output,
 } from '@angular/core';
 import { Router } from '@angular/router';
 import { SlicePipe, UpperCasePipe } from '@angular/common';
-import { LucideAngularModule, Trophy, Medal, Award, Star, Home, BarChart2 } from 'lucide-angular';
+import { LucideAngularModule, Trophy, Medal, Award, Star, Home, BarChart2, Play } from 'lucide-angular';
 import { ReportesService } from '../../../../core/services/reportes.service';
 
 export interface GameOverParticipant {
@@ -21,6 +22,8 @@ export interface GameOverParticipant {
   comodinesUsados: string[];
   numeroRonda: number;
 }
+
+export type GameOverMode = 'round' | 'final';
 
 @Component({
   selector: 'app-game-over',
@@ -34,6 +37,18 @@ export class GameOverComponent implements OnInit {
   readonly salaId = input.required<number>();
   readonly nombreSala = input<string>('Sala de Juego');
 
+  /** Modo: 'round' = podio de una ronda específica, 'final' = resumen de todas las rondas */
+  readonly mode = input<GameOverMode>('final');
+
+  /** Número de ronda a mostrar (solo para mode='round') */
+  readonly rondaNumero = input<number>(1);
+
+  /** Si es el admin/host (true) o un participante (false) */
+  readonly isAdmin = input<boolean>(false);
+
+  /** Emitido cuando el host quiere continuar con la siguiente ronda (solo mode='round') */
+  readonly continuar = output<void>();
+
   private readonly reportesService = inject(ReportesService);
   private readonly router = inject(Router);
 
@@ -43,11 +58,14 @@ export class GameOverComponent implements OnInit {
   protected readonly StarIcon = Star;
   protected readonly HomeIcon = Home;
   protected readonly ChartIcon = BarChart2;
+  protected readonly PlayIcon = Play;
 
   protected readonly loading = signal(true);
   protected readonly error = signal<string | null>(null);
   protected readonly participants = signal<GameOverParticipant[]>([]);
   protected readonly revealed = signal(false);
+
+  protected readonly esModoRonda = computed(() => this.mode() === 'round');
 
   /** Top 3 ordenados por porcentaje de acierto */
   protected readonly podio = computed(() => {
@@ -71,6 +89,13 @@ export class GameOverComponent implements OnInit {
     return Math.round(p.reduce((acc, x) => acc + x.porcentajeAcierto, 0) / p.length);
   });
 
+  /** Subtítulo según el modo */
+  protected readonly subtitulo = computed(() =>
+    this.esModoRonda()
+      ? `Resultados de la ronda ${this.rondaNumero()}`
+      : 'Resultados finales de la sesión',
+  );
+
   ngOnInit(): void {
     this.cargarEstadisticas();
   }
@@ -78,39 +103,57 @@ export class GameOverComponent implements OnInit {
   private cargarEstadisticas(): void {
     this.reportesService.generarReporte(this.salaId()).subscribe({
       next: (data) => {
-        // Consolidar por participante (puede tener múltiples rondas)
-        const mapa = new Map<string, GameOverParticipant>();
-        for (const ronda of data.rondas) {
-          const existing = mapa.get(ronda.participanteNickname);
-          if (existing) {
-            existing.correctas += ronda.correctas;
-            existing.incorrectas += ronda.incorrectas;
-            existing.totalPreguntas += ronda.totalPreguntas;
-            existing.comodinesUsados = [
-              ...new Set([...existing.comodinesUsados, ...ronda.comodinesUsados]),
-            ];
-          } else {
-            mapa.set(ronda.participanteNickname, {
-              nickname: ronda.participanteNickname,
-              totalPreguntas: ronda.totalPreguntas,
-              correctas: ronda.correctas,
-              incorrectas: ronda.incorrectas,
-              porcentajeAcierto: ronda.porcentajeAcierto,
-              comodinesUsados: [...ronda.comodinesUsados],
-              numeroRonda: ronda.numeroRonda,
-            });
+        if (this.esModoRonda()) {
+          // Modo ronda: mostrar solo los datos de la ronda específica
+          const rondaData = data.rondas.find(
+            (r) => r.numeroRonda === this.rondaNumero(),
+          );
+          if (rondaData) {
+            this.participants.set([
+              {
+                nickname: rondaData.participanteNickname,
+                totalPreguntas: rondaData.totalPreguntas,
+                correctas: rondaData.correctas,
+                incorrectas: rondaData.incorrectas,
+                porcentajeAcierto: rondaData.porcentajeAcierto,
+                comodinesUsados: rondaData.comodinesUsados,
+                numeroRonda: rondaData.numeroRonda,
+              },
+            ]);
           }
+        } else {
+          // Modo final: consolidar por participante (todas las rondas)
+          const mapa = new Map<string, GameOverParticipant>();
+          for (const ronda of data.rondas) {
+            const existing = mapa.get(ronda.participanteNickname);
+            if (existing) {
+              existing.correctas += ronda.correctas;
+              existing.incorrectas += ronda.incorrectas;
+              existing.totalPreguntas += ronda.totalPreguntas;
+              existing.comodinesUsados = [
+                ...new Set([...existing.comodinesUsados, ...ronda.comodinesUsados]),
+              ];
+            } else {
+              mapa.set(ronda.participanteNickname, {
+                nickname: ronda.participanteNickname,
+                totalPreguntas: ronda.totalPreguntas,
+                correctas: ronda.correctas,
+                incorrectas: ronda.incorrectas,
+                porcentajeAcierto: ronda.porcentajeAcierto,
+                comodinesUsados: [...ronda.comodinesUsados],
+                numeroRonda: ronda.numeroRonda,
+              });
+            }
+          }
+          const list: GameOverParticipant[] = [];
+          mapa.forEach((p) => {
+            p.porcentajeAcierto =
+              p.totalPreguntas > 0 ? Math.round((p.correctas / p.totalPreguntas) * 100) : 0;
+            list.push(p);
+          });
+          this.participants.set(list);
         }
-        // Recalcular porcentaje consolidado
-        const list: GameOverParticipant[] = [];
-        mapa.forEach((p) => {
-          p.porcentajeAcierto =
-            p.totalPreguntas > 0 ? Math.round((p.correctas / p.totalPreguntas) * 100) : 0;
-          list.push(p);
-        });
-        this.participants.set(list);
         this.loading.set(false);
-        // Lanzar animación de reveal con delay
         setTimeout(() => this.revealed.set(true), 200);
       },
       error: () => {
@@ -120,12 +163,20 @@ export class GameOverComponent implements OnInit {
     });
   }
 
+  protected onContinuar(): void {
+    this.continuar.emit();
+  }
+
   protected onVerAnaliticas(): void {
     this.router.navigate(['/salas', this.salaId(), 'analiticas']);
   }
 
   protected onVolver(): void {
-    this.router.navigate(['/salas']);
+    if (this.isAdmin()) {
+      this.router.navigate(['/salas']);
+    } else {
+      this.router.navigate(['/login']);
+    }
   }
 
   protected getMedallaSrc(puesto: number): string {

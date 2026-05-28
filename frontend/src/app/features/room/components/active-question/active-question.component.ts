@@ -62,6 +62,9 @@ export class ActiveQuestionComponent {
   protected readonly iaSugerencia = signal<{ literal: string; explicacion: string } | null>(null);
   protected readonly cargandoIa = signal(false);
 
+  // 50/50 State
+  protected readonly opcionesEliminadas = signal<number[]>([]);
+
   // Iconos
   protected readonly PrevIcon = ChevronLeft;
   protected readonly NextIcon = ChevronRight;
@@ -89,6 +92,27 @@ export class ActiveQuestionComponent {
           this.respuestaConfirmada.set(false);
           this.iaSugerencia.set(null);
         }
+      }
+    });
+
+    // Escuchar comodin_bloqueado para 50/50 en tiempo real
+    effect(() => {
+      const bloqueado = this.gameSocket.ultimoComodinBloqueado();
+      if (bloqueado && bloqueado.tipoComodin === '50_50' && bloqueado.preguntaId) {
+        // If the current active question matches, update eliminated options
+        if (bloqueado.preguntaId === this.preguntaActivaId()) {
+          this.opcionesEliminadas.set(bloqueado.opcionesEliminadas ?? []);
+        }
+      }
+    });
+
+    // Limpiar 50/50 al reiniciar ronda
+    effect(() => {
+      // Accessing gameSocket properties to react to ronda_reiniciada
+      const list = this.preguntas();
+      const activeId = this.preguntaActivaId();
+      if (list.length === 0 && !activeId) {
+        this.opcionesEliminadas.set([]);
       }
     });
 
@@ -264,6 +288,8 @@ export class ActiveQuestionComponent {
       this.usarComodinIa();
     } else if (comodin.nombre === 'PUBLICO') {
       this.usarComodinPublico();
+    } else if (comodin.nombre === '50_50') {
+      this.usarComodin5050();
     }
     // TODO: Implementar Llamada
   }
@@ -303,6 +329,28 @@ export class ActiveQuestionComponent {
         console.error('[COMODIN:IA] Error al solicitar ayuda:', err);
         this.cargandoIa.set(false);
         alert('No se pudo obtener la sugerencia de la IA. Por favor, intenta más tarde.');
+      },
+    });
+  }
+
+  protected usarComodin5050(): void {
+    const preguntaId = this.preguntaActivaId();
+    const token = this.tokenCompartido();
+
+    if (!preguntaId || !token) {
+      console.warn('[COMODIN:50_50] Falta preguntaId o token');
+      return;
+    }
+
+    console.log(`[COMODIN:50_50] Eliminando opciones para pregunta ${preguntaId}...`);
+
+    this.salasService.usarComodin5050(preguntaId).subscribe({
+      next: (res) => {
+        this.opcionesEliminadas.set(res.opcionesEliminadas);
+        this.gameSocket.bloquearComodin(token, '50_50', res.opcionesEliminadas, preguntaId);
+      },
+      error: (err) => {
+        console.error('[COMODIN:50_50] Error:', err);
       },
     });
   }

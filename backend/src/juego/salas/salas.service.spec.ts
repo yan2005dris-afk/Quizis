@@ -17,6 +17,7 @@ import { GetInvitacionTokenUseCase } from './use-cases/get-invitacion-token.use-
 import { UpdateParticipantRoleUseCase } from './use-cases/update-participant-role.use-case';
 import { GetParticipantsWithRolesUseCase } from './use-cases/get-participants-with-roles.use-case';
 import { RestartRoundUseCase } from './use-cases/restart-round.use-case';
+import { ReactivateRoomUseCase } from './use-cases/reactivate-room.use-case';
 import { EstadoSala } from './dto/update-estado-sala.dto';
 
 describe('SalasService', () => {
@@ -88,6 +89,10 @@ describe('SalasService', () => {
     execute: jest.fn(),
   };
 
+  const mockReactivateRoomUseCase = {
+    execute: jest.fn(),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -148,6 +153,10 @@ describe('SalasService', () => {
         {
           provide: RestartRoundUseCase,
           useValue: mockRestartRoundUseCase,
+        },
+        {
+          provide: ReactivateRoomUseCase,
+          useValue: mockReactivateRoomUseCase,
         },
       ],
     }).compile();

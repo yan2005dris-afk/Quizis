@@ -8,6 +8,7 @@ model Salas {
 
   // Configuración
   limitePreguntas  Int       @default(15) @map("limite_preguntas")
+  maxEstudiantes   Int       @default(1) @map("max_estudiantes")
 
   
   createdAt        DateTime  @default(now()) @map("creado_en")

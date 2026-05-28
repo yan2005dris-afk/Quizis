@@ -44,11 +44,12 @@ export class SalasIndexComponent implements OnInit {
 
     this.salasService.listarTodas().subscribe({
       next: (salas) => {
-        // Ordenar: jugando primero, luego esperando, luego terminado
+        // Ordenar: jugando, esperando, borrador, terminado
         const ordenEstado: Record<string, number> = {
           jugando: 0,
           esperando: 1,
-          terminado: 2,
+          borrador: 2,
+          terminado: 3,
         };
         salas.sort((a, b) => (ordenEstado[a.estado] ?? 99) - (ordenEstado[b.estado] ?? 99));
         this.salas.set(salas);

@@ -42,7 +42,7 @@ export class CreateSalaUseCase {
    * @throws Error si no se logra generar un token único después de MAX_RETRIES intentos.
    */
   async execute(createSalaDto: CreateSalaDto, adminId: number) {
-    const { bancoId, nombre, limitePreguntas, duracionTokenHoras } =
+    const { bancoId, nombre, limitePreguntas, duracionTokenHoras, maxEstudiantes } =
       createSalaDto;
 
     const limite = limitePreguntas || 15;
@@ -93,6 +93,7 @@ export class CreateSalaUseCase {
             nombre,
             tokenCompartido,
             limitePreguntas: limite,
+            maxEstudiantes: maxEstudiantes ?? 1,
             estado: EstadoSala.BORRADOR,
             comodines: {
               create: comodinesCatalogo.map((c) => ({
