@@ -183,7 +183,7 @@ describe('GameSocketService (observer extension)', () => {
 
   describe('comodín llamada', () => {
     beforeEach(() => {
-      vi.spyOn(window, 'alert').mockImplementation(() => {});
+      vi.spyOn(window, 'alert').mockImplementation(() => undefined);
     });
 
     afterEach(() => {
