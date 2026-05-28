@@ -13,6 +13,12 @@ describe('FinalizeRoomUseCase', () => {
   const mockPrisma = {
     salas: { findUnique: jest.fn(), update: jest.fn() },
     participantes: { upsert: jest.fn() },
+    $transaction: jest.fn().mockImplementation((cb: (tx: any) => unknown) =>
+      cb({
+        salas: { update: mockPrisma.salas.update },
+        participantes: { upsert: mockPrisma.participantes.upsert },
+      }),
+    ),
   };
 
   const mockParticipantsCache = {
@@ -21,6 +27,8 @@ describe('FinalizeRoomUseCase', () => {
 
   const mockRoomStateCache = {
     setRoomEnabled: jest.fn(),
+    setRoomEstado: jest.fn(),
+    getRoomEstado: jest.fn().mockResolvedValue(null),
   };
 
   const mockChatCache = {
