@@ -18,8 +18,8 @@ export class ComodinPublicoService {
       throw new NotFoundException('No hay ronda activa');
     }
 
-    const { rondaId, preguntaActualId } = sala.rondaActiva;
-    if (!preguntaActualId) {
+    const { rondaId, preguntaActualId, preguntaActual } = sala.rondaActiva;
+    if (!preguntaActualId || !preguntaActual) {
       throw new NotFoundException('No hay pregunta activa');
     }
 
@@ -35,24 +35,23 @@ export class ComodinPublicoService {
       conteo[voto.opcionId] = (conteo[voto.opcionId] ?? 0) + 1;
     }
 
-    // 4. Calcular porcentajes con tipado fuerte
+    // 4. Mapear por posición real de las opciones (A, B, C, D)
+    const letras = ['A', 'B', 'C', 'D'];
     const total = votos.length;
-    const porcentajes: Record<number, number> = {};
-    for (const [opcionIdStr, count] of Object.entries(conteo)) {
-      const opcionId = Number(opcionIdStr);
-      porcentajes[opcionId] =
-        total === 0 ? 0 : Math.round((count / total) * 100);
+    const resultado: Record<string, number> & { total: number } = {
+      A: 0, B: 0, C: 0, D: 0, total,
+    };
+
+    for (const opcion of preguntaActual.opciones) {
+      const letra = opcion.letra as 'A' | 'B' | 'C' | 'D';
+      if (letras.includes(letra)) {
+        const votos = conteo[opcion.opcionId] ?? 0;
+        resultado[letra] =
+          total === 0 ? 0 : Math.round((votos / total) * 100);
+      }
     }
 
     // 5. Emitir resultado a toda la sala con estructura A/B/C/D
-    const resultado = {
-      A: porcentajes[1] ?? 0,
-      B: porcentajes[2] ?? 0,
-      C: porcentajes[3] ?? 0,
-      D: porcentajes[4] ?? 0,
-      total,
-    };
-
     this.juegoGateway.server
       .to(tokenCompartido)
       .emit('comodin_publico_resultado', resultado);
