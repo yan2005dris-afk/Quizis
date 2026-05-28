@@ -55,6 +55,7 @@ export class GameSocketService {
 
   // Resultado de la última respuesta enviada
   readonly ultimoResultado = signal<ResultRespuesta | null>(null);
+  readonly ultimoComodinBloqueado = signal<any>(null);
 
   // Estado reactivo para el modo observador
   readonly mensajesChat = signal<ChatMessage[]>([]);
@@ -114,12 +115,20 @@ export class GameSocketService {
       }
     });
 
-    // Acumula comodines bloqueados en tiempo real
-    this.socket.on('comodin_bloqueado', (data: { tipoComodin: string }) => {
-      this.comodinBloqueado.update((list) =>
-        list.includes(data.tipoComodin) ? list : [...list, data.tipoComodin],
-      );
-    });
+    // Acumula comodines bloqueados en tiempo real y propaga datos detallados (opcionesEliminadas, preguntaId)
+    this.socket.on(
+      'comodin_bloqueado',
+      (data: {
+        tipoComodin: string;
+        opcionesEliminadas?: number[];
+        preguntaId?: number;
+      }) => {
+        this.comodinBloqueado.update((list) =>
+          list.includes(data.tipoComodin) ? list : [...list, data.tipoComodin],
+        );
+        this.ultimoComodinBloqueado.set(data);
+      },
+    );
 
     // Estado inicial de comodines bloqueados al unirse (para quien entra tarde)
     this.socket.on('comodines_bloqueados', (data: string[]) => {
@@ -270,8 +279,18 @@ export class GameSocketService {
   }
 
   // Notificar uso de comodín para bloquearlo (Broadcast)
-  bloquearComodin(tokenCompartido: string, tipoComodin: string): void {
-    this.socket?.emit('comodin_bloqueado', { tokenCompartido, tipoComodin });
+  bloquearComodin(
+    tokenCompartido: string,
+    tipoComodin: string,
+    opcionesEliminadas?: number[],
+    preguntaId?: number,
+  ): void {
+    this.socket?.emit('comodin_bloqueado', {
+      tokenCompartido,
+      tipoComodin,
+      opcionesEliminadas,
+      preguntaId,
+    });
   }
 
   // Reiniciar ronda (Solo Host/Admin)

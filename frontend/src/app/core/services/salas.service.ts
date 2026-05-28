@@ -6,7 +6,7 @@ import { environment } from '../../../environments/environment';
 export interface SalaResumen {
   salaId: number;
   nombre: string;
-  estado: 'esperando' | 'jugando' | 'terminado';
+  estado: 'borrador' | 'esperando' | 'jugando' | 'terminado';
   participantes: number;
   creadoEn: string;
 }
@@ -50,6 +50,7 @@ export interface CreateSalaPayload {
   nombre: string;
   limitePreguntas?: number;
   duracionTokenHoras?: number;
+  maxEstudiantes?: number;
 }
 
 export interface SalaCreada {
@@ -93,6 +94,7 @@ export class SalasService {
     data: {
       nombre?: string;
       limitePreguntas?: number;
+      maxEstudiantes?: number;
       comodines?: { comodinId: number; activo: boolean }[];
     },
   ): Observable<SalaDetalle> {
@@ -150,6 +152,13 @@ export class SalasService {
   solicitarSugerenciaIa(preguntaId: number): Observable<{ literal: string; explicacion: string }> {
     return this.http.post<{ literal: string; explicacion: string }>(
       `${this.apiUrl}/comodines/ia/sugerencia`,
+      { preguntaId },
+    );
+  }
+
+  usarComodin5050(preguntaId: number): Observable<{ opcionesEliminadas: number[] }> {
+    return this.http.post<{ opcionesEliminadas: number[] }>(
+      `${this.apiUrl}/comodines/50-50`,
       { preguntaId },
     );
   }

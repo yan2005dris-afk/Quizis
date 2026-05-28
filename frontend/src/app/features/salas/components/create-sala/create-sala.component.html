@@ -55,13 +55,23 @@
             </label>
 
             <label class="field">
-              <span>Validez del link</span>
+              <span>Duración del enlace (horas)</span>
               <input
                 type="number"
                 min="1"
                 max="168"
                 [ngModel]="form().duracionTokenHoras"
                 (ngModelChange)="actualizarCampo('duracionTokenHoras', +$event)"
+              />
+            </label>
+
+            <label class="field">
+              <span>Cantidad máxima de estudiantes</span>
+              <input
+                type="number"
+                min="1"
+                [ngModel]="form().maxEstudiantes"
+                (ngModelChange)="actualizarCampo('maxEstudiantes', +$event)"
               />
             </label>
           </div>

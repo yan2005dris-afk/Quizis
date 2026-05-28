@@ -10,9 +10,11 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { isPlatformBrowser } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
-import { map, distinctUntilChanged, switchMap, filter, tap } from 'rxjs';
+import { map, distinctUntilChanged, switchMap, filter } from 'rxjs';
 import { SocketService } from '../../../core/services/socket.service';
 import { SalasService } from '../../../core/services/salas.service';
+import { ChatMessage } from '../../room/room.types';
+import { ChatBoxComponent } from '../../room/components/chat-box/chat-box.component';
 
 type VoteOptionKey = 'A' | 'B' | 'C' | 'D';
 
@@ -35,7 +37,7 @@ import { EventHeaderComponent } from '../../room/components/event-header/event-h
 @Component({
   selector: 'app-vote-touch-screen',
   standalone: true,
-  imports: [EventHeaderComponent],
+  imports: [EventHeaderComponent, ChatBoxComponent],
   templateUrl: './vote-touch-screen.component.html',
   styleUrls: ['./vote-touch-screen.component.scss'],
 })
@@ -134,6 +136,7 @@ export class VoteTouchScreenComponent implements OnInit {
     premio: string;
   } | null>(null);
   protected readonly tituloEvento = signal<string>('Cargando sala...');
+  protected readonly mensajesChat = signal<ChatMessage[]>([]);
 
   private roomToken = '';
   private pendingQuestion: any = null; // Guarda la pregunta activa hasta que se active el comodín
@@ -307,6 +310,19 @@ export class VoteTouchScreenComponent implements OnInit {
       window.addEventListener('quizis:question-released', onRelease as EventListener);
       window.addEventListener('quizis:question-closed', onClose as EventListener);
 
+      // Chat listeners for observers
+      const socketMensajeChatSubscription = this.socketService
+        .escucharEvento<ChatMessage>('mensaje_chat')
+        .subscribe((msg) => {
+          this.mensajesChat.update((msgs) => [...msgs, msg]);
+        });
+
+      const socketMensajeChatNuevoSubscription = this.socketService
+        .escucharEvento<ChatMessage>('mensaje_chat_nuevo')
+        .subscribe((msg) => {
+          this.mensajesChat.update((msgs) => [...msgs, msg]);
+        });
+
       const socketRondaReiniciadaSubscription = this.socketService
         .escucharEvento<any>('ronda_reiniciada')
         .subscribe(() => {
@@ -325,6 +341,8 @@ export class VoteTouchScreenComponent implements OnInit {
         socketComodinesSubscription.unsubscribe();
         socketComodinLiveSubscription.unsubscribe();
         socketRespondidaSubscription.unsubscribe();
+        socketMensajeChatSubscription.unsubscribe();
+        socketMensajeChatNuevoSubscription.unsubscribe();
         socketRondaReiniciadaSubscription.unsubscribe();
 
         window.removeEventListener('quizis:question-released', onRelease as EventListener);
@@ -447,6 +465,18 @@ export class VoteTouchScreenComponent implements OnInit {
           detail: { option: selected },
         }),
       );
+    }
+  }
+
+  protected onEnviarMensaje(event: { texto: string; tipo: 'mensaje' | 'sugerencia' }): void {
+    try {
+      this.socketService.emitirEvento('enviar_mensaje', {
+        tokenCompartido: this.roomToken,
+        texto: event.texto,
+        tipo: event.tipo,
+      });
+    } catch (err) {
+      console.warn('Error al enviar mensaje:', err);
     }
   }
 }

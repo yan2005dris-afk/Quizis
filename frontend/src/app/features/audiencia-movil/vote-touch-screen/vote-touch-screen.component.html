@@ -117,4 +117,13 @@
       </div>
     }
   </section>
+
+  <!-- CHAT BOX FOR OBSERVERS -->
+  <section class="chat-section">
+    <app-chat-box
+      [mensajes]="mensajesChat()"
+      [conectado]="true"
+      (enviar)="onEnviarMensaje($event)"
+    />
+  </section>
 </main>

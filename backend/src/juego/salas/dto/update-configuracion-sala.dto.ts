@@ -3,6 +3,7 @@ import {
   IsInt,
   IsOptional,
   Min,
+  Max,
   IsArray,
   ValidateNested,
   IsBoolean,
@@ -50,4 +51,16 @@ export class UpdateConfiguracionSalaDto {
   @Type(() => ComodinConfigDto)
   @IsOptional()
   comodines?: ComodinConfigDto[];
+
+  /** Cantidad máxima de estudiantes que pueden tener rol 'estudiante' simultáneamente */
+  @ApiPropertyOptional({
+    example: 3,
+    default: 1,
+    description: 'Nueva cantidad máxima de estudiantes',
+  })
+  @IsInt()
+  @Min(1)
+  @Max(100)
+  @IsOptional()
+  maxEstudiantes?: number;
 }

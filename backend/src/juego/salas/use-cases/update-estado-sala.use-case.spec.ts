@@ -15,7 +15,7 @@ describe('UpdateEstadoSalaUseCase', () => {
       findUnique: jest.fn(),
     },
     preguntas: { findMany: jest.fn() },
-    participantes: { findFirst: jest.fn(), upsert: jest.fn() },
+    participantes: { findFirst: jest.fn(), upsert: jest.fn(), count: jest.fn() },
     rondas: { findFirst: jest.fn(), create: jest.fn() },
   };
 
@@ -64,7 +64,7 @@ describe('UpdateEstadoSalaUseCase', () => {
     );
   });
 
-  it('debería transicionar de ESPERANDO_ALUMNOS a EN_VIVO', async () => {
+  it('debería transicionar de ESPERANDO_ALUMNOS a EN_VIVO con estudiantes', async () => {
     mockPrisma.salas.findUnique.mockResolvedValue({
       salaId: 1,
       tokenCompartido: 'T1',
@@ -72,15 +72,7 @@ describe('UpdateEstadoSalaUseCase', () => {
       limitePreguntas: 5,
       estado: EstadoSala.ESPERANDO_ALUMNOS,
     });
-    mockPrisma.rondas.findFirst.mockResolvedValue(null);
-    mockPrisma.participantes.findFirst.mockResolvedValue({
-      participanteId: 1,
-    });
-    mockPrisma.preguntas.findMany.mockResolvedValue([
-      { preguntaId: 1 },
-      { preguntaId: 2 },
-    ]);
-    mockPrisma.rondas.create.mockResolvedValue({ rondaId: 1 });
+    mockPrisma.participantes.count.mockResolvedValue(2);
 
     const result = await useCase.execute(1, { estado: EstadoSala.EN_VIVO });
 
@@ -89,7 +81,24 @@ describe('UpdateEstadoSalaUseCase', () => {
       'T1',
       EstadoSala.EN_VIVO,
     );
-    expect(mockPrisma.rondas.create).toHaveBeenCalled();
+    // ensureRondaActiva was removed — no more ronda/participant creation
+    expect(mockPrisma.rondas.create).not.toHaveBeenCalled();
+    expect(mockPrisma.rondas.findFirst).not.toHaveBeenCalled();
+  });
+
+  it('debería rechazar EN_VIVO cuando no hay estudiantes (EN_VIVO guard)', async () => {
+    mockPrisma.salas.findUnique.mockResolvedValue({
+      salaId: 1,
+      tokenCompartido: 'T1',
+      estado: EstadoSala.ESPERANDO_ALUMNOS,
+    });
+    mockPrisma.participantes.count.mockResolvedValue(0);
+
+    await expect(
+      useCase.execute(1, { estado: EstadoSala.EN_VIVO }),
+    ).rejects.toThrow(BadRequestException);
+
+    expect(mockRoomStateCache.setRoomEstado).not.toHaveBeenCalled();
   });
 
   it('debería transicionar de EN_VIVO a FINALIZADO', async () => {

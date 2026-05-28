@@ -1,6 +1,20 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../../../infrastructure/database/prisma/prisma.service';
 
+const ESTADO_MAP: Record<string, string> = {
+  BORRADOR: 'borrador',
+  ESPERANDO_ALUMNOS: 'esperando',
+  EN_VIVO: 'jugando',
+  FINALIZADO: 'terminado',
+};
+
+const SORT_ORDER: Record<string, number> = {
+  jugando: 0,
+  esperando: 1,
+  borrador: 2,
+  terminado: 3,
+};
+
 @Injectable()
 export class ListAllSalasUseCase {
   private readonly logger = new Logger(ListAllSalasUseCase.name);
@@ -19,12 +33,19 @@ export class ListAllSalasUseCase {
       orderBy: [{ estado: 'asc' }, { createdAt: 'desc' }],
     });
 
-    return salas.map((sala) => ({
+    const mapped = salas.map((sala) => ({
       salaId: sala.salaId,
       nombre: sala.nombre,
-      estado: sala.estado,
+      estado: ESTADO_MAP[sala.estado] ?? sala.estado,
       participantes: sala._count.participantes,
       creadoEn: sala.createdAt.toISOString(),
     }));
+
+    // Sort: jugando → esperando → borrador → terminado
+    mapped.sort(
+      (a, b) => (SORT_ORDER[a.estado] ?? 99) - (SORT_ORDER[b.estado] ?? 99),
+    );
+
+    return mapped;
   }
 }

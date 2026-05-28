@@ -36,6 +36,7 @@ interface SalaForm {
   bancoId: number;
   limitePreguntas: number;
   duracionTokenHoras: number;
+  maxEstudiantes: number;
   comodines: Record<string, boolean>;
 }
 
@@ -101,6 +102,7 @@ export class CreateSalaComponent implements OnInit {
     bancoId: 0,
     limitePreguntas: 15,
     duracionTokenHoras: 24,
+    maxEstudiantes: 1,
     comodines: {
       PUBLICO: true,
       IA: true,
@@ -220,6 +222,7 @@ export class CreateSalaComponent implements OnInit {
         nombre: form.nombre.trim(),
         limitePreguntas: Number(form.limitePreguntas) || 15,
         duracionTokenHoras: Number(form.duracionTokenHoras) || 24,
+        maxEstudiantes: Number(form.maxEstudiantes) || 1,
       })
       .pipe(
         switchMap((sala: SalaCreada) =>
