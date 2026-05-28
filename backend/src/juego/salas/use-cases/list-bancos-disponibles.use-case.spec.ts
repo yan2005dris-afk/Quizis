@@ -32,7 +32,8 @@ describe('ListBancosDisponiblesUseCase', () => {
     expect(useCase).toBeDefined();
   });
 
-  it('debería retornar la lista mapeada de bancos de preguntas activos', async () => {
+  it('debería retornar la lista mapeada de bancos de preguntas activos del usuario', async () => {
+    const usuarioId = 1;
     const mockBancos = [
       {
         bancoId: 1,
@@ -54,7 +55,7 @@ describe('ListBancosDisponiblesUseCase', () => {
 
     mockPrisma.bancoPreguntas.findMany.mockResolvedValue(mockBancos);
 
-    const result = await useCase.execute();
+    const result = await useCase.execute(usuarioId);
 
     expect(result).toEqual([
       {
@@ -72,7 +73,7 @@ describe('ListBancosDisponiblesUseCase', () => {
     ]);
 
     expect(prisma.bancoPreguntas.findMany).toHaveBeenCalledWith({
-      where: { deletedAt: null },
+      where: { deletedAt: null, usuarioId },
       select: {
         bancoId: true,
         nombre: true,

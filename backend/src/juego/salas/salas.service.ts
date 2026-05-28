@@ -98,15 +98,15 @@ export class SalasService {
   /**
    * Lista bancos de preguntas para el admin.
    */
-  async listBancosDisponibles() {
-    return this.listBancosDisponiblesUseCase.execute();
+  async listBancosDisponibles(usuarioId: number) {
+    return this.listBancosDisponiblesUseCase.execute(usuarioId);
   }
 
   /**
-   * Lista todas las salas.
+   * Lista todas las salas filtradas por admin.
    */
-  async listarTodas() {
-    return this.listAllSalasUseCase.execute();
+  async listarTodas(adminId: number) {
+    return this.listAllSalasUseCase.execute(adminId);
   }
 
   /**

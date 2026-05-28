@@ -7,10 +7,10 @@ export class ListAllSalasUseCase {
 
   constructor(private readonly prisma: PrismaService) {}
 
-  async execute() {
-    this.logger.log('Listando todas las salas');
+  async execute(adminId: number) {
+    this.logger.log(`Listando salas para admin ${adminId}`);
     const salas = await this.prisma.salas.findMany({
-      where: { deletedAt: null },
+      where: { deletedAt: null, adminId },
       include: {
         _count: {
           select: { participantes: true },
