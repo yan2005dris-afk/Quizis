@@ -35,15 +35,22 @@ describe('UpdateQuestionUseCase', () => {
     useCase = module.get<UpdateQuestionUseCase>(UpdateQuestionUseCase);
   });
 
-  it('should update question and options', async () => {
+  afterEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('should update question and options if bank is owned by user', async () => {
     const dto = {
       texto: 'Updated',
       opciones: [{ texto: 'New Op', esCorrecta: true }],
     };
+    mockPrisma.bancoPreguntas.findUnique.mockResolvedValue({
+      bancoId: 1,
+      usuarioId: 1,
+    });
     mockPrisma.preguntas.findFirst.mockResolvedValue({ preguntaId: 1 });
-    mockPrisma.bancoPreguntas.findUnique.mockResolvedValue({ bancoId: 1 });
 
-    const result = await useCase.execute(1, 1, dto as any);
+    const result = await useCase.execute(1, 1, dto as any, 1);
 
     expect(mockPrisma.preguntas.update).toHaveBeenCalled();
     expect(mockPrisma.opcionesPregunta.deleteMany).toHaveBeenCalled();
@@ -52,7 +59,34 @@ describe('UpdateQuestionUseCase', () => {
   });
 
   it('should throw NotFoundException if question not found', async () => {
+    mockPrisma.bancoPreguntas.findUnique.mockResolvedValue({
+      bancoId: 1,
+      usuarioId: 1,
+    });
     mockPrisma.preguntas.findFirst.mockResolvedValue(null);
-    await expect(useCase.execute(1, 1, {})).rejects.toThrow(NotFoundException);
+    await expect(useCase.execute(1, 1, {}, 1)).rejects.toThrow(
+      NotFoundException,
+    );
+  });
+
+  it('should throw NotFoundException if bank not owned by user', async () => {
+    mockPrisma.bancoPreguntas.findUnique.mockResolvedValue({
+      bancoId: 1,
+      usuarioId: 2,
+    });
+
+    await expect(useCase.execute(1, 1, {} as any, 1)).rejects.toThrow(
+      NotFoundException,
+    );
+    expect(mockPrisma.preguntas.update).not.toHaveBeenCalled();
+  });
+
+  it('should throw NotFoundException if bank does not exist', async () => {
+    mockPrisma.bancoPreguntas.findUnique.mockResolvedValue(null);
+
+    await expect(useCase.execute(1, 1, {} as any, 1)).rejects.toThrow(
+      NotFoundException,
+    );
+    expect(mockPrisma.preguntas.update).not.toHaveBeenCalled();
   });
 });

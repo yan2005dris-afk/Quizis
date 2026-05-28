@@ -85,17 +85,18 @@ describe('SalasController', () => {
   });
 
   describe('listBancosDisponibles', () => {
-    it('debería llamar a salasService.listBancosDisponibles', async () => {
+    it('debería llamar a salasService.listBancosDisponibles con usuarioId', async () => {
+      const usuarioId = 1;
       const expectedResult = [
         { bancoId: 1, nombre: 'Matemáticas', totalPreguntas: 5 },
       ];
 
       mockSalasService.listBancosDisponibles.mockResolvedValue(expectedResult);
 
-      const result = await controller.listBancosDisponibles();
+      const result = await controller.listBancosDisponibles(usuarioId);
 
       expect(result).toEqual(expectedResult);
-      expect(service.listBancosDisponibles).toHaveBeenCalled();
+      expect(service.listBancosDisponibles).toHaveBeenCalledWith(usuarioId);
     });
   });
 

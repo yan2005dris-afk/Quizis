@@ -42,6 +42,7 @@ describe('CreateBancoUseCase', () => {
   describe('execute', () => {
     it('should create a banco without questions', async () => {
       const dto = { nombre: 'Test Banco', descripcion: 'Test Desc' };
+      const usuarioId = 1;
       const createdBanco = { bancoId: 1, ...dto };
       const returnedBanco = { ...createdBanco, _count: { preguntas: 0 } };
       mockPrisma.bancoPreguntas.create.mockResolvedValue(createdBanco);
@@ -49,13 +50,14 @@ describe('CreateBancoUseCase', () => {
         returnedBanco,
       );
 
-      const result = await useCase.execute(dto as any);
+      const result = await useCase.execute(usuarioId, dto as any);
 
       expect(result).toEqual(returnedBanco);
       expect(mockPrisma.bancoPreguntas.create).toHaveBeenCalledWith({
         data: {
           nombre: dto.nombre,
           descripcion: dto.descripcion,
+          usuarioId,
         },
       });
       expect(mockPrisma.bancoPreguntas.findUniqueOrThrow).toHaveBeenCalledWith({
@@ -72,6 +74,7 @@ describe('CreateBancoUseCase', () => {
     it('should create a banco with valid questions', async () => {
       const dto = {
         nombre: 'Test Banco',
+        usuarioId: 1,
         preguntas: [
           {
             texto: 'Q1',
@@ -83,6 +86,7 @@ describe('CreateBancoUseCase', () => {
           },
         ],
       };
+      const usuarioId = 1;
       const createdBanco = { bancoId: 1, nombre: 'Test Banco' };
       const returnedBanco = { ...createdBanco, _count: { preguntas: 1 } };
       mockPrisma.bancoPreguntas.create.mockResolvedValue(createdBanco);
@@ -91,7 +95,7 @@ describe('CreateBancoUseCase', () => {
         returnedBanco,
       );
 
-      const result = await useCase.execute(dto as any);
+      const result = await useCase.execute(usuarioId, dto as any);
 
       expect(result).toEqual(returnedBanco);
       expect(mockPrisma.bancoPreguntas.create).toHaveBeenCalled();
@@ -113,7 +117,7 @@ describe('CreateBancoUseCase', () => {
         ],
       };
 
-      await expect(useCase.execute(dto as any)).rejects.toThrow(
+      await expect(useCase.execute(1, dto as any)).rejects.toThrow(
         BadRequestException,
       );
     });
@@ -132,7 +136,7 @@ describe('CreateBancoUseCase', () => {
         ],
       };
 
-      await expect(useCase.execute(dto as any)).rejects.toThrow(
+      await expect(useCase.execute(1, dto as any)).rejects.toThrow(
         BadRequestException,
       );
     });
