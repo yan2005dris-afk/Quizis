@@ -9,6 +9,7 @@ describe('CacheService', () => {
   const mockRedisClient = {
     get: jest.fn(),
     set: jest.fn(),
+    del: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -29,24 +30,33 @@ describe('CacheService', () => {
     jest.clearAllMocks();
   });
 
-  it('debería delegar get al cliente redis', async () => {
-    mockRedisClient.get.mockResolvedValue('valor');
+  it('should delegate get to redis client', async () => {
+    mockRedisClient.get.mockResolvedValue('value');
 
     const result = await service.get('test:key');
 
     expect(redisService.getClient).toHaveBeenCalled();
     expect(mockRedisClient.get).toHaveBeenCalledWith('test:key');
-    expect(result).toBe('valor');
+    expect(result).toBe('value');
   });
 
-  it('debería delegar set al cliente redis con TTL', async () => {
-    await service.set('test:key', 'valor', 60);
+  it('should return null when redis client is unavailable on get', async () => {
+    jest.spyOn(redisService, 'getClient').mockReturnValue(null);
 
-    expect(mockRedisClient.set).toHaveBeenCalledWith(
-      'test:key',
-      'valor',
-      'EX',
-      60,
-    );
+    const result = await service.get('test:key');
+
+    expect(result).toBeNull();
+  });
+
+  it('should delegate set to redis client with TTL', async () => {
+    await service.set('test:key', 'value', 60);
+
+    expect(mockRedisClient.set).toHaveBeenCalledWith('test:key', 'value', 'EX', 60);
+  });
+
+  it('should delegate del to redis client', async () => {
+    await service.del('test:key');
+
+    expect(mockRedisClient.del).toHaveBeenCalledWith('test:key');
   });
 });

@@ -14,14 +14,32 @@ export class RecordAnswerUseCase {
   constructor(private readonly prisma: PrismaService) {}
 
   async execute(data: RecordAnswerData): Promise<void> {
-    await this.prisma.respuestasRonda.create({
-      data: {
+    const existing = await this.prisma.respuestasRonda.findFirst({
+      where: {
         rondaId: data.rondaId,
         preguntaId: data.preguntaId,
-        opcionId: data.opcionId,
-        esCorrecta: data.esCorrecta,
-        comodinUsado: data.comodinUsado ?? null,
       },
     });
+
+    if (existing) {
+      await this.prisma.respuestasRonda.update({
+        where: { respuestaId: existing.respuestaId },
+        data: {
+          opcionId: data.opcionId,
+          esCorrecta: data.esCorrecta,
+          comodinUsado: data.comodinUsado ?? existing.comodinUsado,
+        },
+      });
+    } else {
+      await this.prisma.respuestasRonda.create({
+        data: {
+          rondaId: data.rondaId,
+          preguntaId: data.preguntaId,
+          opcionId: data.opcionId,
+          esCorrecta: data.esCorrecta,
+          comodinUsado: data.comodinUsado ?? null,
+        },
+      });
+    }
   }
 }

@@ -116,7 +116,9 @@ export class RoomComponent implements OnInit, OnDestroy {
 
   protected readonly isEnVivo = computed(() => this.estadoSala() === ESTADOS_SALA.EN_VIVO);
 
-  protected readonly isEsperando = computed(() => this.estadoSala() === ESTADOS_SALA.ESPERANDO_ALUMNOS);
+  protected readonly isEsperando = computed(
+    () => this.estadoSala() === ESTADOS_SALA.ESPERANDO_ALUMNOS,
+  );
 
   protected readonly isBorrador = computed(() => this.estadoSala() === ESTADOS_SALA.BORRADOR);
 
@@ -132,7 +134,7 @@ export class RoomComponent implements OnInit, OnDestroy {
     return p?.rol || 'observador';
   });
 
-  /** 
+  /**
    * Indica si el usuario NO host puede interactuar con la pregunta activa.
    * - Estudiantes: siempre que haya pregunta activa y la sala no esté finalizada.
    * - Observadores: solo cuando el comodín PÚBLICO está activo (votosPublico tiene datos).
@@ -189,11 +191,13 @@ export class RoomComponent implements OnInit, OnDestroy {
       const pregunta = this.gameSocket.preguntaActiva();
       const sala = this.salaDetalle();
       if (pregunta && sala && !sala.rondaActiva && sala.salaId) {
-        this.salasService.obtenerPorId(String(sala.salaId))
+        this.salasService
+          .obtenerPorId(String(sala.salaId))
           .pipe(takeUntilDestroyed(this.destroyRef))
           .subscribe({
             next: (s) => this.salaDetalle.set(s),
-            error: (err) => console.error('[ROOM] Error refrescando sala al recibir pregunta:', err),
+            error: (err) =>
+              console.error('[ROOM] Error refrescando sala al recibir pregunta:', err),
           });
       }
     });
@@ -453,7 +457,8 @@ export class RoomComponent implements OnInit, OnDestroy {
     // Si la ronda aún no se cargó (HTTP pendiente), recargar y reintentar
     if (!sala?.rondaActiva) {
       if (sala?.salaId) {
-        this.salasService.obtenerPorId(String(sala.salaId))
+        this.salasService
+          .obtenerPorId(String(sala.salaId))
           .pipe(takeUntilDestroyed(this.destroyRef))
           .subscribe({
             next: (s) => {
@@ -522,7 +527,10 @@ export class RoomComponent implements OnInit, OnDestroy {
     this.gameSocket.enviarMensaje(event.texto, event.tipo);
   }
 
-  public async onToggleRol(event: { nickname: string; nuevoRol: 'estudiante' | 'observador' }): Promise<void> {
+  public async onToggleRol(event: {
+    nickname: string;
+    nuevoRol: 'estudiante' | 'observador';
+  }): Promise<void> {
     const sala = this.salaDetalle();
     if (!sala) return;
 

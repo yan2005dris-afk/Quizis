@@ -53,6 +53,12 @@ export class GameSocketService {
   readonly salaHabilitada = signal<boolean>(true);
   readonly conectado = signal<boolean>(false);
 
+  // Estado para Comodín Llamada
+  readonly llamadaActiva = signal<boolean>(false);
+  readonly consultorAsignado = signal<string | null>(null);
+  readonly preguntaConsultor = signal<Pregunta | null>(null);
+  readonly pistaConsultor = signal<string | null>(null);
+
   // Resultado de la última respuesta enviada
   readonly ultimoResultado = signal<ResultRespuesta | null>(null);
   readonly ultimoComodinBloqueado = signal<any>(null);
@@ -84,6 +90,10 @@ export class GameSocketService {
       this._cancelPendingVoto(); // No aplicar votos viejos después de liberar
       this.votosPublico.set(null);
       this.ultimoResultado.set(null);
+      this.llamadaActiva.set(false);
+      this.consultorAsignado.set(null);
+      this.preguntaConsultor.set(null);
+      this.pistaConsultor.set(null);
 
       // Auto-incrementar el número de pregunta (ronda) en la interfaz
       this.infoRonda.update((info) => {
@@ -118,17 +128,20 @@ export class GameSocketService {
     // Acumula comodines bloqueados en tiempo real y propaga datos detallados (opcionesEliminadas, preguntaId)
     this.socket.on(
       'comodin_bloqueado',
-      (data: {
-        tipoComodin: string;
-        opcionesEliminadas?: number[];
-        preguntaId?: number;
-      }) => {
+      (data: { tipoComodin: string; opcionesEliminadas?: number[]; preguntaId?: number }) => {
         this.comodinBloqueado.update((list) =>
           list.includes(data.tipoComodin) ? list : [...list, data.tipoComodin],
         );
         this.ultimoComodinBloqueado.set(data);
       },
     );
+
+    // Listener para comodin_usado (ej. comodín LLAMADA desde el backend)
+    this.socket.on('comodin_usado', (data: { tipoComodin: string }) => {
+      this.comodinBloqueado.update((list) =>
+        list.includes(data.tipoComodin) ? list : [...list, data.tipoComodin],
+      );
+    });
 
     // Estado inicial de comodines bloqueados al unirse (para quien entra tarde)
     this.socket.on('comodines_bloqueados', (data: string[]) => {
@@ -148,6 +161,32 @@ export class GameSocketService {
     // Recibe el resultado de una respuesta procesada (broadcast)
     this.socket.on('pregunta_respondida', (data: ResultRespuesta) => {
       this.ultimoResultado.set(data);
+    });
+
+    // ——— Listeners para Comodín Llamada ———
+    this.socket.on('consultor_seleccionado', (data: { pregunta: Pregunta }) => {
+      this.llamadaActiva.set(true);
+      this.preguntaConsultor.set(data.pregunta);
+    });
+
+    this.socket.on(
+      'comodin_llamada_iniciado',
+      (data: { consultorId: string; consultorNombre: string }) => {
+        this.llamadaActiva.set(true);
+        this.consultorAsignado.set(data.consultorNombre);
+      },
+    );
+
+    this.socket.on('pista_consultor_recibida', (data: { pista: string }) => {
+      this.pistaConsultor.set(data.pista);
+    });
+
+    this.socket.on('comodin_llamada_error', (data: { error: string }) => {
+      alert(`Error con comodín llamada: ${data.error}`);
+    });
+
+    this.socket.on('enviar_pista_error', (data: { error: string }) => {
+      alert(`Error al enviar pista: ${data.error}`);
     });
 
     // ——— Observers ———
@@ -179,6 +218,10 @@ export class GameSocketService {
       this.tiempoRestante.set(null);
       this.votosPublico.set(null);
       this.comodinBloqueado.set([]);
+      this.llamadaActiva.set(false);
+      this.consultorAsignado.set(null);
+      this.preguntaConsultor.set(null);
+      this.pistaConsultor.set(null);
       this.rondaReiniciada.set(data);
       if (data?.rondaActiva) {
         this.infoRonda.set({
@@ -286,9 +329,13 @@ export class GameSocketService {
         resolve({ success: false, message: 'Socket no conectado' });
         return;
       }
-      this.socket.emit('cambiar_rol_participante', { tokenCompartido, nickname, nuevoRol }, (res: any) => {
-        resolve(res);
-      });
+      this.socket.emit(
+        'cambiar_rol_participante',
+        { tokenCompartido, nickname, nuevoRol },
+        (res: any) => {
+          resolve(res);
+        },
+      );
     });
   }
 
@@ -305,6 +352,16 @@ export class GameSocketService {
       opcionesEliminadas,
       preguntaId,
     });
+  }
+
+  // Activar comodín llamada (Solo Estudiante)
+  activarComodinLlamada(tokenCompartido: string, pregunta: Pregunta): void {
+    this.socket?.emit('activar_comodin_llamada', { tokenCompartido, pregunta });
+  }
+
+  // Enviar pista consultor (Solo Consultor)
+  enviarPistaConsultor(tokenCompartido: string, preguntaId: number, pista: string): void {
+    this.socket?.emit('enviar_pista_consultor', { tokenCompartido, preguntaId, pista });
   }
 
   // Reiniciar ronda (Solo Host/Admin)
