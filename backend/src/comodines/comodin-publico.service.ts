@@ -54,8 +54,7 @@ export class ComodinPublicoService {
     // 5. Emitir resultado a toda la sala con estructura A/B/C/D
     this.juegoGateway.server
       .to(tokenCompartido)
-      .emit('comodin_publico_resultado', resultado);
-
+      .emit('voto_recibido', resultado);
     return resultado;
   }
 }
