@@ -121,6 +121,13 @@ export class GameSocketService {
       );
     });
 
+    // Listener para comodin_usado (ej. comodín LLAMADA desde el backend)
+    this.socket.on('comodin_usado', (data: { tipoComodin: string }) => {
+      this.comodinBloqueado.update((list) =>
+        list.includes(data.tipoComodin) ? list : [...list, data.tipoComodin],
+      );
+    });
+
     // Estado inicial de comodines bloqueados al unirse (para quien entra tarde)
     this.socket.on('comodines_bloqueados', (data: string[]) => {
       this.comodinBloqueado.set(data);

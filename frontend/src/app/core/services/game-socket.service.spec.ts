@@ -155,6 +155,32 @@ describe('GameSocketService (observer extension)', () => {
     });
   });
 
+  describe('comodines', () => {
+    it('should update comodinBloqueado signal when comodin_bloqueado event is received', () => {
+      service.conectar('http://test.local', 'fake-token');
+
+      mockSocket.trigger('comodin_bloqueado', { tipoComodin: 'PUBLICO' });
+
+      expect(service.comodinBloqueado()).toEqual(['PUBLICO']);
+    });
+
+    it('should update comodinBloqueado signal when comodin_usado event is received', () => {
+      service.conectar('http://test.local', 'fake-token');
+
+      mockSocket.trigger('comodin_usado', { tipoComodin: 'LLAMADA' });
+
+      expect(service.comodinBloqueado()).toEqual(['LLAMADA']);
+    });
+
+    it('should set initial blocked comodines when comodines_bloqueados event is received', () => {
+      service.conectar('http://test.local', 'fake-token');
+
+      mockSocket.trigger('comodines_bloqueados', ['PUBLICO', 'IA']);
+
+      expect(service.comodinBloqueado()).toEqual(['PUBLICO', 'IA']);
+    });
+  });
+
   describe('initial state', () => {
     it('should initialize observer signals to null/empty', () => {
       expect(service.mensajesChat()).toEqual([]);
