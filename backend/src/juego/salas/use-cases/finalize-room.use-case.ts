@@ -36,15 +36,10 @@ export class FinalizeRoomUseCase {
     const estadoActual =
       (await this.roomStateCache.getRoomEstado(sala.tokenCompartido)) ?? sala.estado;
 
-    // EN_VIVO-only guard
+    // Solo evitar doble finalización — permitir finalizar desde cualquier estado activo
     if (estadoActual === EstadoSala.FINALIZADO) {
       throw new BadRequestException(
         'La sala ya ha sido finalizada. No se puede finalizar dos veces.',
-      );
-    }
-    if (estadoActual !== EstadoSala.EN_VIVO) {
-      throw new BadRequestException(
-        `Solo se pueden finalizar salas en estado EN_VIVO. Estado actual: "${estadoActual}"`,
       );
     }
 
@@ -83,6 +78,10 @@ export class FinalizeRoomUseCase {
     });
 
     // Cache operations (outside transaction — non-critical)
+    await this.roomStateCache.setRoomEstado(
+      sala.tokenCompartido,
+      EstadoSala.FINALIZADO,
+    );
     await this.roomStateCache.setRoomEnabled(sala.tokenCompartido, false);
     await this.chatCache.clearMessages(sala.tokenCompartido);
 

@@ -140,6 +140,11 @@ export class GameSocketService {
       this.salaHabilitada.set(data.habilitada);
     });
 
+    // Cuando la sala se finaliza (partida_finalizada), se deshabilita la sala
+    this.socket.on('partida_finalizada', (data: { totalParticipantes: number }) => {
+      this.salaHabilitada.set(false);
+    });
+
     // Recibe el resultado de una respuesta procesada (broadcast)
     this.socket.on('pregunta_respondida', (data: ResultRespuesta) => {
       this.ultimoResultado.set(data);
@@ -270,12 +275,21 @@ export class GameSocketService {
   }
 
   // Cambiar rol participante (Solo Admin)
+  // Retorna una promesa que resuelve con la respuesta del server (éxito o error)
   cambiarRolParticipante(
     tokenCompartido: string,
     nickname: string,
     nuevoRol: 'estudiante' | 'observador',
-  ): void {
-    this.socket?.emit('cambiar_rol_participante', { tokenCompartido, nickname, nuevoRol });
+  ): Promise<{ success: boolean; message?: string }> {
+    return new Promise((resolve) => {
+      if (!this.socket) {
+        resolve({ success: false, message: 'Socket no conectado' });
+        return;
+      }
+      this.socket.emit('cambiar_rol_participante', { tokenCompartido, nickname, nuevoRol }, (res: any) => {
+        resolve(res);
+      });
+    });
   }
 
   // Notificar uso de comodín para bloquearlo (Broadcast)

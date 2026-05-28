@@ -26,6 +26,8 @@ describe('FinalizeRoomUseCase', () => {
   };
 
   const mockRoomStateCache = {
+    getRoomEstado: jest.fn().mockResolvedValue(undefined),
+    setRoomEstado: jest.fn().mockResolvedValue(undefined),
     setRoomEnabled: jest.fn(),
   };
 
@@ -59,6 +61,7 @@ describe('FinalizeRoomUseCase', () => {
       tokenCompartido: 'TOKEN',
       estado: EstadoSala.EN_VIVO,
     });
+    mockRoomStateCache.getRoomEstado.mockResolvedValue(EstadoSala.EN_VIVO);
     mockParticipantsCache.getHistoricalParticipants.mockResolvedValue([
       'alice',
       'bob',
@@ -81,18 +84,22 @@ describe('FinalizeRoomUseCase', () => {
     expect(mockChatCache.clearMessages).toHaveBeenCalledWith('TOKEN');
   });
 
-  it('should throw BadRequestException when sala is in BORRADOR state', async () => {
+  it('should finalize a sala from BORRADOR state', async () => {
+    mockRoomStateCache.getRoomEstado.mockResolvedValue(EstadoSala.BORRADOR);
     mockPrisma.salas.findUnique.mockResolvedValue({
       salaId: 1,
       tokenCompartido: 'TOKEN',
       estado: EstadoSala.BORRADOR,
     });
+    mockParticipantsCache.getHistoricalParticipants.mockResolvedValue([]);
+    mockPrisma.$transaction.mockImplementation((cb: any) => cb(mockPrisma));
 
-    await expect(useCase.execute(1)).rejects.toThrow(BadRequestException);
-    expect(mockPrisma.salas.update).not.toHaveBeenCalled();
+    const result = await useCase.execute(1);
+    expect(result.success).toBe(true);
   });
 
   it('should throw BadRequestException when sala is already FINALIZADO (déjà-vu guard)', async () => {
+    mockRoomStateCache.getRoomEstado.mockResolvedValue(EstadoSala.FINALIZADO);
     mockPrisma.salas.findUnique.mockResolvedValue({
       salaId: 1,
       tokenCompartido: 'TOKEN',
@@ -103,15 +110,18 @@ describe('FinalizeRoomUseCase', () => {
     expect(mockPrisma.salas.update).not.toHaveBeenCalled();
   });
 
-  it('should throw BadRequestException when sala is in ESPERANDO_ALUMNOS state', async () => {
+  it('should finalize a sala from ESPERANDO_ALUMNOS state', async () => {
+    mockRoomStateCache.getRoomEstado.mockResolvedValue(EstadoSala.ESPERANDO_ALUMNOS);
     mockPrisma.salas.findUnique.mockResolvedValue({
       salaId: 1,
       tokenCompartido: 'TOKEN',
       estado: EstadoSala.ESPERANDO_ALUMNOS,
     });
+    mockParticipantsCache.getHistoricalParticipants.mockResolvedValue([]);
+    mockPrisma.$transaction.mockImplementation((cb: any) => cb(mockPrisma));
 
-    await expect(useCase.execute(1)).rejects.toThrow(BadRequestException);
-    expect(mockPrisma.salas.update).not.toHaveBeenCalled();
+    const result = await useCase.execute(1);
+    expect(result.success).toBe(true);
   });
 
   it('should throw NotFoundException when sala does not exist', async () => {
@@ -121,6 +131,7 @@ describe('FinalizeRoomUseCase', () => {
   });
 
   it('should wrap mutations in $transaction', async () => {
+    mockRoomStateCache.getRoomEstado.mockResolvedValue(EstadoSala.EN_VIVO);
     mockPrisma.salas.findUnique.mockResolvedValue({
       salaId: 1,
       tokenCompartido: 'TOKEN',

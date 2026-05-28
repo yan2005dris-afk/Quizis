@@ -5,6 +5,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../../../infrastructure/database/prisma/prisma.service';
 import { RoomStateCacheUseCase } from '../../../infrastructure/cache/use-cases/room-state-cache.use-case';
+import { ParticipantsCacheUseCase } from '../../../infrastructure/cache/use-cases/participants-cache.use-case';
 import { UpdateEstadoSalaDto, EstadoSala } from '../dto/update-estado-sala.dto';
 
 @Injectable()
@@ -12,6 +13,7 @@ export class UpdateEstadoSalaUseCase {
   constructor(
     private readonly prisma: PrismaService,
     private readonly roomStateCache: RoomStateCacheUseCase,
+    private readonly participantsCache: ParticipantsCacheUseCase,
   ) {}
 
   async execute(id: number, updateEstadoSalaDto: UpdateEstadoSalaDto) {
@@ -58,8 +60,80 @@ export class UpdateEstadoSalaUseCase {
       }
     }
 
+    // Persistir en DB también para que sobreviva a reinicios de Redis
+    await this.prisma.salas.update({
+      where: { salaId: id },
+      data: { estado: nuevoEstado },
+    });
+
     await this.roomStateCache.setRoomEstado(sala.tokenCompartido, nuevoEstado);
 
+    // Al pasar a EN_VIVO, asegurar que exista una ronda activa con preguntas
+    if (nuevoEstado === EstadoSala.EN_VIVO) {
+      await this.ensureRondaActiva(
+        sala.salaId,
+        sala.bancoId,
+        sala.limitePreguntas,
+        sala.tokenCompartido,
+      );
+    }
+
     return { salaId: sala.salaId, estado: nuevoEstado };
+  }
+
+  private async ensureRondaActiva(
+    salaId: number,
+    bancoId: number,
+    limitePreguntas: number,
+    tokenCompartido: string,
+  ): Promise<void> {
+    const existing = await this.prisma.rondas.findFirst({
+      where: { salaId, estado: 'jugando' },
+    });
+    if (existing) return;
+
+    let participante =
+      (await this.prisma.participantes.findFirst({
+        where: { salaId, deletedAt: null, rol: 'estudiante' },
+      })) ??
+      (await this.prisma.participantes.findFirst({
+        where: { salaId, deletedAt: null },
+      }));
+
+    if (!participante) {
+      const cachedNicknames =
+        await this.participantsCache.getHistoricalParticipants(tokenCompartido);
+      const nickname =
+        cachedNicknames.find((n) => !n.startsWith('Host-')) ??
+        cachedNicknames[0];
+      if (nickname) {
+        participante = await this.prisma.participantes.upsert({
+          where: { salaId_nickname: { salaId, nickname } },
+          update: {},
+          create: { salaId, nickname, rol: 'observador' },
+        });
+      }
+    }
+
+    if (!participante) return;
+
+    const preguntas = await this.prisma.preguntas.findMany({
+      where: { bancoId },
+      take: limitePreguntas,
+      orderBy: { nivel: 'asc' },
+    });
+
+    if (preguntas.length === 0) return;
+
+    await this.prisma.rondas.create({
+      data: {
+        salaId,
+        participanteId: participante.participanteId,
+        numeroRonda: 1,
+        estado: 'jugando',
+        preguntasAsignadas: preguntas.map((p) => p.preguntaId),
+        fechaInicio: new Date(),
+      },
+    });
   }
 }

@@ -28,11 +28,12 @@ import {
 } from '../../../../core/services/bancos.service';
 import { FileParserService, ParseError } from '../../../../core/services/file-parser.service';
 import { finalize, forkJoin, of, switchMap } from 'rxjs';
+import { ESTADOS_SALA } from '../../../../core/constants/estados.constants';
 
 interface SalaForm {
   nombre: string;
   descripcionBanco: string;
-  estadoInicial: 'BORRADOR' | 'ESPERANDO_ALUMNOS';
+  estadoInicial: typeof ESTADOS_SALA.BORRADOR | typeof ESTADOS_SALA.ESPERANDO_ALUMNOS;
   bancoId: number;
   limitePreguntas: number;
   duracionTokenHoras: number;
@@ -98,7 +99,7 @@ export class CreateSalaComponent implements OnInit {
   protected readonly form = signal<SalaForm>({
     nombre: '',
     descripcionBanco: '',
-    estadoInicial: 'BORRADOR',
+    estadoInicial: ESTADOS_SALA.BORRADOR,
     bancoId: 0,
     limitePreguntas: 15,
     duracionTokenHoras: 24,
@@ -238,8 +239,8 @@ export class CreateSalaComponent implements OnInit {
                 comodines: config,
               });
               const estadoRequest =
-                iniciar || form.estadoInicial === 'ESPERANDO_ALUMNOS'
-                  ? this.salasService.updateEstado(sala.salaId, { estado: 'ESPERANDO_ALUMNOS' })
+                iniciar || form.estadoInicial === ESTADOS_SALA.ESPERANDO_ALUMNOS
+                  ? this.salasService.updateEstado(sala.salaId, { estado: ESTADOS_SALA.ESPERANDO_ALUMNOS })
                   : of(null);
 
               return forkJoin([configRequest, estadoRequest]).pipe(switchMap(() => of(sala)));

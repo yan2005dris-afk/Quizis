@@ -30,7 +30,7 @@
           }
         </div>
 
-        @if (isHost() && isEsperando() && p.rol !== 'admin') {
+        @if (isHost() && !isEnVivo() && p.rol !== 'admin') {
           <button
             class="pl__role-toggle"
             (click)="onToggleRol(p)"
