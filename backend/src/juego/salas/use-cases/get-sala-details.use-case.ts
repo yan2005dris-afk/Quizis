@@ -144,6 +144,7 @@ export class GetSalaDetailsUseCase {
       bancoId: sala.bancoId,
       nombre: sala.nombre,
       estado: estadoActual,
+      maxEstudiantes: sala.maxEstudiantes,
       limitePreguntas: sala.limitePreguntas,
       tokenCompartido: sala.tokenCompartido,
       totalParticipantes: sala.participantes.length,

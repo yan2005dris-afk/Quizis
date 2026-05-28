@@ -9,7 +9,12 @@ import { PrismaService } from '../../../infrastructure/database/prisma/prisma.se
 export class UpdateParticipantRoleUseCase {
   constructor(private readonly prisma: PrismaService) {}
 
-  async execute(tokenCompartido: string, nickname: string, nuevoRol: string) {
+  async execute(
+    tokenCompartido: string,
+    nickname: string,
+    nuevoRol: string,
+    onlineNicknames?: string[],
+  ) {
     const sala = await this.prisma.salas.findUnique({
       where: { tokenCompartido },
     });
@@ -24,21 +29,32 @@ export class UpdateParticipantRoleUseCase {
       );
     }
 
-    const participante = await this.prisma.$transaction(async (tx) => {
-      if (nuevoRol === 'estudiante') {
-        await tx.participantes.updateMany({
-          where: {
-            salaId: sala.salaId,
-            deletedAt: null,
-            rol: 'estudiante',
-            nickname: { not: nickname },
-          },
-          data: {
-            rol: 'observador',
-          },
-        });
+    // Only check cap when promoting to 'estudiante'
+    if (nuevoRol === 'estudiante') {
+      // Contar solo estudiantes ONLINE (los desconectados no ocupan cupo)
+      const whereEstudiantes: any = {
+        salaId: sala.salaId,
+        deletedAt: null,
+        rol: 'estudiante',
+        nickname: { not: nickname },
+      };
+
+      if (onlineNicknames) {
+        whereEstudiantes.nickname = { in: onlineNicknames, not: nickname };
       }
 
+      const currentEstudiantes = await this.prisma.participantes.count({
+        where: whereEstudiantes,
+      });
+
+      if (currentEstudiantes >= sala.maxEstudiantes) {
+        throw new BadRequestException(
+          'Límite de estudiantes alcanzado. Degradá a otro participante online primero.',
+        );
+      }
+    }
+
+    const participante = await this.prisma.$transaction(async (tx) => {
       return tx.participantes.update({
         where: {
           salaId_nickname: {

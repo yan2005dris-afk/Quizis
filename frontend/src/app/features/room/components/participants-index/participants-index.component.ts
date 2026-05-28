@@ -13,7 +13,7 @@ import { LucideAngularModule, GraduationCap, Eye, Shield } from 'lucide-angular'
 export class ParticipantsIndexComponent {
   readonly participantes = input.required<Participante[]>();
   readonly isHost = input<boolean>(false);
-  readonly isEsperando = input<boolean>(false);
+  readonly isEnVivo = input<boolean>(false);
 
   readonly toggleRol = output<{ nickname: string; nuevoRol: 'estudiante' | 'observador' }>();
 
@@ -22,7 +22,7 @@ export class ParticipantsIndexComponent {
   protected readonly ObserverIcon = Eye;
 
   onToggleRol(participante: Participante) {
-    if (this.isHost() && this.isEsperando() && participante.rol !== 'admin') {
+    if (this.isHost() && !this.isEnVivo() && participante.rol !== 'admin') {
       const nuevoRol = participante.rol === 'estudiante' ? 'observador' : 'estudiante';
       this.toggleRol.emit({ nickname: participante.nombre, nuevoRol });
     }

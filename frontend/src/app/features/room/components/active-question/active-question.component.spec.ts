@@ -31,6 +31,7 @@ describe('ActiveQuestionComponent', () => {
     const mockGameSocket = {
       votosPublico: mockVotosPublico,
       ultimoResultado: signal(null),
+      ultimoComodinBloqueado: signal<any>(null),
     } as unknown as GameSocketService;
 
     await TestBed.configureTestingModule({

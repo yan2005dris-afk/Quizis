@@ -41,14 +41,6 @@ export const routes: Routes = [
         (m) => m.JoinRoomComponent,
       ),
   },
-  {
-    path: 'audiencia',
-    loadComponent: () =>
-      import('./features/audiencia-movil/vote-touch-screen/vote-touch-screen.component').then(
-        (m) => m.VoteTouchScreenComponent,
-      ),
-  },
-
   // Rutas bajo el Layout (Híbrido: Privado o Público según Auth)
   {
     path: 'salas/unirse',

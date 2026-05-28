@@ -270,4 +270,34 @@ describe('GameSocketService (observer extension)', () => {
       expect(service.pistaConsultor()).toBeNull();
     });
   });
+
+  // ─── NEW: partida_finalizada event handler ────────────────────────
+
+  describe('partida_finalizada event', () => {
+    it('should set salaHabilitada to false when partida_finalizada event is received', () => {
+      service.conectar('http://test.local', 'fake-token');
+
+      // salaHabilitada starts as true
+      expect(service.salaHabilitada()).toBe(true);
+
+      // When partida_finalizada fires
+      mockSocket.trigger('partida_finalizada', { totalParticipantes: 5 });
+
+      // salaHabilitada should be set to false
+      expect(service.salaHabilitada()).toBe(false);
+    });
+
+    it('should set salaHabilitada to false regardless of payload shape', () => {
+      service.conectar('http://test.local', 'fake-token');
+
+      // Start with true
+      expect(service.salaHabilitada()).toBe(true);
+
+      // Fire with different payload shape (no totalParticipantes)
+      mockSocket.trigger('partida_finalizada', {});
+
+      // Still sets salaHabilitada to false
+      expect(service.salaHabilitada()).toBe(false);
+    });
+  });
 });

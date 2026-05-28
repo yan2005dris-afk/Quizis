@@ -15,10 +15,10 @@
   <header class="go-header">
     <div class="go-header__badge">
       <lucide-icon [img]="TrophyIcon" size="28" />
-      <span>FIN DEL JUEGO</span>
+      <span>{{ esModoRonda() ? 'RONDA COMPLETADA' : 'FIN DEL JUEGO' }}</span>
     </div>
     <h1 class="go-header__title">{{ nombreSala() }}</h1>
-    <p class="go-header__sub">Resultados finales de la sesión</p>
+    <p class="go-header__sub">{{ subtitulo() }}</p>
   </header>
 
   <!-- ── Cargando ── -->
@@ -121,13 +121,19 @@
 
     <!-- Acciones -->
     <div class="go-actions">
+      @if (esModoRonda()) {
+        <button class="go-btn go-btn--primary" (click)="onContinuar()">
+          <lucide-icon [img]="PlayIcon" size="18" />
+          Siguiente ronda
+        </button>
+      }
       <button class="go-btn go-btn--analytics" (click)="onVerAnaliticas()">
         <lucide-icon [img]="ChartIcon" size="18" />
-        Ver analíticas del grupo
+        Ver analíticas
       </button>
       <button class="go-btn go-btn--home" (click)="onVolver()">
         <lucide-icon [img]="HomeIcon" size="18" />
-        Volver al inicio
+        {{ isAdmin() ? 'Volver al inicio' : 'Salir del podio' }}
       </button>
     </div>
   }
