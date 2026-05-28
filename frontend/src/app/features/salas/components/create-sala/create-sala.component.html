@@ -43,26 +43,42 @@
             </select>
           </label>
 
-          <div class="field-grid">
+          <div class="field-grid field-grid--3cols">
             <label class="field">
               <span>Preguntas por ronda</span>
               <input
                 type="number"
                 min="1"
+                placeholder="15"
                 [ngModel]="form().limitePreguntas"
                 (ngModelChange)="actualizarCampo('limitePreguntas', +$event)"
               />
+              <small class="field__help">Cantidad de preguntas por ronda de juego</small>
             </label>
 
             <label class="field">
-              <span>Validez del link</span>
+              <span>Duración del enlace (horas)</span>
               <input
                 type="number"
                 min="1"
                 max="168"
+                placeholder="24"
                 [ngModel]="form().duracionTokenHoras"
                 (ngModelChange)="actualizarCampo('duracionTokenHoras', +$event)"
               />
+              <small class="field__help">Tiempo de validez del link de invitación (1-168 hs)</small>
+            </label>
+
+            <label class="field">
+              <span>Máximo de estudiantes</span>
+              <input
+                type="number"
+                min="1"
+                placeholder="1"
+                [ngModel]="form().maxEstudiantes"
+                (ngModelChange)="actualizarCampo('maxEstudiantes', +$event)"
+              />
+              <small class="field__help">Cantidad máxima de participantes con rol estudiante</small>
             </label>
           </div>
         </div>

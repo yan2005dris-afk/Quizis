@@ -59,22 +59,41 @@ export class UpdateConfiguracionSalaUseCase {
       }
     }
 
-    // 4. Actualizar datos principales de la sala
+    // 4. Validar maxEstudiantes contra cantidad actual de estudiantes (si se proporciona)
+    if (updateConfigDto.maxEstudiantes !== undefined) {
+      const currentEstudiantes = await this.prisma.participantes.count({
+        where: {
+          salaId: id,
+          deletedAt: null,
+          rol: 'estudiante',
+        },
+      });
+
+      if (updateConfigDto.maxEstudiantes < currentEstudiantes) {
+        throw new BadRequestException(
+          `No se puede reducir el límite a ${updateConfigDto.maxEstudiantes}. ` +
+            `Actualmente hay ${currentEstudiantes} estudiantes en la sala.`,
+        );
+      }
+    }
+
+    // 5. Actualizar datos principales de la sala (solo incluir propiedades definidas)
+    const data: Record<string, unknown> = {};
+    if (updateConfigDto.nombre !== undefined) {
+      data.nombre = updateConfigDto.nombre;
+    }
+    if (updateConfigDto.limitePreguntas !== undefined) {
+      data.limitePreguntas = updateConfigDto.limitePreguntas;
+    }
+    if (updateConfigDto.maxEstudiantes !== undefined) {
+      data.maxEstudiantes = updateConfigDto.maxEstudiantes;
+    }
     await this.prisma.salas.update({
       where: { salaId: id },
-      data: {
-        nombre:
-          updateConfigDto.nombre !== undefined
-            ? updateConfigDto.nombre
-            : undefined,
-        limitePreguntas:
-          updateConfigDto.limitePreguntas !== undefined
-            ? updateConfigDto.limitePreguntas
-            : undefined,
-      },
+      data,
     });
 
-    // 5. Actualizar la relación de comodines (si se proporciona)
+    // 6. Actualizar la relación de comodines (si se proporciona)
     if (updateConfigDto.comodines && updateConfigDto.comodines.length > 0) {
       for (const item of updateConfigDto.comodines) {
         await this.prisma.salaComodines.upsert({
@@ -94,7 +113,7 @@ export class UpdateConfiguracionSalaUseCase {
       }
     }
 
-    // 6. Retornar los detalles actualizados
+    // 7. Retornar los detalles actualizados
     const salaActualizada = await this.prisma.salas.findUnique({
       where: { salaId: id },
       include: {

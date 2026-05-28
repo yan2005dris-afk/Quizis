@@ -3,7 +3,7 @@
    ═══════════════════════════════════════════════ */
 
 // ── Variables locales ──────────────────────────
-$gold:   #F59E0B;
+$gold:   var(--color-warning);
 $silver: #94A3B8;
 $bronze: #C47B2B;
 
@@ -16,9 +16,9 @@ $bronze: #C47B2B;
   flex-direction: column;
   align-items: center;
   padding: 2.5rem 1.5rem 4rem;
-  background: #0B0F2E;
+  background: linear-gradient(135deg, var(--color-bg) 0%, #E2E8F0 100%);
   font-family: 'DM Sans', var(--font-sans);
-  color: #EEF2FF;
+  color: var(--color-text);
   gap: 2rem;
 }
 
@@ -33,7 +33,7 @@ $bronze: #C47B2B;
     position: absolute;
     border-radius: 50%;
     filter: blur(90px);
-    opacity: .18;
+    opacity: .10;
     animation: orbFloat 12s ease-in-out infinite;
 
     &--1 { width: 520px; height: 520px; background: var(--color-primary); top: -160px; left: -100px; animation-delay: 0s; }
@@ -52,7 +52,7 @@ $bronze: #C47B2B;
   position: absolute;
   width: 3px;
   height: 3px;
-  background: #fff;
+  background: var(--color-primary);
   border-radius: 50%;
   opacity: 0;
   left: calc(var(--i) * 5.2%);
@@ -67,7 +67,7 @@ $bronze: #C47B2B;
 
 @keyframes twinkle {
   0%, 100% { opacity: 0; }
-  50%       { opacity: .7; }
+  50%       { opacity: .5; }
 }
 
 // ── Z-index base para contenido ────────────────
@@ -84,8 +84,8 @@ $bronze: #C47B2B;
     display: inline-flex;
     align-items: center;
     gap: .5rem;
-    background: rgba(255,255,255,.07);
-    border: 1px solid rgba(255,255,255,.12);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
     border-radius: var(--radius-full);
     padding: .35rem 1.1rem;
     font-family: 'DM Sans', sans-serif;
@@ -94,7 +94,7 @@ $bronze: #C47B2B;
     letter-spacing: .12em;
     color: var(--color-accent);
     margin-bottom: .75rem;
-    backdrop-filter: blur(6px);
+    box-shadow: var(--shadow-sm);
 
     lucide-icon { opacity: .9; }
   }
@@ -104,7 +104,7 @@ $bronze: #C47B2B;
     font-size: clamp(1.75rem, 5vw, 3rem);
     font-weight: 800;
     letter-spacing: -.02em;
-    background: linear-gradient(135deg, #fff 30%, var(--color-accent) 100%);
+    background: linear-gradient(135deg, var(--color-primary) 30%, var(--color-accent) 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     line-height: 1.1;
@@ -113,7 +113,7 @@ $bronze: #C47B2B;
 
   &__sub {
     font-size: var(--text-sm);
-    color: rgba(238,242,255,.5);
+    color: var(--color-sub);
   }
 }
 
@@ -122,11 +122,11 @@ $bronze: #C47B2B;
   display: flex;
   flex-direction: column;
   align-items: center;
-  background: rgba(255,255,255,.05);
-  border: 1px solid rgba(255,255,255,.1);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
   border-radius: var(--radius-xl);
   padding: 1rem 2.5rem;
-  backdrop-filter: blur(8px);
+  box-shadow: var(--shadow-sm);
 
   &__value {
     font-family: 'Syne', sans-serif;
@@ -138,7 +138,7 @@ $bronze: #C47B2B;
 
   &__label {
     font-size: var(--text-xs);
-    color: rgba(238,242,255,.5);
+    color: var(--color-sub);
     text-transform: uppercase;
     letter-spacing: .08em;
     margin-top: .2rem;
@@ -188,7 +188,7 @@ $bronze: #C47B2B;
     height: 64px;
     border-radius: 50%;
     background: linear-gradient(135deg, var(--color-primary), #2a3580);
-    border: 3px solid rgba(255,255,255,.2);
+    border: 3px solid var(--color-border);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -197,7 +197,7 @@ $bronze: #C47B2B;
       width: 80px;
       height: 80px;
       border-color: $gold;
-      box-shadow: 0 0 28px rgba($gold, .45);
+      box-shadow: 0 0 28px rgba(245, 158, 11, .45);
     }
   }
 
@@ -218,7 +218,7 @@ $bronze: #C47B2B;
   &__nombre {
     font-size: var(--text-sm);
     font-weight: 600;
-    color: rgba(238,242,255,.85);
+    color: var(--color-text);
     text-align: center;
     white-space: nowrap;
     overflow: hidden;
@@ -226,8 +226,9 @@ $bronze: #C47B2B;
     max-width: 100%;
 
     &--champion {
-      color: #fff;
+      color: var(--color-primary);
       font-size: var(--text-base);
+      font-weight: 700;
     }
   }
 
@@ -235,7 +236,7 @@ $bronze: #C47B2B;
     font-family: 'Syne', sans-serif;
     font-size: 1rem;
     font-weight: 700;
-    color: rgba(238,242,255,.6);
+    color: var(--color-sub);
 
     &--champion {
       color: $gold;
@@ -249,18 +250,18 @@ $bronze: #C47B2B;
     display: flex;
     align-items: center;
     justify-content: center;
-    border: 1px solid rgba(255,255,255,.08);
+    border: 1px solid var(--color-border);
 
-    &--1 { height: 96px;  background: linear-gradient(180deg, rgba($gold, .3) 0%, rgba($gold, .1) 100%); border-color: rgba($gold, .4); }
-    &--2 { height: 72px;  background: linear-gradient(180deg, rgba($silver, .2) 0%, rgba($silver, .05) 100%); border-color: rgba($silver, .3); }
-    &--3 { height: 52px;  background: linear-gradient(180deg, rgba($bronze, .2) 0%, rgba($bronze, .05) 100%); border-color: rgba($bronze, .3); }
+    &--1 { height: 96px;  background: linear-gradient(180deg, rgba(245, 158, 11, .25) 0%, rgba(245, 158, 11, .08) 100%); border-color: rgba(245, 158, 11, .35); }
+    &--2 { height: 72px;  background: linear-gradient(180deg, rgba(148, 163, 184, .18) 0%, rgba(148, 163, 184, .05) 100%); border-color: rgba(148, 163, 184, .3); }
+    &--3 { height: 52px;  background: linear-gradient(180deg, rgba(196, 123, 43, .18) 0%, rgba(196, 123, 43, .05) 100%); border-color: rgba(196, 123, 43, .3); }
   }
 
   &__puesto {
     font-family: 'Syne', sans-serif;
     font-size: var(--text-lg);
     font-weight: 800;
-    color: rgba(238,242,255,.4);
+    color: var(--color-sub);
   }
 
   &__slot--1 { order: 2; }
@@ -284,7 +285,7 @@ $bronze: #C47B2B;
     font-weight: 700;
     letter-spacing: .1em;
     text-transform: uppercase;
-    color: rgba(238,242,255,.4);
+    color: var(--color-sub);
     margin-bottom: .75rem;
     text-align: center;
   }
@@ -300,20 +301,23 @@ $bronze: #C47B2B;
     display: flex;
     align-items: center;
     gap: .75rem;
-    background: rgba(255,255,255,.04);
-    border: 1px solid rgba(255,255,255,.07);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
     border-radius: var(--radius-md);
     padding: .6rem 1rem;
-    transition: background var(--transition);
+    transition: box-shadow var(--transition), border-color var(--transition);
 
-    &:hover { background: rgba(255,255,255,.07); }
+    &:hover {
+      border-color: var(--color-primary);
+      box-shadow: var(--shadow-sm);
+    }
   }
 
   &__puesto {
     font-family: 'Syne', sans-serif;
     font-size: var(--text-sm);
     font-weight: 700;
-    color: rgba(238,242,255,.35);
+    color: var(--color-sub);
     width: 26px;
     text-align: right;
   }
@@ -321,7 +325,7 @@ $bronze: #C47B2B;
   &__nick {
     font-size: var(--text-sm);
     font-weight: 500;
-    color: rgba(238,242,255,.8);
+    color: var(--color-text);
     min-width: 90px;
     flex-shrink: 0;
   }
@@ -329,7 +333,7 @@ $bronze: #C47B2B;
   &__bar-wrap {
     flex: 1;
     height: 6px;
-    background: rgba(255,255,255,.08);
+    background: var(--color-border);
     border-radius: var(--radius-full);
     overflow: hidden;
   }
@@ -352,7 +356,7 @@ $bronze: #C47B2B;
 
   &__stats {
     font-size: var(--text-xs);
-    color: rgba(238,242,255,.3);
+    color: var(--color-sub);
     width: 44px;
     text-align: right;
   }
@@ -397,6 +401,14 @@ $bronze: #C47B2B;
 
     &:hover { background: rgba(255,255,255,.12); }
   }
+
+  &--primary {
+    background: var(--color-primary);
+    color: #fff;
+    box-shadow: 0 4px 16px rgba(29,38,103,.5);
+
+    &:hover { box-shadow: 0 8px 24px rgba(29,38,103,.6); }
+  }
 }
 
 // ── Loader ─────────────────────────────────────
@@ -406,13 +418,13 @@ $bronze: #C47B2B;
   align-items: center;
   gap: 1rem;
   padding: 3rem;
-  color: rgba(238,242,255,.5);
+  color: var(--color-sub);
   font-size: var(--text-sm);
 
   &__ring {
     width: 48px;
     height: 48px;
-    border: 3px solid rgba(255,255,255,.1);
+    border: 3px solid var(--color-border);
     border-top-color: var(--color-accent);
     border-radius: 50%;
     animation: spin .8s linear infinite;
@@ -425,11 +437,11 @@ $bronze: #C47B2B;
 
 // ── Error ──────────────────────────────────────
 .go-error {
-  background: rgba(239,68,68,.12);
-  border: 1px solid rgba(239,68,68,.3);
+  background: rgba(239,68,68,.08);
+  border: 1px solid rgba(239,68,68,.25);
   border-radius: var(--radius-md);
   padding: 1rem 1.5rem;
-  color: #FCA5A5;
+  color: var(--color-danger);
   font-size: var(--text-sm);
 }
 

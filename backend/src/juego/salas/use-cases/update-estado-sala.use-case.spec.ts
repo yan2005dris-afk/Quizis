@@ -13,9 +13,10 @@ describe('UpdateEstadoSalaUseCase', () => {
   const mockPrisma = {
     salas: {
       findUnique: jest.fn(),
+      update: jest.fn(),
     },
     preguntas: { findMany: jest.fn() },
-    participantes: { findFirst: jest.fn(), upsert: jest.fn() },
+    participantes: { findFirst: jest.fn(), upsert: jest.fn(), count: jest.fn() },
     rondas: { findFirst: jest.fn(), create: jest.fn() },
   };
 
@@ -64,7 +65,7 @@ describe('UpdateEstadoSalaUseCase', () => {
     );
   });
 
-  it('debería transicionar de ESPERANDO_ALUMNOS a EN_VIVO', async () => {
+  it('debería transicionar de ESPERANDO_ALUMNOS a EN_VIVO con estudiantes y crear ronda', async () => {
     mockPrisma.salas.findUnique.mockResolvedValue({
       salaId: 1,
       tokenCompartido: 'T1',
@@ -72,13 +73,15 @@ describe('UpdateEstadoSalaUseCase', () => {
       limitePreguntas: 5,
       estado: EstadoSala.ESPERANDO_ALUMNOS,
     });
+    mockPrisma.participantes.count.mockResolvedValue(2);
+    // ensureRondaActiva mocks
     mockPrisma.rondas.findFirst.mockResolvedValue(null);
     mockPrisma.participantes.findFirst.mockResolvedValue({
       participanteId: 1,
+      nickname: 'TestStudent',
     });
     mockPrisma.preguntas.findMany.mockResolvedValue([
-      { preguntaId: 1 },
-      { preguntaId: 2 },
+      { preguntaId: 1 }, { preguntaId: 2 }, { preguntaId: 3 },
     ]);
     mockPrisma.rondas.create.mockResolvedValue({ rondaId: 1 });
 
@@ -89,7 +92,25 @@ describe('UpdateEstadoSalaUseCase', () => {
       'T1',
       EstadoSala.EN_VIVO,
     );
+    // ensureRondaActiva restored — creates round with questions
+    expect(mockPrisma.rondas.findFirst).toHaveBeenCalled();
+    expect(mockPrisma.preguntas.findMany).toHaveBeenCalled();
     expect(mockPrisma.rondas.create).toHaveBeenCalled();
+  });
+
+  it('debería rechazar EN_VIVO cuando no hay estudiantes (EN_VIVO guard)', async () => {
+    mockPrisma.salas.findUnique.mockResolvedValue({
+      salaId: 1,
+      tokenCompartido: 'T1',
+      estado: EstadoSala.ESPERANDO_ALUMNOS,
+    });
+    mockPrisma.participantes.count.mockResolvedValue(0);
+
+    await expect(
+      useCase.execute(1, { estado: EstadoSala.EN_VIVO }),
+    ).rejects.toThrow(BadRequestException);
+
+    expect(mockRoomStateCache.setRoomEstado).not.toHaveBeenCalled();
   });
 
   it('debería transicionar de EN_VIVO a FINALIZADO', async () => {

@@ -16,6 +16,7 @@ import { GetInvitacionTokenUseCase } from './use-cases/get-invitacion-token.use-
 import { UpdateParticipantRoleUseCase } from './use-cases/update-participant-role.use-case';
 import { GetParticipantsWithRolesUseCase } from './use-cases/get-participants-with-roles.use-case';
 import { RestartRoundUseCase } from './use-cases/restart-round.use-case';
+import { ReactivateRoomUseCase } from './use-cases/reactivate-room.use-case';
 import { AuthModule } from '../../identity/auth/auth.module';
 import { CacheModule } from '../../infrastructure/cache/cache.module';
 
@@ -39,6 +40,7 @@ import { CacheModule } from '../../infrastructure/cache/cache.module';
     UpdateParticipantRoleUseCase,
     GetParticipantsWithRolesUseCase,
     RestartRoundUseCase,
+    ReactivateRoomUseCase,
   ],
   exports: [SalasService],
 })
