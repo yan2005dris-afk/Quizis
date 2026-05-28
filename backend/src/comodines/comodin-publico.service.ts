@@ -39,7 +39,11 @@ export class ComodinPublicoService {
     const letras = ['A', 'B', 'C', 'D'];
     const total = votos.length;
     const resultado: Record<string, number> & { total: number } = {
-      A: 0, B: 0, C: 0, D: 0, total,
+      A: 0,
+      B: 0,
+      C: 0,
+      D: 0,
+      total,
     };
 
     for (const opcion of preguntaActual.opciones) {
