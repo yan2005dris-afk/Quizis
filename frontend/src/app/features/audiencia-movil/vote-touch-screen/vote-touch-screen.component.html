@@ -10,21 +10,31 @@
   <section class="question-container">
     @if (currentQuestion()) {
       <div class="question-card">
-        <!-- Indicador de Estado Activo -->
+        <!-- Indicador de Estado -->
         <div class="status-indicator live">
           <span class="pulse-dot"></span>
-          Pregunta en curso
+          @if (resultadoRespondida()) {
+            Pregunta respondida
+          } @else {
+            Pregunta en curso
+          }
         </div>
 
         <h1 class="question-text">{{ currentQuestion()!.prompt }}</h1>
 
-        <!-- Cuadrícula de Opciones de Votación (A, B, C, D) -->
+        <!-- Cuadrícula de Opciones -->
         <div class="options-grid">
           @for (option of activeOptions(); track option.id) {
             <button
               type="button"
               class="option-btn"
-              [class.option-btn--selected]="selectedOption() === option.id"
+              [class.option-btn--selected]="
+                resultadoRespondida()
+                  ? resultadoRespondida()!.opcionId === option.opcionId
+                  : selectedOption() === option.id
+              "
+              [class.option-btn--correct]="resultadoRespondida()?.opcionId === option.opcionId && resultadoRespondida()!.esCorrecta"
+              [class.option-btn--wrong]="resultadoRespondida()?.opcionId === option.opcionId && !resultadoRespondida()!.esCorrecta"
               [disabled]="!canVote()"
               (click)="selectOption(option.id)"
             >
@@ -36,11 +46,19 @@
           }
         </div>
 
-        <!-- Botón de Confirmación de Voto -->
-        @if (!isPublicoActive()) {
+        <!-- Feedback de resultado -->
+        @if (resultadoRespondida()) {
+          <div class="comodin-locked-message" [style.background]="resultadoRespondida()!.esCorrecta ? '#dcfce7' : '#fee2e2'">
+            <span class="locked-icon">{{ resultadoRespondida()!.esCorrecta ? '✅' : '❌' }}</span>
+            {{ resultadoRespondida()!.esCorrecta ? 'Respuesta correcta' : 'Respuesta incorrecta' }}
+            @if (resultadoRespondida()!.feedback) {
+              — {{ resultadoRespondida()!.feedback }}
+            }
+          </div>
+        } @else if (!isPublicoActive()) {
           <div class="comodin-locked-message">
-            <span class="locked-icon">🔒</span>
-            Modo Espectador. Esperando comodín del público...
+            <span class="locked-icon">👁️</span>
+            Modo Espectador
           </div>
         } @else if (selectedOption()) {
           <button
@@ -62,8 +80,14 @@
           </button>
         }
       </div>
+    } @else if (juegoEnVivo()) {
+      <!-- JUEGO EN CURSO — sin pregunta activa todavía -->
+      <div class="waiting-footer" style="justify-content: center; padding: 32px 0;">
+        <span class="waiting-status-dot"></span>
+        En vivo — esperando la siguiente pregunta...
+      </div>
     } @else {
-      <!-- PANTALLA DE ESPERA (BLOQUEADA) -->
+      <!-- PANTALLA DE ESPERA (BLOQUEADA) — juego aún no iniciado -->
       <div class="waiting-card">
         <div class="radar-animation">
           <div class="radar-wave wave-1"></div>
