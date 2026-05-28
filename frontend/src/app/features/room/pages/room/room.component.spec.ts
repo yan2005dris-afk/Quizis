@@ -54,6 +54,18 @@ describe('RoomComponent', () => {
   });
 
   it('should embed app-active-question in the left (70%) column', () => {
+    (fixture.componentInstance as any).salaDetalle.set({
+      salaId: 1,
+      nombre: 'Test Sala',
+      estado: 'EN_VIVO',
+      tokenCompartido: 'test-token',
+      rondaActiva: {
+        rondaId: 1,
+        preguntaActualId: 1,
+        historialPreguntas: [],
+        preguntaActual: null,
+      },
+    });
     fixture.detectChanges();
 
     const el = fixture.nativeElement as HTMLElement;

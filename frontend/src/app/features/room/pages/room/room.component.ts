@@ -108,7 +108,7 @@ export class RoomComponent implements OnInit, OnDestroy {
   protected readonly isBorrador = computed(() => this.estadoSala() === 'BORRADOR');
 
   protected readonly miNickname = computed(() => {
-    if (this.isHost()) return `Host-${this.salaDetalle()?.nombre}`;
+    if (this.isHost()) return this.auth.user()?.nombre || 'Admin';
     const participantInfo = JSON.parse(localStorage.getItem('participantInfo') ?? '{}');
     return participantInfo.nickname;
   });
@@ -259,7 +259,7 @@ export class RoomComponent implements OnInit, OnDestroy {
             if (this.gameSocket.conectado()) {
               const participantInfo = JSON.parse(localStorage.getItem('participantInfo') ?? '{}');
               const nickname = this.isHost()
-                ? `Host-${sala.nombre}`
+                ? `Host-${this.auth.user()?.nombre || 'Admin'}`
                 : (participantInfo.nickname ?? `Estudiante-${Math.floor(Math.random() * 1000)}`);
               this.gameSocket.unirseASala(sala.tokenCompartido, nickname);
               clearInterval(interval);
@@ -303,6 +303,13 @@ export class RoomComponent implements OnInit, OnDestroy {
         this.salaDetalle.update((s) => (s ? { ...s, estado: updated.estado } : s));
         this.cambiandoEstado.set(false);
         this.gameSocket.salaHabilitada.set(updated.estado !== 'FINALIZADO');
+
+        if (updated.estado === 'EN_VIVO') {
+          this.salasService
+            .obtenerPorId(String(updated.salaId))
+            .pipe(takeUntilDestroyed(this.destroyRef))
+            .subscribe({ next: (s) => this.salaDetalle.set(s) });
+        }
       },
       error: (err) => {
         console.error('Error actualizando estado:', err);
