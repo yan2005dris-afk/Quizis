@@ -233,7 +233,8 @@ describe('SalasService', () => {
   });
 
   describe('listBancosDisponibles', () => {
-    it('debería delegar el listado al ListBancosDisponiblesUseCase', async () => {
+    it('debería delegar el listado al ListBancosDisponiblesUseCase con usuarioId', async () => {
+      const usuarioId = 1;
       const expectedResult = [
         { bancoId: 1, nombre: 'Matemáticas', totalPreguntas: 5 },
       ];
@@ -242,10 +243,10 @@ describe('SalasService', () => {
         expectedResult,
       );
 
-      const result = await service.listBancosDisponibles();
+      const result = await service.listBancosDisponibles(usuarioId);
 
       expect(result).toEqual(expectedResult);
-      expect(listBancosDisponiblesUseCase.execute).toHaveBeenCalledTimes(1);
+      expect(listBancosDisponiblesUseCase.execute).toHaveBeenCalledWith(usuarioId);
     });
   });
 

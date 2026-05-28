@@ -100,7 +100,11 @@ export class VoteTouchScreenComponent implements OnInit {
   protected readonly timeRemaining = signal<number>(45);
   protected readonly isPublicoActive = signal<boolean>(false);
   protected readonly juegoEnVivo = signal<boolean>(false);
-  protected readonly resultadoRespondida = signal<{ opcionId: number; esCorrecta: boolean; feedback?: string } | null>(null);
+  protected readonly resultadoRespondida = signal<{
+    opcionId: number;
+    esCorrecta: boolean;
+    feedback?: string;
+  } | null>(null);
 
   protected readonly canVote = computed(
     () => this.currentQuestion() !== null && !this.isVoteConfirmed() && this.isPublicoActive(),

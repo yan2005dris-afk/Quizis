@@ -1,9 +1,9 @@
 import { PrismaClient } from '../../../src/generated/prisma/client';
 
-export const seedSalaDemo = async (prisma: PrismaClient) => {
-  // ── Buscar admin ──
-  const admin = await prisma.usuarios.findUnique({ where: { email: 'admin@quizis.com' } });
-  if (!admin) throw new Error('Admin no encontrado. Ejecutá primero el seed de usuarios.');
+export const seedSalaDemo = async (
+  prisma: PrismaClient,
+  adminId: number,
+) => {
 
   // ── Buscar comodines ──
   const comodines = await prisma.comodines.findMany();
@@ -11,7 +11,11 @@ export const seedSalaDemo = async (prisma: PrismaClient) => {
 
   // ── Crear banco de preguntas ──
   const banco = await prisma.bancoPreguntas.create({
-    data: { nombre: 'Cultura General', descripcion: 'Preguntas de cultura general variadas' },
+    data: {
+      nombre: 'Cultura General',
+      descripcion: 'Preguntas de cultura general variadas',
+      usuarioId: adminId,
+    },
   });
 
   // ── Preguntas con opciones ──
@@ -155,7 +159,7 @@ export const seedSalaDemo = async (prisma: PrismaClient) => {
   // ── Crear sala demo ──
   const sala = await prisma.salas.create({
     data: {
-      adminId: admin.usuarioId,
+      adminId,
       bancoId: banco.bancoId,
       nombre: 'Gran Torneo de Cultura General - Edición 2024',
       estado: 'jugando',
