@@ -5,8 +5,9 @@ import { ConfigService } from '@nestjs/config';
 import { RegenerateRoomTokenUseCase } from './regenerate-room-token.use-case';
 import { PrismaService } from 'src/infrastructure/database/prisma/prisma.service';
 
-jest.mock('uuid', () => ({
-  v4: jest.fn(() => 'new-uuid-1234-5678'),
+jest.mock('crypto', () => ({
+  ...jest.requireActual('crypto'),
+  randomUUID: jest.fn(() => 'new-uuid-1234-5678'),
 }));
 
 describe('RegenerateRoomTokenUseCase', () => {
@@ -22,6 +23,7 @@ describe('RegenerateRoomTokenUseCase', () => {
 
   const mockConfigService = {
     getOrThrow: jest.fn(),
+    get: jest.fn().mockReturnValue('24h'),
   };
 
   const mockSala = { salaId: 1, tokenCompartido: 'old-uuid' };
