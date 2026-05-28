@@ -5,7 +5,10 @@ import { PrismaService } from 'src/infrastructure/database/prisma/prisma.service
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { SessionsService } from '../../sessions/sessions.service';
-import { UnauthorizedException } from '@nestjs/common';
+import {
+  UnauthorizedException,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import * as bcrypt from 'bcryptjs';
 
 jest.mock('bcryptjs');
@@ -70,6 +73,17 @@ describe('RefreshAccessTokenUseCase', () => {
   });
 
   describe('execute', () => {
+    it('should throw UnauthorizedException if session expired', async () => {
+      sessionsService.getSession.mockResolvedValue({
+        revocado: false,
+        expiraEn: new Date(Date.now() - 1000),
+      } as any);
+
+      await expect(
+        useCase.execute('sid', 'rt', 'ip', 'ua', 1),
+      ).rejects.toThrow(UnauthorizedException);
+    });
+
     it('should refresh tokens successfully', async () => {
       const mockSession = {
         sesionId: 'sid',
@@ -125,6 +139,39 @@ describe('RefreshAccessTokenUseCase', () => {
       await expect(useCase.execute('sid', 'rt', 'ip', 'ua', 1)).rejects.toThrow(
         UnauthorizedException,
       );
+    });
+
+    it('should throw UnauthorizedException if user not found in database', async () => {
+      sessionsService.getSession.mockResolvedValue({
+        revocado: false,
+        expiraEn: new Date(Date.now() + 100000),
+        hashRefreshToken: 'hash',
+      } as any);
+      (bcrypt.compare as jest.Mock).mockResolvedValue(true);
+      (prismaService.usuarios.findUnique as jest.Mock).mockResolvedValue(null);
+
+      await expect(
+        useCase.execute('sid', 'rt', 'ip', 'ua', 1),
+      ).rejects.toThrow(UnauthorizedException);
+    });
+
+    it('should throw InternalServerErrorException when session update fails', async () => {
+      sessionsService.getSession.mockResolvedValue({
+        revocado: false,
+        expiraEn: new Date(Date.now() + 100000),
+        hashRefreshToken: 'hash',
+      } as any);
+      (bcrypt.compare as jest.Mock).mockResolvedValue(true);
+      (prismaService.usuarios.findUnique as jest.Mock).mockResolvedValue({
+        email: 'test@test.com',
+      });
+      jwtService.signAsync.mockResolvedValue('new-token');
+      (bcrypt.hash as jest.Mock).mockResolvedValue('new-hash');
+      sessionsService.updateSession.mockRejectedValue(new Error('DB Error'));
+
+      await expect(
+        useCase.execute('sid', 'rt', 'ip', 'ua', 1),
+      ).rejects.toThrow(InternalServerErrorException);
     });
   });
 });
