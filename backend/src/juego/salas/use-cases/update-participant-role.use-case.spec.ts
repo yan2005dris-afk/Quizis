@@ -15,10 +15,11 @@ describe('UpdateParticipantRoleUseCase', () => {
 
   const mockPrisma = {
     salas: { findUnique: jest.fn() },
+    participantes: { count: jest.fn().mockResolvedValue(0) },
     $transaction: jest.fn().mockImplementation((cb: (tx: typeof mockTx) => unknown) => cb(mockTx)),
   };
 
-  const mockSala = { salaId: 1, tokenCompartido: 'token-abc' };
+  const mockSala = { salaId: 1, tokenCompartido: 'token-abc', maxEstudiantes: 30 };
 
   const mockParticipante = {
     participanteId: 5,
@@ -44,6 +45,7 @@ describe('UpdateParticipantRoleUseCase', () => {
     jest.clearAllMocks();
 
     mockPrisma.salas.findUnique.mockResolvedValue(mockSala);
+    mockPrisma.participantes.count.mockResolvedValue(0);
     mockPrisma.$transaction.mockImplementation(
       (cb: (tx: typeof mockTx) => unknown) => cb(mockTx),
     );
@@ -76,7 +78,8 @@ describe('UpdateParticipantRoleUseCase', () => {
     });
   });
 
-  it('cambio a estudiante → demota otros estudiantes a observador primero', async () => {
+  it('cambio a estudiante → verifica cupo antes de actualizar', async () => {
+    mockPrisma.participantes.count.mockResolvedValue(0);
     mockTx.participantes.update.mockResolvedValue({
       ...mockParticipante,
       rol: 'estudiante',
@@ -84,37 +87,24 @@ describe('UpdateParticipantRoleUseCase', () => {
 
     await useCase.execute('token-abc', 'Juan', 'estudiante');
 
-    expect(mockTx.participantes.updateMany).toHaveBeenCalledWith({
-      where: {
-        salaId: 1,
-        deletedAt: null,
-        rol: 'estudiante',
-        nickname: { not: 'Juan' },
-      },
-      data: { rol: 'observador' },
-    });
+    expect(mockPrisma.participantes.count).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({ salaId: 1, rol: 'estudiante' }),
+      }),
+    );
     expect(mockTx.participantes.update).toHaveBeenCalledWith({
       where: { salaId_nickname: { salaId: 1, nickname: 'Juan' } },
       data: { rol: 'estudiante' },
     });
   });
 
-  it('demote ocurre dentro de la misma transacción que el update', async () => {
-    let updateManyCalledFirst = false;
-    let updateCalledAfter = false;
+  it('cupo de estudiantes lleno → BadRequestException', async () => {
+    mockPrisma.participantes.count.mockResolvedValue(30);
 
-    mockTx.participantes.updateMany.mockImplementation(() => {
-      updateManyCalledFirst = true;
-      return Promise.resolve({ count: 1 });
-    });
-    mockTx.participantes.update.mockImplementation(() => {
-      updateCalledAfter = updateManyCalledFirst;
-      return Promise.resolve({ ...mockParticipante, rol: 'estudiante' });
-    });
-
-    await useCase.execute('token-abc', 'Maria', 'estudiante');
-
-    expect(updateCalledAfter).toBe(true);
+    await expect(
+      useCase.execute('token-abc', 'Juan', 'estudiante'),
+    ).rejects.toThrow(BadRequestException);
+    expect(mockPrisma.$transaction).not.toHaveBeenCalled();
   });
 
   it('retorna el participante actualizado', async () => {
