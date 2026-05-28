@@ -12,6 +12,11 @@ import {
 } from './use-cases/submit-answer.use-case';
 import { ToggleRoomEnabledUseCase } from './use-cases/toggle-room-enabled.use-case';
 import { SendMessageUseCase } from './use-cases/send-message.use-case';
+import { ActivateCallJokerUseCase } from './use-cases/activate-call-joker.use-case';
+import {
+  SendHintUseCase,
+  SendHintPayload,
+} from './use-cases/send-hint.use-case';
 
 @Injectable()
 export class WebsocketsService {
@@ -23,6 +28,8 @@ export class WebsocketsService {
     private readonly submitAnswerUseCase: SubmitAnswerUseCase,
     private readonly toggleRoomEnabledUseCase: ToggleRoomEnabledUseCase,
     private readonly sendMessageUseCase: SendMessageUseCase,
+    private readonly activateCallJokerUseCase: ActivateCallJokerUseCase,
+    private readonly sendHintUseCase: SendHintUseCase,
   ) {}
 
   async joinRoom(payload: {
@@ -64,5 +71,13 @@ export class WebsocketsService {
     tipo: 'mensaje' | 'sugerencia';
   }) {
     return this.sendMessageUseCase.execute(payload);
+  }
+
+  async activateCallJoker(tokenCompartido: string) {
+    return this.activateCallJokerUseCase.execute(tokenCompartido);
+  }
+
+  async sendHint(payload: SendHintPayload) {
+    return this.sendHintUseCase.execute(payload);
   }
 }

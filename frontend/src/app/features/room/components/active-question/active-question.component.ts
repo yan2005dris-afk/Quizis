@@ -288,10 +288,20 @@ export class ActiveQuestionComponent {
       this.usarComodinIa();
     } else if (comodin.nombre === 'PUBLICO') {
       this.usarComodinPublico();
+    } else if (comodin.nombre === 'LLAMADA') {
+      this.usarComodinLlamada();
     } else if (comodin.nombre === '50_50') {
       this.usarComodin5050();
     }
-    // TODO: Implementar Llamada
+  }
+
+  protected usarComodinLlamada(): void {
+    const token = this.tokenCompartido();
+    const pregunta = this.preguntaMostrada();
+    if (!token || !pregunta) return;
+
+    console.log('[COMODIN:LLAMADA] Activando comodín de llamada...');
+    this.gameSocket.activarComodinLlamada(token, pregunta);
   }
 
   protected usarComodinPublico(): void {

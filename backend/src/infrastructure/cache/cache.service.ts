@@ -29,4 +29,15 @@ export class CacheService {
       }
     }
   }
+
+  async del(key: string): Promise<void> {
+    const client = this.redisService.getClient();
+    if (client) {
+      try {
+        await client.del(key);
+      } catch (error) {
+        this.logger.warn(`[CACHE:WARN] Error genérico DEL Redis: ${error}`);
+      }
+    }
+  }
 }
