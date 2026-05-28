@@ -10,7 +10,16 @@ import {
 } from '@angular/core';
 import { Router } from '@angular/router';
 import { SlicePipe, UpperCasePipe } from '@angular/common';
-import { LucideAngularModule, Trophy, Medal, Award, Star, Home, BarChart2, Play } from 'lucide-angular';
+import {
+  LucideAngularModule,
+  Trophy,
+  Medal,
+  Award,
+  Star,
+  Home,
+  BarChart2,
+  Play,
+} from 'lucide-angular';
 import { ReportesService } from '../../../../core/services/reportes.service';
 
 export interface GameOverParticipant {
@@ -105,9 +114,7 @@ export class GameOverComponent implements OnInit {
       next: (data) => {
         if (this.esModoRonda()) {
           // Modo ronda: mostrar solo los datos de la ronda específica
-          const rondaData = data.rondas.find(
-            (r) => r.numeroRonda === this.rondaNumero(),
-          );
+          const rondaData = data.rondas.find((r) => r.numeroRonda === this.rondaNumero());
           if (rondaData) {
             this.participants.set([
               {

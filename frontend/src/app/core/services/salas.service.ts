@@ -161,10 +161,7 @@ export class SalasService {
     tokenInvitacion: string;
     message: string;
   }> {
-    return this.http.post<any>(
-      `${this.apiUrl}/salas/${salaId}/reactivar`,
-      {},
-    );
+    return this.http.post<any>(`${this.apiUrl}/salas/${salaId}/reactivar`, {});
   }
 
   solicitarSugerenciaIa(preguntaId: number): Observable<{ literal: string; explicacion: string }> {
@@ -175,9 +172,8 @@ export class SalasService {
   }
 
   usarComodin5050(preguntaId: number): Observable<{ opcionesEliminadas: number[] }> {
-    return this.http.post<{ opcionesEliminadas: number[] }>(
-      `${this.apiUrl}/comodines/50-50`,
-      { preguntaId },
-    );
+    return this.http.post<{ opcionesEliminadas: number[] }>(`${this.apiUrl}/comodines/50-50`, {
+      preguntaId,
+    });
   }
 }

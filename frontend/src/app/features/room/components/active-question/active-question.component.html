@@ -45,8 +45,12 @@
               (p.respuestaDada && !opcion.fueElegida && opcion.esCorrecta !== true) ||
               (opcionesEliminadas().includes(opcion.id) && !opcion.fueElegida)
             "
-            [style.opacity]="opcionesEliminadas().includes(opcion.id) && !opcion.fueElegida ? '0.3' : null"
-            [style.pointer-events]="opcionesEliminadas().includes(opcion.id) && !opcion.fueElegida ? 'none' : null"
+            [style.opacity]="
+              opcionesEliminadas().includes(opcion.id) && !opcion.fueElegida ? '0.3' : null
+            "
+            [style.pointer-events]="
+              opcionesEliminadas().includes(opcion.id) && !opcion.fueElegida ? 'none' : null
+            "
             [class.option-item--pre-selected]="opcion.seleccionLocal"
             [class.option-item--clickable]="
               interactive() && !respuestaConfirmada() && !p.respuestaDada

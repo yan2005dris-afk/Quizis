@@ -128,11 +128,7 @@ export class GameSocketService {
     // Acumula comodines bloqueados en tiempo real y propaga datos detallados (opcionesEliminadas, preguntaId)
     this.socket.on(
       'comodin_bloqueado',
-      (data: {
-        tipoComodin: string;
-        opcionesEliminadas?: number[];
-        preguntaId?: number;
-      }) => {
+      (data: { tipoComodin: string; opcionesEliminadas?: number[]; preguntaId?: number }) => {
         this.comodinBloqueado.update((list) =>
           list.includes(data.tipoComodin) ? list : [...list, data.tipoComodin],
         );
@@ -173,10 +169,13 @@ export class GameSocketService {
       this.preguntaConsultor.set(data.pregunta);
     });
 
-    this.socket.on('comodin_llamada_iniciado', (data: { consultorId: string; consultorNombre: string }) => {
-      this.llamadaActiva.set(true);
-      this.consultorAsignado.set(data.consultorNombre);
-    });
+    this.socket.on(
+      'comodin_llamada_iniciado',
+      (data: { consultorId: string; consultorNombre: string }) => {
+        this.llamadaActiva.set(true);
+        this.consultorAsignado.set(data.consultorNombre);
+      },
+    );
 
     this.socket.on('pista_consultor_recibida', (data: { pista: string }) => {
       this.pistaConsultor.set(data.pista);
@@ -330,9 +329,13 @@ export class GameSocketService {
         resolve({ success: false, message: 'Socket no conectado' });
         return;
       }
-      this.socket.emit('cambiar_rol_participante', { tokenCompartido, nickname, nuevoRol }, (res: any) => {
-        resolve(res);
-      });
+      this.socket.emit(
+        'cambiar_rol_participante',
+        { tokenCompartido, nickname, nuevoRol },
+        (res: any) => {
+          resolve(res);
+        },
+      );
     });
   }
 

@@ -193,9 +193,9 @@ describe('GameSocketService (observer extension)', () => {
     it('should emit activar_comodin_llamada event with correct payload', () => {
       service.conectar('http://test.local', 'fake-token');
       const pregunta = { preguntaId: 1, texto: 'Test', opciones: [], nivel: 1 };
-      
+
       service.activarComodinLlamada('fake-token', pregunta);
-      
+
       expect(mockSocket.emit).toHaveBeenCalledWith('activar_comodin_llamada', {
         tokenCompartido: 'fake-token',
         pregunta,
@@ -204,9 +204,9 @@ describe('GameSocketService (observer extension)', () => {
 
     it('should emit enviar_pista_consultor event with correct payload', () => {
       service.conectar('http://test.local', 'fake-token');
-      
+
       service.enviarPistaConsultor('fake-token', 1, 'Mi pista');
-      
+
       expect(mockSocket.emit).toHaveBeenCalledWith('enviar_pista_consultor', {
         tokenCompartido: 'fake-token',
         preguntaId: 1,
@@ -217,43 +217,48 @@ describe('GameSocketService (observer extension)', () => {
     it('should update state when consultor_seleccionado event is received', () => {
       service.conectar('http://test.local', 'fake-token');
       const pregunta = { preguntaId: 1, texto: 'Test', opciones: [], nivel: 1 };
-      
+
       mockSocket.trigger('consultor_seleccionado', { pregunta });
-      
+
       expect(service.llamadaActiva()).toBe(true);
       expect(service.preguntaConsultor()).toEqual(pregunta);
     });
 
     it('should update state when comodin_llamada_iniciado event is received', () => {
       service.conectar('http://test.local', 'fake-token');
-      
-      mockSocket.trigger('comodin_llamada_iniciado', { consultorId: 'c1', consultorNombre: 'Juan' });
-      
+
+      mockSocket.trigger('comodin_llamada_iniciado', {
+        consultorId: 'c1',
+        consultorNombre: 'Juan',
+      });
+
       expect(service.llamadaActiva()).toBe(true);
       expect(service.consultorAsignado()).toBe('Juan');
     });
 
     it('should update state when pista_consultor_recibida event is received', () => {
       service.conectar('http://test.local', 'fake-token');
-      
+
       mockSocket.trigger('pista_consultor_recibida', { pista: 'La respuesta es A' });
-      
+
       expect(service.pistaConsultor()).toBe('La respuesta es A');
     });
 
     it('should show alert on comodin_llamada_error', () => {
       service.conectar('http://test.local', 'fake-token');
-      
+
       mockSocket.trigger('comodin_llamada_error', { error: 'Consultor no disponible' });
-      
-      expect(window.alert).toHaveBeenCalledWith('Error con comodín llamada: Consultor no disponible');
+
+      expect(window.alert).toHaveBeenCalledWith(
+        'Error con comodín llamada: Consultor no disponible',
+      );
     });
 
     it('should show alert on enviar_pista_error', () => {
       service.conectar('http://test.local', 'fake-token');
-      
+
       mockSocket.trigger('enviar_pista_error', { error: 'Tiempo agotado' });
-      
+
       expect(window.alert).toHaveBeenCalledWith('Error al enviar pista: Tiempo agotado');
     });
   });
