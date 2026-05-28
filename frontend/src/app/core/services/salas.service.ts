@@ -2,16 +2,21 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
+import type { EstadoSala } from '../constants/estados.constants';
+import { ESTADOS_SALA } from '../constants/estados.constants';
+
+/** Tipo para el listado de salas (backend mapea los valores) */
+export type EstadoSalaListado = 'borrador' | 'esperando' | 'jugando' | 'terminado';
 
 export interface SalaResumen {
   salaId: number;
   nombre: string;
-  estado: 'esperando' | 'jugando' | 'terminado';
+  estado: EstadoSalaListado;
   participantes: number;
   creadoEn: string;
 }
 
-export type EstadoSala = 'BORRADOR' | 'ESPERANDO_ALUMNOS' | 'EN_VIVO' | 'FINALIZADO';
+export { EstadoSala, ESTADOS_SALA };
 
 export interface SalaDetalle {
   salaId: number;
@@ -50,6 +55,7 @@ export interface CreateSalaPayload {
   nombre: string;
   limitePreguntas?: number;
   duracionTokenHoras?: number;
+  maxEstudiantes?: number;
 }
 
 export interface SalaCreada {
@@ -93,6 +99,7 @@ export class SalasService {
     data: {
       nombre?: string;
       limitePreguntas?: number;
+      maxEstudiantes?: number;
       comodines?: { comodinId: number; activo: boolean }[];
     },
   ): Observable<SalaDetalle> {
@@ -147,9 +154,29 @@ export class SalasService {
     );
   }
 
+  reactivarSala(salaId: number): Observable<{
+    success: boolean;
+    estado: EstadoSala;
+    tokenCompartido: string;
+    tokenInvitacion: string;
+    message: string;
+  }> {
+    return this.http.post<any>(
+      `${this.apiUrl}/salas/${salaId}/reactivar`,
+      {},
+    );
+  }
+
   solicitarSugerenciaIa(preguntaId: number): Observable<{ literal: string; explicacion: string }> {
     return this.http.post<{ literal: string; explicacion: string }>(
       `${this.apiUrl}/comodines/ia/sugerencia`,
+      { preguntaId },
+    );
+  }
+
+  usarComodin5050(preguntaId: number): Observable<{ opcionesEliminadas: number[] }> {
+    return this.http.post<{ opcionesEliminadas: number[] }>(
+      `${this.apiUrl}/comodines/50-50`,
       { preguntaId },
     );
   }

@@ -162,7 +162,7 @@ export const seedSalaDemo = async (
       adminId,
       bancoId: banco.bancoId,
       nombre: 'Gran Torneo de Cultura General - Edición 2024',
-      estado: 'jugando',
+      estado: 'EN_VIVO',
       limitePreguntas: 15,
       comodines: {
         create: comodines.map((c) => ({ comodinId: c.comodinId, activo: true })),

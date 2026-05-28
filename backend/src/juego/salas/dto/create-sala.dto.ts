@@ -58,4 +58,16 @@ export class CreateSalaDto {
   @Max(168)
   @IsOptional()
   duracionTokenHoras?: number;
+
+  /** Cantidad máxima de estudiantes que pueden tener rol 'estudiante' simultáneamente. Por defecto 1 */
+  @ApiPropertyOptional({
+    example: 3,
+    default: 1,
+    description: 'Cantidad máxima de estudiantes en la sala',
+  })
+  @IsInt()
+  @Min(1)
+  @Max(100)
+  @IsOptional()
+  maxEstudiantes?: number;
 }

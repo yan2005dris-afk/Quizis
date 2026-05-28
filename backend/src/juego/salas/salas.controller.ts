@@ -212,4 +212,16 @@ export class SalasController {
   async reiniciarRonda(@Param('id', ParseIntPipe) id: number) {
     return this.salasService.reiniciarRonda(id);
   }
+
+  /**
+   * Reactiva una sala finalizada: la vuelve a BORRADOR y genera nuevo link.
+   */
+  @Post(':id/reactivar')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @RequiredPermission('salas', 'update')
+  @ApiOperation({ summary: 'Reactivar una sala finalizada.' })
+  async reactivarSala(@Param('id', ParseIntPipe) id: number) {
+    return this.salasService.reactivarSala(id);
+  }
 }

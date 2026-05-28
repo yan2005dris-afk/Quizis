@@ -36,7 +36,7 @@ export const seedRondas = async (
       bancoId: banco.bancoId,
       nombre: 'Sala de Demostración de Rondas',
       tokenCompartido: 'de9b23b3-8b77-4f6c-8438-e6b8a8b11111',
-      estado: 'ESPERANDO_ALUMNOS',
+      estado: 'EN_VIVO',
       limitePreguntas: 5,
       comodines: {
         create: comodinesCatalogo.map((c) => ({ comodinId: c.comodinId, activo: true })),

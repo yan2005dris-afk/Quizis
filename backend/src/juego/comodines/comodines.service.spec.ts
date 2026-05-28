@@ -3,16 +3,19 @@ import { ComodinesService } from './comodines.service';
 import { GetIaSuggestionUseCase } from './use-cases/get-ia-suggestion.use-case';
 import { SelectRandomConsultantUseCase } from './use-cases/select-random-consultant.use-case';
 import { GetPublicVoteResultsUseCase } from './use-cases/get-public-vote-results.use-case';
+import { EliminateOptions5050UseCase } from './use-cases/eliminate-options-5050.use-case';
 
 describe('ComodinesService', () => {
   let service: ComodinesService;
   let getIaSuggestionUseCase: GetIaSuggestionUseCase;
   let selectRandomConsultantUseCase: SelectRandomConsultantUseCase;
   let getPublicVoteResultsUseCase: GetPublicVoteResultsUseCase;
+  let eliminateOptions5050UseCase: EliminateOptions5050UseCase;
 
   const mockGetIaSuggestionUseCase = { execute: jest.fn() };
   const mockSelectRandomConsultantUseCase = { execute: jest.fn() };
   const mockGetPublicVoteResultsUseCase = { execute: jest.fn() };
+  const mockEliminateOptions5050UseCase = { execute: jest.fn() };
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -30,6 +33,10 @@ describe('ComodinesService', () => {
           provide: GetPublicVoteResultsUseCase,
           useValue: mockGetPublicVoteResultsUseCase,
         },
+        {
+          provide: EliminateOptions5050UseCase,
+          useValue: mockEliminateOptions5050UseCase,
+        },
       ],
     }).compile();
 
@@ -42,6 +49,9 @@ describe('ComodinesService', () => {
     );
     getPublicVoteResultsUseCase = module.get<GetPublicVoteResultsUseCase>(
       GetPublicVoteResultsUseCase,
+    );
+    eliminateOptions5050UseCase = module.get<EliminateOptions5050UseCase>(
+      EliminateOptions5050UseCase,
     );
   });
 
@@ -69,5 +79,11 @@ describe('ComodinesService', () => {
       rondaId,
       preguntaId,
     );
+  });
+
+  it('eliminateOptions5050 should delegate to EliminateOptions5050UseCase', async () => {
+    const preguntaId = 1;
+    await service.eliminateOptions5050(preguntaId);
+    expect(eliminateOptions5050UseCase.execute).toHaveBeenCalledWith(preguntaId);
   });
 });
