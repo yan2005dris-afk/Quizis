@@ -311,7 +311,7 @@
   <app-confirm-modal
     title="Regenerar Link"
     message="¿Seguro que deseas regenerar el link de invitación? El link anterior dejará de funcionar y los alumnos no podrán entrar."
-    (confirm)="confirmarRegenerarToken()"
-    (cancel)="mostrandoModalRegenerar.set(false)"
+    (confirmed)="confirmarRegenerarToken()"
+    (cancelled)="mostrandoModalRegenerar.set(false)"
   />
 }

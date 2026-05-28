@@ -19,7 +19,7 @@ import {
   SalaDetalle,
   EstadoSala,
 } from '../../../../core/services/salas.service';
-import { ToastService } from '../../../../core/services/toast.service'; 
+import { ToastService } from '../../../../core/services/toast.service';
 import { ConfirmModalComponent } from '../../../../shared/ui/confirm-modal/confirm-modal.component';
 import { ChatBoxComponent } from '../../components/chat-box/chat-box.component';
 import { EventHeaderComponent } from '../../components/event-header/event-header.component';
@@ -53,7 +53,7 @@ import { environment } from '../../../../../environments/environment';
     ActiveQuestionComponent,
     GameOverComponent,
     LucideAngularModule,
-    ConfirmModalComponent, 
+    ConfirmModalComponent,
   ],
   templateUrl: './room.component.html',
   styleUrl: './room.component.scss',
@@ -65,7 +65,7 @@ export class RoomComponent implements OnInit, OnDestroy {
   protected readonly route = inject(ActivatedRoute);
   protected readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
-  private readonly toastService = inject(ToastService); 
+  private readonly toastService = inject(ToastService);
 
   protected readonly activeTab = signal<'publico' | 'chat'>('publico');
   protected readonly unreadChatCount = signal(0);
@@ -83,7 +83,7 @@ export class RoomComponent implements OnInit, OnDestroy {
   protected readonly linkCopiado = signal(false);
   protected readonly confirmandoFinalizar = signal(false);
   protected readonly reiniciandoRonda = signal(false);
-  protected readonly mostrandoModalRegenerar = signal(false); 
+  protected readonly mostrandoModalRegenerar = signal(false);
 
   // Lucide icons
   protected readonly UsersIcon = Users;
@@ -319,15 +319,13 @@ export class RoomComponent implements OnInit, OnDestroy {
     this.gameSocket.cambiarEstadoSala(sala.tokenCompartido, nueva);
   }
 
-  
   public onRegenerarToken(): void {
     if (!this.salaDetalle() || this.regenerandoToken()) return;
     this.mostrandoModalRegenerar.set(true);
   }
 
-  
   public confirmarRegenerarToken(): void {
-    this.mostrandoModalRegenerar.set(false); 
+    this.mostrandoModalRegenerar.set(false);
     const sala = this.salaDetalle();
     if (!sala) return;
 
@@ -338,16 +336,24 @@ export class RoomComponent implements OnInit, OnDestroy {
         this.tokenInvitacion.set(res.tokenInvitacion);
         this.regenerandoToken.set(false);
         this.tokenRegenerado.set(true);
-        
-        this.toastService.show('El link anterior ha sido invalidado y el nuevo se ha generado.', 'success', '¡Link regenerado!');
+
+        this.toastService.show(
+          'El link anterior ha sido invalidado y el nuevo se ha generado.',
+          'success',
+          '¡Link regenerado!',
+        );
 
         setTimeout(() => this.tokenRegenerado.set(false), 2000);
       },
       error: (err) => {
         console.error('Error regenerando token:', err);
         this.regenerandoToken.set(false);
-        
-        this.toastService.show('Hubo un problema de conexión al regenerar el link.', 'danger', 'Error');
+
+        this.toastService.show(
+          'Hubo un problema de conexión al regenerar el link.',
+          'danger',
+          'Error',
+        );
       },
     });
   }
@@ -459,7 +465,7 @@ export class RoomComponent implements OnInit, OnDestroy {
         this.gameSocket.tiempoRestante.set(null);
         this.gameSocket.votosPublico.set(null);
         this.gameSocket.comodinBloqueado.set([]);
-        
+
         this.salaDetalle.update((s) =>
           s ? { ...s, estado: res.estado, rondaActiva: res.rondaActiva } : s,
         );
