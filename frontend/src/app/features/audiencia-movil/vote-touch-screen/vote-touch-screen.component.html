@@ -33,8 +33,14 @@
                   ? resultadoRespondida()!.opcionId === option.opcionId
                   : selectedOption() === option.id
               "
-              [class.option-btn--correct]="resultadoRespondida()?.opcionId === option.opcionId && resultadoRespondida()!.esCorrecta"
-              [class.option-btn--wrong]="resultadoRespondida()?.opcionId === option.opcionId && !resultadoRespondida()!.esCorrecta"
+              [class.option-btn--correct]="
+                resultadoRespondida()?.opcionId === option.opcionId &&
+                resultadoRespondida()!.esCorrecta
+              "
+              [class.option-btn--wrong]="
+                resultadoRespondida()?.opcionId === option.opcionId &&
+                !resultadoRespondida()!.esCorrecta
+              "
               [disabled]="!canVote()"
               (click)="selectOption(option.id)"
             >
@@ -48,7 +54,10 @@
 
         <!-- Feedback de resultado -->
         @if (resultadoRespondida()) {
-          <div class="comodin-locked-message" [style.background]="resultadoRespondida()!.esCorrecta ? '#dcfce7' : '#fee2e2'">
+          <div
+            class="comodin-locked-message"
+            [style.background]="resultadoRespondida()!.esCorrecta ? '#dcfce7' : '#fee2e2'"
+          >
             <span class="locked-icon">{{ resultadoRespondida()!.esCorrecta ? '✅' : '❌' }}</span>
             {{ resultadoRespondida()!.esCorrecta ? 'Respuesta correcta' : 'Respuesta incorrecta' }}
             @if (resultadoRespondida()!.feedback) {
@@ -82,7 +91,7 @@
       </div>
     } @else if (juegoEnVivo()) {
       <!-- JUEGO EN CURSO — sin pregunta activa todavía -->
-      <div class="waiting-footer" style="justify-content: center; padding: 32px 0;">
+      <div class="waiting-footer" style="justify-content: center; padding: 32px 0">
         <span class="waiting-status-dot"></span>
         En vivo — esperando la siguiente pregunta...
       </div>
