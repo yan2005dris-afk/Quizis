@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, ConflictException, Injectable } from '@nestjs/common';
 import { UserService } from 'src/identity/users/user.service';
 import { RegisterDto } from '../dto/register.dto';
 
@@ -10,7 +10,7 @@ export class RegisterUseCase {
     const user = await this.userService.user({ email: registerDto.email });
 
     if (user) {
-      throw new BadRequestException('El correo ya está registrado');
+      throw new ConflictException('El correo ya está registrado');
     }
 
     const createUserData: any = {
