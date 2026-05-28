@@ -11,6 +11,10 @@ describe('ParticipantsCacheUseCase', () => {
     smembers: jest.fn(),
     scard: jest.fn(),
     expire: jest.fn(),
+    hincrby: jest.fn(),
+    hdel: jest.fn(),
+    hgetall: jest.fn(),
+    hkeys: jest.fn(),
   };
 
   const mockRedisService = {
@@ -37,17 +41,19 @@ describe('ParticipantsCacheUseCase', () => {
   // ─── addParticipantOnline ──────────────────────────────────────────────────
 
   describe('addParticipantOnline', () => {
-    it('agrega nickname a online set y history set en Redis', async () => {
+    it('agrega nickname a online (hincrby) y history (sadd) en Redis', async () => {
+      mockRedisClient.hincrby.mockResolvedValue(1);
       mockRedisClient.sadd.mockResolvedValue(1);
       mockRedisClient.expire.mockResolvedValue(1);
 
       await useCase.addParticipantOnline('token-abc', 'Juan');
 
-      expect(mockRedisClient.sadd).toHaveBeenCalledWith('online:token-abc', 'Juan');
+      expect(mockRedisClient.hincrby).toHaveBeenCalledWith('online:token-abc', 'Juan', 1);
       expect(mockRedisClient.sadd).toHaveBeenCalledWith('history:token-abc', 'Juan');
     });
 
     it('establece TTL: 3600 para online, 14400 para history', async () => {
+      mockRedisClient.hincrby.mockResolvedValue(1);
       mockRedisClient.sadd.mockResolvedValue(1);
       mockRedisClient.expire.mockResolvedValue(1);
 
@@ -80,24 +86,23 @@ describe('ParticipantsCacheUseCase', () => {
   // ─── removeParticipantOnline ───────────────────────────────────────────────
 
   describe('removeParticipantOnline', () => {
-    it('remueve de online set con SREM', async () => {
-      mockRedisClient.srem.mockResolvedValue(1);
+    it('decrementa contador online con hincrby y elimina con hdel si llega a 0', async () => {
+      mockRedisClient.hincrby.mockResolvedValue(0);
+      mockRedisClient.hdel.mockResolvedValue(1);
 
       await useCase.removeParticipantOnline('token-abc', 'Juan');
 
-      expect(mockRedisClient.srem).toHaveBeenCalledWith('online:token-abc', 'Juan');
+      expect(mockRedisClient.hincrby).toHaveBeenCalledWith('online:token-abc', 'Juan', -1);
+      expect(mockRedisClient.hdel).toHaveBeenCalledWith('online:token-abc', 'Juan');
     });
 
-    it('NO remueve del history set', async () => {
-      mockRedisClient.srem.mockResolvedValue(1);
+    it('NO toca el history set al remover', async () => {
+      mockRedisClient.hincrby.mockResolvedValue(0);
+      mockRedisClient.hdel.mockResolvedValue(1);
 
       await useCase.removeParticipantOnline('token-abc', 'Juan');
 
-      expect(mockRedisClient.srem).toHaveBeenCalledTimes(1);
-      expect(mockRedisClient.srem).not.toHaveBeenCalledWith(
-        'history:token-abc',
-        'Juan',
-      );
+      expect(mockRedisClient.srem).not.toHaveBeenCalled();
     });
 
     it('fallback a memoria: elimina del online set interno', async () => {
