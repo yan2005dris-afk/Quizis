@@ -17,7 +17,7 @@ export class HelperCacheUseCase implements OnModuleInit, OnModuleDestroy {
   private memoryData = new Map<string, MemoryHelperEntry>();
   private gcInterval: NodeJS.Timeout | null = null;
 
-  private readonly TTL_SECONDS = 3600;
+  private readonly TTL_SECONDS = 600; // 10 minutos segun el lineamiento
 
   constructor(private readonly redisService: RedisService) {}
 

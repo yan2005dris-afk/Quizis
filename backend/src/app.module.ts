@@ -9,7 +9,6 @@ import { CacheModule } from './infrastructure/cache/cache.module';
 import { HealthModule } from './infrastructure/health/health.module';
 import { WebsocketsInfraModule } from './infrastructure/websockets/websockets.module';
 import { VotosModule } from './juego/votos/votos.module';
-import { ComodinesModule } from './comodines/comodines.module';
 import { SalasModule } from './juego/salas/salas.module';
 import { ReportesModule } from './juego/reportes/reportes.module';
 import { RondasModule } from './juego/rondas/rondas.module';
@@ -29,7 +28,6 @@ import { RondasModule } from './juego/rondas/rondas.module';
     HealthModule,
     WebsocketsInfraModule,
     VotosModule,
-    ComodinesModule,
     SalasModule,
     ReportesModule,
     RondasModule,
