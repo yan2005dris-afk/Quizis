@@ -164,21 +164,32 @@ xdg-open backend/coverage/lcov-report/index.html
 ```
 backend/
 ├── src/
-│   └── **/*.spec.ts          ← Unit tests (junto al código)
+│   └── **/*.spec.ts                      ← Unit tests (junto al código)
 └── test/
-    ├── jest-integration.json ← Config para integration tests
-    ├── jest-e2e.json         ← Config para e2e tests
+    ├── jest-integration.json             ← Config para integration tests
+    ├── jest-e2e.json                     ← Config para e2e tests
     ├── helpers/
-    │   ├── create-auth-test-app.ts   ← Factory: app sin Redis/WS
-    │   └── db-test.helper.ts         ← Seed y cleanup de DB
+    │   ├── create-auth-test-app.ts       ← Factory: app solo con Auth + Users
+    │   ├── create-full-test-app.ts       ← Factory: app con Auth, Users, Bancos, Salas, Health
+    │   ├── db-test.helper.ts             ← Seed/cleanup básico (auth)
+    │   └── db-seed.helper.ts             ← Seed/cleanup completo (seedAdminUser, seedBanco, cleanSeedData)
     ├── integration/
-    │   └── auth/
-    │       └── auth.integration.spec.ts  ← Auth: login, refresh, logout
-    └── app.e2e-spec.ts       ← E2E placeholder (pendiente)
+    │   ├── auth/
+    │   │   ├── auth.integration.spec.ts      ← login, refresh, logout
+    │   │   └── register.integration.spec.ts  ← registro, validaciones, permisos, duplicado
+    │   ├── health/
+    │   │   └── health.integration.spec.ts    ← GET /health
+    │   ├── bancos/
+    │   │   └── bancos.integration.spec.ts    ← CRUD bancos + preguntas en lote
+    │   ├── salas/
+    │   │   └── salas.integration.spec.ts     ← crear, listar, join, configurar, estado, token
+    │   └── users/
+    │       └── users.integration.spec.ts     ← GET me, CRUD usuarios
+    └── app.e2e-spec.ts                   ← E2E placeholder (pendiente)
 
 frontend/
 └── src/
-    └── **/*.spec.ts          ← Unit tests Angular
+    └── **/*.spec.ts                      ← Unit tests Angular
 ```
 
 ---
@@ -190,3 +201,4 @@ frontend/
 | **Unit** | Rápido (~ms) | No | Lógica aislada, un use-case o service |
 | **Integration** | Medio (~s) | PostgreSQL | Flujo completo con DB real |
 | **E2E** | Lento (~s) | PostgreSQL + Redis | App completa vía HTTP |
+
