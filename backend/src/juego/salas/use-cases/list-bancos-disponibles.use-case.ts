@@ -15,9 +15,9 @@ export class ListBancosDisponiblesUseCase {
   /**
    * Ejecuta la consulta para obtener los bancos de preguntas activos.
    */
-  async execute() {
+  async execute(usuarioId: number) {
     const bancos = await this.prisma.bancoPreguntas.findMany({
-      where: { deletedAt: null },
+      where: { deletedAt: null, usuarioId },
       select: {
         bancoId: true,
         nombre: true,

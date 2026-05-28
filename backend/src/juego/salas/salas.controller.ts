@@ -62,27 +62,32 @@ export class SalasController {
   }
 
   /**
-   * Lista todas las salas (visión general).
-   */
-  @Get()
-  @ApiOperation({ summary: 'Listar todas las salas disponibles.' })
-  @ApiResponse({ status: 200, description: 'Lista de salas retornada.' })
-  async listarTodas() {
-    return this.salasService.listarTodas();
-  }
-
-  /**
-   * Obtiene los bancos de preguntas disponibles para los profesores.
+   * Lista las salas del administrador autenticado.
    */
   @ApiBearerAuth()
   @ApiOperation({
-    summary: 'Listar los bancos de preguntas disponibles para los profesores',
+    summary: 'Listar las salas del administrador autenticado.',
+  })
+  @ApiResponse({ status: 200, description: 'Lista de salas retornada.' })
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @RequiredPermission('salas', 'read')
+  @Get()
+  async listarTodas(@AuthUserId() adminId: number) {
+    return this.salasService.listarTodas(adminId);
+  }
+
+  /**
+   * Obtiene los bancos de preguntas disponibles para el profesor autenticado.
+   */
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Listar los bancos de preguntas disponibles para el profesor',
   })
   @UseGuards(JwtAuthGuard, PermissionsGuard)
   @RequiredPermission('salas', 'create')
   @Get('bancos-disponibles')
-  listBancosDisponibles() {
-    return this.salasService.listBancosDisponibles();
+  listBancosDisponibles(@AuthUserId() usuarioId: number) {
+    return this.salasService.listBancosDisponibles(usuarioId);
   }
 
   /**

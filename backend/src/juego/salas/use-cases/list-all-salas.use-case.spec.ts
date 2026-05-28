@@ -25,7 +25,8 @@ describe('ListAllSalasUseCase', () => {
     useCase = module.get<ListAllSalasUseCase>(ListAllSalasUseCase);
   });
 
-  it('should list all salas', async () => {
+  it('should list salas filtered by adminId', async () => {
+    const adminId = 1;
     const salas = [
       {
         salaId: 1,
@@ -37,11 +38,19 @@ describe('ListAllSalasUseCase', () => {
     ];
     mockPrisma.salas.findMany.mockResolvedValue(salas);
 
-    const result = await useCase.execute();
+    const result = await useCase.execute(adminId);
 
     expect(result).toHaveLength(1);
     expect(result[0].nombre).toBe('S1');
     expect(result[0].participantes).toBe(5);
-    expect(mockPrisma.salas.findMany).toHaveBeenCalled();
+    expect(mockPrisma.salas.findMany).toHaveBeenCalledWith({
+      where: { deletedAt: null, adminId },
+      include: {
+        _count: {
+          select: { participantes: true },
+        },
+      },
+      orderBy: [{ estado: 'asc' }, { createdAt: 'desc' }],
+    });
   });
 });

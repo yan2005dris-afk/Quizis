@@ -8,7 +8,7 @@ export class CreateBancoUseCase {
 
   constructor(private readonly prisma: PrismaService) {}
 
-  async execute(dto: CreateBancoDto) {
+  async execute(usuarioId: number, dto: CreateBancoDto) {
     this.logger.log(`Creando nuevo banco: ${dto.nombre}`);
 
     if (dto.preguntas && dto.preguntas.length > 0) {
@@ -20,6 +20,7 @@ export class CreateBancoUseCase {
         data: {
           nombre: dto.nombre,
           descripcion: dto.descripcion ?? null,
+          usuarioId,
         },
       });
 
