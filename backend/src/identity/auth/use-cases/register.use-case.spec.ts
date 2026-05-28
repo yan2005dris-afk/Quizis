@@ -2,7 +2,7 @@ import type { TestingModule } from '@nestjs/testing';
 import { Test } from '@nestjs/testing';
 import { RegisterUseCase } from './register.use-case';
 import { UserService } from 'src/identity/users/user.service';
-import { BadRequestException } from '@nestjs/common';
+import { BadRequestException, ConflictException } from '@nestjs/common';
 
 describe('RegisterUseCase', () => {
   let useCase: RegisterUseCase;
@@ -68,7 +68,7 @@ describe('RegisterUseCase', () => {
           apellidos: 'Pérez',
           telefono: '+593991234567',
         }),
-      ).rejects.toThrow(BadRequestException);
+      ).rejects.toThrow(ConflictException);
     });
 
     it('should throw BadRequestException if creation fails', async () => {
