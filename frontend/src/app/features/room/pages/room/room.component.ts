@@ -10,7 +10,7 @@ import {
   effect,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { GameSocketService } from '../../../../core/services/game-socket.service';
 import { AuthService } from '../../../../core/services/auth.service';
 import {
@@ -63,6 +63,7 @@ export class RoomComponent implements OnInit, OnDestroy {
   protected readonly auth = inject(AuthService);
   protected readonly salasService = inject(SalasService);
   protected readonly route = inject(ActivatedRoute);
+  protected readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
   private readonly toastService = inject(ToastService); 
 
@@ -112,7 +113,7 @@ export class RoomComponent implements OnInit, OnDestroy {
   protected readonly isBorrador = computed(() => this.estadoSala() === 'BORRADOR');
 
   protected readonly miNickname = computed(() => {
-    if (this.isHost()) return `Host-${this.salaDetalle()?.nombre}`;
+    if (this.isHost()) return this.auth.user()?.nombre || 'Admin';
     const participantInfo = JSON.parse(localStorage.getItem('participantInfo') ?? '{}');
     return participantInfo.nickname;
   });
@@ -138,6 +139,24 @@ export class RoomComponent implements OnInit, OnDestroy {
   });
 
   constructor() {
+    // Efecto para redirigir a la vista de audiencia si pasamos a ser observadores
+    effect(() => {
+      const rol = this.miRol();
+      const sala = this.salaDetalle();
+      const participantes = this.gameSocket.participantes();
+
+      // Solo evaluar la redirección si ya recibimos la lista del socket
+      if (
+        participantes.length > 0 &&
+        rol === 'observador' &&
+        !this.isHost() &&
+        sala &&
+        sala.tokenCompartido
+      ) {
+        this.router.navigate(['/audiencia'], { queryParams: { token: sala.tokenCompartido } });
+      }
+    });
+
     // Efecto ÚNICO para reaccionar al WS ronda_reiniciada
     effect(() => {
       const reinicio = this.gameSocket.rondaReiniciada();
@@ -219,8 +238,14 @@ export class RoomComponent implements OnInit, OnDestroy {
             participantes: [],
             infoRonda: sala.rondaActiva
               ? {
-                  ronda: sala.rondaActiva.numeroRonda,
-                  totalRondas: sala.rondaActiva.historialPreguntas?.length || sala.limitePreguntas,
+                  ronda: (() => {
+                    const idx = sala.rondaActiva.historialPreguntas?.findIndex(
+                      (p: any) => p.preguntaId === sala.rondaActiva!.preguntaActualId,
+                    );
+                    return idx !== undefined && idx >= 0 ? idx + 1 : 1;
+                  })(),
+                  totalRondas:
+                    sala.limitePreguntas || sala.rondaActiva.historialPreguntas?.length || 0,
                   premio: '$0',
                 }
               : null,
@@ -236,7 +261,7 @@ export class RoomComponent implements OnInit, OnDestroy {
             if (this.gameSocket.conectado()) {
               const participantInfo = JSON.parse(localStorage.getItem('participantInfo') ?? '{}');
               const nickname = this.isHost()
-                ? `Host-${sala.nombre}`
+                ? `Host-${this.auth.user()?.nombre || 'Admin'}`
                 : (participantInfo.nickname ?? `Estudiante-${Math.floor(Math.random() * 1000)}`);
               this.gameSocket.unirseASala(sala.tokenCompartido, nickname);
               clearInterval(interval);
@@ -272,6 +297,13 @@ export class RoomComponent implements OnInit, OnDestroy {
         this.salaDetalle.update((s) => (s ? { ...s, estado: updated.estado } : s));
         this.cambiandoEstado.set(false);
         this.gameSocket.salaHabilitada.set(updated.estado !== 'FINALIZADO');
+
+        if (updated.estado === 'EN_VIVO') {
+          this.salasService
+            .obtenerPorId(String(updated.salaId))
+            .pipe(takeUntilDestroyed(this.destroyRef))
+            .subscribe({ next: (s) => this.salaDetalle.set(s) });
+        }
       },
       error: (err) => {
         console.error('Error actualizando estado:', err);

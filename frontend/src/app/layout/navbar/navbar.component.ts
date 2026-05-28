@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { AuthService } from '../../core/services/auth.service';
-import { LucideAngularModule, Bell, Search } from 'lucide-angular';
+import { LucideAngularModule, Bell } from 'lucide-angular';
 
 @Component({
   selector: 'app-navbar',
@@ -13,5 +13,4 @@ export class NavbarComponent {
   protected readonly authService = inject(AuthService);
 
   readonly BellIcon = Bell;
-  readonly SearchIcon = Search;
 }

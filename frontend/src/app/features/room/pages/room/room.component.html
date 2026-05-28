@@ -129,7 +129,7 @@
               size="14"
               aria-hidden="true"
             ></lucide-icon>
-            {{ linkCopiado() ? 'Copiado' : 'Copiar link' }}
+            {{ linkCopiado() ? 'Copiado' : 'Copiar Enlace' }}
           </button>
           <button
             class="room__btn"
@@ -234,20 +234,23 @@
         </div>
       }
 
-      <app-active-question
-        [preguntas]="salaDetalle()?.rondaActiva?.historialPreguntas || []"
-        [preguntaActivaId]="
-          gameSocket.preguntaActiva()?.preguntaId ||
-          salaDetalle()?.rondaActiva?.preguntaActualId ||
-          null
-        "
-        [tiempoRestante]="gameSocket.tiempoRestante()"
-        [comodinBloqueado]="gameSocket.comodinBloqueado()"
-        [comodines]="comodines()"
-        [tokenCompartido]="salaDetalle()?.tokenCompartido || ''"
-        [interactive]="!!preguntaActiva() && !isFinalizado()"
-        (seleccionada)="onResponder($event)"
-      />
+      @if (salaDetalle()?.rondaActiva) {
+        <app-active-question
+          [preguntas]="salaDetalle()?.rondaActiva?.historialPreguntas || []"
+          [preguntaActivaId]="
+            gameSocket.preguntaActiva()?.preguntaId ||
+            salaDetalle()?.rondaActiva?.preguntaActualId ||
+            null
+          "
+          [tiempoRestante]="gameSocket.tiempoRestante()"
+          [comodinBloqueado]="gameSocket.comodinBloqueado()"
+          [comodines]="comodines()"
+          [tokenCompartido]="salaDetalle()?.tokenCompartido || ''"
+          [interactive]="!!preguntaActiva() && !isFinalizado()"
+          [isAdmin]="isHost()"
+          (seleccionada)="onResponder($event)"
+        />
+      }
 
       <p class="room__footer-note">
         {{ isHost() ? 'Estás en modo Presentador.' : 'Estás participando en la sala.' }}

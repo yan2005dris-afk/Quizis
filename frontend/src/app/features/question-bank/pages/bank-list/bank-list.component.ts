@@ -26,8 +26,29 @@ export class BankListComponent {
   readonly PlusIcon = Plus;
   readonly DatabaseIcon = Database;
 
-  // ── Template download ─────────────────────────────
   readonly templateFormat = signal<'json' | 'csv' | 'xlsx'>('json');
+
+  getTotalPreguntas(): number {
+    const bancos = this.bancosResource.value() || [];
+    return bancos.reduce((acc, b) => acc + (b._count?.preguntas || 0), 0);
+  }
+
+  getUltimoCreado(): string {
+    const bancos = this.bancosResource.value() || [];
+
+    if (bancos.length === 0) return '—';
+
+    const ultimo = bancos.sort(
+      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+    )[0];
+
+    const fecha = new Date(ultimo.createdAt);
+
+    return fecha.toLocaleDateString('es-ES', {
+      day: '2-digit',
+      month: 'short',
+    });
+  }
 
   async downloadTemplate() {
     const format = this.templateFormat();
@@ -36,9 +57,11 @@ export class BankListComponent {
       case 'json':
         this.downloadJsonTemplate();
         break;
+
       case 'csv':
         await this.downloadCsvTemplate();
         break;
+
       case 'xlsx':
         await this.downloadXlsxTemplate();
         break;
@@ -73,8 +96,14 @@ export class BankListComponent {
             texto: 'Evitar ambigüedad sobre quién realiza seguimiento o verificación.',
             esCorrecta: true,
           },
-          { texto: 'Hacer el documento más largo sin utilidad.', esCorrecta: false },
-          { texto: 'Quitar autonomía a todo el equipo.', esCorrecta: false },
+          {
+            texto: 'Hacer el documento más largo sin utilidad.',
+            esCorrecta: false,
+          },
+          {
+            texto: 'Quitar autonomía a todo el equipo.',
+            esCorrecta: false,
+          },
         ],
         categoria: 'Plan de calidad',
         feedbackCorrecto: '',
@@ -82,26 +111,41 @@ export class BankListComponent {
           'La respuesta correcta es: Evitar ambigüedad sobre quién realiza seguimiento…',
       },
     ];
+
     const jsonString = `data:text/json;charset=utf-8,${encodeURIComponent(
       JSON.stringify(data, null, 2),
     )}`;
+
     this.triggerDownload(jsonString, 'plantilla_carga_masiva.json');
   }
 
   private async downloadCsvTemplate() {
     const { default: Papa } = await import('papaparse');
+
     const data = this.getTemplateData();
-    const csv = Papa.unparse(data, { header: true });
+
+    const csv = Papa.unparse(data, {
+      header: true,
+    });
+
     const bom = '\uFEFF';
-    const blob = new Blob([bom + csv], { type: 'text/csv;charset=utf-8;' });
+
+    const blob = new Blob([bom + csv], {
+      type: 'text/csv;charset=utf-8;',
+    });
+
     const url = URL.createObjectURL(blob);
+
     this.triggerDownload(url, 'plantilla_carga_masiva.csv');
+
     setTimeout(() => URL.revokeObjectURL(url), 0);
   }
 
   private async downloadXlsxTemplate() {
     const XLSX = await import('xlsx');
+
     const data = this.getTemplateData();
+
     const ws = XLSX.utils.json_to_sheet(data);
 
     ws['!cols'] = [
@@ -118,16 +162,22 @@ export class BankListComponent {
     ];
 
     const wb = XLSX.utils.book_new();
+
     XLSX.utils.book_append_sheet(wb, ws, 'Preguntas');
+
     XLSX.writeFile(wb, 'plantilla_carga_masiva.xlsx');
   }
 
   private triggerDownload(url: string, filename: string) {
     const anchor = document.createElement('a');
+
     anchor.setAttribute('href', url);
     anchor.setAttribute('download', filename);
+
     document.body.appendChild(anchor);
+
     anchor.click();
+
     anchor.remove();
   }
 

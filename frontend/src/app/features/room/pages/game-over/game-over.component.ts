@@ -100,7 +100,6 @@ export class GameOverComponent implements OnInit {
               numeroRonda: ronda.numeroRonda,
             });
           }
-
         }
         // Recalcular porcentaje consolidado
         const list: GameOverParticipant[] = [];

@@ -10,7 +10,9 @@ export class ReportesController {
 
   @Post('generar')
   async generarReporte(@Body() dto: GenerateReportDto) {
-    const reportData = await this.reportesService.obtenerEstadisticas(dto.salaId);
+    const reportData = await this.reportesService.obtenerEstadisticas(
+      dto.salaId,
+    );
     return reportData;
   }
 }

@@ -35,7 +35,7 @@ COPY package.json pnpm-workspace.yaml ./
 COPY backend/ ./backend/
 
 # Generate Prisma client and compile NestJS
-RUN cd backend && npx prisma generate && npx nest build
+RUN cd backend && pnpm exec prisma generate && pnpm --filter backend run build
 
 # Stage 3: Production runtime
 # -------------------------------------------------------------------------
@@ -59,4 +59,4 @@ COPY --from=build /app/backend/prisma.config.ts ./backend/prisma.config.ts
 EXPOSE 3000
 
 # Start: apply pending migrations, then launch the NestJS server
-CMD cd backend && npx prisma migrate deploy && node dist/src/main.js
+CMD cd backend && pnpm exec prisma migrate deploy && node dist/src/main.js
