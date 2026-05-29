@@ -8,6 +8,7 @@ import {
   MessageBody,
 } from '@nestjs/websockets';
 import { Logger } from '@nestjs/common';
+import { OnEvent } from '@nestjs/event-emitter';
 import { Server, Socket } from 'socket.io';
 import { WebsocketsService } from '../../juego/websockets/websockets.service';
 import * as ProcessVote from '../../juego/websockets/use-cases/process-audience-vote.use-case';
@@ -70,6 +71,27 @@ export class JuegoGateway implements OnGatewayConnection, OnGatewayDisconnect {
     private readonly chatCache: ChatCacheUseCase,
     private readonly helperCache: HelperCacheUseCase,
   ) {}
+
+  // ─── Bug 3: IA broadcast to all participants via EventEmitter ───────
+  @OnEvent('comodin.ia.suggestion')
+  handleIaSuggestionBroadcast(payload: {
+    preguntaId: number;
+    literal: string;
+    explicacion: string;
+    tokenCompartido: string;
+  }) {
+    this.server.to(payload.tokenCompartido).emit('ia_sugerencia_recibida', {
+      preguntaId: payload.preguntaId,
+      literal: payload.literal,
+      explicacion: payload.explicacion,
+    });
+  }
+
+  // ─── Bug 3: Público vote broadcast to all participants via EventEmitter ───────
+  @OnEvent('publico.voto.recibido')
+  handlePublicoVoteBroadcast(payload: { tokenCompartido: string; resultado: any }) {
+    this.server.to(payload.tokenCompartido).emit('voto_recibido', payload.resultado);
+  }
 
   handleConnection(client: Socket) {
     this.logger.log(`Cliente conectado: ${client.id}`);

@@ -23,7 +23,7 @@ import { AnalyticsComponent } from '../analytics/analytics.component';
 interface SalaItem {
   salaId: number;
   nombre: string;
-  estado: 'BORRADOR' | 'ESPERANDO_ALUMNOS' | 'EN_VIVO' | 'FINALIZADO';
+  estado: 'borrador' | 'esperando' | 'jugando' | 'terminado';
   participantesCount: number;
   creadoEn: string;
 }
@@ -53,7 +53,8 @@ export class ReportesIndexComponent implements OnInit {
 
   protected readonly salasFiltradas = computed(() => {
     const q = this.busqueda().toLowerCase();
-    const finalizadas = this.salas().filter((s) => s.estado === 'FINALIZADO');
+    // Backend maps FINALIZADO → 'terminado' in ListAllSalasUseCase
+    const finalizadas = this.salas().filter((s) => s.estado === 'terminado');
     return q ? finalizadas.filter((s) => s.nombre.toLowerCase().includes(q)) : finalizadas;
   });
 

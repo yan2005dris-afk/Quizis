@@ -11,6 +11,7 @@ import {
 import { CommonModule, TitleCasePipe } from '@angular/common';
 import { GameSocketService } from '../../../../core/services/game-socket.service';
 import { SalasService, ComodinSala } from '../../../../core/services/salas.service';
+import { ToastService } from '../../../../core/services/toast.service';
 import {
   LucideAngularModule,
   ChevronLeft,
@@ -43,6 +44,7 @@ export interface OpcionVoto {
 export class ActiveQuestionComponent {
   private readonly salasService = inject(SalasService);
   protected readonly gameSocket = inject(GameSocketService);
+  private readonly toastService = inject(ToastService);
 
   readonly preguntaActivaId = input<number | null>(null);
   readonly preguntas = input<any[]>([]);
@@ -62,8 +64,8 @@ export class ActiveQuestionComponent {
   protected readonly iaSugerencia = signal<{ literal: string; explicacion: string } | null>(null);
   protected readonly cargandoIa = signal(false);
 
-  // 50/50 State
-  protected readonly opcionesEliminadas = signal<number[]>([]);
+  // 50/50 State — derived from GameSocketService singleton (survives round restarts)
+  protected readonly opcionesEliminadas = computed(() => this.gameSocket.opcionesEliminadas());
 
   // Iconos
   protected readonly PrevIcon = ChevronLeft;
@@ -99,22 +101,14 @@ export class ActiveQuestionComponent {
     effect(() => {
       const bloqueado = this.gameSocket.ultimoComodinBloqueado();
       if (bloqueado && bloqueado.tipoComodin === '50_50' && bloqueado.preguntaId) {
-        // If the current active question matches, update eliminated options
+        // If the current active question matches, update eliminated options in the service singleton
         if (bloqueado.preguntaId === this.preguntaActivaId()) {
-          this.opcionesEliminadas.set(bloqueado.opcionesEliminadas ?? []);
+          this.gameSocket.opcionesEliminadas.set(bloqueado.opcionesEliminadas ?? []);
         }
       }
     });
 
-    // Limpiar 50/50 al reiniciar ronda
-    effect(() => {
-      // Accessing gameSocket properties to react to ronda_reiniciada
-      const list = this.preguntas();
-      const activeId = this.preguntaActivaId();
-      if (list.length === 0 && !activeId) {
-        this.opcionesEliminadas.set([]);
-      }
-    });
+    // Clear 50/50 when round restarts (service signal is already cleared via WS event)
 
     // Reaccionar a respuestas en tiempo real vía socket
     effect(() => {
@@ -276,6 +270,21 @@ export class ActiveQuestionComponent {
   }
 
   protected onComodinClick(comodin: ComodinSala): void {
+    // Guard 1: Already answered (confirmed via WS)
+    if (this.respuestaConfirmada()) {
+      this.toastService.show('Ya respondiste esta pregunta', 'warning', 'Atención');
+      return;
+    }
+
+    // Guard 2: Race condition — answer submitted, WS not yet received
+    const activeId = this.preguntaActivaId();
+    const result = this.gameSocket.ultimoResultado();
+    if (activeId && result?.preguntaId === activeId) {
+      this.toastService.show('Ya respondiste esta pregunta', 'warning', 'Atención');
+      return;
+    }
+
+    // Guard 3: Comodín not active or already used
     if (
       !this.interactive() ||
       !comodin.activo ||
@@ -330,7 +339,12 @@ export class ActiveQuestionComponent {
     this.salasService.solicitarSugerenciaIa(preguntaId).subscribe({
       next: (res) => {
         console.log('[COMODIN:IA] Sugerencia recibida:', res);
-        this.iaSugerencia.set(res);
+        // Deduplication: if global already has this suggestion, don't show duplicate banner
+        if (this.gameSocket.iaSugerenciaGlobal()?.literal === res.literal) {
+          console.log('[COMODIN:IA] Sugerencia ya presente globalmente, omitiendo duplicado');
+        } else {
+          this.iaSugerencia.set(res);
+        }
         this.cargandoIa.set(false);
         // Notificar a la sala para bloquear el uso (Broadcast)
         this.gameSocket.bloquearComodin(token, 'IA');
@@ -356,7 +370,7 @@ export class ActiveQuestionComponent {
 
     this.salasService.usarComodin5050(preguntaId).subscribe({
       next: (res) => {
-        this.opcionesEliminadas.set(res.opcionesEliminadas);
+        this.gameSocket.opcionesEliminadas.set(res.opcionesEliminadas);
         this.gameSocket.bloquearComodin(token, '50_50', res.opcionesEliminadas, preguntaId);
       },
       error: (err) => {

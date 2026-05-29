@@ -1,8 +1,9 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { signal } from '@angular/core';
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { ActiveQuestionComponent } from './active-question.component';
 import { GameSocketService, VotosPublico } from '../../../../core/services/game-socket.service';
+import { ToastService } from '../../../../core/services/toast.service';
 
 const preguntasMock = [
   {
@@ -24,19 +25,29 @@ describe('ActiveQuestionComponent', () => {
   let fixture: ComponentFixture<ActiveQuestionComponent>;
 
   let mockVotosPublico: ReturnType<typeof signal<VotosPublico | null>>;
+  let mockOpcionesEliminadas: ReturnType<typeof signal<number[]>>;
+  let mockUltimoResultado: ReturnType<typeof signal<any>>;
+  let mockToastService: { show: ReturnType<typeof vi.fn> };
 
   beforeEach(async () => {
     mockVotosPublico = signal<VotosPublico | null>(null);
+    mockOpcionesEliminadas = signal<number[]>([]);
+    mockUltimoResultado = signal(null);
+    mockToastService = { show: vi.fn() };
 
     const mockGameSocket = {
       votosPublico: mockVotosPublico,
-      ultimoResultado: signal(null),
+      ultimoResultado: mockUltimoResultado,
       ultimoComodinBloqueado: signal<any>(null),
+      opcionesEliminadas: mockOpcionesEliminadas,
     } as unknown as GameSocketService;
 
     await TestBed.configureTestingModule({
       imports: [ActiveQuestionComponent],
-      providers: [{ provide: GameSocketService, useValue: mockGameSocket }],
+      providers: [
+        { provide: GameSocketService, useValue: mockGameSocket },
+        { provide: ToastService, useValue: mockToastService },
+      ],
     }).compileComponents();
 
     fixture = TestBed.createComponent(ActiveQuestionComponent);
@@ -158,5 +169,74 @@ describe('ActiveQuestionComponent', () => {
 
     expect(fixture.nativeElement.textContent).toContain('Segunda Pregunta');
     expect(fixture.nativeElement.textContent).toContain('2 / 2');
+  });
+
+  // ─── BUG 4: Comodín blocking on already-answered questions ──────────
+
+  describe('Bug 4 — comodín blocking guards', () => {
+    it('should show toast when respuestaConfirmada is true', () => {
+      // Set up with a single comodín
+      const comodinesMock = [{ comodinId: 1, nombre: 'IA', descripcion: 'test', icono: '🤖', activo: true }];
+      fixture.componentRef.setInput('comodines', comodinesMock);
+      fixture.componentRef.setInput('preguntas', preguntasMock);
+      fixture.componentRef.setInput('preguntaActivaId', 1);
+      fixture.componentRef.setInput('interactive', true);
+      fixture.detectChanges();
+
+      // Simulate answer confirmed
+      component['respuestaConfirmada'].set(true);
+      fixture.detectChanges();
+
+      // Click comodín — should trigger toast, not call usarComodinIa
+      component['onComodinClick'](comodinesMock[0]);
+
+      expect(mockToastService.show).toHaveBeenCalledWith(
+        'Ya respondiste esta pregunta',
+        'warning',
+        'Atención',
+      );
+    });
+
+    it('should show toast when ultimoResultado has matching preguntaId (race condition)', () => {
+      const comodinesMock = [{ comodinId: 2, nombre: '50_50', descripcion: 'test', icono: '5', activo: true }];
+      fixture.componentRef.setInput('comodines', comodinesMock);
+      fixture.componentRef.setInput('preguntas', preguntasMock);
+      fixture.componentRef.setInput('preguntaActivaId', 1);
+      fixture.componentRef.setInput('interactive', true);
+      fixture.detectChanges();
+
+      // Simulate answer result already received via WS (race condition guard)
+      mockUltimoResultado.set({ preguntaId: 1, opcionId: 2, esCorrecta: true, feedback: 'ok' });
+      fixture.detectChanges();
+
+      component['onComodinClick'](comodinesMock[0]);
+
+      expect(mockToastService.show).toHaveBeenCalledWith(
+        'Ya respondiste esta pregunta',
+        'warning',
+        'Atención',
+      );
+    });
+
+    it('should show toast when ultimoResultado has matching preguntaId (race condition)', () => {
+      const comodinesMock = [{ comodinId: 2, nombre: '50_50', descripcion: 'test', icono: '5', activo: true }];
+      fixture.componentRef.setInput('comodines', comodinesMock);
+      fixture.componentRef.setInput('preguntas', preguntasMock);
+      fixture.componentRef.setInput('preguntaActivaId', 1);
+      fixture.componentRef.setInput('interactive', true);
+      fixture.detectChanges();
+
+      // Simulate answer result already received via WS (race condition guard)
+      mockUltimoResultado.set({ preguntaId: 1, opcionId: 2, esCorrecta: true, feedback: 'ok' });
+      fixture.detectChanges();
+
+      component['onComodinClick'](comodinesMock[0]);
+
+      expect(mockToastService.show).toHaveBeenCalledWith(
+        'Ya respondiste esta pregunta',
+        'warning',
+        'Atención',
+      );
+    });
   });
 });

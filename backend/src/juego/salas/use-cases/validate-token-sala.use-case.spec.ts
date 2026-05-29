@@ -162,6 +162,8 @@ describe('ValidateTokenSalaUseCase', () => {
     };
 
     mockJwtService.verifyAsync.mockResolvedValue(payload);
+    // Note: FINALIZADO rooms now allow access — admin can view reports
+    // The frontend's `salaHabilitada` flag prevents new interactions
     mockPrisma.salas.findUnique.mockResolvedValue({
       salaId: 1,
       nombre: 'Sala Finalizada',
@@ -170,8 +172,7 @@ describe('ValidateTokenSalaUseCase', () => {
       deletedAt: null,
     });
 
-    await expect(useCase.execute(token)).rejects.toThrow(
-      'La sala ha finalizado y ya no acepta participantes',
-    );
+    const result = await useCase.execute(token);
+    expect(result.estado).toBe(EstadoSala.FINALIZADO);
   });
 });

@@ -1,6 +1,7 @@
-import { Injectable, signal } from '@angular/core';
+import { Injectable, signal, inject } from '@angular/core';
 import { io, Socket } from 'socket.io-client';
 import { ChatMessage, SalaEvento, Participante, RondaInfo } from '../../features/room/room.types';
+import { ToastService } from './toast.service';
 
 // Representa una opción de respuesta individual dentro de una pregunta
 export interface Opcion {
@@ -63,12 +64,20 @@ export class GameSocketService {
   readonly ultimoResultado = signal<ResultRespuesta | null>(null);
   readonly ultimoComodinBloqueado = signal<any>(null);
 
+  // IA suggestion broadcast to all participants (Bug 3 fix)
+  readonly iaSugerenciaGlobal = signal<{ literal: string; explicacion: string } | null>(null);
+
   // Estado reactivo para el modo observador
   readonly mensajesChat = signal<ChatMessage[]>([]);
   readonly eventosSala = signal<SalaEvento[]>([]);
   readonly participantes = signal<Participante[]>([]);
   readonly infoRonda = signal<RondaInfo | null>(null);
   readonly rondaReiniciada = signal<any | null>(null);
+
+  // 50/50 — survived round restarts (Bug 1 fix)
+  readonly opcionesEliminadas = signal<number[]>([]);
+
+  private readonly toast = inject(ToastService);
 
   // Separado para poder mockearlo en tests sin depender de vi.mock
   protected createSocketConnection(url: string, token: string): Socket {
@@ -94,6 +103,7 @@ export class GameSocketService {
       this.consultorAsignado.set(null);
       this.preguntaConsultor.set(null);
       this.pistaConsultor.set(null);
+      this.iaSugerenciaGlobal.set(null);
 
       // Auto-incrementar el número de pregunta (ronda) en la interfaz
       this.infoRonda.update((info) => {
@@ -181,12 +191,17 @@ export class GameSocketService {
       this.pistaConsultor.set(data.pista);
     });
 
-    this.socket.on('comodin_llamada_error', (data: { error: string }) => {
-      alert(`Error con comodín llamada: ${data.error}`);
+    this.socket.on('comodin_llamada_error', (data: { message: string }) => {
+      this.toast.show(data.message ?? 'No hay compañeros en línea disponibles', 'warning', 'Comodín Llamada');
     });
 
-    this.socket.on('enviar_pista_error', (data: { error: string }) => {
-      alert(`Error al enviar pista: ${data.error}`);
+    this.socket.on('enviar_pista_error', (data: { message: string }) => {
+      this.toast.show(data.message ?? 'Error al enviar pista', 'warning', 'Consultor');
+    });
+
+    // IA suggestion broadcast to all participants (Bug 3 fix)
+    this.socket.on('ia_sugerencia_recibida', (data: { preguntaId: number; literal: string; explicacion: string }) => {
+      this.iaSugerenciaGlobal.set({ literal: data.literal, explicacion: data.explicacion });
     });
 
     // ——— Observers ———
@@ -222,6 +237,7 @@ export class GameSocketService {
       this.consultorAsignado.set(null);
       this.preguntaConsultor.set(null);
       this.pistaConsultor.set(null);
+      this.opcionesEliminadas.set([]);
       this.rondaReiniciada.set(data);
       if (data?.rondaActiva) {
         this.infoRonda.set({
