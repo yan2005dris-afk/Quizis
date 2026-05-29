@@ -1,0 +1,20 @@
+// Paleta del módulo de juego — creada para componentizar active-question.
+// Contiene los mismos valores que tenía active-question.component.scss
+// de forma inline antes del refactor.
+
+$color-card-white:       #ffffff;
+$color-ui-primary:       #3b82f6;
+$color-ui-primary-light: #eff6ff;
+$color-ui-primary-hover: #2563eb;  // reemplaza color.adjust($color-ui-primary, $lightness: -8%)
+$color-text-main:        #1e293b;
+$color-text-muted:       #64748b;
+$color-success:          #10b981;
+$color-success-bg:       #ecfdf5;
+$color-danger:           #ef4444;
+$color-danger-bg:        #fef2f2;
+$color-warning:          #f59e0b;
+$color-warning-bg:       #fffbeb;
+$color-purple:           #7c3aed;
+$color-purple-bg:        #f5f3ff;
+$color-cyan:             #0891b2;
+$color-cyan-bg:          #ecfeff;

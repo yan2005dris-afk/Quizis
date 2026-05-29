@@ -181,7 +181,7 @@ export class GameSocketService {
 
     this.socket.on(
       'comodin_llamada_iniciado',
-      (data: { consultorId: string; consultorNombre: string }) => {
+      (data: { consultorNombre: string }) => {
         this.llamadaActiva.set(true);
         this.consultorAsignado.set(data.consultorNombre);
       },
@@ -378,8 +378,16 @@ export class GameSocketService {
   }
 
   // Activar comodín llamada (Solo Estudiante)
-  activarComodinLlamada(tokenCompartido: string, pregunta: Pregunta): void {
-    this.socket?.emit('activar_comodin_llamada', { tokenCompartido, pregunta });
+  activarComodinLlamada(
+    tokenCompartido: string,
+    pregunta: Pregunta,
+    consultorNickname: string,
+  ): void {
+    this.socket?.emit('activar_comodin_llamada', {
+      tokenCompartido,
+      pregunta,
+      consultorNickname,
+    });
   }
 
   // Enviar pista consultor (Solo Consultor)

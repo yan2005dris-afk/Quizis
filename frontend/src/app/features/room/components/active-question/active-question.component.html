@@ -182,45 +182,15 @@
       </div>
     }
 
-    <!-- Panel de Comodines -->
-    <div class="observer-wildcards-panel">
-      <p class="wildcards-title">COMODINES EN ESTA RONDA</p>
-
-      <div class="wildcards-grid">
-        @for (comodin of comodines(); track comodin.nombre) {
-          @if (comodin.activo) {
-            <div
-              class="wildcard-node"
-              [class.wildcard-node--active]="comodin.nombre === 'PUBLICO' && comodinPublicoActivo()"
-              [class.wildcard-node--disabled]="isComodinUsado(comodin)"
-              [class.wildcard-node--clickable]="interactive() && !isComodinUsado(comodin)"
-              [title]="comodin.descripcion + ' · ' + getComodinEstadoTexto(comodin)"
-              role="button"
-              tabindex="0"
-              (click)="onComodinClick(comodin)"
-              (keyup.enter)="onComodinClick(comodin)"
-            >
-              <div class="wildcard-node__icon">
-                @if (comodin.nombre === 'IA' && cargandoIa()) {
-                  <lucide-icon [name]="LoaderIcon" size="20" class="observer-spin"></lucide-icon>
-                } @else {
-                  <span>{{ comodin.icono }}</span>
-                }
-              </div>
-              <span class="wildcard-node__label">{{ comodin.nombre | titlecase }}</span>
-              <span
-                class="wildcard-node__state"
-                [class.wildcard-node__state--used]="isComodinUsado(comodin)"
-              >
-                {{ getComodinEstadoTexto(comodin) }}
-              </span>
-            </div>
-          }
-        } @empty {
-          <p class="wildcards-empty">No hay comodines configurados en esta sesión.</p>
-        }
-      </div>
-    </div>
+    <!-- Paneles comodín LLAMADA (selector, consultor, anuncio, sugerencia) -->
+    <app-llamada-panel
+      [interactive]="interactive()"
+      [mostrandoSelector]="mostrandoSeleccionConsultor()"
+      [observadoresOnline]="observadoresOnline()"
+      [tokenCompartido]="tokenCompartido()"
+      (consultorConfirmado)="confirmarConsultor($event)"
+      (seleccionCancelada)="cancelarSeleccionConsultor()"
+    />
   } @else {
     <div class="observer-empty-state">
       <div class="spinner"></div>

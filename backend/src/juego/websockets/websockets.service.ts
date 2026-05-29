@@ -73,8 +73,8 @@ export class WebsocketsService {
     return this.sendMessageUseCase.execute(payload);
   }
 
-  async activateCallJoker(tokenCompartido: string) {
-    return this.activateCallJokerUseCase.execute(tokenCompartido);
+  async activateCallJoker(tokenCompartido: string, consultorNickname?: string) {
+    return this.activateCallJokerUseCase.execute(tokenCompartido, consultorNickname);
   }
 
   async sendHint(payload: SendHintPayload) {

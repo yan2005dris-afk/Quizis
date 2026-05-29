@@ -464,10 +464,16 @@ export class JuegoGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @SubscribeMessage('activar_comodin_llamada')
   async handleActivarComodinLlamada(
     @ConnectedSocket() client: Socket,
-    @MessageBody() payload: { tokenCompartido: string; pregunta: any },
+    @MessageBody()
+    payload: {
+      tokenCompartido: string;
+      pregunta: any;
+      consultorNickname?: string;
+    },
   ) {
     const result = await this.websocketsService.activateCallJoker(
       payload.tokenCompartido,
+      payload.consultorNickname,
     );
 
     if (!result.success) {
@@ -493,7 +499,7 @@ export class JuegoGateway implements OnGatewayConnection, OnGatewayDisconnect {
     });
 
     this.server.to(payload.tokenCompartido).emit('comodin_llamada_iniciado', {
-      nicknameConsultor: result.consultor.nickname,
+      consultorNombre: result.consultor.nickname,
     });
   }
 

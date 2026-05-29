@@ -1,0 +1,55 @@
+<!-- Selector de observador (solo para el encuestado interactivo) -->
+@if (interactive() && mostrandoSelector()) {
+  <div class="llamada-selector" role="dialog" aria-labelledby="llamada-title">
+    <div class="llamada-selector__header">
+      <p id="llamada-title" class="llamada-selector__title">
+        📞 Elegí un observador para ayudarte
+      </p>
+      <app-button variant="ghost" size="sm" (clicked)="onCancelar()">Cancelar</app-button>
+    </div>
+    <div class="llamada-selector__list">
+      @for (obs of observadoresOnline(); track obs) {
+        <button class="llamada-obs-btn" (click)="onConfirmar(obs)">👤 {{ obs }}</button>
+      } @empty {
+        <p class="llamada-selector__empty">No hay observadores conectados.</p>
+      }
+    </div>
+  </div>
+}
+
+<!-- Panel del consultor (solo cuando este cliente fue elegido) -->
+@if (gameSocket.preguntaConsultor(); as pConsultor) {
+  <div class="llamada-consultor-panel" role="alert">
+    <div class="llamada-consultor-panel__header">
+      <span aria-hidden="true">📞</span>
+      <strong>¡Te eligieron para ayudar! Seleccioná la opción que sugieres</strong>
+    </div>
+    <p class="llamada-consultor-panel__question">{{ pConsultor.texto }}</p>
+    <div class="llamada-consultor-panel__opciones">
+      @for (opcion of pConsultor.opciones; track opcion.opcionId) {
+        <button class="llamada-opcion-btn" (click)="enviarSugerencia(opcion.letra)">
+          <span class="llamada-opcion-btn__letra" aria-hidden="true">{{ opcion.letra }}</span>
+          {{ opcion.texto }}
+        </button>
+      }
+    </div>
+  </div>
+}
+
+<!-- Anuncio: quién fue elegido como consultor (para todos) — usa AlertComponent -->
+@if (gameSocket.llamadaActiva() && gameSocket.consultorAsignado(); as consultor) {
+  <app-alert
+    type="success"
+    title="📞 Llamada activa"
+    [message]="getMensajeAnuncio(consultor)"
+  />
+}
+
+<!-- Sugerencia recibida del consultor (para todos) — usa AlertComponent -->
+@if (gameSocket.pistaConsultor(); as pista) {
+  <app-alert
+    type="warning"
+    title="💡 Sugerencia del consultor"
+    [message]="getMensajePista(pista)"
+  />
+}

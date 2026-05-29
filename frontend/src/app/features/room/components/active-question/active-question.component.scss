@@ -1,24 +1,4 @@
-@use 'sass:color';
-
-// Variables estéticas heredadas de la línea de diseño principal
-$color-bg-canvas: #f4f6f9;
-$color-card-white: #ffffff;
-$color-ui-primary: #3b82f6;
-$color-ui-primary-light: #eff6ff;
-$color-text-main: #1e293b;
-$color-text-muted: #64748b;
-
-// Colores de feedback semántico
-$color-success: #10b981;
-$color-success-bg: #ecfdf5;
-$color-danger: #ef4444;
-$color-danger-bg: #fef2f2;
-$color-warning: #f59e0b;
-$color-warning-bg: #fffbeb;
-$color-purple: #7c3aed;
-$color-purple-bg: #f5f3ff;
-$color-cyan: #0891b2;
-$color-cyan-bg: #ecfeff;
+@use '../game-palette' as *;
 
 .active-question-container {
   width: 100%;
@@ -26,10 +6,6 @@ $color-cyan-bg: #ecfeff;
   flex-direction: column;
   gap: 1rem;
   box-sizing: border-box;
-}
-
-.active-question-container > .observer-wildcards-panel:not(.observer-wildcards-panel--inline) {
-  display: none;
 }
 
 /* ───────────────────────────────────── */
@@ -357,7 +333,7 @@ $color-cyan-bg: #ecfeff;
   letter-spacing: 0.5px;
 
   &:hover {
-    background-color: color.adjust($color-ui-primary, $lightness: -8%);
+    background-color: $color-ui-primary-hover;
     transform: translateY(-1px);
     box-shadow: 0 4px 12px rgba($color-ui-primary, 0.3);
   }
@@ -470,10 +446,6 @@ $color-cyan-bg: #ecfeff;
 
 .wildcard-node__state--used {
   color: $color-purple;
-}
-
-.wildcard-node__state--disabled {
-  color: $color-danger;
 }
 
 /* Modificadores de estado de comodín desde el socket */
@@ -689,73 +661,6 @@ $color-cyan-bg: #ecfeff;
   animation: spin 0.8s linear infinite;
 }
 
-/* Animaciones globales */
-@keyframes pulse {
-  0% {
-    transform: scale(1);
-  }
-  50% {
-    transform: scale(1.05);
-  }
-  100% {
-    transform: scale(1);
-  }
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(-4px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-/* ─── Animaciones adicionales ─────────── */
-
-@keyframes shake {
-  0%,
-  100% {
-    transform: translateX(0);
-  }
-  25% {
-    transform: translateX(-5px);
-  }
-  50% {
-    transform: translateX(5px);
-  }
-  75% {
-    transform: translateX(-5px);
-  }
-}
-
-@keyframes blink {
-  50% {
-    opacity: 0.3;
-  }
-}
-
-@keyframes blinkSelect {
-  0% {
-    transform: translateY(-1px);
-    opacity: 1;
-  }
-  50% {
-    transform: translateY(-2px);
-    opacity: 0.82;
-  }
-  100% {
-    transform: translateY(-1px);
-    opacity: 1;
-  }
-}
 
 @media (max-width: 900px) {
   .observer-card {
@@ -796,13 +701,5 @@ $color-cyan-bg: #ecfeff;
   }
 }
 
-/* Respetar preferencia de movimiento reducido */
-@media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-  }
-}
+
+

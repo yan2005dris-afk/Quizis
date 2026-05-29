@@ -20,6 +20,7 @@ import {
   Loader2,
 } from 'lucide-angular';
 import { AudienceBarsComponent } from '../../../../shared/ui';
+import { LlamadaPanelComponent } from '../llamada-panel/llamada-panel.component';
 
 export interface OpcionVoto {
   id: number;
@@ -36,7 +37,7 @@ export interface OpcionVoto {
 @Component({
   selector: 'app-active-question',
   standalone: true,
-  imports: [CommonModule, TitleCasePipe, LucideAngularModule, AudienceBarsComponent],
+  imports: [CommonModule, TitleCasePipe, LucideAngularModule, AudienceBarsComponent, LlamadaPanelComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './active-question.component.html',
   styleUrl: './active-question.component.scss',
@@ -63,6 +64,9 @@ export class ActiveQuestionComponent {
   // IA State
   protected readonly iaSugerencia = signal<{ literal: string; explicacion: string } | null>(null);
   protected readonly cargandoIa = signal(false);
+
+  // LLAMADA State
+  protected readonly mostrandoSeleccionConsultor = signal(false);
 
   // 50/50 State — derived from GameSocketService singleton (survives round restarts)
   protected readonly opcionesEliminadas = computed(() => this.gameSocket.opcionesEliminadas());
@@ -93,6 +97,7 @@ export class ActiveQuestionComponent {
           this.localSelectedId.set(null);
           this.respuestaConfirmada.set(false);
           this.iaSugerencia.set(null);
+          this.mostrandoSeleccionConsultor.set(false);
         }
       }
     });
@@ -304,13 +309,36 @@ export class ActiveQuestionComponent {
     }
   }
 
+  readonly observadoresOnline = computed(() =>
+    this.gameSocket
+      .participantes()
+      .filter((p) => p.rol === 'observador')
+      .map((p) => p.nombre),
+  );
+
   protected usarComodinLlamada(): void {
+    if (this.observadoresOnline().length === 0) {
+      this.toastService.show(
+        'No hay observadores conectados para llamar.',
+        'warning',
+        'Comodín Llamada',
+      );
+      return;
+    }
+    this.mostrandoSeleccionConsultor.set(true);
+  }
+
+  protected confirmarConsultor(nickname: string): void {
     const token = this.tokenCompartido();
     const pregunta = this.preguntaMostrada();
     if (!token || !pregunta) return;
 
-    console.log('[COMODIN:LLAMADA] Activando comodín de llamada...');
-    this.gameSocket.activarComodinLlamada(token, pregunta);
+    this.mostrandoSeleccionConsultor.set(false);
+    this.gameSocket.activarComodinLlamada(token, pregunta, nickname);
+  }
+
+  protected cancelarSeleccionConsultor(): void {
+    this.mostrandoSeleccionConsultor.set(false);
   }
 
   protected usarComodinPublico(): void {

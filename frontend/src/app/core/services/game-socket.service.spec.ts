@@ -208,11 +208,12 @@ describe('GameSocketService (observer extension)', () => {
       service.conectar('http://test.local', 'fake-token');
       const pregunta = { preguntaId: 1, texto: 'Test', opciones: [], nivel: 1 };
 
-      service.activarComodinLlamada('fake-token', pregunta);
+      service.activarComodinLlamada('fake-token', pregunta, 'Juan');
 
       expect(mockSocket.emit).toHaveBeenCalledWith('activar_comodin_llamada', {
         tokenCompartido: 'fake-token',
         pregunta,
+        consultorNickname: 'Juan',
       });
     });
 
@@ -242,7 +243,6 @@ describe('GameSocketService (observer extension)', () => {
       service.conectar('http://test.local', 'fake-token');
 
       mockSocket.trigger('comodin_llamada_iniciado', {
-        consultorId: 'c1',
         consultorNombre: 'Juan',
       });
 

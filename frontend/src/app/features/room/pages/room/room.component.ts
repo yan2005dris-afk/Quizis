@@ -403,6 +403,8 @@ export class RoomComponent implements OnInit, OnDestroy {
       error: (err) => {
         console.error('Error actualizando estado:', err);
         this.cambiandoEstado.set(false);
+        const msg = err?.error?.message || 'No se pudo cambiar el estado de la sala.';
+        this.toastService.show(msg, 'danger', 'Error al actualizar el estado');
       },
     });
   }
