@@ -131,7 +131,11 @@ describe('SubmitAnswerUseCase', () => {
     mockCacheService.setQuestionStatus.mockResolvedValue(undefined);
     mockRecordAnswerUseCase.execute.mockResolvedValue(undefined);
 
-    await useCase.execute({ ...basePayload, opcionId: 10, comodinUsado: '50/50' });
+    await useCase.execute({
+      ...basePayload,
+      opcionId: 10,
+      comodinUsado: '50/50',
+    });
 
     expect(recordAnswerUseCase.execute).toHaveBeenCalledWith(
       expect.objectContaining({ comodinUsado: '50/50' }),

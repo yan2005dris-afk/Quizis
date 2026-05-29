@@ -95,9 +95,7 @@ export class ParticipantsCacheUseCase implements OnModuleInit, OnModuleDestroy {
   /**
    * Lee un contador de Redis, con fallback a SMEMBERS si la clave es SET (schema antiguo).
    */
-  private async redisReadCounters(
-    key: string,
-  ): Promise<Map<string, number>> {
+  private async redisReadCounters(key: string): Promise<Map<string, number>> {
     const result = new Map<string, number>();
     const client = this.redisService.getClient();
     if (!client) return result;
@@ -117,7 +115,9 @@ export class ParticipantsCacheUseCase implements OnModuleInit, OnModuleDestroy {
         }
         // Migrar a HASH: borrar SET y recrear como HASH
         if (members.length > 0) {
-          this.logger.warn(`[CACHE:MIGRATE] Migrando online:${key} de SET a HASH (${members.length} miembros)`);
+          this.logger.warn(
+            `[CACHE:MIGRATE] Migrando online:${key} de SET a HASH (${members.length} miembros)`,
+          );
           await client.del(key);
           for (const nickname of members) {
             await client.hincrby(key, nickname, 1);

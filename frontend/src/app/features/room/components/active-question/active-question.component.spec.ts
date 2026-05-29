@@ -176,7 +176,9 @@ describe('ActiveQuestionComponent', () => {
   describe('Bug 4 — comodín blocking guards', () => {
     it('should show toast when respuestaConfirmada is true', () => {
       // Set up with a single comodín
-      const comodinesMock = [{ comodinId: 1, nombre: 'IA', descripcion: 'test', icono: '🤖', activo: true }];
+      const comodinesMock = [
+        { comodinId: 1, nombre: 'IA', descripcion: 'test', icono: '🤖', activo: true },
+      ];
       fixture.componentRef.setInput('comodines', comodinesMock);
       fixture.componentRef.setInput('preguntas', preguntasMock);
       fixture.componentRef.setInput('preguntaActivaId', 1);
@@ -198,7 +200,9 @@ describe('ActiveQuestionComponent', () => {
     });
 
     it('should show toast when ultimoResultado has matching preguntaId (race condition)', () => {
-      const comodinesMock = [{ comodinId: 2, nombre: '50_50', descripcion: 'test', icono: '5', activo: true }];
+      const comodinesMock = [
+        { comodinId: 2, nombre: '50_50', descripcion: 'test', icono: '5', activo: true },
+      ];
       fixture.componentRef.setInput('comodines', comodinesMock);
       fixture.componentRef.setInput('preguntas', preguntasMock);
       fixture.componentRef.setInput('preguntaActivaId', 1);
@@ -219,7 +223,9 @@ describe('ActiveQuestionComponent', () => {
     });
 
     it('should show toast when ultimoResultado has matching preguntaId (race condition)', () => {
-      const comodinesMock = [{ comodinId: 2, nombre: '50_50', descripcion: 'test', icono: '5', activo: true }];
+      const comodinesMock = [
+        { comodinId: 2, nombre: '50_50', descripcion: 'test', icono: '5', activo: true },
+      ];
       fixture.componentRef.setInput('comodines', comodinesMock);
       fixture.componentRef.setInput('preguntas', preguntasMock);
       fixture.componentRef.setInput('preguntaActivaId', 1);

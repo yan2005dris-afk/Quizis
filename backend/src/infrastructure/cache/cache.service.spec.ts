@@ -39,9 +39,7 @@ describe('CacheService', () => {
 
       expect(redisService.getClient).toHaveBeenCalled();
 
-      expect(mockRedisClient.get).toHaveBeenCalledWith(
-        'test:key',
-      );
+      expect(mockRedisClient.get).toHaveBeenCalledWith('test:key');
 
       expect(mockRedisClient.get).toHaveBeenCalledTimes(1);
 
@@ -59,9 +57,7 @@ describe('CacheService', () => {
     it('debería manejar errores de Redis en get sin romper la aplicación', async () => {
       const loggerSpy = jest.spyOn(Logger.prototype, 'warn');
 
-      mockRedisClient.get.mockRejectedValue(
-        new Error('Redis Error'),
-      );
+      mockRedisClient.get.mockRejectedValue(new Error('Redis Error'));
 
       const result = await service.get('test:key');
 
@@ -88,24 +84,17 @@ describe('CacheService', () => {
     it('no debería lanzar errores si Redis no está disponible', async () => {
       jest.spyOn(redisService, 'getClient').mockReturnValue(null);
 
-      await expect(
-        service.set('test:key', 'valor', 60),
-      ).resolves.not.toThrow();
+      await expect(service.set('test:key', 'valor', 60)).resolves.not.toThrow();
     });
 
     it('debería manejar errores de Redis en set sin romper la aplicación', async () => {
       const loggerSpy = jest.spyOn(Logger.prototype, 'warn');
 
-      mockRedisClient.set.mockRejectedValue(
-        new Error('Redis Error'),
-      );
+      mockRedisClient.set.mockRejectedValue(new Error('Redis Error'));
 
-      await expect(
-        service.set('test:key', 'valor', 60),
-      ).resolves.not.toThrow();
+      await expect(service.set('test:key', 'valor', 60)).resolves.not.toThrow();
 
       expect(loggerSpy).toHaveBeenCalled();
     });
   });
-
 });

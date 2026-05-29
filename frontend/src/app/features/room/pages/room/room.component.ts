@@ -115,16 +115,14 @@ export class RoomComponent implements OnInit, OnDestroy {
     const correctas = resultados.filter((r) => r.esCorrecta).length;
     const totalPreguntas = resultados.length;
     const nickname =
-      this.gameSocket.participantes().find((p) => p.rol === 'estudiante')?.nombre ??
-      'Participante';
+      this.gameSocket.participantes().find((p) => p.rol === 'estudiante')?.nombre ?? 'Participante';
     return [
       {
         nickname,
         totalPreguntas,
         correctas,
         incorrectas: totalPreguntas - correctas,
-        porcentajeAcierto:
-          totalPreguntas > 0 ? Math.round((correctas / totalPreguntas) * 100) : 0,
+        porcentajeAcierto: totalPreguntas > 0 ? Math.round((correctas / totalPreguntas) * 100) : 0,
         comodinesUsados: this.gameSocket.comodinBloqueado(),
         numeroRonda: ronda.numeroRonda,
       },
@@ -292,8 +290,6 @@ export class RoomComponent implements OnInit, OnDestroy {
 
       this.mensajesLengthAtLastCheck = mensajes.length;
     });
-
-    
   }
 
   ngOnInit(): void {

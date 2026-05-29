@@ -50,13 +50,15 @@ export class ComodinPublicoService {
       const letra = opcion.letra as 'A' | 'B' | 'C' | 'D';
       if (letras.includes(letra)) {
         const votos = conteo[opcion.opcionId] ?? 0;
-        resultado[letra] =
-          total === 0 ? 0 : Math.round((votos / total) * 100);
+        resultado[letra] = total === 0 ? 0 : Math.round((votos / total) * 100);
       }
     }
 
     // 5. Emitir resultado a toda la sala via EventEmitter (Bug 3 fix)
-    this.eventEmitter.emit('publico.voto.recibido', { tokenCompartido, resultado });
+    this.eventEmitter.emit('publico.voto.recibido', {
+      tokenCompartido,
+      resultado,
+    });
     return resultado;
   }
 }

@@ -52,10 +52,7 @@ export class BancosController {
   @ApiBody({ type: CreateBancoDto })
   @ApiResponse({ status: 201, description: 'Banco creado exitosamente.' })
   @RequiredPermission('bancos', 'create')
-  async create(
-    @Body() dto: CreateBancoDto,
-    @AuthUserId() usuarioId: number,
-  ) {
+  async create(@Body() dto: CreateBancoDto, @AuthUserId() usuarioId: number) {
     const banco = await this.bancosService.create(dto, usuarioId);
     return {
       success: true,

@@ -30,12 +30,19 @@ export class SendHintUseCase {
     });
 
     if (!rondaActiva) {
-      return { success: false, message: 'No hay una ronda activa en esta sala.' };
+      return {
+        success: false,
+        message: 'No hay una ronda activa en esta sala.',
+      };
     }
 
-    const helperNickname = await this.helperCache.getActiveHelper(tokenCompartido);
+    const helperNickname =
+      await this.helperCache.getActiveHelper(tokenCompartido);
     if (!helperNickname) {
-      return { success: false, message: 'No hay ninguna llamada activa en esta sala.' };
+      return {
+        success: false,
+        message: 'No hay ninguna llamada activa en esta sala.',
+      };
     }
 
     try {

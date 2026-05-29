@@ -20,7 +20,9 @@ describe('EliminateOptions5050UseCase', () => {
       ],
     }).compile();
 
-    useCase = module.get<EliminateOptions5050UseCase>(EliminateOptions5050UseCase);
+    useCase = module.get<EliminateOptions5050UseCase>(
+      EliminateOptions5050UseCase,
+    );
     jest.clearAllMocks();
   });
 
@@ -28,10 +30,10 @@ describe('EliminateOptions5050UseCase', () => {
     const pregunta = {
       preguntaId: 1,
       opciones: [
-        { opcionId: 1, esCorrecta: true },   // correcta
-        { opcionId: 2, esCorrecta: false },  // incorrecta
-        { opcionId: 3, esCorrecta: false },  // incorrecta
-        { opcionId: 4, esCorrecta: false },  // incorrecta
+        { opcionId: 1, esCorrecta: true }, // correcta
+        { opcionId: 2, esCorrecta: false }, // incorrecta
+        { opcionId: 3, esCorrecta: false }, // incorrecta
+        { opcionId: 4, esCorrecta: false }, // incorrecta
       ],
     };
     mockPrisma.preguntas.findUnique.mockResolvedValue(pregunta);
@@ -51,8 +53,8 @@ describe('EliminateOptions5050UseCase', () => {
     const pregunta = {
       preguntaId: 2,
       opciones: [
-        { opcionId: 1, esCorrecta: true },   // correcta
-        { opcionId: 2, esCorrecta: false },  // only 1 wrong
+        { opcionId: 1, esCorrecta: true }, // correcta
+        { opcionId: 2, esCorrecta: false }, // only 1 wrong
       ],
     };
     mockPrisma.preguntas.findUnique.mockResolvedValue(pregunta);
@@ -65,9 +67,7 @@ describe('EliminateOptions5050UseCase', () => {
   it('should return empty array when 0 wrong options exist', async () => {
     const pregunta = {
       preguntaId: 3,
-      opciones: [
-        { opcionId: 1, esCorrecta: true },
-      ],
+      opciones: [{ opcionId: 1, esCorrecta: true }],
     };
     mockPrisma.preguntas.findUnique.mockResolvedValue(pregunta);
 
@@ -86,7 +86,7 @@ describe('EliminateOptions5050UseCase', () => {
     const pregunta = {
       preguntaId: 4,
       opciones: [
-        { opcionId: 1, esCorrecta: true },   // correcta
+        { opcionId: 1, esCorrecta: true }, // correcta
         { opcionId: 2, esCorrecta: false },
         { opcionId: 3, esCorrecta: false },
         { opcionId: 4, esCorrecta: false },

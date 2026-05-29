@@ -26,10 +26,16 @@ export class ActivateCallJokerUseCase {
       this.logger.warn(
         `No hay consultores disponibles en sala: ${tokenCompartido}`,
       );
-      return { success: false, message: 'No hay compañeros en línea disponibles.' };
+      return {
+        success: false,
+        message: 'No hay compañeros en línea disponibles.',
+      };
     }
 
-    await this.helperCache.saveActiveHelper(tokenCompartido, consultor.nickname);
+    await this.helperCache.saveActiveHelper(
+      tokenCompartido,
+      consultor.nickname,
+    );
 
     this.logger.log(
       `Consultor seleccionado: ${consultor.nickname} en sala: ${tokenCompartido}`,

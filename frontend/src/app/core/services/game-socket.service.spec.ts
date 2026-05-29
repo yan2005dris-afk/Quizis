@@ -1,6 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { GameSocketService } from './game-socket.service';
+import { ToastService } from './toast.service';
 import type {
   ChatMessage,
   SalaEvento,
@@ -32,15 +33,28 @@ function createMockSocket() {
 
 type MockSocket = ReturnType<typeof createMockSocket>;
 
+// Mock toast service that captures show() calls
+const mockToasts: { message: string; type: string; title?: string }[] = [];
+const mockToastService = {
+  show: vi.fn((message: string, type: string, title?: string) => {
+    mockToasts.push({ message, type, title });
+  }),
+};
+
+// --- Mock socket without vi.mock ---
 describe('GameSocketService (observer extension)', () => {
   let service: GameSocketService;
   let mockSocket: MockSocket;
 
   beforeEach(() => {
+    mockToasts.length = 0;
     mockSocket = createMockSocket();
 
     TestBed.configureTestingModule({
-      providers: [GameSocketService],
+      providers: [
+        GameSocketService,
+        { provide: ToastService, useValue: mockToastService },
+      ],
     });
     service = TestBed.inject(GameSocketService);
 
@@ -247,19 +261,17 @@ describe('GameSocketService (observer extension)', () => {
     it('should show alert on comodin_llamada_error', () => {
       service.conectar('http://test.local', 'fake-token');
 
-      mockSocket.trigger('comodin_llamada_error', { error: 'Consultor no disponible' });
+      mockSocket.trigger('comodin_llamada_error', { message: 'Consultor no disponible' });
 
-      expect(window.alert).toHaveBeenCalledWith(
-        'Error con comodín llamada: Consultor no disponible',
-      );
+      expect(mockToasts.some(t => t.message === 'Consultor no disponible' && t.type === 'warning')).toBe(true);
     });
 
     it('should show alert on enviar_pista_error', () => {
       service.conectar('http://test.local', 'fake-token');
 
-      mockSocket.trigger('enviar_pista_error', { error: 'Tiempo agotado' });
+      mockSocket.trigger('enviar_pista_error', { message: 'Tiempo agotado' });
 
-      expect(window.alert).toHaveBeenCalledWith('Error al enviar pista: Tiempo agotado');
+      expect(mockToasts.some(t => t.message === 'Tiempo agotado' && t.type === 'warning')).toBe(true);
     });
   });
 
@@ -385,7 +397,11 @@ describe('GameSocketService (observer extension)', () => {
     it('should NOT be reset on ronda_reiniciada (only on pregunta_liberada)', () => {
       service.conectar('http://test.local', 'fake-token');
 
-      mockSocket.trigger('ia_sugerencia_recibida', { preguntaId: 2, literal: 'D', explicacion: 'D' });
+      mockSocket.trigger('ia_sugerencia_recibida', {
+        preguntaId: 2,
+        literal: 'D',
+        explicacion: 'D',
+      });
       expect(service.iaSugerenciaGlobal()).not.toBeNull();
 
       mockSocket.trigger('ronda_reiniciada', { rondaActiva: {} });

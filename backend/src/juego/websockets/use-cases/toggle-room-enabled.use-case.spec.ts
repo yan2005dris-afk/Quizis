@@ -25,13 +25,19 @@ describe('ToggleRoomEnabledUseCase', () => {
   it('toggle enabled true → setRoomEnabled(token, true)', async () => {
     await useCase.execute('token-abc', true);
 
-    expect(mockCacheService.setRoomEnabled).toHaveBeenCalledWith('token-abc', true);
+    expect(mockCacheService.setRoomEnabled).toHaveBeenCalledWith(
+      'token-abc',
+      true,
+    );
   });
 
   it('toggle enabled false → setRoomEnabled(token, false)', async () => {
     await useCase.execute('token-abc', false);
 
-    expect(mockCacheService.setRoomEnabled).toHaveBeenCalledWith('token-abc', false);
+    expect(mockCacheService.setRoomEnabled).toHaveBeenCalledWith(
+      'token-abc',
+      false,
+    );
   });
 
   it('retorna { success: true, enabled, message }', async () => {

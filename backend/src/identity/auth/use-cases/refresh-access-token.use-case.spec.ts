@@ -79,9 +79,9 @@ describe('RefreshAccessTokenUseCase', () => {
         expiraEn: new Date(Date.now() - 1000),
       } as any);
 
-      await expect(
-        useCase.execute('sid', 'rt', 'ip', 'ua', 1),
-      ).rejects.toThrow(UnauthorizedException);
+      await expect(useCase.execute('sid', 'rt', 'ip', 'ua', 1)).rejects.toThrow(
+        UnauthorizedException,
+      );
     });
 
     it('should refresh tokens successfully', async () => {
@@ -150,9 +150,9 @@ describe('RefreshAccessTokenUseCase', () => {
       (bcrypt.compare as jest.Mock).mockResolvedValue(true);
       (prismaService.usuarios.findUnique as jest.Mock).mockResolvedValue(null);
 
-      await expect(
-        useCase.execute('sid', 'rt', 'ip', 'ua', 1),
-      ).rejects.toThrow(UnauthorizedException);
+      await expect(useCase.execute('sid', 'rt', 'ip', 'ua', 1)).rejects.toThrow(
+        UnauthorizedException,
+      );
     });
 
     it('should throw InternalServerErrorException when session update fails', async () => {
@@ -169,9 +169,9 @@ describe('RefreshAccessTokenUseCase', () => {
       (bcrypt.hash as jest.Mock).mockResolvedValue('new-hash');
       sessionsService.updateSession.mockRejectedValue(new Error('DB Error'));
 
-      await expect(
-        useCase.execute('sid', 'rt', 'ip', 'ua', 1),
-      ).rejects.toThrow(InternalServerErrorException);
+      await expect(useCase.execute('sid', 'rt', 'ip', 'ua', 1)).rejects.toThrow(
+        InternalServerErrorException,
+      );
     });
   });
 });

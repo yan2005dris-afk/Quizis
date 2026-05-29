@@ -100,7 +100,9 @@ describe('file.utils', () => {
     });
 
     it('archivo con punto en nombre → solo quita última extensión', () => {
-      expect(getFileNameWithoutExt('archivo.backup.tar')).toBe('archivo.backup');
+      expect(getFileNameWithoutExt('archivo.backup.tar')).toBe(
+        'archivo.backup',
+      );
     });
   });
 

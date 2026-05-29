@@ -100,7 +100,12 @@ describe('RestartRoundUseCase', () => {
   });
 
   it('happy path: ronda activa existe → se cierra y se crea la siguiente', async () => {
-    const currentRound = { rondaId: 1, salaId: 1, numeroRonda: 1, estado: 'jugando' };
+    const currentRound = {
+      rondaId: 1,
+      salaId: 1,
+      numeroRonda: 1,
+      estado: 'jugando',
+    };
     mockPrisma.rondas.findFirst.mockResolvedValue(currentRound);
     mockPrisma.rondas.update.mockResolvedValue(undefined);
     mockPrisma.participantes.findFirst.mockResolvedValue(mockParticipante);
@@ -119,7 +124,11 @@ describe('RestartRoundUseCase', () => {
   it('sin ronda activa → crea ronda 1 sin cerrar ninguna', async () => {
     mockPrisma.rondas.findFirst.mockResolvedValue(null);
     mockPrisma.participantes.findFirst.mockResolvedValue(mockParticipante);
-    mockPrisma.rondas.create.mockResolvedValue({ ...mockNewRound, rondaId: 1, numeroRonda: 1 });
+    mockPrisma.rondas.create.mockResolvedValue({
+      ...mockNewRound,
+      rondaId: 1,
+      numeroRonda: 1,
+    });
 
     await useCase.execute(1);
 
@@ -179,9 +188,9 @@ describe('RestartRoundUseCase', () => {
 
     await useCase.execute(1);
 
-    expect(mockParticipantsCache.getHistoricalParticipants).toHaveBeenCalledWith(
-      'token-abc',
-    );
+    expect(
+      mockParticipantsCache.getHistoricalParticipants,
+    ).toHaveBeenCalledWith('token-abc');
     expect(mockPrisma.participantes.upsert).toHaveBeenCalledWith(
       expect.objectContaining({
         create: expect.objectContaining({ nickname: 'Carlos' }),
@@ -213,7 +222,9 @@ describe('RestartRoundUseCase', () => {
 
     await useCase.execute(1);
 
-    expect(mockRoomStateCache.clearRoundState).toHaveBeenCalledWith('token-abc');
+    expect(mockRoomStateCache.clearRoundState).toHaveBeenCalledWith(
+      'token-abc',
+    );
     expect(mockRoomStateCache.setRoomEstado).toHaveBeenCalledWith(
       'token-abc',
       'ESPERANDO_ALUMNOS',

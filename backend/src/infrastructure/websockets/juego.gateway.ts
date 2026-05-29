@@ -89,8 +89,13 @@ export class JuegoGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   // ─── Bug 3: Público vote broadcast to all participants via EventEmitter ───────
   @OnEvent('publico.voto.recibido')
-  handlePublicoVoteBroadcast(payload: { tokenCompartido: string; resultado: any }) {
-    this.server.to(payload.tokenCompartido).emit('voto_recibido', payload.resultado);
+  handlePublicoVoteBroadcast(payload: {
+    tokenCompartido: string;
+    resultado: any;
+  }) {
+    this.server
+      .to(payload.tokenCompartido)
+      .emit('voto_recibido', payload.resultado);
   }
 
   handleConnection(client: Socket) {
@@ -163,7 +168,9 @@ export class JuegoGateway implements OnGatewayConnection, OnGatewayDisconnect {
             info.tokenCompartido,
             onlineNicknames,
           );
-          this.server.to(info.tokenCompartido).emit('participantes', updatedList);
+          this.server
+            .to(info.tokenCompartido)
+            .emit('participantes', updatedList);
           return;
         }
       }

@@ -192,7 +192,11 @@ export class GameSocketService {
     });
 
     this.socket.on('comodin_llamada_error', (data: { message: string }) => {
-      this.toast.show(data.message ?? 'No hay compañeros en línea disponibles', 'warning', 'Comodín Llamada');
+      this.toast.show(
+        data.message ?? 'No hay compañeros en línea disponibles',
+        'warning',
+        'Comodín Llamada',
+      );
     });
 
     this.socket.on('enviar_pista_error', (data: { message: string }) => {
@@ -200,9 +204,12 @@ export class GameSocketService {
     });
 
     // IA suggestion broadcast to all participants (Bug 3 fix)
-    this.socket.on('ia_sugerencia_recibida', (data: { preguntaId: number; literal: string; explicacion: string }) => {
-      this.iaSugerenciaGlobal.set({ literal: data.literal, explicacion: data.explicacion });
-    });
+    this.socket.on(
+      'ia_sugerencia_recibida',
+      (data: { preguntaId: number; literal: string; explicacion: string }) => {
+        this.iaSugerenciaGlobal.set({ literal: data.literal, explicacion: data.explicacion });
+      },
+    );
 
     // ——— Observers ———
     this.socket.on('mensaje_chat', (data: ChatMessage[]) => {

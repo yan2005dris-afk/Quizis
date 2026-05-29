@@ -60,10 +60,7 @@ export class ReactivateRoomUseCase {
 
     // Generar nuevo JWT de invitación
     const roomSecret = this.config.getOrThrow<string>('JWT_ROOM_SECRET');
-    const roomExpiresIn = this.config.get<string>(
-      'JWT_ROOM_EXPIRES_IN',
-      '24h',
-    );
+    const roomExpiresIn = this.config.get<string>('JWT_ROOM_EXPIRES_IN', '24h');
     const tokenInvitacion = await this.jwtService.signAsync(
       {
         sub: nuevoTokenUUID,

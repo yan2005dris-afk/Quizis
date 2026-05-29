@@ -5,9 +5,7 @@ import { PrismaService } from '../../../infrastructure/database/prisma/prisma.se
 export class EliminateOptions5050UseCase {
   constructor(private readonly prisma: PrismaService) {}
 
-  async execute(
-    preguntaId: number,
-  ): Promise<{ opcionesEliminadas: number[] }> {
+  async execute(preguntaId: number): Promise<{ opcionesEliminadas: number[] }> {
     const pregunta = await this.prisma.preguntas.findUnique({
       where: { preguntaId },
       include: {

@@ -29,20 +29,40 @@ describe('ComodinesService', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         ComodinesService,
-        { provide: GetIaSuggestionUseCase, useValue: mockGetIaSuggestionUseCase },
-        { provide: SelectRandomConsultantUseCase, useValue: mockSelectRandomConsultantUseCase },
-        { provide: GetPublicVoteResultsUseCase, useValue: mockGetPublicVoteResultsUseCase },
-        { provide: EliminateOptions5050UseCase, useValue: mockEliminateOptions5050UseCase },
+        {
+          provide: GetIaSuggestionUseCase,
+          useValue: mockGetIaSuggestionUseCase,
+        },
+        {
+          provide: SelectRandomConsultantUseCase,
+          useValue: mockSelectRandomConsultantUseCase,
+        },
+        {
+          provide: GetPublicVoteResultsUseCase,
+          useValue: mockGetPublicVoteResultsUseCase,
+        },
+        {
+          provide: EliminateOptions5050UseCase,
+          useValue: mockEliminateOptions5050UseCase,
+        },
         { provide: EventEmitter2, useValue: mockEventEmitter },
         { provide: PrismaService, useValue: mockPrisma },
       ],
     }).compile();
 
     service = module.get<ComodinesService>(ComodinesService);
-    getIaSuggestionUseCase = module.get<GetIaSuggestionUseCase>(GetIaSuggestionUseCase);
-    selectRandomConsultantUseCase = module.get<SelectRandomConsultantUseCase>(SelectRandomConsultantUseCase);
-    getPublicVoteResultsUseCase = module.get<GetPublicVoteResultsUseCase>(GetPublicVoteResultsUseCase);
-    eliminateOptions5050UseCase = module.get<EliminateOptions5050UseCase>(EliminateOptions5050UseCase);
+    getIaSuggestionUseCase = module.get<GetIaSuggestionUseCase>(
+      GetIaSuggestionUseCase,
+    );
+    selectRandomConsultantUseCase = module.get<SelectRandomConsultantUseCase>(
+      SelectRandomConsultantUseCase,
+    );
+    getPublicVoteResultsUseCase = module.get<GetPublicVoteResultsUseCase>(
+      GetPublicVoteResultsUseCase,
+    );
+    eliminateOptions5050UseCase = module.get<EliminateOptions5050UseCase>(
+      EliminateOptions5050UseCase,
+    );
     eventEmitter = module.get<EventEmitter2>(EventEmitter2);
     prisma = module.get<PrismaService>(PrismaService);
   });
@@ -71,13 +91,18 @@ describe('ComodinesService', () => {
     const rondaId = 1;
     const preguntaId = 1;
     await service.obtenerResultadosPublico(rondaId, preguntaId);
-    expect(getPublicVoteResultsUseCase.execute).toHaveBeenCalledWith(rondaId, preguntaId);
+    expect(getPublicVoteResultsUseCase.execute).toHaveBeenCalledWith(
+      rondaId,
+      preguntaId,
+    );
   });
 
   it('eliminateOptions5050 should delegate to EliminateOptions5050UseCase', async () => {
     const preguntaId = 1;
     await service.eliminateOptions5050(preguntaId);
-    expect(eliminateOptions5050UseCase.execute).toHaveBeenCalledWith(preguntaId);
+    expect(eliminateOptions5050UseCase.execute).toHaveBeenCalledWith(
+      preguntaId,
+    );
   });
 
   // ─── BUG 3: IA suggestion broadcast to all participants ─────────────
@@ -93,7 +118,12 @@ describe('ComodinesService', () => {
         texto: 'Test',
         opciones: [],
         respuestasRonda: [
-          { ronda: { numeroRonda: 1, sala: { tokenCompartido: 'test-token-123' } } },
+          {
+            ronda: {
+              numeroRonda: 1,
+              sala: { tokenCompartido: 'test-token-123' },
+            },
+          },
         ],
       });
 
@@ -101,12 +131,20 @@ describe('ComodinesService', () => {
 
       expect(mockEventEmitter.emit).toHaveBeenCalledWith(
         'comodin.ia.suggestion',
-        { preguntaId: 1, literal: 'A', explicacion: 'La opción A es correcta porque...', tokenCompartido: 'test-token-123' },
+        {
+          preguntaId: 1,
+          literal: 'A',
+          explicacion: 'La opción A es correcta porque...',
+          tokenCompartido: 'test-token-123',
+        },
       );
     });
 
     it('should NOT emit when pregunta has no sala token', async () => {
-      mockGetIaSuggestionUseCase.execute.mockResolvedValue({ literal: 'B', explicacion: 'Test' });
+      mockGetIaSuggestionUseCase.execute.mockResolvedValue({
+        literal: 'B',
+        explicacion: 'Test',
+      });
       mockPrisma.preguntas.findUnique.mockResolvedValue({
         preguntaId: 1,
         texto: 'Test',

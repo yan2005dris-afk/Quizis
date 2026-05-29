@@ -16,7 +16,11 @@ describe('UpdateEstadoSalaUseCase', () => {
       update: jest.fn(),
     },
     preguntas: { findMany: jest.fn() },
-    participantes: { findFirst: jest.fn(), upsert: jest.fn(), count: jest.fn() },
+    participantes: {
+      findFirst: jest.fn(),
+      upsert: jest.fn(),
+      count: jest.fn(),
+    },
     rondas: { findFirst: jest.fn(), create: jest.fn() },
   };
 
@@ -81,7 +85,9 @@ describe('UpdateEstadoSalaUseCase', () => {
       nickname: 'TestStudent',
     });
     mockPrisma.preguntas.findMany.mockResolvedValue([
-      { preguntaId: 1 }, { preguntaId: 2 }, { preguntaId: 3 },
+      { preguntaId: 1 },
+      { preguntaId: 2 },
+      { preguntaId: 3 },
     ]);
     mockPrisma.rondas.create.mockResolvedValue({ rondaId: 1 });
 

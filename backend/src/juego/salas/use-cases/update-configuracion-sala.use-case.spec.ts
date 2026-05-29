@@ -57,7 +57,10 @@ describe('UpdateConfiguracionSalaUseCase', () => {
 
     mockPrisma.salas.findUnique
       .mockResolvedValueOnce(mockSalaBorrador)
-      .mockResolvedValue({ ...mockSalaActualizada, comodines: mockSalaActualizada.comodines });
+      .mockResolvedValue({
+        ...mockSalaActualizada,
+        comodines: mockSalaActualizada.comodines,
+      });
     mockPrisma.salas.update.mockResolvedValue(undefined);
     mockPrisma.preguntas.count.mockResolvedValue(20);
     mockPrisma.salaComodines.upsert.mockResolvedValue(undefined);
@@ -134,9 +137,9 @@ describe('UpdateConfiguracionSalaUseCase', () => {
   it('limitePreguntas mayor que preguntas en banco → BadRequestException', async () => {
     mockPrisma.preguntas.count.mockResolvedValue(3);
 
-    await expect(
-      useCase.execute(1, { limitePreguntas: 10 }),
-    ).rejects.toThrow(BadRequestException);
+    await expect(useCase.execute(1, { limitePreguntas: 10 })).rejects.toThrow(
+      BadRequestException,
+    );
     expect(mockPrisma.salas.update).not.toHaveBeenCalled();
   });
 
@@ -187,9 +190,9 @@ describe('UpdateConfiguracionSalaUseCase', () => {
   it('maxEstudiantes menor que estudiantes actuales → BadRequestException', async () => {
     mockPrisma.participantes.count.mockResolvedValue(5);
 
-    await expect(
-      useCase.execute(1, { maxEstudiantes: 3 }),
-    ).rejects.toThrow(BadRequestException);
+    await expect(useCase.execute(1, { maxEstudiantes: 3 })).rejects.toThrow(
+      BadRequestException,
+    );
     expect(mockPrisma.salas.update).not.toHaveBeenCalled();
   });
 

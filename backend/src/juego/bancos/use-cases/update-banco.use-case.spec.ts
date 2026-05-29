@@ -47,6 +47,8 @@ describe('UpdateBancoUseCase', () => {
   it('should throw NotFoundException if banco belongs to another user', async () => {
     const banco = { bancoId: 1, nombre: 'Old', usuarioId: 2 };
     mockPrisma.bancoPreguntas.findUnique.mockResolvedValue(banco);
-    await expect(useCase.execute(1, { nombre: 'New' }, 1)).rejects.toThrow(NotFoundException);
+    await expect(useCase.execute(1, { nombre: 'New' }, 1)).rejects.toThrow(
+      NotFoundException,
+    );
   });
 });

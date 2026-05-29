@@ -53,7 +53,9 @@ describe('DecimalToNumberInterceptor', () => {
 
   it('convierte objeto con constructor.name Decimal a Number', async () => {
     class Decimal {
-      valueOf() { return 9.99; }
+      valueOf() {
+        return 9.99;
+      }
     }
     const decimal = new Decimal();
     const result = await lastValueFrom(

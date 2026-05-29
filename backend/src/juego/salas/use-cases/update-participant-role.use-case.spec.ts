@@ -16,10 +16,16 @@ describe('UpdateParticipantRoleUseCase', () => {
   const mockPrisma = {
     salas: { findUnique: jest.fn() },
     participantes: { count: jest.fn().mockResolvedValue(0) },
-    $transaction: jest.fn().mockImplementation((cb: (tx: typeof mockTx) => unknown) => cb(mockTx)),
+    $transaction: jest
+      .fn()
+      .mockImplementation((cb: (tx: typeof mockTx) => unknown) => cb(mockTx)),
   };
 
-  const mockSala = { salaId: 1, tokenCompartido: 'token-abc', maxEstudiantes: 30 };
+  const mockSala = {
+    salaId: 1,
+    tokenCompartido: 'token-abc',
+    maxEstudiantes: 30,
+  };
 
   const mockParticipante = {
     participanteId: 5,
