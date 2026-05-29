@@ -15,5 +15,9 @@
     "frontend:build": "pnpm --filter frontend run build",
     "test": "pnpm --recursive run test",
     "test:watch": "pnpm --recursive run test:watch"
+  },
+  "devDependencies": {
+    "artillery": "^2.0.32",
+    "artillery-engine-socketio-v3": "^1.2.0"
   }
 }
