@@ -1,38 +1,44 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { BadRequestException, NotFoundException } from '@nestjs/common';
+import { NotFoundException, BadRequestException } from '@nestjs/common';
 import { UpdateConfiguracionSalaUseCase } from './update-configuracion-sala.use-case';
-import { PrismaService } from '../../../infrastructure/database/prisma/prisma.service';
-
-const createSalaBase = () => ({
-  salaId: 1,
-  adminId: 1,
-  bancoId: 10,
-  nombre: 'Sala',
-  tokenCompartido: 'T1',
-  estado: 'BORRADOR',
-  limitePreguntas: 15,
-  createdAt: new Date(),
-  deletedAt: null,
-  comodines: [],
-});
+import { PrismaService } from 'src/infrastructure/database/prisma/prisma.service';
+import { EstadoSala } from '../dto/update-estado-sala.dto';
 
 describe('UpdateConfiguracionSalaUseCase', () => {
   let useCase: UpdateConfiguracionSalaUseCase;
 
   const mockPrisma = {
-    salas: {
-      findUnique: jest.fn(),
-      update: jest.fn(),
-    },
-    preguntas: {
-      count: jest.fn(),
-    },
-    participantes: {
-      count: jest.fn(),
-    },
-    salaComodines: {
-      upsert: jest.fn(),
-    },
+    salas: { findUnique: jest.fn(), update: jest.fn() },
+    preguntas: { count: jest.fn() },
+    salaComodines: { upsert: jest.fn() },
+  };
+
+  const mockSalaBorrador = {
+    salaId: 1,
+    adminId: 1,
+    bancoId: 2,
+    nombre: 'Sala Original',
+    tokenCompartido: 'token-abc',
+    estado: EstadoSala.BORRADOR,
+    limitePreguntas: 10,
+    createdAt: new Date(),
+    deletedAt: null,
+  };
+
+  const mockSalaActualizada = {
+    ...mockSalaBorrador,
+    nombre: 'Sala Actualizada',
+    limitePreguntas: 5,
+    comodines: [
+      {
+        activo: true,
+        comodin: {
+          comodinId: 1,
+          nombre: '50/50',
+          descripcion: 'Elimina dos opciones',
+        },
+      },
+    ],
   };
 
   beforeEach(async () => {
@@ -43,62 +49,136 @@ describe('UpdateConfiguracionSalaUseCase', () => {
       ],
     }).compile();
 
-    useCase = module.get<UpdateConfiguracionSalaUseCase>(UpdateConfiguracionSalaUseCase);
+    useCase = module.get<UpdateConfiguracionSalaUseCase>(
+      UpdateConfiguracionSalaUseCase,
+    );
     jest.clearAllMocks();
+
+    mockPrisma.salas.findUnique
+      .mockResolvedValueOnce(mockSalaBorrador)
+      .mockResolvedValue({ ...mockSalaActualizada, comodines: mockSalaActualizada.comodines });
+    mockPrisma.salas.update.mockResolvedValue(undefined);
+    mockPrisma.preguntas.count.mockResolvedValue(20);
+    mockPrisma.salaComodines.upsert.mockResolvedValue(undefined);
   });
 
-  it('should update maxEstudiantes when valid', async () => {
-    mockPrisma.salas.findUnique.mockResolvedValue(createSalaBase());
-    mockPrisma.salas.update.mockResolvedValue({ ...createSalaBase(), maxEstudiantes: 5 });
+  it('sala no encontrada → NotFoundException', async () => {
+    mockPrisma.salas.findUnique.mockReset();
+    mockPrisma.salas.findUnique.mockResolvedValue(null);
 
-    await useCase.execute(1, { maxEstudiantes: 5 });
+    await expect(useCase.execute(999, { nombre: 'X' })).rejects.toThrow(
+      NotFoundException,
+    );
+  });
 
-    expect(mockPrisma.salas.update).toHaveBeenCalledWith(
+  it('sala soft-deleted → NotFoundException', async () => {
+    mockPrisma.salas.findUnique.mockReset();
+    mockPrisma.salas.findUnique.mockResolvedValue({
+      ...mockSalaBorrador,
+      deletedAt: new Date(),
+    });
+
+    await expect(useCase.execute(1, { nombre: 'X' })).rejects.toThrow(
+      NotFoundException,
+    );
+  });
+
+  it('estado BORRADOR → permite actualización', async () => {
+    const result = await useCase.execute(1, { nombre: 'Sala Actualizada' });
+
+    expect(mockPrisma.salas.update).toHaveBeenCalled();
+    expect(result).toBeDefined();
+  });
+
+  it('estado ESPERANDO_ALUMNOS → también permite actualización', async () => {
+    mockPrisma.salas.findUnique.mockReset();
+    mockPrisma.salas.findUnique
+      .mockResolvedValueOnce({
+        ...mockSalaBorrador,
+        estado: EstadoSala.ESPERANDO_ALUMNOS,
+      })
+      .mockResolvedValue({ ...mockSalaActualizada, comodines: [] });
+
+    await useCase.execute(1, { nombre: 'X' });
+
+    expect(mockPrisma.salas.update).toHaveBeenCalled();
+  });
+
+  it('estado EN_VIVO → BadRequestException', async () => {
+    mockPrisma.salas.findUnique.mockReset();
+    mockPrisma.salas.findUnique.mockResolvedValue({
+      ...mockSalaBorrador,
+      estado: EstadoSala.EN_VIVO,
+    });
+
+    await expect(useCase.execute(1, { nombre: 'X' })).rejects.toThrow(
+      BadRequestException,
+    );
+    expect(mockPrisma.salas.update).not.toHaveBeenCalled();
+  });
+
+  it('estado FINALIZADO → BadRequestException', async () => {
+    mockPrisma.salas.findUnique.mockReset();
+    mockPrisma.salas.findUnique.mockResolvedValue({
+      ...mockSalaBorrador,
+      estado: EstadoSala.FINALIZADO,
+    });
+
+    await expect(useCase.execute(1, { limitePreguntas: 5 })).rejects.toThrow(
+      BadRequestException,
+    );
+  });
+
+  it('limitePreguntas mayor que preguntas en banco → BadRequestException', async () => {
+    mockPrisma.preguntas.count.mockResolvedValue(3);
+
+    await expect(
+      useCase.execute(1, { limitePreguntas: 10 }),
+    ).rejects.toThrow(BadRequestException);
+    expect(mockPrisma.salas.update).not.toHaveBeenCalled();
+  });
+
+  it('limitePreguntas igual a preguntas en banco → permitido', async () => {
+    mockPrisma.preguntas.count.mockResolvedValue(5);
+
+    await useCase.execute(1, { limitePreguntas: 5 });
+
+    expect(mockPrisma.salas.update).toHaveBeenCalled();
+  });
+
+  it('actualiza comodines con upsert por cada item', async () => {
+    await useCase.execute(1, {
+      comodines: [
+        { comodinId: 1, activo: true },
+        { comodinId: 2, activo: false },
+      ],
+    });
+
+    expect(mockPrisma.salaComodines.upsert).toHaveBeenCalledTimes(2);
+    expect(mockPrisma.salaComodines.upsert).toHaveBeenCalledWith(
       expect.objectContaining({
-        where: { salaId: 1 },
-        data: expect.objectContaining({
-          maxEstudiantes: 5,
-        }),
+        where: { salaId_comodinId: { salaId: 1, comodinId: 1 } },
+        update: { activo: true },
+        create: { salaId: 1, comodinId: 1, activo: true },
       }),
     );
   });
 
-  it('should throw BadRequestException when maxEstudiantes < current estudiantes count', async () => {
-    mockPrisma.salas.findUnique.mockResolvedValue(createSalaBase());
-    mockPrisma.participantes.count.mockResolvedValue(3);
+  it('sin comodines en DTO → no llama salaComodines.upsert', async () => {
+    await useCase.execute(1, { nombre: 'Solo nombre' });
 
-    await expect(
-      useCase.execute(1, { maxEstudiantes: 2 }),
-    ).rejects.toThrow(BadRequestException);
+    expect(mockPrisma.salaComodines.upsert).not.toHaveBeenCalled();
   });
 
-  it('should not update maxEstudiantes when not provided', async () => {
-    mockPrisma.salas.findUnique.mockResolvedValue(createSalaBase());
-    mockPrisma.salas.update.mockResolvedValue(createSalaBase());
+  it('retorna sala actualizada con comodines mapeados', async () => {
+    const result = await useCase.execute(1, { nombre: 'Sala Actualizada' });
 
-    await useCase.execute(1, { nombre: 'Nuevo nombre' });
-
-    const updateCall = mockPrisma.salas.update.mock.calls[0][0];
-    expect(updateCall.data).not.toHaveProperty('maxEstudiantes');
-  });
-
-  it('should throw NotFoundException when sala is deleted', async () => {
-    mockPrisma.salas.findUnique.mockResolvedValue({
-      ...createSalaBase(),
-      deletedAt: new Date(),
+    expect(result).toMatchObject({
+      salaId: 1,
+      nombre: 'Sala Actualizada',
+      comodines: expect.arrayContaining([
+        expect.objectContaining({ comodinId: 1, nombre: '50/50' }),
+      ]),
     });
-
-    await expect(
-      useCase.execute(1, { nombre: 'test' }),
-    ).rejects.toThrow(NotFoundException);
-  });
-
-  it('should accept maxEstudiantes equal to current estudiantes count', async () => {
-    mockPrisma.salas.findUnique.mockResolvedValue(createSalaBase());
-    mockPrisma.participantes.count.mockResolvedValue(3);
-    mockPrisma.salas.update.mockResolvedValue({ ...createSalaBase(), maxEstudiantes: 3 });
-
-    const result = await useCase.execute(1, { maxEstudiantes: 3 });
-    expect(result).toBeDefined();
   });
 });

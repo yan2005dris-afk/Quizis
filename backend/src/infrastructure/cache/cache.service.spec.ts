@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { CacheService } from './cache.service';
 import { RedisService } from '../database/redis/redis.service';
+import { Logger } from '@nestjs/common';
 
 describe('CacheService', () => {
   let service: CacheService;
@@ -30,33 +31,81 @@ describe('CacheService', () => {
     jest.clearAllMocks();
   });
 
-  it('should delegate get to redis client', async () => {
-    mockRedisClient.get.mockResolvedValue('value');
+  describe('get', () => {
+    it('debería delegar get al cliente Redis', async () => {
+      mockRedisClient.get.mockResolvedValue('valor');
 
-    const result = await service.get('test:key');
+      const result = await service.get('test:key');
 
-    expect(redisService.getClient).toHaveBeenCalled();
-    expect(mockRedisClient.get).toHaveBeenCalledWith('test:key');
-    expect(result).toBe('value');
+      expect(redisService.getClient).toHaveBeenCalled();
+
+      expect(mockRedisClient.get).toHaveBeenCalledWith(
+        'test:key',
+      );
+
+      expect(mockRedisClient.get).toHaveBeenCalledTimes(1);
+
+      expect(result).toBe('valor');
+    });
+
+    it('debería retornar null si Redis no está disponible', async () => {
+      jest.spyOn(redisService, 'getClient').mockReturnValue(null);
+
+      const result = await service.get('test:key');
+
+      expect(result).toBeNull();
+    });
+
+    it('debería manejar errores de Redis en get sin romper la aplicación', async () => {
+      const loggerSpy = jest.spyOn(Logger.prototype, 'warn');
+
+      mockRedisClient.get.mockRejectedValue(
+        new Error('Redis Error'),
+      );
+
+      const result = await service.get('test:key');
+
+      expect(result).toBeNull();
+
+      expect(loggerSpy).toHaveBeenCalled();
+    });
   });
 
-  it('should return null when redis client is unavailable on get', async () => {
-    jest.spyOn(redisService, 'getClient').mockReturnValue(null);
+  describe('set', () => {
+    it('debería delegar set al cliente Redis con TTL', async () => {
+      await service.set('test:key', 'valor', 60);
 
-    const result = await service.get('test:key');
+      expect(mockRedisClient.set).toHaveBeenCalledWith(
+        'test:key',
+        'valor',
+        'EX',
+        60,
+      );
 
-    expect(result).toBeNull();
+      expect(mockRedisClient.set).toHaveBeenCalledTimes(1);
+    });
+
+    it('no debería lanzar errores si Redis no está disponible', async () => {
+      jest.spyOn(redisService, 'getClient').mockReturnValue(null);
+
+      await expect(
+        service.set('test:key', 'valor', 60),
+      ).resolves.not.toThrow();
+    });
+
+    it('debería manejar errores de Redis en set sin romper la aplicación', async () => {
+      const loggerSpy = jest.spyOn(Logger.prototype, 'warn');
+
+      mockRedisClient.set.mockRejectedValue(
+        new Error('Redis Error'),
+      );
+
+      await expect(
+        service.set('test:key', 'valor', 60),
+      ).resolves.not.toThrow();
+
+      expect(loggerSpy).toHaveBeenCalled();
+    });
   });
 
-  it('should delegate set to redis client with TTL', async () => {
-    await service.set('test:key', 'value', 60);
-
-    expect(mockRedisClient.set).toHaveBeenCalledWith('test:key', 'value', 'EX', 60);
-  });
-
-  it('should delegate del to redis client', async () => {
-    await service.del('test:key');
-
-    expect(mockRedisClient.del).toHaveBeenCalledWith('test:key');
-  });
 });

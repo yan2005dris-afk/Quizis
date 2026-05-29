@@ -5,6 +5,10 @@ import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import cookieParser from 'cookie-parser';
 import { DatabaseModule } from 'src/infrastructure/database/prisma/prisma.module';
 import { AuthModule } from 'src/identity/auth/auth.module';
+import { UserModule } from 'src/identity/users/user.module';
+import { BancosModule } from 'src/juego/bancos/bancos.module';
+import { SalasModule } from 'src/juego/salas/salas.module';
+import { HealthModule } from 'src/infrastructure/health/health.module';
 import { GlobalExceptionFilter } from 'src/infrastructure/common/filters/global-exception.filter';
 import { BigIntInterceptor } from 'src/infrastructure/common/interceptors/bigint.interceptor';
 import { DecimalToNumberInterceptor } from 'src/infrastructure/common/interceptors/decimal-to-number.interceptor';
@@ -16,10 +20,6 @@ type CookieParserMiddleware = (
 ) => void;
 type CookieParserFactory = () => CookieParserMiddleware;
 
-// ─── Guard: requiere .env.test o vars de entorno explícitas (CI) ─────────────
-// En local: debe existir backend/.env.test
-// En CI: las vars llegan vía process.env (inyectadas por el workflow)
-// Sin este check, ConfigModule podría cargar .env de dev silenciosamente.
 import { existsSync } from 'fs';
 import { resolve } from 'path';
 
@@ -31,7 +31,7 @@ const hasEnvVars = Boolean(
 
 if (!hasEnvFile && !hasEnvVars) {
   throw new Error(
-    `[create-auth-test-app] Falta configuración para integration tests.\n` +
+    `[create-full-test-app] Falta configuración para integration tests.\n` +
       `  Local: crea backend/.env.test (ver backend/.env-example).\n` +
       `  CI: inyecta DATABASE_URL y JWT_ACCESS_SECRET como variables de entorno.\n` +
       `  No se usa .env como fallback para evitar correr tests contra la DB de desarrollo.`,
@@ -39,12 +39,12 @@ if (!hasEnvFile && !hasEnvVars) {
 }
 
 /**
- * Crea una instancia de NestJS lista para integration tests de auth.
+ * Crea una instancia de NestJS lista para integration tests completos.
  *
- * Carga solo los módulos necesarios para auth — sin Redis, WebSockets ni Juego.
+ * Incluye todos los módulos necesarios: Auth, User, Bancos, Salas.
  * Solo lee .env.test — sin fallback a .env para evitar uso accidental de la DB de dev.
  */
-export async function createAuthTestApp(): Promise<INestApplication> {
+export async function createFullTestApp(): Promise<INestApplication> {
   const moduleFixture: TestingModule = await Test.createTestingModule({
     imports: [
       ConfigModule.forRoot({
@@ -54,6 +54,10 @@ export async function createAuthTestApp(): Promise<INestApplication> {
       ThrottlerModule.forRoot([{ ttl: 60000, limit: 1000 }]),
       DatabaseModule,
       AuthModule,
+      UserModule,
+      BancosModule,
+      SalasModule,
+      HealthModule,
     ],
   })
     .overrideGuard(ThrottlerGuard)

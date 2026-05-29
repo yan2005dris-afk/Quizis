@@ -1,21 +1,34 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { BadRequestException, NotFoundException } from '@nestjs/common';
+import { NotFoundException, BadRequestException } from '@nestjs/common';
 import { UpdateParticipantRoleUseCase } from './update-participant-role.use-case';
-import { PrismaService } from '../../../infrastructure/database/prisma/prisma.service';
+import { PrismaService } from 'src/infrastructure/database/prisma/prisma.service';
 
 describe('UpdateParticipantRoleUseCase', () => {
   let useCase: UpdateParticipantRoleUseCase;
 
-  const mockPrisma = {
-    salas: {
-      findUnique: jest.fn(),
-    },
+  const mockTx = {
     participantes: {
-      count: jest.fn(),
       updateMany: jest.fn(),
       update: jest.fn(),
     },
-    $transaction: jest.fn(),
+  };
+
+  const mockPrisma = {
+    salas: { findUnique: jest.fn() },
+    participantes: { count: jest.fn().mockResolvedValue(0) },
+    $transaction: jest.fn().mockImplementation((cb: (tx: typeof mockTx) => unknown) => cb(mockTx)),
+  };
+
+  const mockSala = { salaId: 1, tokenCompartido: 'token-abc', maxEstudiantes: 30 };
+
+  const mockParticipante = {
+    participanteId: 5,
+    salaId: 1,
+    nickname: 'Juan',
+    rol: 'observador',
+    deletedAt: null,
+    createdAt: new Date(),
+    updatedAt: new Date(),
   };
 
   beforeEach(async () => {
@@ -26,107 +39,88 @@ describe('UpdateParticipantRoleUseCase', () => {
       ],
     }).compile();
 
-    useCase = module.get<UpdateParticipantRoleUseCase>(UpdateParticipantRoleUseCase);
+    useCase = module.get<UpdateParticipantRoleUseCase>(
+      UpdateParticipantRoleUseCase,
+    );
     jest.clearAllMocks();
 
-    // Default mock for $transaction: execute the callback with tx that has participantes
+    mockPrisma.salas.findUnique.mockResolvedValue(mockSala);
+    mockPrisma.participantes.count.mockResolvedValue(0);
     mockPrisma.$transaction.mockImplementation(
-      (cb: any) => cb({ participantes: mockPrisma.participantes }),
+      (cb: (tx: typeof mockTx) => unknown) => cb(mockTx),
     );
+    mockTx.participantes.updateMany.mockResolvedValue({ count: 0 });
+    mockTx.participantes.update.mockResolvedValue(mockParticipante);
   });
 
-  it('should promote nickname to estudiante when under maxEstudiantes cap', async () => {
-    mockPrisma.salas.findUnique.mockResolvedValue({
-      salaId: 1,
-      tokenCompartido: 'TOKEN',
-      maxEstudiantes: 3,
-    });
-    mockPrisma.participantes.count.mockResolvedValue(1); // only 1 current estudiante
-
-    const result = { participanteId: 1, nickname: 'alice', rol: 'estudiante' };
-    mockPrisma.participantes.update.mockResolvedValue(result);
-
-    const response = await useCase.execute('TOKEN', 'alice', 'estudiante');
-
-    expect(response).toEqual(result);
-    expect(mockPrisma.participantes.count).toHaveBeenCalledWith({
-      where: {
-        salaId: 1,
-        deletedAt: null,
-        rol: 'estudiante',
-        nickname: { not: 'alice' },
-      },
-    });
-    // Should NOT call updateMany (no demotion)
-    expect(mockPrisma.participantes.updateMany).not.toHaveBeenCalled();
-  });
-
-  it('should throw BadRequestException when at maxEstudiantes cap', async () => {
-    mockPrisma.salas.findUnique.mockResolvedValue({
-      salaId: 1,
-      tokenCompartido: 'TOKEN',
-      maxEstudiantes: 2,
-    });
-    mockPrisma.participantes.count.mockResolvedValue(2); // already at cap (2 existing estudiantes)
-
-    await expect(
-      useCase.execute('TOKEN', 'alice', 'estudiante'),
-    ).rejects.toThrow(BadRequestException);
-
-    expect(mockPrisma.participantes.update).not.toHaveBeenCalled();
-  });
-
-  it('should allow role change to observador without cap check', async () => {
-    mockPrisma.salas.findUnique.mockResolvedValue({
-      salaId: 1,
-      tokenCompartido: 'TOKEN',
-      maxEstudiantes: 1,
-    });
-
-    const result = { participanteId: 1, nickname: 'alice', rol: 'observador' };
-    mockPrisma.participantes.update.mockResolvedValue(result);
-
-    const response = await useCase.execute('TOKEN', 'alice', 'observador');
-
-    expect(response).toEqual(result);
-    // count should not be called for non-estudiante roles
-    expect(mockPrisma.participantes.count).not.toHaveBeenCalled();
-  });
-
-  it('should throw NotFoundException when sala does not exist', async () => {
+  it('sala no encontrada → NotFoundException', async () => {
     mockPrisma.salas.findUnique.mockResolvedValue(null);
 
     await expect(
-      useCase.execute('INVALID', 'alice', 'estudiante'),
+      useCase.execute('token-abc', 'Juan', 'observador'),
     ).rejects.toThrow(NotFoundException);
   });
 
-  it('should throw BadRequestException when promoting Host-nickname', async () => {
-    mockPrisma.salas.findUnique.mockResolvedValue({
-      salaId: 1,
-      tokenCompartido: 'TOKEN',
-      maxEstudiantes: 5,
-    });
-
+  it('nickname con prefijo Host-* → BadRequestException', async () => {
     await expect(
-      useCase.execute('TOKEN', 'Host-profe', 'estudiante'),
+      useCase.execute('token-abc', 'Host-Admin', 'observador'),
     ).rejects.toThrow(BadRequestException);
+    expect(mockPrisma.$transaction).not.toHaveBeenCalled();
   });
 
-  it('should allow promotion when count < maxEstudiantes with exact boundary', async () => {
-    mockPrisma.salas.findUnique.mockResolvedValue({
-      salaId: 1,
-      tokenCompartido: 'TOKEN',
-      maxEstudiantes: 3,
+  it('cambio a observador → solo actualiza ese participante, sin demote', async () => {
+    await useCase.execute('token-abc', 'Juan', 'observador');
+
+    expect(mockTx.participantes.updateMany).not.toHaveBeenCalled();
+    expect(mockTx.participantes.update).toHaveBeenCalledWith({
+      where: { salaId_nickname: { salaId: 1, nickname: 'Juan' } },
+      data: { rol: 'observador' },
     });
-    mockPrisma.participantes.count.mockResolvedValue(2); // 2 current, cap is 3 → OK
+  });
 
-    const result = { participanteId: 1, nickname: 'bob', rol: 'estudiante' };
-    mockPrisma.participantes.update.mockResolvedValue(result);
+  it('cambio a estudiante → verifica cupo antes de actualizar', async () => {
+    mockPrisma.participantes.count.mockResolvedValue(0);
+    mockTx.participantes.update.mockResolvedValue({
+      ...mockParticipante,
+      rol: 'estudiante',
+    });
 
-    const response = await useCase.execute('TOKEN', 'bob', 'estudiante');
+    await useCase.execute('token-abc', 'Juan', 'estudiante');
 
-    expect(response).toEqual(result);
-    expect(mockPrisma.participantes.count).toHaveBeenCalled();
+    expect(mockPrisma.participantes.count).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({ salaId: 1, rol: 'estudiante' }),
+      }),
+    );
+    expect(mockTx.participantes.update).toHaveBeenCalledWith({
+      where: { salaId_nickname: { salaId: 1, nickname: 'Juan' } },
+      data: { rol: 'estudiante' },
+    });
+  });
+
+  it('cupo de estudiantes lleno → BadRequestException', async () => {
+    mockPrisma.participantes.count.mockResolvedValue(30);
+
+    await expect(
+      useCase.execute('token-abc', 'Juan', 'estudiante'),
+    ).rejects.toThrow(BadRequestException);
+    expect(mockPrisma.$transaction).not.toHaveBeenCalled();
+  });
+
+  it('retorna el participante actualizado', async () => {
+    const updated = { ...mockParticipante, rol: 'estudiante' };
+    mockTx.participantes.update.mockResolvedValue(updated);
+
+    const result = await useCase.execute('token-abc', 'Juan', 'estudiante');
+
+    expect(result).toEqual(updated);
+  });
+
+  it('busca sala por tokenCompartido', async () => {
+    await useCase.execute('token-abc', 'Juan', 'observador');
+
+    expect(mockPrisma.salas.findUnique).toHaveBeenCalledWith({
+      where: { tokenCompartido: 'token-abc' },
+    });
   });
 });

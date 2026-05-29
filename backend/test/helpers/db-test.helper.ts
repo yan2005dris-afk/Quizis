@@ -1,45 +1,56 @@
 import { PrismaService } from 'src/infrastructure/database/prisma/prisma.service';
 import * as bcrypt from 'bcryptjs';
+import { randomUUID } from 'crypto';
+
+// ─── Guard: falla temprano si DATABASE_URL no apunta a DB de test ─────────────
+const dbUrl = process.env.DATABASE_URL ?? '';
+const isTestDb =
+  dbUrl.includes('quizis_test') ||
+  dbUrl.includes('test') ||
+  process.env.NODE_ENV === 'test';
+
+if (!isTestDb) {
+  throw new Error(
+    `[db-test.helper] DATABASE_URL no apunta a una DB de test.\n` +
+      `  URL actual: ${dbUrl}\n` +
+      `  Los integration tests hacen INSERT/DELETE reales.\n` +
+      `  Configura backend/.env.test con una DB dedicada (ej: quizis_test).`,
+  );
+}
+
+// ─── Identificadores únicos por ejecución ─────────────────────────────────────
+// Sufijo UUID corto evita colisiones entre ejecuciones paralelas o
+// cleanup fallidos previos — sin necesidad de lógica de "rescue".
+const RUN_ID = randomUUID().slice(0, 8);
 
 export const TEST_AUTH_USER = {
-  email: 'integration-auth-test@quizis.local',
+  email: `integration-auth-${RUN_ID}@quizis.local`,
   password: 'Test@Integration1!',
   nombres: 'Integration',
   apellidos: 'Test',
 };
 
-const TEST_ROLE_NAME = '__integration_test_role__';
+const TEST_ROLE_NAME = `__integration_test_role_${RUN_ID}__`;
 
 export interface SeededTestData {
   userId: number;
   roleId: number;
+  runId: string;
 }
 
 /**
- * Crea rol y usuario de prueba en la DB.
- * Usa upsert en el rol y create en el usuario para evitar colisiones.
+ * Crea rol y usuario de prueba con IDs únicos por ejecución.
+ * No necesita lógica de "rescue" — el sufijo UUID garantiza que
+ * no colisiona con ejecuciones anteriores ni con datos reales.
  */
 export async function seedAuthTestData(
   prisma: PrismaService,
 ): Promise<SeededTestData> {
   const hashedPassword = await bcrypt.hash(TEST_AUTH_USER.password, 10);
 
-  const role = await prisma.roles.upsert({
-    where: { nombre: TEST_ROLE_NAME },
-    update: {},
-    create: { nombre: TEST_ROLE_NAME },
+  const role = await prisma.roles.create({
+    data: { nombre: TEST_ROLE_NAME },
   });
-
-  // Si ya existe el usuario de test anterior (cleanup fallido), limpiarlo
-  const existing = await prisma.usuarios.findUnique({
-    where: { email: TEST_AUTH_USER.email },
-  });
-  if (existing) {
-    await prisma.sesiones.deleteMany({
-      where: { usuarioId: existing.usuarioId },
-    });
-    await prisma.usuarios.delete({ where: { usuarioId: existing.usuarioId } });
-  }
 
   const user = await prisma.usuarios.create({
     data: {
@@ -51,12 +62,12 @@ export async function seedAuthTestData(
     },
   });
 
-  return { userId: user.usuarioId, roleId: role.rolId };
+  return { userId: user.usuarioId, roleId: role.rolId, runId: RUN_ID };
 }
 
 /**
- * Elimina todos los datos creados por seedAuthTestData.
- * Llama siempre en afterAll para no contaminar la DB.
+ * Elimina exactamente los registros creados por seedAuthTestData.
+ * Seguro: opera por IDs numéricos, no por email ni nombre de rol.
  */
 export async function cleanAuthTestData(
   prisma: PrismaService,

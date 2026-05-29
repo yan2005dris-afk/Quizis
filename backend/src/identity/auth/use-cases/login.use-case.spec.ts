@@ -76,6 +76,59 @@ describe('LoginUseCase', () => {
   });
 
   describe('execute', () => {
+    it('should create session with hashed refresh token', async () => {
+      const mockUser = {
+        usuarioId: 1,
+        email: 'test@test.com',
+        clave: 'hashed',
+        deletedAt: null,
+        nombres: 'Juan',
+        apellidos: 'Perez',
+        avatar: null,
+        rolId: 1,
+        rol: { nombre: 'admin', deletedAt: null },
+      };
+
+      (prismaService.usuarios.findUnique as jest.Mock)
+        .mockResolvedValue(mockUser);
+
+      (bcrypt.compare as jest.Mock).mockResolvedValue(true);
+
+      (bcrypt.hash as jest.Mock)
+        .mockResolvedValue('hashed-refresh');
+
+      jwtService.signAsync
+        .mockResolvedValueOnce('access-token')
+        .mockResolvedValueOnce('refresh-token');
+
+      jwtService.decode.mockReturnValue({
+        iat: 100,
+        exp: 200,
+      });
+
+      sessionsService.createSession.mockResolvedValue({} as any);
+
+      await useCase.execute(
+        {
+          email: 'test@test.com',
+          password: '123456',
+        },
+        '127.0.0.1',
+        'Chrome',
+      );
+
+      expect(sessionsService.createSession)
+        .toHaveBeenCalledWith(
+          expect.objectContaining({
+            sesionId: 'test-uuid-1234-5678',
+            hashRefreshToken: 'hashed-refresh',
+            direccionIp: '127.0.0.1',
+            usuarioAgente: 'Chrome',
+            revocado: false,
+          }),
+        );
+    });
+
     it('should login successfully with minimal data retrieval', async () => {
       const loginDto = { email: 'test@jasrapo.com', password: 'Password123!' };
 
@@ -131,6 +184,19 @@ describe('LoginUseCase', () => {
 
       await expect(
         useCase.execute({ email: 'notfound@test.com', password: 'any' }),
+      ).rejects.toThrow(UnauthorizedException);
+    });
+
+    it('should throw UnauthorizedException when user is soft-deleted', async () => {
+      (prismaService.usuarios.findUnique as jest.Mock).mockResolvedValue({
+        usuarioId: 1,
+        email: 'test@test.com',
+        clave: 'hashed',
+        deletedAt: new Date(),
+      });
+
+      await expect(
+        useCase.execute({ email: 'test@test.com', password: 'any' }),
       ).rejects.toThrow(UnauthorizedException);
     });
 

@@ -8,7 +8,7 @@ import { PrismaService } from '../../../infrastructure/database/prisma/prisma.se
 import { RoomStateCacheUseCase } from '../../../infrastructure/cache/use-cases/room-state-cache.use-case';
 import { EstadoSala } from '../dto/update-estado-sala.dto';
 import { RegenerateRoomTokenUseCase } from './regenerate-room-token.use-case';
-import { v4 as uuidv4 } from 'uuid';
+import { randomUUID } from 'crypto';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 
@@ -41,7 +41,7 @@ export class ReactivateRoomUseCase {
       );
     }
 
-    const nuevoTokenUUID = uuidv4();
+    const nuevoTokenUUID = randomUUID();
 
     // Actualizar DB: nuevo token + estado BORRADOR
     await this.prisma.salas.update({

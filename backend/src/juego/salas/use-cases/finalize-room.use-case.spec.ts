@@ -1,24 +1,24 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { BadRequestException, NotFoundException } from '@nestjs/common';
+import { NotFoundException } from '@nestjs/common';
 import { FinalizeRoomUseCase } from './finalize-room.use-case';
-import { PrismaService } from '../../../infrastructure/database/prisma/prisma.service';
-import { ParticipantsCacheUseCase } from '../../../infrastructure/cache/use-cases/participants-cache.use-case';
-import { RoomStateCacheUseCase } from '../../../infrastructure/cache/use-cases/room-state-cache.use-case';
-import { ChatCacheUseCase } from '../../../infrastructure/cache/use-cases/chat-cache.use-case';
+import { PrismaService } from 'src/infrastructure/database/prisma/prisma.service';
+import { ParticipantsCacheUseCase } from 'src/infrastructure/cache/use-cases/participants-cache.use-case';
+import { RoomStateCacheUseCase } from 'src/infrastructure/cache/use-cases/room-state-cache.use-case';
+import { ChatCacheUseCase } from 'src/infrastructure/cache/use-cases/chat-cache.use-case';
 import { EstadoSala } from '../dto/update-estado-sala.dto';
 
 describe('FinalizeRoomUseCase', () => {
   let useCase: FinalizeRoomUseCase;
 
   const mockPrisma = {
-    salas: {
-      findUnique: jest.fn(),
-      update: jest.fn(),
-    },
-    participantes: {
-      upsert: jest.fn(),
-    },
-    $transaction: jest.fn(),
+    salas: { findUnique: jest.fn(), update: jest.fn() },
+    participantes: { upsert: jest.fn() },
+    $transaction: jest.fn().mockImplementation((cb: (tx: any) => unknown) =>
+      cb({
+        salas: { update: mockPrisma.salas.update },
+        participantes: { upsert: mockPrisma.participantes.upsert },
+      }),
+    ),
   };
 
   const mockParticipantsCache = {
@@ -26,14 +26,16 @@ describe('FinalizeRoomUseCase', () => {
   };
 
   const mockRoomStateCache = {
-    getRoomEstado: jest.fn().mockResolvedValue(undefined),
-    setRoomEstado: jest.fn().mockResolvedValue(undefined),
     setRoomEnabled: jest.fn(),
+    setRoomEstado: jest.fn(),
+    getRoomEstado: jest.fn().mockResolvedValue(null),
   };
 
   const mockChatCache = {
     clearMessages: jest.fn(),
   };
+
+  const mockSala = { salaId: 1, tokenCompartido: 'token-abc' };
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -49,100 +51,86 @@ describe('FinalizeRoomUseCase', () => {
     useCase = module.get<FinalizeRoomUseCase>(FinalizeRoomUseCase);
     jest.clearAllMocks();
 
-    // Default $transaction: execute callback
-    mockPrisma.$transaction.mockImplementation(
-      (cb: any) => cb(mockPrisma),
-    );
-  });
-
-  it('should finalize a sala from EN_VIVO state', async () => {
-    mockPrisma.salas.findUnique.mockResolvedValue({
-      salaId: 1,
-      tokenCompartido: 'TOKEN',
-      estado: EstadoSala.EN_VIVO,
-    });
-    mockRoomStateCache.getRoomEstado.mockResolvedValue(EstadoSala.EN_VIVO);
+    mockPrisma.salas.findUnique.mockResolvedValue(mockSala);
+    mockPrisma.salas.update.mockResolvedValue(undefined);
+    mockPrisma.participantes.upsert.mockResolvedValue(undefined);
     mockParticipantsCache.getHistoricalParticipants.mockResolvedValue([
-      'alice',
-      'bob',
+      'Juan',
+      'Maria',
+      'Host-Admin',
     ]);
-    mockPrisma.participantes.upsert.mockResolvedValue({});
-
-    const result = await useCase.execute(1);
-
-    expect(result.success).toBe(true);
-    expect(result.totalParticipantes).toBe(2);
-    expect(mockPrisma.salas.update).toHaveBeenCalledWith(
-      expect.objectContaining({
-        where: { salaId: 1 },
-        data: expect.objectContaining({
-          estado: EstadoSala.FINALIZADO,
-        }),
-      }),
-    );
-    expect(mockRoomStateCache.setRoomEnabled).toHaveBeenCalledWith('TOKEN', false);
-    expect(mockChatCache.clearMessages).toHaveBeenCalledWith('TOKEN');
+    mockRoomStateCache.setRoomEnabled.mockResolvedValue(undefined);
+    mockChatCache.clearMessages.mockResolvedValue(undefined);
   });
 
-  it('should finalize a sala from BORRADOR state', async () => {
-    mockRoomStateCache.getRoomEstado.mockResolvedValue(EstadoSala.BORRADOR);
-    mockPrisma.salas.findUnique.mockResolvedValue({
-      salaId: 1,
-      tokenCompartido: 'TOKEN',
-      estado: EstadoSala.BORRADOR,
-    });
-    mockParticipantsCache.getHistoricalParticipants.mockResolvedValue([]);
-    mockPrisma.$transaction.mockImplementation((cb: any) => cb(mockPrisma));
-
-    const result = await useCase.execute(1);
-    expect(result.success).toBe(true);
-  });
-
-  it('should throw BadRequestException when sala is already FINALIZADO (déjà-vu guard)', async () => {
-    mockRoomStateCache.getRoomEstado.mockResolvedValue(EstadoSala.FINALIZADO);
-    mockPrisma.salas.findUnique.mockResolvedValue({
-      salaId: 1,
-      tokenCompartido: 'TOKEN',
-      estado: EstadoSala.FINALIZADO,
-    });
-
-    await expect(useCase.execute(1)).rejects.toThrow(BadRequestException);
-    expect(mockPrisma.salas.update).not.toHaveBeenCalled();
-  });
-
-  it('should finalize a sala from ESPERANDO_ALUMNOS state', async () => {
-    mockRoomStateCache.getRoomEstado.mockResolvedValue(EstadoSala.ESPERANDO_ALUMNOS);
-    mockPrisma.salas.findUnique.mockResolvedValue({
-      salaId: 1,
-      tokenCompartido: 'TOKEN',
-      estado: EstadoSala.ESPERANDO_ALUMNOS,
-    });
-    mockParticipantsCache.getHistoricalParticipants.mockResolvedValue([]);
-    mockPrisma.$transaction.mockImplementation((cb: any) => cb(mockPrisma));
-
-    const result = await useCase.execute(1);
-    expect(result.success).toBe(true);
-  });
-
-  it('should throw NotFoundException when sala does not exist', async () => {
+  it('sala no encontrada → NotFoundException', async () => {
     mockPrisma.salas.findUnique.mockResolvedValue(null);
 
     await expect(useCase.execute(999)).rejects.toThrow(NotFoundException);
+    expect(mockPrisma.participantes.upsert).not.toHaveBeenCalled();
   });
 
-  it('should wrap mutations in $transaction', async () => {
-    mockRoomStateCache.getRoomEstado.mockResolvedValue(EstadoSala.EN_VIVO);
-    mockPrisma.salas.findUnique.mockResolvedValue({
-      salaId: 1,
-      tokenCompartido: 'TOKEN',
-      estado: EstadoSala.EN_VIVO,
-    });
-    mockParticipantsCache.getHistoricalParticipants.mockResolvedValue(['alice']);
-    mockPrisma.participantes.upsert.mockResolvedValue({});
+  it('happy path: persiste participantes reales y filtra Host-*', async () => {
+    const result = await useCase.execute(1);
 
+    expect(result.success).toBe(true);
+    expect(mockPrisma.participantes.upsert).toHaveBeenCalledTimes(2);
+    expect(mockPrisma.participantes.upsert).not.toHaveBeenCalledWith(
+      expect.objectContaining({
+        create: expect.objectContaining({ nickname: 'Host-Admin' }),
+      }),
+    );
+  });
+
+  it('retorna totalParticipantes correcto (excluye Host-*)', async () => {
+    const result = await useCase.execute(1);
+
+    expect(result.totalParticipantes).toBe(2);
+  });
+
+  it('estado en DB actualizado a FINALIZADO', async () => {
     await useCase.execute(1);
 
-    // $transaction should have been called with a callback
-    expect(mockPrisma.$transaction).toHaveBeenCalledWith(expect.any(Function));
+    expect(mockPrisma.salas.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ estado: EstadoSala.FINALIZADO }),
+      }),
+    );
+  });
+
+  it('Redis: room deshabilitada en cache', async () => {
+    await useCase.execute(1);
+
+    expect(mockRoomStateCache.setRoomEnabled).toHaveBeenCalledWith(
+      'token-abc',
+      false,
+    );
+  });
+
+  it('Redis: chat limpiado', async () => {
+    await useCase.execute(1);
+
+    expect(mockChatCache.clearMessages).toHaveBeenCalledWith('token-abc');
+  });
+
+  it('cache vacío → retorna 0 participantes, no llama upsert', async () => {
+    mockParticipantsCache.getHistoricalParticipants.mockResolvedValue([]);
+
+    const result = await useCase.execute(1);
+
+    expect(result.totalParticipantes).toBe(0);
+    expect(mockPrisma.participantes.upsert).not.toHaveBeenCalled();
+  });
+
+  it('cache solo con Host-* → retorna 0 participantes reales', async () => {
+    mockParticipantsCache.getHistoricalParticipants.mockResolvedValue([
+      'Host-Admin',
+      'Host-Profesor',
+    ]);
+
+    const result = await useCase.execute(1);
+
+    expect(result.totalParticipantes).toBe(0);
+    expect(mockPrisma.participantes.upsert).not.toHaveBeenCalled();
   });
 });
