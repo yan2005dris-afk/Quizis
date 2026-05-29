@@ -1,0 +1,35 @@
+config:
+  target: "http://localhost:3000"
+  engines:
+    socketio-v3: {}
+  phases:
+    - duration: 2
+      arrivalRate: 250
+      name: "Disparo masivo — 500 usuarios en 2 segundos"
+  variables:
+    TOKEN_SALA: "62e27136-a228-4532-a7e2-f9f5f4e17e2a"
+    SALA_ID: 49
+    RONDA_ID: 1
+    PREGUNTA_ID: 1
+
+scenarios:
+  - name: "Audiencia completa vota simultáneamente"
+    engine: socketio-v3
+    flow:
+      - emit:
+          channel: "unirse_sala"
+          data:
+            tokenCompartido: "{{ TOKEN_SALA }}"
+            nombre: "concurrent_{{ $randomNumber(1, 9999999) }}"
+
+      - emit:
+          channel: "audience:vote"
+          data:
+            salaId: "{{ SALA_ID }}"
+            rondaId: "{{ RONDA_ID }}"
+            tokenCompartido: "{{ TOKEN_SALA }}"
+            preguntaId: "{{ PREGUNTA_ID }}"
+            participanteId: "{{ $randomNumber(1, 9999999) }}"
+            opcionId: "{{ $randomNumber(1, 4) }}"
+
+      - think: 3

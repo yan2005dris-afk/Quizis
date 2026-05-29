@@ -4,10 +4,13 @@ packages:
 allowBuilds:
   '@nestjs/core': true
   '@parcel/watcher': true
+  '@playwright/browser-chromium': false
   '@prisma/engines': true
   '@scarf/scarf': true
   esbuild: true
   lmdb: true
   msgpackr-extract: true
   prisma: true
+  protobufjs: false
+  unix-dgram: false
   unrs-resolver: true

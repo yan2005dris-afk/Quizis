@@ -1,0 +1,44 @@
+config:
+  target: "http://localhost:3000"
+  engines:
+    socketio-v3: {}
+  phases:
+    - duration: 10
+      arrivalRate: 1
+      name: "Calentamiento (10 usuarios)"
+    - duration: 30
+      arrivalRate: 10
+      rampTo: 50
+      name: "Carga normal (10 → 50 usuarios/seg)"
+    - duration: 10
+      arrivalRate: 200
+      name: "Pico masivo (200 usuarios/seg)"
+  variables:
+    TOKEN_SALA: "62e27136-a228-4532-a7e2-f9f5f4e17e2a"
+    SALA_ID: 49
+    RONDA_ID: 1
+    PREGUNTA_ID: 1
+
+scenarios:
+  - name: "Participante se une y vota"
+    engine: socketio-v3
+    flow:
+      - emit:
+          channel: "unirse_sala"
+          data:
+            tokenCompartido: "{{ TOKEN_SALA }}"
+            nombre: "stress_{{ $randomNumber(1, 9999999) }}"
+
+      - think: 0.5
+
+      - emit:
+          channel: "audience:vote"
+          data:
+            salaId: "{{ SALA_ID }}"
+            rondaId: "{{ RONDA_ID }}"
+            tokenCompartido: "{{ TOKEN_SALA }}"
+            preguntaId: "{{ PREGUNTA_ID }}"
+            participanteId: "{{ $randomNumber(1, 9999999) }}"
+            opcionId: "{{ $randomNumber(1, 4) }}"
+
+      - think: 2

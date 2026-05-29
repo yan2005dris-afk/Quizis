@@ -6,12 +6,14 @@ import {
 import { ValidateVoteUniquenessUseCase } from './validate-vote-uniqueness.use-case';
 import { VotosService } from '../../votos/votos.service';
 import { RoomStateCacheUseCase } from '../../../infrastructure/cache/use-cases/room-state-cache.use-case';
+import { VotesCacheUseCase } from '../../../infrastructure/cache/use-cases/votes-cache.use-case';
 
 describe('ProcessAudienceVoteUseCase', () => {
   let useCase: ProcessAudienceVoteUseCase;
   let validateUniqueness: ValidateVoteUniquenessUseCase;
   let votosService: VotosService;
   let roomStateCache: RoomStateCacheUseCase;
+  let votesCache: VotesCacheUseCase;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -36,6 +38,12 @@ describe('ProcessAudienceVoteUseCase', () => {
             getActiveQuestion: jest.fn(),
           },
         },
+        {
+          provide: VotesCacheUseCase,
+          useValue: {
+            getDistribution: jest.fn(),
+          },
+        },
       ],
     }).compile();
 
@@ -47,6 +55,7 @@ describe('ProcessAudienceVoteUseCase', () => {
     );
     votosService = module.get<VotosService>(VotosService);
     roomStateCache = module.get<RoomStateCacheUseCase>(RoomStateCacheUseCase);
+    votesCache = module.get<VotesCacheUseCase>(VotesCacheUseCase);
   });
 
   const mockPayload: VotePayload = {
@@ -62,8 +71,8 @@ describe('ProcessAudienceVoteUseCase', () => {
     jest.spyOn(validateUniqueness, 'execute').mockResolvedValue(true);
     jest.spyOn(votosService, 'registrarVoto').mockResolvedValue(undefined);
     jest
-      .spyOn(votosService, 'obtenerVotosCache')
-      .mockResolvedValue([{ participanteId: 100, opcionId: 5 }]);
+      .spyOn(votesCache, 'getDistribution')
+      .mockResolvedValue(new Map([[5, 1]]));
     jest.spyOn(roomStateCache, 'getActiveQuestion').mockResolvedValue({
       opciones: [{ opcionId: 5, letra: 'A' }],
     } as any);

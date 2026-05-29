@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ValidateVoteUniquenessUseCase } from './validate-vote-uniqueness.use-case';
 import { VotosService } from '../../votos/votos.service';
 import { RoomStateCacheUseCase } from '../../../infrastructure/cache/use-cases/room-state-cache.use-case';
+import { VotesCacheUseCase } from '../../../infrastructure/cache/use-cases/votes-cache.use-case';
 
 export interface VotePayload {
   salaId: number;
@@ -20,6 +21,7 @@ export class ProcessAudienceVoteUseCase {
     private readonly validateVoteUniquenessUseCase: ValidateVoteUniquenessUseCase,
     private readonly votosService: VotosService,
     private readonly cacheService: RoomStateCacheUseCase,
+    private readonly votesCacheUseCase: VotesCacheUseCase,
   ) {}
 
   async execute(payload: VotePayload) {
@@ -50,8 +52,8 @@ export class ProcessAudienceVoteUseCase {
       `Voto procesado: Participante ${payload.participanteId} en ronda ${payload.rondaId}`,
     );
 
-    // 3. Calcular nueva distribución
-    const votos = await this.votosService.obtenerVotosCache(
+    // 3. Calcular nueva distribución (O(4) en lugar de O(N))
+    const distMap = await this.votesCacheUseCase.getDistribution(
       payload.rondaId,
       payload.preguntaId,
     );
@@ -59,23 +61,18 @@ export class ProcessAudienceVoteUseCase {
       payload.tokenCompartido,
     );
 
-    const distribucion: any = { total: votos.length };
+    const distribucion: any = { total: 0 };
 
     if (activeQuestion) {
-      // Inicializar en 0
       activeQuestion.opciones.forEach((o: any) => {
-        distribucion[o.letra] = 0;
+        const count = distMap.get(o.opcionId) ?? 0;
+        distribucion[o.letra] = count;
+        distribucion.total += count;
       });
-
-      // Contar
-      votos.forEach((v) => {
-        const opcion = activeQuestion.opciones.find(
-          (o: any) => o.opcionId === v.opcionId,
-        );
-        if (opcion) {
-          distribucion[opcion.letra]++;
-        }
-      });
+    } else {
+      for (const count of distMap.values()) {
+        distribucion.total += count;
+      }
     }
 
     return {
