@@ -45,6 +45,8 @@
               <span class="sala-card__badge sala-card__badge--vivo">EN VIVO</span>
             } @else if (sala.estado === 'esperando') {
               <span class="sala-card__badge sala-card__badge--esperando">Esperando</span>
+            } @else if (sala.estado === 'borrador') {
+              <span class="sala-card__badge sala-card__badge--borrador">Borrador</span>
             } @else {
               <span class="sala-card__badge sala-card__badge--terminado">Terminado</span>
             }

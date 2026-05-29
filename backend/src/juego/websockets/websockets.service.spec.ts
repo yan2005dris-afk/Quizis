@@ -7,6 +7,8 @@ import { ReleaseQuestionUseCase } from './use-cases/release-question.use-case';
 import { SubmitAnswerUseCase } from './use-cases/submit-answer.use-case';
 import { ToggleRoomEnabledUseCase } from './use-cases/toggle-room-enabled.use-case';
 import { SendMessageUseCase } from './use-cases/send-message.use-case';
+import { ActivateCallJokerUseCase } from './use-cases/activate-call-joker.use-case';
+import { SendHintUseCase } from './use-cases/send-hint.use-case';
 
 describe('WebsocketsService', () => {
   let service: WebsocketsService;
@@ -27,6 +29,8 @@ describe('WebsocketsService', () => {
         { provide: SubmitAnswerUseCase, useValue: mockUseCase },
         { provide: ToggleRoomEnabledUseCase, useValue: mockUseCase },
         { provide: SendMessageUseCase, useValue: mockUseCase },
+        { provide: ActivateCallJokerUseCase, useValue: mockUseCase },
+        { provide: SendHintUseCase, useValue: mockUseCase },
       ],
     }).compile();
 

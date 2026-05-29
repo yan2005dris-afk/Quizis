@@ -10,6 +10,7 @@ describe('CacheService', () => {
   const mockRedisClient = {
     get: jest.fn(),
     set: jest.fn(),
+    del: jest.fn(),
   };
 
   beforeEach(async () => {

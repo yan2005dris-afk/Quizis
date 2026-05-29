@@ -43,8 +43,32 @@ export class UpdateEstadoSalaUseCase {
       );
     }
 
+    // EN_VIVO guard: requiere al menos 1 estudiante en la sala
+    if (nuevoEstado === EstadoSala.EN_VIVO) {
+      const estudiantesCount = await this.prisma.participantes.count({
+        where: {
+          salaId: id,
+          deletedAt: null,
+          rol: 'estudiante',
+        },
+      });
+
+      if (estudiantesCount === 0) {
+        throw new BadRequestException(
+          'No se puede iniciar la sala en vivo sin estudiantes. Debe haber al menos 1 estudiante.',
+        );
+      }
+    }
+
+    // Persistir en DB también para que sobreviva a reinicios de Redis
+    await this.prisma.salas.update({
+      where: { salaId: id },
+      data: { estado: nuevoEstado },
+    });
+
     await this.roomStateCache.setRoomEstado(sala.tokenCompartido, nuevoEstado);
 
+    // Al pasar a EN_VIVO, asegurar que exista una ronda activa con preguntas
     if (nuevoEstado === EstadoSala.EN_VIVO) {
       await this.ensureRondaActiva(
         sala.salaId,

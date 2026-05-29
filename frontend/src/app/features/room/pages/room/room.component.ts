@@ -39,8 +39,10 @@ import {
   Square,
   CirclePause,
   RotateCcw,
+  BarChart,
 } from 'lucide-angular';
 import { environment } from '../../../../../environments/environment';
+import { ESTADOS_SALA } from '../../../../core/constants/estados.constants';
 
 @Component({
   selector: 'app-room',
@@ -84,6 +86,11 @@ export class RoomComponent implements OnInit, OnDestroy {
   protected readonly confirmandoFinalizar = signal(false);
   protected readonly reiniciandoRonda = signal(false);
   protected readonly mostrandoModalRegenerar = signal(false);
+  protected readonly reactivando = signal(false);
+  protected readonly rondaCompletada = signal(false);
+  protected readonly rondaActualNumero = signal(1);
+  protected readonly totalPreguntasRonda = signal(0);
+  protected readonly preguntasContestadasRonda = signal(0);
 
   // Lucide icons
   protected readonly UsersIcon = Users;
@@ -96,6 +103,7 @@ export class RoomComponent implements OnInit, OnDestroy {
   protected readonly StopIcon = Square;
   protected readonly PauseIcon = CirclePause;
   protected readonly RestartIcon = RotateCcw;
+  protected readonly BarChartIcon = BarChart;
 
   protected readonly preguntaActiva = this.gameSocket.preguntaActiva;
   protected readonly tiempoRestante = this.gameSocket.tiempoRestante;
@@ -104,13 +112,15 @@ export class RoomComponent implements OnInit, OnDestroy {
 
   protected readonly estadoSala = computed(() => this.salaDetalle()?.estado ?? null);
 
-  protected readonly isFinalizado = computed(() => this.estadoSala() === 'FINALIZADO');
+  protected readonly isFinalizado = computed(() => this.estadoSala() === ESTADOS_SALA.FINALIZADO);
 
-  protected readonly isEnVivo = computed(() => this.estadoSala() === 'EN_VIVO');
+  protected readonly isEnVivo = computed(() => this.estadoSala() === ESTADOS_SALA.EN_VIVO);
 
-  protected readonly isEsperando = computed(() => this.estadoSala() === 'ESPERANDO_ALUMNOS');
+  protected readonly isEsperando = computed(
+    () => this.estadoSala() === ESTADOS_SALA.ESPERANDO_ALUMNOS,
+  );
 
-  protected readonly isBorrador = computed(() => this.estadoSala() === 'BORRADOR');
+  protected readonly isBorrador = computed(() => this.estadoSala() === ESTADOS_SALA.BORRADOR);
 
   protected readonly miNickname = computed(() => {
     if (this.isHost()) return this.auth.user()?.nombre || 'Admin';
@@ -124,10 +134,25 @@ export class RoomComponent implements OnInit, OnDestroy {
     return p?.rol || 'observador';
   });
 
+  /**
+   * Indica si el usuario NO host puede interactuar con la pregunta activa.
+   * - Estudiantes: siempre que haya pregunta activa y la sala no esté finalizada.
+   * - Observadores: solo cuando el comodín PÚBLICO está activo (votosPublico tiene datos).
+   */
+  protected readonly puedeInteractuar = computed(() => {
+    if (!this.preguntaActiva() || this.isFinalizado()) return false;
+    if (this.isHost()) return false;
+    if (this.miRol() === 'estudiante') return true;
+    if (this.miRol() === 'observador') return this.gameSocket.votosPublico() !== null;
+    return false;
+  });
+
   protected readonly canReleaseNext = computed(() => {
-    if (!this.isHost() || this.isFinalizado()) return false;
+    // Solo se puede liberar preguntas si el juego está en vivo
+    if (!this.isHost() || !this.isEnVivo() || this.isFinalizado()) return false;
     const active = this.preguntaActiva();
     const result = this.gameSocket.ultimoResultado();
+    // Se puede liberar si: no hay pregunta activa, o la anterior fue respondida
     return !active || !!result || !!this.salaDetalle()?.rondaActiva?.preguntaActual?.answerDada;
   });
 
@@ -139,23 +164,10 @@ export class RoomComponent implements OnInit, OnDestroy {
   });
 
   constructor() {
-    // Efecto para redirigir a la vista de audiencia si pasamos a ser observadores
-    effect(() => {
-      const rol = this.miRol();
-      const sala = this.salaDetalle();
-      const participantes = this.gameSocket.participantes();
-
-      // Solo evaluar la redirección si ya recibimos la lista del socket
-      if (
-        participantes.length > 0 &&
-        rol === 'observador' &&
-        !this.isHost() &&
-        sala &&
-        sala.tokenCompartido
-      ) {
-        this.router.navigate(['/audiencia'], { queryParams: { token: sala.tokenCompartido } });
-      }
-    });
+    // NOTA: Ya NO redirigimos a /audiencia. Todos los usuarios (estudiantes y observadores)
+    // se quedan en RoomComponent. ActiveQuestionComponent maneja la interacción según el rol
+    // a través de la input `interactive` y RoomComponent.onResponder().
+    // Esto elimina el redirect loop y la necesidad de dos sockets separados.
 
     // Efecto ÚNICO para reaccionar al WS ronda_reiniciada
     effect(() => {
@@ -166,11 +178,64 @@ export class RoomComponent implements OnInit, OnDestroy {
         actual
           ? {
               ...actual,
-              estado: reinicio.estado ?? 'ESPERANDO_ALUMNOS',
+              estado: reinicio.estado ?? ESTADOS_SALA.ESPERANDO_ALUMNOS,
               rondaActiva: reinicio.rondaActiva,
             }
           : actual,
       );
+    });
+
+    // Efecto: cuando llega una pregunta vía socket pero la sala no tiene rondaActiva,
+    // recargar los detalles de la sala (el HTTP inicial pudo ocurrir antes de crear la ronda)
+    effect(() => {
+      const pregunta = this.gameSocket.preguntaActiva();
+      const sala = this.salaDetalle();
+      if (pregunta && sala && !sala.rondaActiva && sala.salaId) {
+        this.salasService
+          .obtenerPorId(String(sala.salaId))
+          .pipe(takeUntilDestroyed(this.destroyRef))
+          .subscribe({
+            next: (s) => this.salaDetalle.set(s),
+            error: (err) =>
+              console.error('[ROOM] Error refrescando sala al recibir pregunta:', err),
+          });
+      }
+    });
+
+    // Efecto: detectar cuándo todas las preguntas de la ronda fueron contestadas
+    effect(() => {
+      const result = this.gameSocket.ultimoResultado();
+      const total = this.totalPreguntasRonda();
+      if (!result || total === 0) return;
+
+      this.preguntasContestadasRonda.update((c) => {
+        const nuevo = c + 1;
+        if (nuevo >= total) {
+          // Todas las preguntas respondidas → mostrar podio de ronda
+          setTimeout(() => this.rondaCompletada.set(true), 500);
+        }
+        return nuevo;
+      });
+    });
+
+    // Inicializar contadores cuando se cargan los detalles de sala (nueva ronda)
+    effect(() => {
+      const ronda = this.salaDetalle()?.rondaActiva;
+      if (ronda?.historialPreguntas) {
+        const yaRespondidas = ronda.historialPreguntas.filter((p: any) => p.respuestaDada).length;
+        this.totalPreguntasRonda.set(ronda.historialPreguntas.length);
+        this.preguntasContestadasRonda.set(yaRespondidas);
+      }
+    });
+
+    // Limpiar estado de ronda completada cuando se reinicia la ronda
+    effect(() => {
+      const reinicio = this.gameSocket.rondaReiniciada();
+      if (reinicio) {
+        this.rondaCompletada.set(false);
+        this.preguntasContestadasRonda.set(0);
+        this.rondaActualNumero.update((n) => n + 1);
+      }
     });
 
     // Contador de mensajes no leídos
@@ -250,7 +315,7 @@ export class RoomComponent implements OnInit, OnDestroy {
                 }
               : null,
             preguntaActiva: sala.rondaActiva?.preguntaActual ?? null,
-            salaHabilitada: sala.estado !== 'FINALIZADO',
+            salaHabilitada: sala.estado !== ESTADOS_SALA.FINALIZADO,
           });
 
           const socketUrl = environment.apiUrl.replace('/api/v1', '');
@@ -280,11 +345,11 @@ export class RoomComponent implements OnInit, OnDestroy {
   }
 
   public onAbrirSala(): void {
-    this.cambiarEstado('ESPERANDO_ALUMNOS');
+    this.cambiarEstado(ESTADOS_SALA.ESPERANDO_ALUMNOS);
   }
 
   public onIniciarJuego(): void {
-    this.cambiarEstado('EN_VIVO');
+    this.cambiarEstado(ESTADOS_SALA.EN_VIVO);
   }
 
   private cambiarEstado(nuevoEstado: EstadoSala): void {
@@ -296,9 +361,9 @@ export class RoomComponent implements OnInit, OnDestroy {
       next: (updated) => {
         this.salaDetalle.update((s) => (s ? { ...s, estado: updated.estado } : s));
         this.cambiandoEstado.set(false);
-        this.gameSocket.salaHabilitada.set(updated.estado !== 'FINALIZADO');
+        this.gameSocket.salaHabilitada.set(updated.estado !== ESTADOS_SALA.FINALIZADO);
 
-        if (updated.estado === 'EN_VIVO') {
+        if (updated.estado === ESTADOS_SALA.EN_VIVO) {
           this.salasService
             .obtenerPorId(String(updated.salaId))
             .pipe(takeUntilDestroyed(this.destroyRef))
@@ -371,7 +436,7 @@ export class RoomComponent implements OnInit, OnDestroy {
     this.confirmandoFinalizar.set(false);
     this.salasService.finalizarSala(sala.salaId).subscribe({
       next: () => {
-        this.salaDetalle.update((s) => (s ? { ...s, estado: 'FINALIZADO' } : null));
+        this.salaDetalle.update((s) => (s ? { ...s, estado: ESTADOS_SALA.FINALIZADO } : null));
         this.gameSocket.salaHabilitada.set(false);
         this.finalizando.set(false);
       },
@@ -388,40 +453,63 @@ export class RoomComponent implements OnInit, OnDestroy {
 
   public onLiberarSiguiente(): void {
     const sala = this.salaDetalle();
-    if (!sala?.rondaActiva) return;
 
-    const historial = sala.rondaActiva.historialPreguntas ?? [];
-    const proxima = historial.find(
+    // Si la ronda aún no se cargó (HTTP pendiente), recargar y reintentar
+    if (!sala?.rondaActiva) {
+      if (sala?.salaId) {
+        this.salasService
+          .obtenerPorId(String(sala.salaId))
+          .pipe(takeUntilDestroyed(this.destroyRef))
+          .subscribe({
+            next: (s) => {
+              this.salaDetalle.set(s);
+              // Reintentar con los datos frescos
+              if (s.rondaActiva) {
+                this.liberarProximaPregunta(s.tokenCompartido, s.rondaActiva.historialPreguntas);
+              }
+            },
+          });
+      }
+      return;
+    }
+
+    this.liberarProximaPregunta(sala.tokenCompartido, sala.rondaActiva.historialPreguntas);
+  }
+
+  private liberarProximaPregunta(tokenCompartido: string, historial: any[]): void {
+    const proxima = (historial ?? []).find(
       (p) => !p.respuestaDada && p.preguntaId !== this.preguntaActiva()?.preguntaId,
     );
-
     if (proxima) {
-      this.gameSocket.liberarPregunta(sala.tokenCompartido, proxima);
+      this.gameSocket.liberarPregunta(tokenCompartido, proxima);
     }
   }
 
   public onResponder(opcionId: number): void {
     const sala = this.salaDetalle();
     const pregunta = this.preguntaActiva();
-    if (sala?.rondaActiva && pregunta) {
-      if (this.miRol() === 'estudiante') {
-        this.gameSocket.responderPregunta({
-          tokenCompartido: sala.tokenCompartido,
-          rondaId: sala.rondaActiva.rondaId,
-          preguntaId: pregunta.preguntaId,
-          opcionId,
-        });
-      } else if (this.miRol() === 'observador') {
-        const participantInfo = JSON.parse(localStorage.getItem('participantInfo') ?? '{}');
-        this.gameSocket.emitirVoto({
-          salaId: sala.salaId,
-          rondaId: sala.rondaActiva.rondaId,
-          tokenCompartido: sala.tokenCompartido,
-          preguntaId: pregunta.preguntaId,
-          participanteId: participantInfo.id || 0,
-          opcionId,
-        });
-      }
+    if (!sala?.rondaActiva || !pregunta) return;
+
+    if (this.miRol() === 'estudiante') {
+      this.gameSocket.responderPregunta({
+        tokenCompartido: sala.tokenCompartido,
+        rondaId: sala.rondaActiva.rondaId,
+        preguntaId: pregunta.preguntaId,
+        opcionId,
+      });
+    } else if (this.miRol() === 'observador') {
+      // Validar que el comodín PÚBLICO esté activo antes de permitir el voto
+      if (!this.gameSocket.votosPublico()) return;
+
+      const participantInfo = JSON.parse(localStorage.getItem('participantInfo') ?? '{}');
+      this.gameSocket.emitirVoto({
+        salaId: sala.salaId,
+        rondaId: sala.rondaActiva.rondaId,
+        tokenCompartido: sala.tokenCompartido,
+        preguntaId: pregunta.preguntaId,
+        participanteId: participantInfo.id || 0,
+        opcionId,
+      });
     }
   }
 
@@ -439,10 +527,67 @@ export class RoomComponent implements OnInit, OnDestroy {
     this.gameSocket.enviarMensaje(event.texto, event.tipo);
   }
 
-  public onToggleRol(event: { nickname: string; nuevoRol: 'estudiante' | 'observador' }): void {
+  public async onToggleRol(event: {
+    nickname: string;
+    nuevoRol: 'estudiante' | 'observador';
+  }): Promise<void> {
     const sala = this.salaDetalle();
     if (!sala) return;
-    this.gameSocket.cambiarRolParticipante(sala.tokenCompartido, event.nickname, event.nuevoRol);
+
+    const res = await this.gameSocket.cambiarRolParticipante(
+      sala.tokenCompartido,
+      event.nickname,
+      event.nuevoRol,
+    );
+
+    if (!res.success) {
+      this.toastService.show(
+        res.message || 'No se pudo cambiar el rol del participante.',
+        'danger',
+        'Error',
+      );
+    }
+  }
+
+  public onVerResultados(): void {
+    const sala = this.salaDetalle();
+    if (!sala) return;
+    this.router.navigate(['/salas', sala.salaId, 'analiticas']);
+  }
+
+  public onReactivarSala(): void {
+    const sala = this.salaDetalle();
+    if (!sala || this.reactivando()) return;
+
+    this.reactivando.set(true);
+    this.salasService.reactivarSala(sala.salaId).subscribe({
+      next: (res) => {
+        this.salaDetalle.update((s) =>
+          s
+            ? {
+                ...s,
+                estado: res.estado,
+                tokenCompartido: res.tokenCompartido,
+              }
+            : s,
+        );
+        this.tokenInvitacion.set(res.tokenInvitacion);
+        this.gameSocket.salaHabilitada.set(true);
+        this.gameSocket.preguntaActiva.set(null);
+        this.gameSocket.ultimoResultado.set(null);
+        this.reactivando.set(false);
+      },
+      error: (err) => {
+        console.error('[REACTIVAR] Error:', err);
+        this.reactivando.set(false);
+      },
+    });
+  }
+
+  public onContinuarRonda(): void {
+    this.rondaCompletada.set(false);
+    this.preguntasContestadasRonda.set(0);
+    this.onReiniciarRonda();
   }
 
   public onReiniciarRonda(): void {

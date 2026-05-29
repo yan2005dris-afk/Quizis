@@ -40,6 +40,18 @@ export class ComodinesController {
     );
   }
 
+  @Post('50-50')
+  @ApiOperation({ summary: 'Eliminar 2 opciones incorrectas (50/50)' })
+  @ApiResponse({
+    status: 200,
+    description: 'Opciones eliminadas exitosamente.',
+  })
+  async eliminateOptions5050(
+    @Body('preguntaId', ParseIntPipe) preguntaId: number,
+  ) {
+    return await this.comodinesService.eliminateOptions5050(preguntaId);
+  }
+
   @Post('llamada/seleccionar/:tokenCompartido')
   @ApiOperation({
     summary:

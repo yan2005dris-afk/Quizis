@@ -42,7 +42,14 @@
             [class.option-item--correct]="opcion.esCorrecta === true"
             [class.option-item--incorrect]="opcion.esCorrecta === false && opcion.fueElegida"
             [class.option-item--dimmed]="
-              p.respuestaDada && !opcion.fueElegida && opcion.esCorrecta !== true
+              (p.respuestaDada && !opcion.fueElegida && opcion.esCorrecta !== true) ||
+              (opcionesEliminadas().includes(opcion.id) && !opcion.fueElegida)
+            "
+            [style.opacity]="
+              opcionesEliminadas().includes(opcion.id) && !opcion.fueElegida ? '0.3' : null
+            "
+            [style.pointer-events]="
+              opcionesEliminadas().includes(opcion.id) && !opcion.fueElegida ? 'none' : null
             "
             [class.option-item--pre-selected]="opcion.seleccionLocal"
             [class.option-item--clickable]="

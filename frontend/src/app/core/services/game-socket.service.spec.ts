@@ -155,12 +155,154 @@ describe('GameSocketService (observer extension)', () => {
     });
   });
 
+  describe('comodines', () => {
+    it('should update comodinBloqueado signal when comodin_bloqueado event is received', () => {
+      service.conectar('http://test.local', 'fake-token');
+
+      mockSocket.trigger('comodin_bloqueado', { tipoComodin: 'PUBLICO' });
+
+      expect(service.comodinBloqueado()).toEqual(['PUBLICO']);
+    });
+
+    it('should update comodinBloqueado signal when comodin_usado event is received', () => {
+      service.conectar('http://test.local', 'fake-token');
+
+      mockSocket.trigger('comodin_usado', { tipoComodin: 'LLAMADA' });
+
+      expect(service.comodinBloqueado()).toEqual(['LLAMADA']);
+    });
+
+    it('should set initial blocked comodines when comodines_bloqueados event is received', () => {
+      service.conectar('http://test.local', 'fake-token');
+
+      mockSocket.trigger('comodines_bloqueados', ['PUBLICO', 'IA']);
+
+      expect(service.comodinBloqueado()).toEqual(['PUBLICO', 'IA']);
+    });
+  });
+
+  describe('comodín llamada', () => {
+    beforeEach(() => {
+      vi.spyOn(window, 'alert').mockImplementation(() => undefined);
+    });
+
+    afterEach(() => {
+      vi.restoreAllMocks();
+    });
+
+    it('should emit activar_comodin_llamada event with correct payload', () => {
+      service.conectar('http://test.local', 'fake-token');
+      const pregunta = { preguntaId: 1, texto: 'Test', opciones: [], nivel: 1 };
+
+      service.activarComodinLlamada('fake-token', pregunta);
+
+      expect(mockSocket.emit).toHaveBeenCalledWith('activar_comodin_llamada', {
+        tokenCompartido: 'fake-token',
+        pregunta,
+      });
+    });
+
+    it('should emit enviar_pista_consultor event with correct payload', () => {
+      service.conectar('http://test.local', 'fake-token');
+
+      service.enviarPistaConsultor('fake-token', 1, 'Mi pista');
+
+      expect(mockSocket.emit).toHaveBeenCalledWith('enviar_pista_consultor', {
+        tokenCompartido: 'fake-token',
+        preguntaId: 1,
+        pista: 'Mi pista',
+      });
+    });
+
+    it('should update state when consultor_seleccionado event is received', () => {
+      service.conectar('http://test.local', 'fake-token');
+      const pregunta = { preguntaId: 1, texto: 'Test', opciones: [], nivel: 1 };
+
+      mockSocket.trigger('consultor_seleccionado', { pregunta });
+
+      expect(service.llamadaActiva()).toBe(true);
+      expect(service.preguntaConsultor()).toEqual(pregunta);
+    });
+
+    it('should update state when comodin_llamada_iniciado event is received', () => {
+      service.conectar('http://test.local', 'fake-token');
+
+      mockSocket.trigger('comodin_llamada_iniciado', {
+        consultorId: 'c1',
+        consultorNombre: 'Juan',
+      });
+
+      expect(service.llamadaActiva()).toBe(true);
+      expect(service.consultorAsignado()).toBe('Juan');
+    });
+
+    it('should update state when pista_consultor_recibida event is received', () => {
+      service.conectar('http://test.local', 'fake-token');
+
+      mockSocket.trigger('pista_consultor_recibida', { pista: 'La respuesta es A' });
+
+      expect(service.pistaConsultor()).toBe('La respuesta es A');
+    });
+
+    it('should show alert on comodin_llamada_error', () => {
+      service.conectar('http://test.local', 'fake-token');
+
+      mockSocket.trigger('comodin_llamada_error', { error: 'Consultor no disponible' });
+
+      expect(window.alert).toHaveBeenCalledWith(
+        'Error con comodín llamada: Consultor no disponible',
+      );
+    });
+
+    it('should show alert on enviar_pista_error', () => {
+      service.conectar('http://test.local', 'fake-token');
+
+      mockSocket.trigger('enviar_pista_error', { error: 'Tiempo agotado' });
+
+      expect(window.alert).toHaveBeenCalledWith('Error al enviar pista: Tiempo agotado');
+    });
+  });
+
   describe('initial state', () => {
     it('should initialize observer signals to null/empty', () => {
       expect(service.mensajesChat()).toEqual([]);
       expect(service.eventosSala()).toEqual([]);
       expect(service.participantes()).toEqual([]);
       expect(service.infoRonda()).toBeNull();
+      expect(service.llamadaActiva()).toBe(false);
+      expect(service.consultorAsignado()).toBeNull();
+      expect(service.preguntaConsultor()).toBeNull();
+      expect(service.pistaConsultor()).toBeNull();
+    });
+  });
+
+  // ─── NEW: partida_finalizada event handler ────────────────────────
+
+  describe('partida_finalizada event', () => {
+    it('should set salaHabilitada to false when partida_finalizada event is received', () => {
+      service.conectar('http://test.local', 'fake-token');
+
+      // salaHabilitada starts as true
+      expect(service.salaHabilitada()).toBe(true);
+
+      // When partida_finalizada fires
+      mockSocket.trigger('partida_finalizada', { totalParticipantes: 5 });
+
+      // salaHabilitada should be set to false
+      expect(service.salaHabilitada()).toBe(false);
+    });
+
+    it('should set salaHabilitada to false regardless of payload shape', () => {
+      service.conectar('http://test.local', 'fake-token');
+
+      // Start with true
+      expect(service.salaHabilitada()).toBe(true);
+
+      // Fire with different payload shape (no totalParticipantes)
+      mockSocket.trigger('partida_finalizada', {});
+
+      // Still sets salaHabilitada to false
+      expect(service.salaHabilitada()).toBe(false);
     });
   });
 });
