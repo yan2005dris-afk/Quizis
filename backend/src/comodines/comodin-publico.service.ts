@@ -1,13 +1,13 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { VotesCacheUseCase } from '../infrastructure/cache/use-cases/votes-cache.use-case';
-import { JuegoGateway } from '../infrastructure/websockets/juego.gateway';
 import { SalasService } from '../juego/salas/salas.service';
 
 @Injectable()
 export class ComodinPublicoService {
   constructor(
     private readonly votesCacheUseCase: VotesCacheUseCase,
-    private readonly juegoGateway: JuegoGateway,
+    private readonly eventEmitter: EventEmitter2,
     private readonly salasService: SalasService,
   ) {}
 
@@ -55,10 +55,8 @@ export class ComodinPublicoService {
       }
     }
 
-    // 5. Emitir resultado a toda la sala con estructura A/B/C/D
-    this.juegoGateway.server
-      .to(tokenCompartido)
-      .emit('voto_recibido', resultado);
+    // 5. Emitir resultado a toda la sala via EventEmitter (Bug 3 fix)
+    this.eventEmitter.emit('publico.voto.recibido', { tokenCompartido, resultado });
     return resultado;
   }
 }

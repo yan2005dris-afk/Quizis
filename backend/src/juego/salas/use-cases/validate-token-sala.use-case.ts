@@ -85,11 +85,11 @@ export class ValidateTokenSalaUseCase {
       throw new NotFoundException('La sala no existe o fue eliminada');
     }
 
-    // 4. Validar que la sala no esté finalizada
-    if (sala.estado === EstadoSala.FINALIZADO) {
-      throw new BadRequestException(
-        'La sala ha finalizado y ya no acepta participantes',
-      );
+    // 4. Validar que la sala no esté soft-deleted
+    // Note: FINALIZADO state is allowed — admin may access to view reports.
+    // Frontend's `salaHabilitada` flag prevents new interactions on finished rooms.
+    if (sala.deletedAt) {
+      throw new NotFoundException('La sala no existe o fue eliminada');
     }
 
     return {

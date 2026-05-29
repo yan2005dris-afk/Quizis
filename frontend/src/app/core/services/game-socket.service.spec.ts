@@ -305,4 +305,92 @@ describe('GameSocketService (observer extension)', () => {
       expect(service.salaHabilitada()).toBe(false);
     });
   });
+
+  // ─── BUG 1: opcionesEliminadas singleton signal ─────────────────────
+
+  describe('opcionesEliminadas signal (Bug 1)', () => {
+    it('should initialize to empty array', () => {
+      service.conectar('http://test.local', 'fake-token');
+      expect(service.opcionesEliminadas()).toEqual([]);
+    });
+
+    it('should be set to [] on ronda_reiniciada event', () => {
+      service.conectar('http://test.local', 'fake-token');
+
+      // Simulate some options being eliminated
+      service.opcionesEliminadas.set([1, 3]);
+      expect(service.opcionesEliminadas()).toEqual([1, 3]);
+
+      // Trigger round restart
+      mockSocket.trigger('ronda_reiniciada', { rondaActiva: {} });
+
+      // opcionesEliminadas must be cleared
+      expect(service.opcionesEliminadas()).toEqual([]);
+    });
+
+    it('should NOT reset on pregunta_liberada (only on round restart)', () => {
+      service.conectar('http://test.local', 'fake-token');
+
+      service.opcionesEliminadas.set([2]);
+      const pregunta = { preguntaId: 1, texto: 'Test', opciones: [], nivel: 1 };
+
+      mockSocket.trigger('pregunta_liberada', pregunta);
+      // opcionesEliminadas is not cleared by pregunta_liberada — only by ronda_reiniciada
+      expect(service.opcionesEliminadas()).toEqual([2]);
+    });
+  });
+
+  // ─── BUG 3: iaSugerenciaGlobal signal ──────────────────────────────
+
+  describe('iaSugerenciaGlobal signal (Bug 3)', () => {
+    it('should initialize to null', () => {
+      service.conectar('http://test.local', 'fake-token');
+      expect(service.iaSugerenciaGlobal()).toBeNull();
+    });
+
+    it('should be set when ia_sugerencia_recibida event is received', () => {
+      service.conectar('http://test.local', 'fake-token');
+
+      mockSocket.trigger('ia_sugerencia_recibida', {
+        preguntaId: 5,
+        literal: 'B',
+        explicacion: 'Option B is correct because...',
+      });
+
+      expect(service.iaSugerenciaGlobal()).toEqual({
+        literal: 'B',
+        explicacion: 'Option B is correct because...',
+      });
+    });
+
+    it('should be reset to null on pregunta_liberada event', () => {
+      service.conectar('http://test.local', 'fake-token');
+
+      // Set global IA suggestion
+      mockSocket.trigger('ia_sugerencia_recibida', {
+        preguntaId: 3,
+        literal: 'C',
+        explicacion: 'C is correct',
+      });
+      expect(service.iaSugerenciaGlobal()).not.toBeNull();
+
+      // New question released
+      const pregunta = { preguntaId: 4, texto: 'New Q', opciones: [], nivel: 1 };
+      mockSocket.trigger('pregunta_liberada', pregunta);
+
+      // IA suggestion must be cleared
+      expect(service.iaSugerenciaGlobal()).toBeNull();
+    });
+
+    it('should NOT be reset on ronda_reiniciada (only on pregunta_liberada)', () => {
+      service.conectar('http://test.local', 'fake-token');
+
+      mockSocket.trigger('ia_sugerencia_recibida', { preguntaId: 2, literal: 'D', explicacion: 'D' });
+      expect(service.iaSugerenciaGlobal()).not.toBeNull();
+
+      mockSocket.trigger('ronda_reiniciada', { rondaActiva: {} });
+      // iaSugerenciaGlobal is NOT cleared by round restart
+      expect(service.iaSugerenciaGlobal()).not.toBeNull();
+    });
+  });
 });

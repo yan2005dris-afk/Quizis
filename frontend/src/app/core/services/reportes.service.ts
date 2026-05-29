@@ -48,4 +48,12 @@ export class ReportesService {
   generarReporte(salaId: number): Observable<ReportDataDto> {
     return this.http.post<ReportDataDto>(`${this.apiUrl}/reportes/generar`, { salaId });
   }
+
+  /**
+   * Fetches pre-generated report data for a room.
+   * Requires JWT in the interceptor of authentication.
+   */
+  obtenerEstadisticas(salaId: number): Observable<ReportDataDto> {
+    return this.http.get<ReportDataDto>(`${this.apiUrl}/reportes/${salaId}`);
+  }
 }
