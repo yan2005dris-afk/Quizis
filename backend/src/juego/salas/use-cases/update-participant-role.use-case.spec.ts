@@ -123,4 +123,23 @@ describe('UpdateParticipantRoleUseCase', () => {
       where: { tokenCompartido: 'token-abc' },
     });
   });
+
+  it('onlineNicknames filtra el conteo a estudiantes online → permite promoción', async () => {
+    mockPrisma.participantes.count.mockResolvedValue(0);
+    mockTx.participantes.update.mockResolvedValue({
+      ...mockParticipante,
+      rol: 'estudiante',
+    });
+
+    await useCase.execute('token-abc', 'Juan', 'estudiante', ['Juan', 'Maria']);
+
+    expect(mockPrisma.participantes.count).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          nickname: { in: ['Juan', 'Maria'], not: 'Juan' },
+        }),
+      }),
+    );
+    expect(mockTx.participantes.update).toHaveBeenCalled();
+  });
 });

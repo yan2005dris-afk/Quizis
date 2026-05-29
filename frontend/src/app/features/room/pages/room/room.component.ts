@@ -11,7 +11,7 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
-import { GameSocketService } from '../../../../core/services/game-socket.service';
+import { GameSocketService, ResultRespuesta } from '../../../../core/services/game-socket.service';
 import { AuthService } from '../../../../core/services/auth.service';
 import {
   SalasService,
@@ -26,7 +26,7 @@ import { EventHeaderComponent } from '../../components/event-header/event-header
 import { EventFeedComponent } from '../../components/event-feed/event-feed.component';
 import { ParticipantsIndexComponent } from '../../components/participants-index/participants-index.component';
 import { ActiveQuestionComponent } from '../../components/active-question/active-question.component';
-import { GameOverComponent } from '../game-over/game-over.component';
+import { GameOverComponent, GameOverParticipant } from '../game-over/game-over.component';
 import {
   LucideAngularModule,
   Users,
@@ -89,6 +89,7 @@ export class RoomComponent implements OnInit, OnDestroy {
   protected readonly reactivando = signal(false);
   protected readonly rondaCompletada = signal(false);
   protected readonly rondaActualNumero = signal(1);
+  private readonly rondaResultados = signal<ResultRespuesta[]>([]);
   protected readonly totalPreguntasRonda = signal(0);
   protected readonly preguntasContestadasRonda = signal(0);
 
@@ -104,6 +105,30 @@ export class RoomComponent implements OnInit, OnDestroy {
   protected readonly PauseIcon = CirclePause;
   protected readonly RestartIcon = RotateCcw;
   protected readonly BarChartIcon = BarChart;
+
+  protected readonly roundPodioData = computed<GameOverParticipant[] | null>(() => {
+    if (!this.rondaCompletada()) return null;
+    const resultados = this.rondaResultados();
+    const ronda = this.salaDetalle()?.rondaActiva;
+    if (!resultados.length || !ronda) return null;
+    const correctas = resultados.filter((r) => r.esCorrecta).length;
+    const totalPreguntas = resultados.length;
+    const nickname =
+      this.gameSocket.participantes().find((p) => p.rol === 'estudiante')?.nombre ??
+      'Participante';
+    return [
+      {
+        nickname,
+        totalPreguntas,
+        correctas,
+        incorrectas: totalPreguntas - correctas,
+        porcentajeAcierto:
+          totalPreguntas > 0 ? Math.round((correctas / totalPreguntas) * 100) : 0,
+        comodinesUsados: this.gameSocket.comodinBloqueado(),
+        numeroRonda: ronda.numeroRonda,
+      },
+    ];
+  });
 
   protected readonly preguntaActiva = this.gameSocket.preguntaActiva;
   protected readonly tiempoRestante = this.gameSocket.tiempoRestante;
@@ -208,6 +233,11 @@ export class RoomComponent implements OnInit, OnDestroy {
       const total = this.totalPreguntasRonda();
       if (!result || total === 0) return;
 
+      this.rondaResultados.update((prev) => {
+        const yaExiste = prev.some((r) => r.preguntaId === result.preguntaId);
+        return yaExiste ? prev : [...prev, result];
+      });
+
       this.preguntasContestadasRonda.update((c) => {
         const nuevo = c + 1;
         if (nuevo >= total) {
@@ -234,6 +264,7 @@ export class RoomComponent implements OnInit, OnDestroy {
       if (reinicio) {
         this.rondaCompletada.set(false);
         this.preguntasContestadasRonda.set(0);
+        this.rondaResultados.set([]);
         this.rondaActualNumero.update((n) => n + 1);
       }
     });
@@ -587,6 +618,7 @@ export class RoomComponent implements OnInit, OnDestroy {
   public onContinuarRonda(): void {
     this.rondaCompletada.set(false);
     this.preguntasContestadasRonda.set(0);
+    this.rondaResultados.set([]);
     this.onReiniciarRonda();
   }
 

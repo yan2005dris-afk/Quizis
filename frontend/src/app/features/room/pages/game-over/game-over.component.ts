@@ -58,6 +58,9 @@ export class GameOverComponent implements OnInit {
   /** Emitido cuando el host quiere continuar con la siguiente ronda (solo mode='round') */
   readonly continuar = output<void>();
 
+  /** Datos precalculados para el podio de ronda (modo round). Cuando se proveen, omite la llamada HTTP. */
+  readonly roundData = input<GameOverParticipant[] | null>(null);
+
   private readonly reportesService = inject(ReportesService);
   private readonly router = inject(Router);
 
@@ -110,6 +113,13 @@ export class GameOverComponent implements OnInit {
   }
 
   private cargarEstadisticas(): void {
+    if (this.esModoRonda() && this.roundData() !== null) {
+      this.participants.set(this.roundData()!);
+      this.loading.set(false);
+      setTimeout(() => this.revealed.set(true), 200);
+      return;
+    }
+
     this.reportesService.generarReporte(this.salaId()).subscribe({
       next: (data) => {
         if (this.esModoRonda()) {

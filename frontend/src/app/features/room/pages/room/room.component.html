@@ -17,7 +17,8 @@
         [salaId]="salaDetalle()!.salaId"
         [nombreSala]="salaDetalle()?.nombre || 'Sala de Juego'"
         [mode]="'round'"
-        [rondaNumero]="rondaActualNumero()"
+        [rondaNumero]="salaDetalle()?.rondaActiva?.numeroRonda ?? 1"
+        [roundData]="roundPodioData()"
         [isAdmin]="isHost()"
         (continuar)="onContinuarRonda()"
       />
