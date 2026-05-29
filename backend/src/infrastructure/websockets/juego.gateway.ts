@@ -33,6 +33,35 @@ export class JuegoGateway implements OnGatewayConnection, OnGatewayDisconnect {
     { tokenCompartido: string; nickname: string }
   >();
 
+  /**
+   * Debounce de broadcast: acumula distribución y emite cada 500ms por sala
+   */
+  private readonly pendingBroadcasts = new Map<
+    string,
+    { distribucion: any; timer: NodeJS.Timeout }
+  >();
+
+  private scheduleBroadcast(tokenCompartido: string, distribucion: any): void {
+    const existing = this.pendingBroadcasts.get(tokenCompartido);
+    if (existing) clearTimeout(existing.timer);
+
+    const timer = setTimeout(() => {
+      this.server.to(tokenCompartido).emit('voto_recibido', distribucion);
+      this.pendingBroadcasts.delete(tokenCompartido);
+    }, 500);
+
+    this.pendingBroadcasts.set(tokenCompartido, { distribucion, timer });
+  }
+
+  private flushBroadcast(tokenCompartido: string): void {
+    const pending = this.pendingBroadcasts.get(tokenCompartido);
+    if (pending) {
+      clearTimeout(pending.timer);
+      this.server.to(tokenCompartido).emit('voto_recibido', pending.distribucion);
+      this.pendingBroadcasts.delete(tokenCompartido);
+    }
+  }
+
   constructor(
     private readonly websocketsService: WebsocketsService,
     private readonly salasService: SalasService,
@@ -185,9 +214,7 @@ export class JuegoGateway implements OnGatewayConnection, OnGatewayDisconnect {
         return result;
       }
 
-      this.server
-        .to(result.data!.tokenCompartido)
-        .emit('voto_recibido', result.distribucion);
+      this.scheduleBroadcast(result.data!.tokenCompartido, result.distribucion);
 
       return result;
     } catch (error) {
@@ -272,6 +299,7 @@ export class JuegoGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @MessageBody() payload: { salaId: number; tokenCompartido: string },
   ) {
     try {
+      this.flushBroadcast(payload.tokenCompartido);
       const res = await this.salasService.finalizarSala(payload.salaId);
 
       this.server.to(payload.tokenCompartido).emit('partida_finalizada', {
@@ -355,6 +383,9 @@ export class JuegoGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @MessageBody() payload: { tokenCompartido: string; pregunta: any },
   ) {
     try {
+      // Flush votos pendientes de la pregunta anterior antes de liberar la nueva
+      this.flushBroadcast(payload.tokenCompartido);
+
       // 1. Guardar en Redis y validar si se puede liberar
       await this.websocketsService.releaseQuestion(
         payload.tokenCompartido,
