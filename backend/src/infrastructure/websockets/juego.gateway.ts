@@ -459,6 +459,14 @@ export class JuegoGateway implements OnGatewayConnection, OnGatewayDisconnect {
       payload.tipoComodin,
     );
     this.server.to(payload.tokenCompartido).emit('comodin_bloqueado', payload);
+
+    // Al activar el comodín del público, emitir distribución inicial (zeros)
+    // para que los observadores puedan votar (puedeInteractuar checks votosPublico !== null)
+    if (payload.tipoComodin === 'PUBLICO') {
+      this.server
+        .to(payload.tokenCompartido)
+        .emit('voto_recibido', { A: 0, B: 0, C: 0, D: 0, total: 0 });
+    }
   }
 
   @SubscribeMessage('activar_comodin_llamada')
