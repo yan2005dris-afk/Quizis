@@ -11,10 +11,16 @@ interface MemoryCacheEntry {
   expiresAt: number;
 }
 
+interface MemoryDistEntry {
+  counts: Map<number, number>;
+  expiresAt: number;
+}
+
 @Injectable()
 export class VotesCacheUseCase implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(VotesCacheUseCase.name);
   private memoryVotes = new Map<string, MemoryCacheEntry>();
+  private memoryDist = new Map<string, MemoryDistEntry>();
   private gcInterval: NodeJS.Timeout | null = null;
 
   constructor(private readonly redisService: RedisService) {}
@@ -30,6 +36,13 @@ export class VotesCacheUseCase implements OnModuleInit, OnModuleDestroy {
     for (const [key, entry] of this.memoryVotes.entries()) {
       if (entry.expiresAt < now) {
         this.memoryVotes.delete(key);
+        count++;
+      }
+    }
+
+    for (const [key, entry] of this.memoryDist.entries()) {
+      if (entry.expiresAt < now) {
+        this.memoryDist.delete(key);
         count++;
       }
     }
@@ -64,12 +77,15 @@ export class VotesCacheUseCase implements OnModuleInit, OnModuleDestroy {
     opcionId: number,
   ): Promise<void> {
     const key = this.getVoteKey(rondaId, preguntaId);
+    const distKey = `dist:${rondaId}:${preguntaId}`;
     const client = this.redisService.getClient();
 
     if (client) {
       try {
         await client.hset(key, participanteId.toString(), opcionId.toString());
         await client.expire(key, 3600);
+        await client.hincrby(distKey, opcionId.toString(), 1);
+        await client.expire(distKey, 3600);
         return;
       } catch (error) {
         this.logger.warn(
@@ -87,6 +103,42 @@ export class VotesCacheUseCase implements OnModuleInit, OnModuleDestroy {
       this.memoryVotes.set(key, entry);
     }
     entry.votes.set(participanteId, opcionId);
+
+    let distEntry = this.memoryDist.get(distKey);
+    if (!distEntry) {
+      distEntry = {
+        counts: new Map<number, number>(),
+        expiresAt: Date.now() + 3600 * 1000,
+      };
+      this.memoryDist.set(distKey, distEntry);
+    }
+    distEntry.counts.set(opcionId, (distEntry.counts.get(opcionId) ?? 0) + 1);
+  }
+
+  async getDistribution(
+    rondaId: number,
+    preguntaId: number,
+  ): Promise<Map<number, number>> {
+    const distKey = `dist:${rondaId}:${preguntaId}`;
+    const client = this.redisService.getClient();
+
+    if (client) {
+      try {
+        const data = await client.hgetall(distKey);
+        const result = new Map<number, number>();
+        for (const [opcionId, countStr] of Object.entries(data)) {
+          result.set(parseInt(opcionId, 10), parseInt(countStr, 10));
+        }
+        return result;
+      } catch (error) {
+        this.logger.warn(
+          `[CACHE:WARN] Fallo al obtener distribución de Redis: ${error}`,
+        );
+      }
+    }
+
+    const memEntry = this.memoryDist.get(distKey);
+    return new Map(memEntry?.counts ?? []);
   }
 
   async getVotes(
@@ -258,14 +310,17 @@ export class VotesCacheUseCase implements OnModuleInit, OnModuleDestroy {
 
   async clearVotes(rondaId: number, preguntaId: number): Promise<void> {
     const key = this.getVoteKey(rondaId, preguntaId);
+    const distKey = `dist:${rondaId}:${preguntaId}`;
     const client = this.redisService.getClient();
     if (client) {
       try {
         await client.del(key);
+        await client.del(distKey);
       } catch (error) {
         this.logger.warn(`[CACHE:WARN] Fallo limpieza Redis: ${error}`);
       }
     }
     this.memoryVotes.delete(key);
+    this.memoryDist.delete(distKey);
   }
 }
