@@ -107,7 +107,8 @@
     "testEnvironment": "node",
     "moduleNameMapper": {
       "^src/(.*)$": "<rootDir>/$1",
-      "^(\\.\\.?/.*)\\.js$": "$1"
+      "^(\\.\\.?/.*)\\.js$": "$1",
+      "^@nestjs/event-emitter$": "<rootDir>/__mocks__/@nestjs/event-emitter.ts"
     }
   }
 }

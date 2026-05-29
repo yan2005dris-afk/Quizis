@@ -15,7 +15,7 @@
   font-size: 1.2rem;
   font-weight: bold;
   width: 20px;
-  color: white;
+  color: var(--color-primary);
 }
 
 .barra-contenedor {
@@ -38,5 +38,5 @@
   font-weight: bold;
   width: 40px;
   text-align: right;
-  color: white;
+  color: var(--color-primary);
 }

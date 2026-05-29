@@ -244,8 +244,8 @@ export class AnalyticsComponent implements OnInit {
     }
 
     const csvContent = [
-      `Sala: ${d.nombreSala}`,
-      `Docente: ${d.docente}`,
+      `Sala: ${sanitizeCsvCell(d.nombreSala)}`,
+      `Docente: ${sanitizeCsvCell(d.docente)}`,
       `Fecha: ${new Date(d.fechaCreacion).toLocaleDateString('es-EC')}`,
       `Promedio global: ${d.resumenGeneral.porcentajeGlobal}%`,
       '',

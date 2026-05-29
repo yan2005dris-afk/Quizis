@@ -8,12 +8,12 @@ export const SALAS_ROUTES: Routes = [
   },
 
   {
-    path: ':id/game-over',
+    path: ':salaId/game-over',
     loadComponent: () =>
       import('../room/pages/game-over/game-over.component').then((m) => m.GameOverComponent),
   },
   {
-    path: ':id/analiticas',
+    path: ':salaId/analiticas',
     loadComponent: () =>
       import('../room/pages/analytics/analytics.component').then((m) => m.AnalyticsComponent),
   },
