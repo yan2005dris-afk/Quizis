@@ -44,7 +44,7 @@ interface SalaForm {
 @Component({
   selector: 'app-create-sala',
   standalone: true,
-  imports: [FormsModule, LucideAngularModule, ButtonComponent, AlertComponent],
+  imports: [FormsModule, LucideAngularModule, AlertComponent],
   templateUrl: './create-sala.component.html',
   styleUrl: './create-sala.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -68,8 +68,6 @@ export class CreateSalaComponent implements OnInit {
     IA: Bot,
     LLAMADA: Phone,
     '50_50': HelpCircle,
-    SALTA_OPCION: HelpCircle,
-    TIEMPO_EXTRA: HelpCircle,
   };
 
   // State Signals
@@ -109,8 +107,6 @@ export class CreateSalaComponent implements OnInit {
       IA: true,
       LLAMADA: false,
       '50_50': false,
-      SALTA_OPCION: false,
-      TIEMPO_EXTRA: false,
     },
   });
 

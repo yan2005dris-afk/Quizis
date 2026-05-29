@@ -92,7 +92,7 @@
 
         <div class="toggle-list">
           @for (
-            comodin of ['PUBLICO', 'IA', 'LLAMADA', '50_50', 'SALTA_OPCION', 'TIEMPO_EXTRA'];
+            comodin of ['PUBLICO', 'IA', 'LLAMADA', '50_50'];
             track comodin
           ) {
             <label class="toggle-row">
@@ -112,14 +112,8 @@
                     @case ('LLAMADA') {
                       Ayuda de un participante elegido.
                     }
-                    @case ('50_50') {
-                      Elimina dos opciones incorrectas.
-                    }
-                    @case ('SALTA_OPCION') {
-                      Permite saltar una pregunta.
-                    }
                     @default {
-                      Agrega tiempo extra al temporizador.
+                      Elimina dos opciones incorrectas.
                     }
                   }
                 </small>

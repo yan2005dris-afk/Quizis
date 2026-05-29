@@ -11,8 +11,6 @@ export const COMODINES: ComodinSeed[] = [
   { nombre: 'IA', descripcion: 'Sugerencia de inteligencia artificial', icono: '🤖' },
   { nombre: 'LLAMADA', descripcion: 'Ayuda de un participante elegido', icono: '📞' },
   { nombre: '50_50', descripcion: 'Elimina dos opciones incorrectas', icono: '✂️' },
-  { nombre: 'SALTA_OPCION', descripcion: 'Salta esta pregunta sin penalización', icono: '⏭️' },
-  { nombre: 'TIEMPO_EXTRA', descripcion: 'Agrega 30 segundos al temporizador', icono: '⏱️' },
 ];
 
 export const seedComodines = async (prisma: PrismaClient) => {
