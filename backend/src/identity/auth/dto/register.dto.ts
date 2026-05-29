@@ -1,5 +1,5 @@
 import { Transform } from 'class-transformer';
-import { IsEmail, IsNotEmpty, IsString } from 'class-validator';
+import { IsEmail, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class RegisterDto {
@@ -49,6 +49,7 @@ export class RegisterDto {
     example: 1,
     required: false,
   })
+  @IsOptional()
   @IsString()
   rolId?: string;
 }

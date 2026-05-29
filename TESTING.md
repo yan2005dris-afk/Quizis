@@ -8,10 +8,12 @@ Guía de comandos para ejecutar los diferentes tipos de pruebas del proyecto.
 
 ### Backend — variables de entorno para tests
 
-Los integration tests necesitan una base de datos real. Crea `backend/.env.test`:
+Los integration tests necesitan una base de datos **dedicada y separada** de desarrollo. Crea `backend/.env.test`:
+
+> ⚠️ **Nunca apuntes a la DB de desarrollo.** Los integration tests hacen escrituras y borrados reales sobre `usuarios`, `sesiones` y `roles`. Usar la DB de dev puede corromper datos o fallar por conflictos de FK.
 
 ```env
-# PostgreSQL (puede ser la misma DB de dev o una separada)
+# PostgreSQL — DEBE ser una DB exclusiva para tests (no la de dev)
 DATABASE_URL=postgresql://tu_user:tu_pass@localhost:5432/quizis_test
 
 # JWT
@@ -27,6 +29,18 @@ PORT=3001
 ```
 
 > Los unit tests **no** requieren `.env.test` — todo está mockeado.
+
+#### Comportamiento de los guards de seguridad
+
+Los helpers verifican la configuración antes de tocar la DB:
+
+| Entorno | Condición | Resultado |
+|---------|-----------|-----------|
+| Local con `backend/.env.test` | archivo existe | ✅ pasa |
+| CI (GitHub Actions) | `DATABASE_URL` + `JWT_ACCESS_SECRET` en `process.env` | ✅ pasa |
+| Local sin `.env.test` ni vars | ninguna condición | ❌ error claro antes de conectar |
+
+El helper **no usa `.env` como fallback** — si falta `.env.test` en local y no hay vars de entorno, falla con mensaje explicativo antes de cualquier conexión a la DB.
 
 ---
 
@@ -61,7 +75,7 @@ pnpm --filter backend test:integration
 ```
 
 > Ejecuta en serie (`--runInBand`) para evitar conflictos entre tests que comparten DB.
-> Los tests crean y limpian su propia data — no afectan data existente.
+> Cada ejecución genera un sufijo UUID único — email y rol de test nunca colisionan con ejecuciones anteriores ni con datos reales. La data se elimina en `afterAll` por IDs numéricos exactos.
 
 ### E2E tests
 
@@ -150,21 +164,32 @@ xdg-open backend/coverage/lcov-report/index.html
 ```
 backend/
 ├── src/
-│   └── **/*.spec.ts          ← Unit tests (junto al código)
+│   └── **/*.spec.ts                      ← Unit tests (junto al código)
 └── test/
-    ├── jest-integration.json ← Config para integration tests
-    ├── jest-e2e.json         ← Config para e2e tests
+    ├── jest-integration.json             ← Config para integration tests
+    ├── jest-e2e.json                     ← Config para e2e tests
     ├── helpers/
-    │   ├── create-auth-test-app.ts   ← Factory: app sin Redis/WS
-    │   └── db-test.helper.ts         ← Seed y cleanup de DB
+    │   ├── create-auth-test-app.ts       ← Factory: app solo con Auth + Users
+    │   ├── create-full-test-app.ts       ← Factory: app con Auth, Users, Bancos, Salas, Health
+    │   ├── db-test.helper.ts             ← Seed/cleanup básico (auth)
+    │   └── db-seed.helper.ts             ← Seed/cleanup completo (seedAdminUser, seedBanco, cleanSeedData)
     ├── integration/
-    │   └── auth/
-    │       └── auth.integration.spec.ts  ← Auth: login, refresh, logout
-    └── app.e2e-spec.ts       ← E2E placeholder (pendiente)
+    │   ├── auth/
+    │   │   ├── auth.integration.spec.ts      ← login, refresh, logout
+    │   │   └── register.integration.spec.ts  ← registro, validaciones, permisos, duplicado
+    │   ├── health/
+    │   │   └── health.integration.spec.ts    ← GET /health
+    │   ├── bancos/
+    │   │   └── bancos.integration.spec.ts    ← CRUD bancos + preguntas en lote
+    │   ├── salas/
+    │   │   └── salas.integration.spec.ts     ← crear, listar, join, configurar, estado, token
+    │   └── users/
+    │       └── users.integration.spec.ts     ← GET me, CRUD usuarios
+    └── app.e2e-spec.ts                   ← E2E placeholder (pendiente)
 
 frontend/
 └── src/
-    └── **/*.spec.ts          ← Unit tests Angular
+    └── **/*.spec.ts                      ← Unit tests Angular
 ```
 
 ---
@@ -176,3 +201,4 @@ frontend/
 | **Unit** | Rápido (~ms) | No | Lógica aislada, un use-case o service |
 | **Integration** | Medio (~s) | PostgreSQL | Flujo completo con DB real |
 | **E2E** | Lento (~s) | PostgreSQL + Redis | App completa vía HTTP |
+

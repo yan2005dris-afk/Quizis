@@ -1,11 +1,13 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { SubmitAnswerUseCase } from './submit-answer.use-case';
-import { RoomStateCacheUseCase } from '../../../infrastructure/cache/use-cases/room-state-cache.use-case';
+import { RoomStateCacheUseCase } from 'src/infrastructure/cache/use-cases/room-state-cache.use-case';
 import { RecordAnswerUseCase } from '../../respuestas/use-cases/record-answer.use-case';
 
 describe('SubmitAnswerUseCase', () => {
   let useCase: SubmitAnswerUseCase;
+  let cacheService: typeof mockCacheService;
+  let recordAnswerUseCase: typeof mockRecordAnswerUseCase;
 
   const mockCacheService = {
     getActiveQuestion: jest.fn(),
@@ -15,6 +17,26 @@ describe('SubmitAnswerUseCase', () => {
 
   const mockRecordAnswerUseCase = {
     execute: jest.fn(),
+  };
+
+  const mockQuestion = {
+    preguntaId: 1,
+    texto: 'Pregunta de prueba',
+    nivel: 'facil',
+    feedbackCorrecto: '¡Muy bien!',
+    feedbackIncorrecto: 'Incorrecto, la respuesta era A.',
+    opciones: [
+      { opcionId: 10, texto: 'Opción A', esCorrecta: true },
+      { opcionId: 11, texto: 'Opción B', esCorrecta: false },
+      { opcionId: 12, texto: 'Opción C', esCorrecta: false },
+    ],
+  };
+
+  const basePayload = {
+    tokenCompartido: 'token-abc',
+    rondaId: 1,
+    preguntaId: 1,
+    opcionId: 10,
   };
 
   beforeEach(async () => {
@@ -27,92 +49,109 @@ describe('SubmitAnswerUseCase', () => {
     }).compile();
 
     useCase = module.get<SubmitAnswerUseCase>(SubmitAnswerUseCase);
-  });
-
-  afterEach(() => {
+    cacheService = module.get(RoomStateCacheUseCase);
+    recordAnswerUseCase = module.get(RecordAnswerUseCase);
     jest.clearAllMocks();
   });
 
-  const basePayload = {
-    tokenCompartido: 'token-1',
-    rondaId: 1,
-    preguntaId: 1,
-    opcionId: 5,
-  };
+  it('respuesta correcta → esCorrecta true, feedback correcto, status → answered', async () => {
+    mockCacheService.getActiveQuestion.mockResolvedValue(mockQuestion);
+    mockCacheService.getQuestionStatus.mockResolvedValue('released');
+    mockCacheService.setQuestionStatus.mockResolvedValue(undefined);
+    mockRecordAnswerUseCase.execute.mockResolvedValue(undefined);
 
-  it('should throw BadRequestException if there is no active question', async () => {
+    const result = await useCase.execute({ ...basePayload, opcionId: 10 });
+
+    expect(result.esCorrecta).toBe(true);
+    expect(result.success).toBe(true);
+    expect(result.message).toContain('correcta');
+    expect(result.feedback).toBe('¡Muy bien!');
+    expect(cacheService.setQuestionStatus).toHaveBeenCalledWith(
+      'token-abc',
+      'answered',
+    );
+  });
+
+  it('respuesta incorrecta → esCorrecta false, feedback incorrecto', async () => {
+    mockCacheService.getActiveQuestion.mockResolvedValue(mockQuestion);
+    mockCacheService.getQuestionStatus.mockResolvedValue('released');
+    mockCacheService.setQuestionStatus.mockResolvedValue(undefined);
+    mockRecordAnswerUseCase.execute.mockResolvedValue(undefined);
+
+    const result = await useCase.execute({ ...basePayload, opcionId: 11 });
+
+    expect(result.esCorrecta).toBe(false);
+    expect(result.feedback).toBe('Incorrecto, la respuesta era A.');
+  });
+
+  it('sin pregunta activa → BadRequestException', async () => {
     mockCacheService.getActiveQuestion.mockResolvedValue(null);
 
     await expect(useCase.execute(basePayload)).rejects.toThrow(
       BadRequestException,
     );
-    expect(mockRecordAnswerUseCase.execute).not.toHaveBeenCalled();
+    expect(recordAnswerUseCase.execute).not.toHaveBeenCalled();
   });
 
-  it('should throw BadRequestException if active question ID does not match', async () => {
+  it('preguntaId no coincide con activa → BadRequestException', async () => {
     mockCacheService.getActiveQuestion.mockResolvedValue({
-      preguntaId: 99,
-      opciones: [],
+      ...mockQuestion,
+      preguntaId: 999,
     });
 
     await expect(useCase.execute(basePayload)).rejects.toThrow(
       BadRequestException,
     );
-    expect(mockRecordAnswerUseCase.execute).not.toHaveBeenCalled();
+    expect(recordAnswerUseCase.execute).not.toHaveBeenCalled();
   });
 
-  it('should throw BadRequestException if question is already answered', async () => {
-    mockCacheService.getActiveQuestion.mockResolvedValue({
-      preguntaId: 1,
-      opciones: [{ opcionId: 5, esCorrecta: true }],
-    });
+  it('status ya answered → BadRequestException', async () => {
+    mockCacheService.getActiveQuestion.mockResolvedValue(mockQuestion);
     mockCacheService.getQuestionStatus.mockResolvedValue('answered');
 
     await expect(useCase.execute(basePayload)).rejects.toThrow(
       BadRequestException,
     );
-    expect(mockRecordAnswerUseCase.execute).not.toHaveBeenCalled();
+    expect(recordAnswerUseCase.execute).not.toHaveBeenCalled();
   });
 
-  it('should throw NotFoundException if selected option does not belong to the question', async () => {
-    mockCacheService.getActiveQuestion.mockResolvedValue({
-      preguntaId: 1,
-      opciones: [{ opcionId: 10, esCorrecta: true }],
-    });
-    mockCacheService.getQuestionStatus.mockResolvedValue(null);
+  it('opcionId no existe en pregunta → NotFoundException', async () => {
+    mockCacheService.getActiveQuestion.mockResolvedValue(mockQuestion);
+    mockCacheService.getQuestionStatus.mockResolvedValue('released');
 
-    await expect(useCase.execute(basePayload)).rejects.toThrow(
-      NotFoundException,
-    );
-    expect(mockRecordAnswerUseCase.execute).not.toHaveBeenCalled();
+    await expect(
+      useCase.execute({ ...basePayload, opcionId: 999 }),
+    ).rejects.toThrow(NotFoundException);
+    expect(recordAnswerUseCase.execute).not.toHaveBeenCalled();
   });
 
-  it('should persist answer, mark question as answered, and return correct feedback', async () => {
-    mockCacheService.getActiveQuestion.mockResolvedValue({
-      preguntaId: 1,
-      opciones: [{ opcionId: 5, esCorrecta: true }],
-      feedbackCorrecto: '¡Excelente!',
-      feedbackIncorrecto: 'Incorrecto.',
-    });
-    mockCacheService.getQuestionStatus.mockResolvedValue(null);
-    mockRecordAnswerUseCase.execute.mockResolvedValue(undefined);
+  it('con comodinUsado → pasa el comodin a RecordAnswerUseCase', async () => {
+    mockCacheService.getActiveQuestion.mockResolvedValue(mockQuestion);
+    mockCacheService.getQuestionStatus.mockResolvedValue('released');
     mockCacheService.setQuestionStatus.mockResolvedValue(undefined);
+    mockRecordAnswerUseCase.execute.mockResolvedValue(undefined);
 
-    const result = await useCase.execute(basePayload);
+    await useCase.execute({ ...basePayload, opcionId: 10, comodinUsado: '50/50' });
 
-    expect(result.success).toBe(true);
-    expect(result.esCorrecta).toBe(true);
-    expect(result.feedback).toBe('¡Excelente!');
-    expect(mockRecordAnswerUseCase.execute).toHaveBeenCalledWith({
+    expect(recordAnswerUseCase.execute).toHaveBeenCalledWith(
+      expect.objectContaining({ comodinUsado: '50/50' }),
+    );
+  });
+
+  it('persiste en DB con todos los campos correctos', async () => {
+    mockCacheService.getActiveQuestion.mockResolvedValue(mockQuestion);
+    mockCacheService.getQuestionStatus.mockResolvedValue('released');
+    mockCacheService.setQuestionStatus.mockResolvedValue(undefined);
+    mockRecordAnswerUseCase.execute.mockResolvedValue(undefined);
+
+    await useCase.execute({ ...basePayload, opcionId: 10 });
+
+    expect(recordAnswerUseCase.execute).toHaveBeenCalledWith({
       rondaId: 1,
       preguntaId: 1,
-      opcionId: 5,
+      opcionId: 10,
       esCorrecta: true,
       comodinUsado: null,
     });
-    expect(mockCacheService.setQuestionStatus).toHaveBeenCalledWith(
-      'token-1',
-      'answered',
-    );
   });
 });

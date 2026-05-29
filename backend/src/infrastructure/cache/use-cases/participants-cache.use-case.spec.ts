@@ -5,139 +5,238 @@ import { RedisService } from '../../database/redis/redis.service';
 describe('ParticipantsCacheUseCase', () => {
   let useCase: ParticipantsCacheUseCase;
 
-  const makeClient = (overrides: Record<string, jest.Mock> = {}): any => ({
-    sadd: jest.fn().mockResolvedValue(1),
-    srem: jest.fn().mockResolvedValue(1),
-    smembers: jest.fn().mockResolvedValue([]),
-    scard: jest.fn().mockResolvedValue(0),
-    expire: jest.fn().mockResolvedValue(1),
-    ...overrides,
-  });
+  const mockRedisClient = {
+    sadd: jest.fn(),
+    srem: jest.fn(),
+    smembers: jest.fn(),
+    scard: jest.fn(),
+    expire: jest.fn(),
+    hincrby: jest.fn(),
+    hdel: jest.fn(),
+    hgetall: jest.fn(),
+    hkeys: jest.fn(),
+  };
 
-  const build = async (client: any): Promise<void> => {
+  const mockRedisService = {
+    getClient: jest.fn(),
+  };
+
+  beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         ParticipantsCacheUseCase,
-        {
-          provide: RedisService,
-          useValue: { getClient: jest.fn().mockReturnValue(client) },
-        },
+        { provide: RedisService, useValue: mockRedisService },
       ],
     }).compile();
 
     useCase = module.get<ParticipantsCacheUseCase>(ParticipantsCacheUseCase);
-    await useCase.onModuleInit();
-  };
-
-  afterEach(async () => {
-    await useCase?.onModuleDestroy();
     jest.clearAllMocks();
-    jest.useRealTimers();
+    mockRedisService.getClient.mockReturnValue(mockRedisClient);
   });
 
-  describe('ParticipantsCacheUseCase', () => {
+  afterEach(async () => {
+    await useCase.onModuleDestroy();
+  });
 
-    it('debe agregar un participante', async () => {
-      const client = makeClient();
+  // ─── addParticipantOnline ──────────────────────────────────────────────────
 
-      await build(client);
+  describe('addParticipantOnline', () => {
+    it('agrega nickname a online (hincrby) y history (sadd) en Redis', async () => {
+      mockRedisClient.hincrby.mockResolvedValue(1);
+      mockRedisClient.sadd.mockResolvedValue(1);
+      mockRedisClient.expire.mockResolvedValue(1);
 
-      await useCase.addParticipantOnline('token-abc', 'PlayerOne');
+      await useCase.addParticipantOnline('token-abc', 'Juan');
 
-      expect(client.sadd).toHaveBeenCalledWith(
-        'online:token-abc',
-        'PlayerOne',
-      );
-
-      expect(client.sadd).toHaveBeenCalledWith(
-        'history:token-abc',
-        'PlayerOne',
-      );
+      expect(mockRedisClient.hincrby).toHaveBeenCalledWith('online:token-abc', 'Juan', 1);
+      expect(mockRedisClient.sadd).toHaveBeenCalledWith('history:token-abc', 'Juan');
     });
 
-    it('debe eliminar un participante', async () => {
-      const client = makeClient();
+    it('establece TTL: 3600 para online, 14400 para history', async () => {
+      mockRedisClient.hincrby.mockResolvedValue(1);
+      mockRedisClient.sadd.mockResolvedValue(1);
+      mockRedisClient.expire.mockResolvedValue(1);
 
-      await build(client);
+      await useCase.addParticipantOnline('token-abc', 'Juan');
 
-      await useCase.removeParticipantOnline('token-abc', 'PlayerOne');
-
-      expect(client.srem).toHaveBeenCalledWith(
-        'online:token-abc',
-        'PlayerOne',
-      );
+      expect(mockRedisClient.expire).toHaveBeenCalledWith('online:token-abc', 3600);
+      expect(mockRedisClient.expire).toHaveBeenCalledWith('history:token-abc', 14400);
     });
 
-    it('debe obtener los participantes conectados', async () => {
-      const client = makeClient({
-        smembers: jest.fn().mockResolvedValue([
-          'PlayerOne',
-          'PlayerTwo',
-        ]),
-      });
+    it('fallback a memoria si Redis no disponible', async () => {
+      mockRedisService.getClient.mockReturnValue(null);
 
-      await build(client);
+      await useCase.addParticipantOnline('token-abc', 'Juan');
+      const result = await useCase.getOnlineParticipants('token-abc');
+
+      expect(result).toContain('Juan');
+    });
+
+    it('fallback a memoria: mismo nickname no duplica', async () => {
+      mockRedisService.getClient.mockReturnValue(null);
+
+      await useCase.addParticipantOnline('token-abc', 'Juan');
+      await useCase.addParticipantOnline('token-abc', 'Juan');
+      const result = await useCase.getOnlineParticipants('token-abc');
+
+      expect(result.filter((n) => n === 'Juan').length).toBe(1);
+    });
+  });
+
+  // ─── removeParticipantOnline ───────────────────────────────────────────────
+
+  describe('removeParticipantOnline', () => {
+    it('decrementa contador online con hincrby y elimina con hdel si llega a 0', async () => {
+      mockRedisClient.hincrby.mockResolvedValue(0);
+      mockRedisClient.hdel.mockResolvedValue(1);
+
+      await useCase.removeParticipantOnline('token-abc', 'Juan');
+
+      expect(mockRedisClient.hincrby).toHaveBeenCalledWith('online:token-abc', 'Juan', -1);
+      expect(mockRedisClient.hdel).toHaveBeenCalledWith('online:token-abc', 'Juan');
+    });
+
+    it('NO toca el history set al remover', async () => {
+      mockRedisClient.hincrby.mockResolvedValue(0);
+      mockRedisClient.hdel.mockResolvedValue(1);
+
+      await useCase.removeParticipantOnline('token-abc', 'Juan');
+
+      expect(mockRedisClient.srem).not.toHaveBeenCalled();
+    });
+
+    it('fallback a memoria: elimina del online set interno', async () => {
+      mockRedisService.getClient.mockReturnValue(null);
+
+      await useCase.addParticipantOnline('token-abc', 'Juan');
+      await useCase.removeParticipantOnline('token-abc', 'Juan');
+      const result = await useCase.getOnlineParticipants('token-abc');
+
+      expect(result).not.toContain('Juan');
+    });
+  });
+
+  // ─── getOnlineParticipants ─────────────────────────────────────────────────
+
+  describe('getOnlineParticipants', () => {
+    it('retorna lista desde Redis via SMEMBERS', async () => {
+      mockRedisClient.smembers.mockResolvedValue(['Juan', 'Maria']);
 
       const result = await useCase.getOnlineParticipants('token-abc');
 
-      expect(result).toEqual([
-        'PlayerOne',
-        'PlayerTwo',
-      ]);
+      expect(result).toContain('Juan');
+      expect(result).toContain('Maria');
     });
 
-    it('debe verificar participantes duplicados', async () => {
-      const client = makeClient({
-        sadd: jest.fn().mockResolvedValue(1),
-      });
+    it('retorna array vacío si no hay participantes', async () => {
+      mockRedisClient.smembers.mockResolvedValue([]);
 
-      await build(client);
+      const result = await useCase.getOnlineParticipants('token-abc');
 
-      const result = await useCase.checkAndSetDuplicate(
-        'dedup:key',
-        'PlayerOne',
-        60,
-      );
+      expect(result).toEqual([]);
+    });
+  });
+
+  // ─── getHistoricalParticipants ─────────────────────────────────────────────
+
+  describe('getHistoricalParticipants', () => {
+    it('retorna todos los participantes históricos desde Redis', async () => {
+      mockRedisClient.smembers.mockResolvedValue(['Juan', 'Maria', 'Carlos']);
+
+      const result = await useCase.getHistoricalParticipants('token-abc');
+
+      expect(result).toHaveLength(3);
+      expect(result).toContain('Juan');
+    });
+
+    it('usa la clave history:{token}', async () => {
+      mockRedisClient.smembers.mockResolvedValue([]);
+
+      await useCase.getHistoricalParticipants('token-abc');
+
+      expect(mockRedisClient.smembers).toHaveBeenCalledWith('history:token-abc');
+    });
+
+    it('fallback a memoria: incluye participantes añadidos sin Redis', async () => {
+      mockRedisService.getClient.mockReturnValue(null);
+
+      await useCase.addParticipantOnline('token-abc', 'Juan');
+      const result = await useCase.getHistoricalParticipants('token-abc');
+
+      expect(result).toContain('Juan');
+    });
+  });
+
+  // ─── getSessionParticipantCount ────────────────────────────────────────────
+
+  describe('getSessionParticipantCount', () => {
+    it('retorna SCARD del history set', async () => {
+      mockRedisClient.scard.mockResolvedValue(5);
+
+      const result = await useCase.getSessionParticipantCount('token-abc');
+
+      expect(result).toBe(5);
+      expect(mockRedisClient.scard).toHaveBeenCalledWith('history:token-abc');
+    });
+
+    it('retorna 0 si no hay participantes', async () => {
+      mockRedisClient.scard.mockResolvedValue(0);
+
+      const result = await useCase.getSessionParticipantCount('token-abc');
+
+      expect(result).toBe(0);
+    });
+
+    it('fallback a memoria: retorna 0 si sin historial', async () => {
+      mockRedisService.getClient.mockReturnValue(null);
+
+      const result = await useCase.getSessionParticipantCount('token-xyz');
+
+      expect(result).toBe(0);
+    });
+  });
+
+  // ─── checkAndSetDuplicate ──────────────────────────────────────────────────
+
+  describe('checkAndSetDuplicate', () => {
+    it('SADD retorna 1 (nuevo) → true', async () => {
+      mockRedisClient.sadd.mockResolvedValue(1);
+      mockRedisClient.expire.mockResolvedValue(1);
+
+      const result = await useCase.checkAndSetDuplicate('dup-key', 'valor', 60);
 
       expect(result).toBe(true);
-
-      expect(client.expire).toHaveBeenCalledWith(
-        'dedup:key',
-        60,
-      );
+      expect(mockRedisClient.expire).toHaveBeenCalledWith('dup-key', 60);
     });
 
-    it('debe retornar false si el voto ya existe (sadd retorna 0)', async () => {
-      const client = makeClient({
-        sadd: jest.fn().mockResolvedValue(0),
-      });
+    it('SADD retorna 0 (ya existía) → false', async () => {
+      mockRedisClient.sadd.mockResolvedValue(0);
 
-      await build(client);
-
-      const result = await useCase.checkAndSetDuplicate(
-        'dedup:key',
-        'PlayerOne',
-        60,
-      );
+      const result = await useCase.checkAndSetDuplicate('dup-key', 'valor', 60);
 
       expect(result).toBe(false);
     });
 
-    it('debe obtener los participantes históricos de la sala', async () => {
-      const client = makeClient({
-        smembers: jest
-          .fn()
-          .mockResolvedValue(['PlayerOne', 'PlayerTwo', 'Host-admin']),
-      });
+    it('fallback a memoria: primer add → true, segundo → false', async () => {
+      mockRedisService.getClient.mockReturnValue(null);
 
-      await build(client);
+      const first = await useCase.checkAndSetDuplicate('dup-key', 'valor', 60);
+      const second = await useCase.checkAndSetDuplicate('dup-key', 'valor', 60);
 
-      const result = await useCase.getHistoricalParticipants('token-abc');
-
-      expect(result).toEqual(
-        expect.arrayContaining(['PlayerOne', 'PlayerTwo', 'Host-admin']),
-      );
+      expect(first).toBe(true);
+      expect(second).toBe(false);
     });
+  });
 
+  // ─── lifecycle ─────────────────────────────────────────────────────────────
+
+  describe('lifecycle', () => {
+    it('onModuleDestroy limpia el GC interval', async () => {
+      const clearSpy = jest.spyOn(global, 'clearInterval');
+      await useCase.onModuleInit();
+      await useCase.onModuleDestroy();
+
+      expect(clearSpy).toHaveBeenCalled();
+    });
   });
 });

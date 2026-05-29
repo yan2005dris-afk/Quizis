@@ -2,35 +2,75 @@ import { BadRequestException } from '@nestjs/common';
 import { PhoneUtil } from './phone.util';
 
 describe('PhoneUtil', () => {
+  // ─── validateEcuadorian ────────────────────────────────────────────────────
+
+  describe('validateEcuadorian', () => {
+    it('formato +593 válido → no lanza', () => {
+      expect(() =>
+        PhoneUtil.validateEcuadorian('+593 987654321', 'telefono'),
+      ).not.toThrow();
+    });
+
+    it('formato 09 válido → no lanza', () => {
+      expect(() =>
+        PhoneUtil.validateEcuadorian('0987654321', 'telefono'),
+      ).not.toThrow();
+    });
+
+    it('formato 09 con espacios → no lanza', () => {
+      expect(() =>
+        PhoneUtil.validateEcuadorian('098 765 4321', 'telefono'),
+      ).not.toThrow();
+    });
+
+    it('string vacío → BadRequestException', () => {
+      expect(() => PhoneUtil.validateEcuadorian('', 'telefono')).toThrow(
+        BadRequestException,
+      );
+    });
+
+    it('número inicia diferente a +593 o 09 → BadRequestException', () => {
+      expect(() => PhoneUtil.validateEcuadorian('1234567890', 'telefono')).toThrow(
+        BadRequestException,
+      );
+    });
+
+    it('+593 con dígitos incorrectos (no empieza con 9) → BadRequestException', () => {
+      expect(() =>
+        PhoneUtil.validateEcuadorian('+593 123456789', 'telefono'),
+      ).toThrow(BadRequestException);
+    });
+
+    it('09 con menos de 10 dígitos → BadRequestException', () => {
+      expect(() => PhoneUtil.validateEcuadorian('098765432', 'telefono')).toThrow(
+        BadRequestException,
+      );
+    });
+
+    it('09 con más de 10 dígitos → BadRequestException', () => {
+      expect(() =>
+        PhoneUtil.validateEcuadorian('09876543210', 'telefono'),
+      ).toThrow(BadRequestException);
+    });
+  });
+
+  // ─── validateAndClean ──────────────────────────────────────────────────────
+
   describe('validateAndClean', () => {
-    it('should accept valid +593 format', () => {
-      expect(() =>
-        PhoneUtil.validateAndClean('+593991234567', 'telefono'),
-      ).not.toThrow();
+    it('teléfono con espacios → retorna limpio', () => {
+      const result = PhoneUtil.validateAndClean('098 765 4321', 'telefono');
+      expect(result).toBe('0987654321');
     });
 
-    it('should accept valid 09 format', () => {
-      expect(() =>
-        PhoneUtil.validateAndClean('0991234567', 'telefono'),
-      ).not.toThrow();
+    it('teléfono con guiones → retorna limpio', () => {
+      const result = PhoneUtil.validateAndClean('098-765-4321', 'telefono');
+      expect(result).toBe('0987654321');
     });
 
-    it('should throw BadRequestException for +593 without mobile prefix (9)', () => {
-      expect(() =>
-        PhoneUtil.validateAndClean('+593112345678', 'telefono'),
-      ).toThrow(BadRequestException);
-    });
-
-    it('should throw BadRequestException for 09 format with wrong length', () => {
-      expect(() =>
-        PhoneUtil.validateAndClean('099123456', 'telefono'),
-      ).toThrow(BadRequestException);
-    });
-
-    it('should throw BadRequestException for non-Ecuadorian format', () => {
-      expect(() =>
-        PhoneUtil.validateAndClean('+5491155555555', 'telefono'),
-      ).toThrow(BadRequestException);
+    it('teléfono inválido → BadRequestException', () => {
+      expect(() => PhoneUtil.validateAndClean('12345', 'telefono')).toThrow(
+        BadRequestException,
+      );
     });
   });
 });

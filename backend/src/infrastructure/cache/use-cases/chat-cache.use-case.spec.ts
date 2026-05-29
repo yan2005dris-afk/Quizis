@@ -1,110 +1,202 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ChatCacheUseCase } from './chat-cache.use-case';
 import { RedisService } from '../../database/redis/redis.service';
-import { ChatMessage } from '../../../juego/websockets/types/chat.types';
-
-const makeMsg = (partial: Partial<ChatMessage> = {}): ChatMessage => ({
-  usuario: 'PlayerOne',
-  texto: 'Hola mundo',
-  timestamp: Date.now(),
-  tipo: 'mensaje',
-  ...partial,
-});
 
 describe('ChatCacheUseCase', () => {
   let useCase: ChatCacheUseCase;
 
-  const makeClient = (overrides: Record<string, jest.Mock> = {}): any => ({
-    rpush: jest.fn().mockResolvedValue(1),
-    expire: jest.fn().mockResolvedValue(1),
-    llen: jest.fn().mockResolvedValue(1),
-    ltrim: jest.fn().mockResolvedValue('OK'),
-    lrange: jest.fn().mockResolvedValue([]),
-    del: jest.fn().mockResolvedValue(1),
-    ...overrides,
-  });
+  const mockRedisClient = {
+    rpush: jest.fn(),
+    lrange: jest.fn(),
+    llen: jest.fn(),
+    ltrim: jest.fn(),
+    expire: jest.fn(),
+    del: jest.fn(),
+  };
 
-  const build = async (client: any): Promise<void> => {
+  const mockRedisService = {
+    getClient: jest.fn(),
+  };
+
+  const mockMessage = {
+    usuario: 'Juan',
+    texto: 'Hola mundo',
+    timestamp: 1716000000000,
+    tipo: 'mensaje' as const,
+  };
+
+  beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         ChatCacheUseCase,
-        {
-          provide: RedisService,
-          useValue: { getClient: jest.fn().mockReturnValue(client) },
-        },
+        { provide: RedisService, useValue: mockRedisService },
       ],
     }).compile();
 
     useCase = module.get<ChatCacheUseCase>(ChatCacheUseCase);
-    await useCase.onModuleInit();
-  };
-
-  afterEach(async () => {
-    await useCase?.onModuleDestroy();
     jest.clearAllMocks();
-    jest.useRealTimers();
+    mockRedisService.getClient.mockReturnValue(mockRedisClient);
+
+    // Por defecto, no hay trim necesario (llen ≤ 200)
+    mockRedisClient.rpush.mockResolvedValue(1);
+    mockRedisClient.expire.mockResolvedValue(1);
+    mockRedisClient.llen.mockResolvedValue(1);
+    mockRedisClient.lrange.mockResolvedValue([JSON.stringify(mockMessage)]);
   });
 
-  describe('ChatCacheUseCase', () => {
+  afterEach(async () => {
+    await useCase.onModuleDestroy();
+  });
 
-    it('debe agregar un mensaje en Redis', async () => {
-      const client = makeClient({
-        lrange: jest.fn().mockResolvedValue([JSON.stringify(makeMsg())]),
-      });
+  // ─── addMessage ────────────────────────────────────────────────────────────
 
-      await build(client);
+  describe('addMessage', () => {
+    it('hace RPUSH del mensaje serializado en JSON', async () => {
+      await useCase.addMessage('token-abc', mockMessage);
 
-      const msg = makeMsg();
-
-      await useCase.addMessage('token-abc', msg);
-
-      expect(client.rpush).toHaveBeenCalledWith(
+      expect(mockRedisClient.rpush).toHaveBeenCalledWith(
         'room:token-abc:chat',
-        JSON.stringify(msg),
+        JSON.stringify(mockMessage),
       );
     });
 
-    it('debe usar memoria cuando Redis falle al agregar mensajes', async () => {
-      const client = makeClient({
-        rpush: jest.fn().mockRejectedValue(new Error('redis error')),
-      });
+    it('renueva TTL en cada mensaje (7 días)', async () => {
+      await useCase.addMessage('token-abc', mockMessage);
 
-      await build(client);
-
-      const msg = makeMsg();
-
-      const result = await useCase.addMessage('token-abc', msg);
-
-      expect(result).toContainEqual(msg);
+      expect(mockRedisClient.expire).toHaveBeenCalledWith(
+        'room:token-abc:chat',
+        604800,
+      );
     });
 
-    it('debe obtener los mensajes almacenados', async () => {
-      const msg1 = makeMsg({ texto: 'Primero' });
-      const msg2 = makeMsg({ texto: 'Segundo' });
+    it('hace LTRIM si excede MAX_MESSAGES (200)', async () => {
+      mockRedisClient.llen.mockResolvedValue(201);
+      mockRedisClient.ltrim.mockResolvedValue('OK');
 
-      const client = makeClient({
-        lrange: jest.fn().mockResolvedValue([
-          JSON.stringify(msg1),
-          JSON.stringify(msg2),
-        ]),
-      });
+      await useCase.addMessage('token-abc', mockMessage);
 
-      await build(client);
+      expect(mockRedisClient.ltrim).toHaveBeenCalledWith(
+        'room:token-abc:chat',
+        1,
+        -1,
+      );
+    });
+
+    it('NO hace LTRIM si no excede MAX_MESSAGES', async () => {
+      mockRedisClient.llen.mockResolvedValue(100);
+
+      await useCase.addMessage('token-abc', mockMessage);
+
+      expect(mockRedisClient.ltrim).not.toHaveBeenCalled();
+    });
+
+    it('retorna lista actualizada de mensajes', async () => {
+      const result = await useCase.addMessage('token-abc', mockMessage);
+
+      expect(result).toEqual([mockMessage]);
+    });
+
+    it('mensaje tipo sugerencia también se almacena', async () => {
+      const sugerencia = { ...mockMessage, tipo: 'sugerencia' as const };
+      mockRedisClient.lrange.mockResolvedValue([JSON.stringify(sugerencia)]);
+
+      const result = await useCase.addMessage('token-abc', sugerencia);
+
+      expect(mockRedisClient.rpush).toHaveBeenCalledWith(
+        'room:token-abc:chat',
+        JSON.stringify(sugerencia),
+      );
+      expect(result[0].tipo).toBe('sugerencia');
+    });
+
+    it('fallback a memoria si Redis no disponible', async () => {
+      mockRedisService.getClient.mockReturnValue(null);
+
+      const result = await useCase.addMessage('token-abc', mockMessage);
+
+      expect(result).toContainEqual(mockMessage);
+    });
+
+    it('fallback a memoria: trim en mensaje 201', async () => {
+      mockRedisService.getClient.mockReturnValue(null);
+
+      for (let i = 0; i < 201; i++) {
+        await useCase.addMessage('token-abc', { ...mockMessage, timestamp: i });
+      }
+
+      const result = await useCase.getMessages('token-abc');
+      expect(result.length).toBe(200);
+    });
+  });
+
+  // ─── getMessages ───────────────────────────────────────────────────────────
+
+  describe('getMessages', () => {
+    it('recupera mensajes deserializando desde Redis (LRANGE)', async () => {
+      const msgs = [
+        { ...mockMessage, timestamp: 1 },
+        { ...mockMessage, timestamp: 2 },
+      ];
+      mockRedisClient.lrange.mockResolvedValue(msgs.map(JSON.stringify));
 
       const result = await useCase.getMessages('token-abc');
 
-      expect(result).toEqual([msg1, msg2]);
+      expect(result).toEqual(msgs);
+      expect(mockRedisClient.lrange).toHaveBeenCalledWith(
+        'room:token-abc:chat',
+        0,
+        -1,
+      );
     });
 
-    it('debe eliminar los mensajes del chat', async () => {
-      const client = makeClient();
+    it('retorna array vacío si no hay mensajes en Redis', async () => {
+      mockRedisClient.lrange.mockResolvedValue([]);
 
-      await build(client);
+      const result = await useCase.getMessages('token-abc');
+
+      expect(result).toEqual([]);
+    });
+
+    it('fallback a memoria: retorna array vacío si room no existe', async () => {
+      mockRedisService.getClient.mockReturnValue(null);
+
+      const result = await useCase.getMessages('token-xyz');
+
+      expect(result).toEqual([]);
+    });
+  });
+
+  // ─── clearMessages ─────────────────────────────────────────────────────────
+
+  describe('clearMessages', () => {
+    it('elimina la clave del chat con DEL', async () => {
+      mockRedisClient.del.mockResolvedValue(1);
 
       await useCase.clearMessages('token-abc');
 
-      expect(client.del).toHaveBeenCalledWith('room:token-abc:chat');
+      expect(mockRedisClient.del).toHaveBeenCalledWith('room:token-abc:chat');
     });
 
+    it('fallback a memoria: borra mensajes del map interno', async () => {
+      mockRedisService.getClient.mockReturnValue(null);
+
+      await useCase.addMessage('token-abc', mockMessage);
+      await useCase.clearMessages('token-abc');
+      const result = await useCase.getMessages('token-abc');
+
+      expect(result).toEqual([]);
+    });
+  });
+
+  // ─── lifecycle ─────────────────────────────────────────────────────────────
+
+  describe('lifecycle', () => {
+    it('onModuleDestroy limpia el GC interval', async () => {
+      const clearSpy = jest.spyOn(global, 'clearInterval');
+      await useCase.onModuleInit();
+      await useCase.onModuleDestroy();
+
+      expect(clearSpy).toHaveBeenCalled();
+    });
   });
 });

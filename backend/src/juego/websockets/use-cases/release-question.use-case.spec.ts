@@ -1,15 +1,21 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { BadRequestException } from '@nestjs/common';
 import { ReleaseQuestionUseCase } from './release-question.use-case';
-import { RoomStateCacheUseCase } from '../../../infrastructure/cache/use-cases/room-state-cache.use-case';
+import { RoomStateCacheUseCase } from 'src/infrastructure/cache/use-cases/room-state-cache.use-case';
 
 describe('ReleaseQuestionUseCase', () => {
   let useCase: ReleaseQuestionUseCase;
-  let cacheService: RoomStateCacheUseCase;
 
   const mockCacheService = {
     getQuestionStatus: jest.fn(),
     setActiveQuestion: jest.fn(),
+  };
+
+  const mockPregunta = {
+    preguntaId: 1,
+    texto: 'P1',
+    nivel: 'facil',
+    opciones: [{ opcionId: 1, texto: 'A', esCorrecta: true }],
   };
 
   beforeEach(async () => {
@@ -21,37 +27,48 @@ describe('ReleaseQuestionUseCase', () => {
     }).compile();
 
     useCase = module.get<ReleaseQuestionUseCase>(ReleaseQuestionUseCase);
-    cacheService = module.get<RoomStateCacheUseCase>(RoomStateCacheUseCase);
-  });
-
-  afterEach(() => {
     jest.clearAllMocks();
+    mockCacheService.setActiveQuestion.mockResolvedValue(undefined);
   });
 
-  it('should throw BadRequestException if a question is already released', async () => {
+  it('sin pregunta activa (status null) → pregunta guardada exitosamente', async () => {
+    mockCacheService.getQuestionStatus.mockResolvedValue(null);
+
+    const result = await useCase.execute('token-abc', mockPregunta);
+
+    expect(result.success).toBe(true);
+    expect(mockCacheService.setActiveQuestion).toHaveBeenCalledWith(
+      'token-abc',
+      mockPregunta,
+    );
+  });
+
+  it('status answered → permite liberar nueva pregunta', async () => {
+    mockCacheService.getQuestionStatus.mockResolvedValue('answered');
+
+    const result = await useCase.execute('token-abc', mockPregunta);
+
+    expect(result.success).toBe(true);
+    expect(mockCacheService.setActiveQuestion).toHaveBeenCalled();
+  });
+
+  it('status released → BadRequestException (pregunta anterior sin responder)', async () => {
     mockCacheService.getQuestionStatus.mockResolvedValue('released');
 
-    await expect(
-      useCase.execute('token-1', { preguntaId: 1 }),
-    ).rejects.toThrow(BadRequestException);
-
+    await expect(useCase.execute('token-abc', mockPregunta)).rejects.toThrow(
+      BadRequestException,
+    );
     expect(mockCacheService.setActiveQuestion).not.toHaveBeenCalled();
   });
 
-  it('should save question to cache and return success when no question is active', async () => {
-    const pregunta = { preguntaId: 1, texto: '¿Cuánto es 2+2?' };
+  it('llama setActiveQuestion con el objeto de pregunta completo', async () => {
     mockCacheService.getQuestionStatus.mockResolvedValue(null);
-    mockCacheService.setActiveQuestion.mockResolvedValue(undefined);
 
-    const result = await useCase.execute('token-1', pregunta);
+    await useCase.execute('token-abc', mockPregunta);
 
-    expect(result).toEqual({
-      success: true,
-      message: 'Pregunta liberada y guardada en caché.',
-    });
     expect(mockCacheService.setActiveQuestion).toHaveBeenCalledWith(
-      'token-1',
-      pregunta,
+      'token-abc',
+      mockPregunta,
     );
   });
 });
