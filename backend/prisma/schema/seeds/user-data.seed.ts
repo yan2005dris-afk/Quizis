@@ -1,6 +1,5 @@
 import { PrismaClient } from '../../../src/generated/prisma/client';
 import { seedBancosAdicionales } from './bancos-adicionales.seed';
-import { seedSalaDemo } from './sala-demo.seed';
 
 /**
  * Seed: Distribuye datos específicos por usuario.
@@ -206,11 +205,6 @@ export const seedUserData = async (prisma: PrismaClient) => {
         usuarioId: angel.usuarioId,
       },
     });
-  }
-
-  // ── Sala demo para admin ──
-  if (admin) {
-    await seedSalaDemo(prisma, admin.usuarioId);
   }
 
   // Count total banks created per user for reporting

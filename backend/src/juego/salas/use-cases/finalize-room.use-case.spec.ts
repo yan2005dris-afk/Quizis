@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { NotFoundException } from '@nestjs/common';
+import { NotFoundException, BadRequestException } from '@nestjs/common';
 import { FinalizeRoomUseCase } from './finalize-room.use-case';
 import { PrismaService } from 'src/infrastructure/database/prisma/prisma.service';
 import { ParticipantsCacheUseCase } from 'src/infrastructure/cache/use-cases/participants-cache.use-case';
@@ -132,5 +132,12 @@ describe('FinalizeRoomUseCase', () => {
 
     expect(result.totalParticipantes).toBe(0);
     expect(mockPrisma.participantes.upsert).not.toHaveBeenCalled();
+  });
+
+  it('doble finalización → BadRequestException', async () => {
+    mockRoomStateCache.getRoomEstado.mockResolvedValue(EstadoSala.FINALIZADO);
+
+    await expect(useCase.execute(1)).rejects.toThrow(BadRequestException);
+    expect(mockPrisma.$transaction).not.toHaveBeenCalled();
   });
 });

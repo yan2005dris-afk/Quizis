@@ -35,6 +35,10 @@ export class ReportesService {
       throw new BadRequestException(`Sala ${salaId} no existe`);
     }
 
+    if (sala.estado !== 'FINALIZADO') {
+      throw new BadRequestException('Solo se pueden generar reportes de salas finalizadas.');
+    }
+
     if (sala.rondas.length === 0) {
       throw new BadRequestException('La sala no tiene rondas completadas');
     }

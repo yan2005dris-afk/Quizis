@@ -8,7 +8,6 @@ import { seedPermissions } from './seeds/permissions.seed';
 import { seedUSers } from './seeds/user.seed';
 import { seedComodines } from './seeds/comodines.seed';
 import { seedPreguntas } from './seeds/preguntas.seed';
-import { seedRondas } from './seeds/rondas.seed';
 import { seedUserData } from './seeds/user-data.seed';
 
 // Cargar env desde el root de forma explícita
@@ -83,11 +82,6 @@ async function main() {
   console.log('📚 Creando bancos de preguntas y preguntas...');
   await seedPreguntas(prisma, adminUser.usuarioId);
   console.log('✅ Bancos de preguntas y preguntas creados.');
-
-  // Rondas (for admin's data)
-  console.log('🔄 Creando salas de juego, participantes y rondas...');
-  await seedRondas(prisma, adminUser.usuarioId);
-  console.log('✅ Rondas y participantes creados.');
 
   // Per-user data distribution
   console.log('👤 Distribuyendo datos por usuario...');

@@ -11,6 +11,7 @@ describe('UpdateConfiguracionSalaUseCase', () => {
     salas: { findUnique: jest.fn(), update: jest.fn() },
     preguntas: { count: jest.fn() },
     salaComodines: { upsert: jest.fn() },
+    participantes: { count: jest.fn() },
   };
 
   const mockSalaBorrador = {
@@ -60,6 +61,7 @@ describe('UpdateConfiguracionSalaUseCase', () => {
     mockPrisma.salas.update.mockResolvedValue(undefined);
     mockPrisma.preguntas.count.mockResolvedValue(20);
     mockPrisma.salaComodines.upsert.mockResolvedValue(undefined);
+    mockPrisma.participantes.count.mockResolvedValue(0);
   });
 
   it('sala no encontrada → NotFoundException', async () => {
@@ -180,5 +182,22 @@ describe('UpdateConfiguracionSalaUseCase', () => {
         expect.objectContaining({ comodinId: 1, nombre: '50/50' }),
       ]),
     });
+  });
+
+  it('maxEstudiantes menor que estudiantes actuales → BadRequestException', async () => {
+    mockPrisma.participantes.count.mockResolvedValue(5);
+
+    await expect(
+      useCase.execute(1, { maxEstudiantes: 3 }),
+    ).rejects.toThrow(BadRequestException);
+    expect(mockPrisma.salas.update).not.toHaveBeenCalled();
+  });
+
+  it('maxEstudiantes igual a estudiantes actuales → permite actualización', async () => {
+    mockPrisma.participantes.count.mockResolvedValue(5);
+
+    await useCase.execute(1, { maxEstudiantes: 5 });
+
+    expect(mockPrisma.salas.update).toHaveBeenCalled();
   });
 });

@@ -53,7 +53,8 @@ export class ReportesIndexComponent implements OnInit {
 
   protected readonly salasFiltradas = computed(() => {
     const q = this.busqueda().toLowerCase();
-    return q ? this.salas().filter((s) => s.nombre.toLowerCase().includes(q)) : this.salas();
+    const finalizadas = this.salas().filter((s) => s.estado === 'FINALIZADO');
+    return q ? finalizadas.filter((s) => s.nombre.toLowerCase().includes(q)) : finalizadas;
   });
 
   ngOnInit(): void {

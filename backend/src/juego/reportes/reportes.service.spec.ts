@@ -33,10 +33,24 @@ describe('ReportesService', () => {
     );
   });
 
+  it('should throw BadRequestException if sala is not FINALIZADO', async () => {
+    mockPrisma.salas.findUnique.mockResolvedValue({
+      salaId: 1,
+      nombre: 'Test',
+      estado: 'EN_VIVO',
+      createdAt: new Date(),
+      admin: { email: 'admin@test.com' },
+      rondas: [{ numeroRonda: 1, participante: { nickname: 'Juan' }, respuestas: [], votos: [] }],
+    });
+
+    await expect(service.obtenerEstadisticas(1)).rejects.toThrow(BadRequestException);
+  });
+
   it('should throw BadRequestException if sala has no rondas', async () => {
     mockPrisma.salas.findUnique.mockResolvedValue({
       salaId: 1,
       nombre: 'Test',
+      estado: 'FINALIZADO',
       createdAt: new Date(),
       admin: { email: 'admin@test.com' },
       rondas: [],
@@ -51,6 +65,7 @@ describe('ReportesService', () => {
     mockPrisma.salas.findUnique.mockResolvedValue({
       salaId: 1,
       nombre: 'Sala Test',
+      estado: 'FINALIZADO',
       createdAt: new Date(),
       admin: { email: 'admin@test.com' },
       rondas: [
@@ -80,6 +95,7 @@ describe('ReportesService', () => {
     mockPrisma.salas.findUnique.mockResolvedValue({
       salaId: 1,
       nombre: 'Sala Test',
+      estado: 'FINALIZADO',
       createdAt: new Date(),
       admin: { email: 'admin@test.com' },
       rondas: [
@@ -113,6 +129,7 @@ describe('ReportesService', () => {
     mockPrisma.salas.findUnique.mockResolvedValue({
       salaId: 1,
       nombre: 'Sala Multi',
+      estado: 'FINALIZADO',
       createdAt: new Date(),
       admin: { email: 'admin@test.com' },
       rondas: [
