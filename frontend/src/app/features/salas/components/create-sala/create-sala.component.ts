@@ -240,7 +240,9 @@ export class CreateSalaComponent implements OnInit {
               });
               const estadoRequest =
                 iniciar || form.estadoInicial === ESTADOS_SALA.ESPERANDO_ALUMNOS
-                  ? this.salasService.updateEstado(sala.salaId, { estado: ESTADOS_SALA.ESPERANDO_ALUMNOS })
+                  ? this.salasService.updateEstado(sala.salaId, {
+                      estado: ESTADOS_SALA.ESPERANDO_ALUMNOS,
+                    })
                   : of(null);
 
               return forkJoin([configRequest, estadoRequest]).pipe(switchMap(() => of(sala)));

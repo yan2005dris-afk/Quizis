@@ -82,9 +82,7 @@ describe('GameOverComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [GameOverComponent],
-      providers: [
-        { provide: ReportesService, useValue: createMockReportesService() },
-      ],
+      providers: [{ provide: ReportesService, useValue: createMockReportesService() }],
     }).compileComponents();
 
     fixture = TestBed.createComponent(GameOverComponent);
@@ -138,7 +136,7 @@ describe('GameOverComponent', () => {
 
   it('should show action buttons (analytics and home)', () => {
     const el = fixture.nativeElement as HTMLElement;
-    expect(el.textContent).toContain('Ver analíticas del grupo');
-    expect(el.textContent).toContain('Volver al inicio');
+    expect(el.textContent).toContain('Ver analíticas');
+    expect(el.textContent).toContain('Salir del podio');
   });
 });

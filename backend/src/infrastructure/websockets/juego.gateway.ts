@@ -16,6 +16,7 @@ import { SalasService } from '../../juego/salas/salas.service';
 import { RoomStateCacheUseCase } from '../cache/use-cases/room-state-cache.use-case';
 import { ParticipantsCacheUseCase } from '../cache/use-cases/participants-cache.use-case';
 import { ChatCacheUseCase } from '../cache/use-cases/chat-cache.use-case';
+import { HelperCacheUseCase } from '../cache/use-cases/helper-cache.use-case';
 
 @WebSocketGateway({ cors: { origin: '*' } })
 export class JuegoGateway implements OnGatewayConnection, OnGatewayDisconnect {
@@ -38,6 +39,7 @@ export class JuegoGateway implements OnGatewayConnection, OnGatewayDisconnect {
     private readonly roomStateCache: RoomStateCacheUseCase,
     private readonly participantsCache: ParticipantsCacheUseCase,
     private readonly chatCache: ChatCacheUseCase,
+    private readonly helperCache: HelperCacheUseCase,
   ) {}
 
   handleConnection(client: Socket) {
@@ -397,5 +399,102 @@ export class JuegoGateway implements OnGatewayConnection, OnGatewayDisconnect {
       payload.tipoComodin,
     );
     this.server.to(payload.tokenCompartido).emit('comodin_bloqueado', payload);
+  }
+
+  @SubscribeMessage('activar_comodin_llamada')
+  async handleActivarComodinLlamada(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() payload: { tokenCompartido: string; pregunta: any },
+  ) {
+    const result = await this.websocketsService.activateCallJoker(
+      payload.tokenCompartido,
+    );
+
+    if (!result.success) {
+      client.emit('comodin_llamada_error', { message: result.message });
+      return;
+    }
+
+    const consultorSocketId = this.findSocketId(
+      result.consultor.nickname,
+      payload.tokenCompartido,
+    );
+
+    if (!consultorSocketId) {
+      client.emit('comodin_llamada_error', {
+        message: 'El compañero seleccionado se desconectó.',
+      });
+      return;
+    }
+
+    this.server.to(consultorSocketId).emit('consultor_seleccionado', {
+      tokenCompartido: payload.tokenCompartido,
+      pregunta: payload.pregunta,
+    });
+
+    this.server.to(payload.tokenCompartido).emit('comodin_llamada_iniciado', {
+      nicknameConsultor: result.consultor.nickname,
+    });
+  }
+
+  @SubscribeMessage('enviar_pista_consultor')
+  async handleEnviarPistaConsultor(
+    @ConnectedSocket() client: Socket,
+    @MessageBody()
+    payload: { tokenCompartido: string; preguntaId: number; pista: string },
+  ) {
+    const helperNickname = await this.helperCache.getActiveHelper(
+      payload.tokenCompartido,
+    );
+
+    if (!helperNickname) {
+      client.emit('enviar_pista_error', {
+        message: 'No hay ninguna llamada activa en esta sala.',
+      });
+      return;
+    }
+
+    const expectedSocketId = this.findSocketId(
+      helperNickname,
+      payload.tokenCompartido,
+    );
+
+    if (client.id !== expectedSocketId) {
+      client.emit('enviar_pista_error', {
+        message: 'No eres el consultor asignado para esta llamada.',
+      });
+      return;
+    }
+
+    const result = await this.websocketsService.sendHint(payload);
+
+    if (!result.success) {
+      client.emit('enviar_pista_error', { message: result.message });
+      return;
+    }
+
+    this.server.to(payload.tokenCompartido).emit('pista_consultor_recibida', {
+      pista: result.pista,
+      consultor: result.helperNickname,
+    });
+
+    this.server.to(payload.tokenCompartido).emit('comodin_usado', {
+      tipoComodin: 'LLAMADA',
+    });
+  }
+
+  private findSocketId(
+    nickname: string,
+    tokenCompartido: string,
+  ): string | undefined {
+    for (const [socketId, info] of this.socketMap.entries()) {
+      if (
+        info.nickname === nickname &&
+        info.tokenCompartido === tokenCompartido
+      ) {
+        return socketId;
+      }
+    }
+    return undefined;
   }
 }
