@@ -95,6 +95,17 @@
           <button class="confirm-btn" (click)="confirmar()">Confirmar respuesta</button>
         </div>
       }
+
+      <!-- Espera de consenso de equipo (visible una vez confirmada la respuesta, hasta resolución) -->
+      @if (respuestaConfirmada() && gameSocket.esperandoConsenso()) {
+        <div class="confirm-bar" role="status" aria-live="polite">
+          <p class="observer-card__status">
+            <span class="status-dot"></span>
+            Esperando a compañeros...
+            <strong>{{ gameSocket.votantesConfirmados() }} / {{ gameSocket.totalVotantesRequeridos() }}</strong>
+          </p>
+        </div>
+      }
     </div>
 
     <div class="observer-wildcards-panel observer-wildcards-panel--inline">

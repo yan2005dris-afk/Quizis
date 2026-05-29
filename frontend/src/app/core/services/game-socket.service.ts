@@ -77,6 +77,12 @@ export class GameSocketService {
   // 50/50 — survived round restarts (Bug 1 fix)
   readonly opcionesEliminadas = signal<number[]>([]);
 
+  // Consenso de equipo — progreso de votos y estado de re-voto
+  readonly votantesConfirmados = signal<number>(0);
+  readonly totalVotantesRequeridos = signal<number>(0);
+  readonly esperandoConsenso = signal<boolean>(false);
+  readonly revotoSolicitado = signal<boolean>(false);
+
   private readonly toast = inject(ToastService);
 
   // Separado para poder mockearlo en tests sin depender de vi.mock
@@ -104,6 +110,12 @@ export class GameSocketService {
       this.preguntaConsultor.set(null);
       this.pistaConsultor.set(null);
       this.iaSugerenciaGlobal.set(null);
+
+      // Resetear estado de consenso al liberar nueva pregunta
+      this.votantesConfirmados.set(0);
+      this.totalVotantesRequeridos.set(0);
+      this.esperandoConsenso.set(false);
+      this.revotoSolicitado.set(false);
 
       // Auto-incrementar el número de pregunta (ronda) en la interfaz
       this.infoRonda.update((info) => {
@@ -171,6 +183,28 @@ export class GameSocketService {
     // Recibe el resultado de una respuesta procesada (broadcast)
     this.socket.on('pregunta_respondida', (data: ResultRespuesta) => {
       this.ultimoResultado.set(data);
+      // Limpiar estado de consenso al resolverse la pregunta
+      this.votantesConfirmados.set(0);
+      this.totalVotantesRequeridos.set(0);
+      this.esperandoConsenso.set(false);
+      this.revotoSolicitado.set(false);
+    });
+
+    // Progreso de consenso de equipo — N de M estudiantes han votado
+    this.socket.on(
+      'voto_confirmado',
+      (data: { preguntaId: number; votosRecibidos: number; totalRequeridos: number }) => {
+        this.votantesConfirmados.set(data.votosRecibidos);
+        this.totalVotantesRequeridos.set(data.totalRequeridos);
+        this.esperandoConsenso.set(true);
+      },
+    );
+
+    // Sin mayoría — solicitar re-voto a todos los estudiantes
+    this.socket.on('revoto_solicitado', (_data: { preguntaId: number; motivo: string }) => {
+      this.revotoSolicitado.set(true);
+      this.esperandoConsenso.set(false);
+      this.votantesConfirmados.set(0);
     });
 
     // ——— Listeners para Comodín Llamada ———
@@ -385,6 +419,11 @@ export class GameSocketService {
   // Enviar pista consultor (Solo Consultor)
   enviarPistaConsultor(tokenCompartido: string, preguntaId: number, pista: string): void {
     this.socket?.emit('enviar_pista_consultor', { tokenCompartido, preguntaId, pista });
+  }
+
+  // Resetear manualmente la bandera de re-voto (llamado por el componente después de procesar revoto_solicitado)
+  resetRevoto(): void {
+    this.revotoSolicitado.set(false);
   }
 
   // Reiniciar ronda (Solo Host/Admin)

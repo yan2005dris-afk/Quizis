@@ -6,6 +6,7 @@ import { ParticipantsCacheUseCase } from './use-cases/participants-cache.use-cas
 import { RoomStateCacheUseCase } from './use-cases/room-state-cache.use-case';
 import { ChatCacheUseCase } from './use-cases/chat-cache.use-case';
 import { HelperCacheUseCase } from './use-cases/helper-cache.use-case';
+import { ConsensusCacheUseCase } from './use-cases/consensus-cache.use-case';
 
 @Global()
 @Module({
@@ -17,6 +18,7 @@ import { HelperCacheUseCase } from './use-cases/helper-cache.use-case';
     RoomStateCacheUseCase,
     ChatCacheUseCase,
     HelperCacheUseCase,
+    ConsensusCacheUseCase,
   ],
   exports: [
     CacheService,
@@ -25,6 +27,7 @@ import { HelperCacheUseCase } from './use-cases/helper-cache.use-case';
     RoomStateCacheUseCase,
     ChatCacheUseCase,
     HelperCacheUseCase,
+    ConsensusCacheUseCase,
   ],
 })
 export class CacheModule {}

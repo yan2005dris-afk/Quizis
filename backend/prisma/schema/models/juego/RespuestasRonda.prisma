@@ -6,12 +6,14 @@ model RespuestasRonda {
   respuestaElegida String? @map("respuesta_elegida")
   esCorrecta       Boolean @default(false) @map("es_correcta")
   comodinUsado     String? @map("comodin_usado") // publico, ia, llamada
+  participanteId   Int?    @map("participante_id")
 
   timestamp DateTime @default(now()) @map("timestamp")
 
-  ronda    Rondas            @relation(fields: [rondaId], references: [rondaId])
-  pregunta Preguntas         @relation(fields: [preguntaId], references: [preguntaId])
-  opcion   OpcionesPregunta? @relation(fields: [opcionId], references: [opcionId])
+  ronda        Rondas            @relation(fields: [rondaId], references: [rondaId])
+  pregunta     Preguntas         @relation(fields: [preguntaId], references: [preguntaId])
+  opcion       OpcionesPregunta? @relation(fields: [opcionId], references: [opcionId])
+  participante Participantes?    @relation(fields: [participanteId], references: [participanteId])
 
   @@index([rondaId])
   @@index([preguntaId])

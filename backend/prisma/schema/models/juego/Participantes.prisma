@@ -9,8 +9,9 @@ model Participantes {
   deletedAt       DateTime? @map("borrado_en")
 
   sala            Salas     @relation(fields: [salaId], references: [salaId])
-  rondasJugadas   Rondas[]  @relation("ParticipanteRonda")
+  rondasJugadas   Rondas[]          @relation("ParticipanteRonda")
   votos           VotosPublico[]
+  respuestas      RespuestasRonda[]
 
   @@unique([salaId, nickname])
   @@index([salaId, deletedAt, rol])
