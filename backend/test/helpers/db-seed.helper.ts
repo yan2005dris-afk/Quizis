@@ -134,12 +134,22 @@ export async function cleanSeedData(
   prisma: PrismaService,
   opts: CleanSeedOptions,
 ): Promise<void> {
-  const { userIds = [], roleIds = [], bancoIds = [], salaIds = [], permissionIds = [] } = opts;
+  const {
+    userIds = [],
+    roleIds = [],
+    bancoIds = [],
+    salaIds = [],
+    permissionIds = [],
+  } = opts;
 
   // Salas: dependencias antes del registro principal
   if (salaIds.length > 0) {
-    await prisma.salaComodines.deleteMany({ where: { salaId: { in: salaIds } } });
-    await prisma.participantes.deleteMany({ where: { salaId: { in: salaIds } } });
+    await prisma.salaComodines.deleteMany({
+      where: { salaId: { in: salaIds } },
+    });
+    await prisma.participantes.deleteMany({
+      where: { salaId: { in: salaIds } },
+    });
     await prisma.rondas.deleteMany({ where: { salaId: { in: salaIds } } });
     await prisma.salas.deleteMany({ where: { salaId: { in: salaIds } } });
   }
@@ -180,6 +190,8 @@ export async function cleanSeedData(
 
   // Permisos
   if (permissionIds.length > 0) {
-    await prisma.permisos.deleteMany({ where: { permisoId: { in: permissionIds } } });
+    await prisma.permisos.deleteMany({
+      where: { permisoId: { in: permissionIds } },
+    });
   }
 }

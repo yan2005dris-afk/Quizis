@@ -3,7 +3,11 @@ import { ThrottlerExceptionFilter } from './throttler-exception.filter';
 
 describe('ThrottlerExceptionFilter', () => {
   let filter: ThrottlerExceptionFilter;
-  let mockResponse: { status: jest.Mock; json: jest.Mock; getHeader: jest.Mock };
+  let mockResponse: {
+    status: jest.Mock;
+    json: jest.Mock;
+    getHeader: jest.Mock;
+  };
   let mockRequest: { url: string };
   let mockHost: any;
 

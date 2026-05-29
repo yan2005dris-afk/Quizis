@@ -40,10 +40,19 @@ describe('ReportesService', () => {
       estado: 'EN_VIVO',
       createdAt: new Date(),
       admin: { email: 'admin@test.com' },
-      rondas: [{ numeroRonda: 1, participante: { nickname: 'Juan' }, respuestas: [], votos: [] }],
+      rondas: [
+        {
+          numeroRonda: 1,
+          participante: { nickname: 'Juan' },
+          respuestas: [],
+          votos: [],
+        },
+      ],
     });
 
-    await expect(service.obtenerEstadisticas(1)).rejects.toThrow(BadRequestException);
+    await expect(service.obtenerEstadisticas(1)).rejects.toThrow(
+      BadRequestException,
+    );
   });
 
   it('should throw BadRequestException if sala has no rondas', async () => {
@@ -73,10 +82,30 @@ describe('ReportesService', () => {
           numeroRonda: 1,
           participante: { nickname: 'Juan' },
           respuestas: [
-            { esCorrecta: true, comodinUsado: null, pregunta: { preguntaId: 1, texto: 'P1' }, opcion: { texto: 'A', esCorrecta: true } },
-            { esCorrecta: true, comodinUsado: null, pregunta: { preguntaId: 2, texto: 'P2' }, opcion: { texto: 'B', esCorrecta: true } },
-            { esCorrecta: true, comodinUsado: null, pregunta: { preguntaId: 3, texto: 'P3' }, opcion: { texto: 'C', esCorrecta: true } },
-            { esCorrecta: false, comodinUsado: null, pregunta: { preguntaId: 4, texto: 'P4' }, opcion: { texto: 'D', esCorrecta: false } },
+            {
+              esCorrecta: true,
+              comodinUsado: null,
+              pregunta: { preguntaId: 1, texto: 'P1' },
+              opcion: { texto: 'A', esCorrecta: true },
+            },
+            {
+              esCorrecta: true,
+              comodinUsado: null,
+              pregunta: { preguntaId: 2, texto: 'P2' },
+              opcion: { texto: 'B', esCorrecta: true },
+            },
+            {
+              esCorrecta: true,
+              comodinUsado: null,
+              pregunta: { preguntaId: 3, texto: 'P3' },
+              opcion: { texto: 'C', esCorrecta: true },
+            },
+            {
+              esCorrecta: false,
+              comodinUsado: null,
+              pregunta: { preguntaId: 4, texto: 'P4' },
+              opcion: { texto: 'D', esCorrecta: false },
+            },
           ],
           votos: [],
         },
@@ -137,7 +166,12 @@ describe('ReportesService', () => {
           numeroRonda: 1,
           participante: { nickname: 'Juan' },
           respuestas: [
-            { esCorrecta: true, comodinUsado: null, pregunta: { preguntaId: 1, texto: 'P1' }, opcion: { texto: 'A', esCorrecta: true } },
+            {
+              esCorrecta: true,
+              comodinUsado: null,
+              pregunta: { preguntaId: 1, texto: 'P1' },
+              opcion: { texto: 'A', esCorrecta: true },
+            },
           ],
           votos: [],
         },
@@ -145,8 +179,18 @@ describe('ReportesService', () => {
           numeroRonda: 2,
           participante: { nickname: 'Maria' },
           respuestas: [
-            { esCorrecta: false, comodinUsado: null, pregunta: { preguntaId: 1, texto: 'P1' }, opcion: { texto: 'B', esCorrecta: false } },
-            { esCorrecta: true, comodinUsado: null, pregunta: { preguntaId: 2, texto: 'P2' }, opcion: { texto: 'A', esCorrecta: true } },
+            {
+              esCorrecta: false,
+              comodinUsado: null,
+              pregunta: { preguntaId: 1, texto: 'P1' },
+              opcion: { texto: 'B', esCorrecta: false },
+            },
+            {
+              esCorrecta: true,
+              comodinUsado: null,
+              pregunta: { preguntaId: 2, texto: 'P2' },
+              opcion: { texto: 'A', esCorrecta: true },
+            },
           ],
           votos: [],
         },

@@ -1,4 +1,8 @@
-import { BadRequestException, ConflictException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+} from '@nestjs/common';
 import { UserService } from 'src/identity/users/user.service';
 import { RegisterDto } from '../dto/register.dto';
 

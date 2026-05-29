@@ -30,9 +30,9 @@ describe('PhoneUtil', () => {
     });
 
     it('número inicia diferente a +593 o 09 → BadRequestException', () => {
-      expect(() => PhoneUtil.validateEcuadorian('1234567890', 'telefono')).toThrow(
-        BadRequestException,
-      );
+      expect(() =>
+        PhoneUtil.validateEcuadorian('1234567890', 'telefono'),
+      ).toThrow(BadRequestException);
     });
 
     it('+593 con dígitos incorrectos (no empieza con 9) → BadRequestException', () => {
@@ -42,9 +42,9 @@ describe('PhoneUtil', () => {
     });
 
     it('09 con menos de 10 dígitos → BadRequestException', () => {
-      expect(() => PhoneUtil.validateEcuadorian('098765432', 'telefono')).toThrow(
-        BadRequestException,
-      );
+      expect(() =>
+        PhoneUtil.validateEcuadorian('098765432', 'telefono'),
+      ).toThrow(BadRequestException);
     });
 
     it('09 con más de 10 dígitos → BadRequestException', () => {

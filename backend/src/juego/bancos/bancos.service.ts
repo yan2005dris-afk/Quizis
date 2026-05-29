@@ -49,6 +49,11 @@ export class BancosService {
     dto: UpdatePreguntaDto,
     usuarioId: number,
   ) {
-    return this.updateQuestionUseCase.execute(bancoId, preguntaId, dto, usuarioId);
+    return this.updateQuestionUseCase.execute(
+      bancoId,
+      preguntaId,
+      dto,
+      usuarioId,
+    );
   }
 }

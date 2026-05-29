@@ -104,7 +104,11 @@ describe('JoinSalaUseCase', () => {
 
     expect(result.success).toBe(true);
     expect(result.sessionToken).toBe('session-jwt-token');
-    expect(result.participante).toEqual({ id: 5, nickname: 'Juan', rol: 'observador' });
+    expect(result.participante).toEqual({
+      id: 5,
+      nickname: 'Juan',
+      rol: 'observador',
+    });
     expect(result.sala).toEqual({
       id: 1,
       nombre: 'Sala Test',

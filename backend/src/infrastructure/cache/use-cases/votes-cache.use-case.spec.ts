@@ -27,24 +27,19 @@ describe('VotesCacheUseCase', () => {
   beforeEach(async () => {
     jest.clearAllMocks();
 
-    mockRedisService.getClient.mockReturnValue(
-      mockClient,
-    );
+    mockRedisService.getClient.mockReturnValue(mockClient);
 
-    const module: TestingModule =
-      await Test.createTestingModule({
-        providers: [
-          VotesCacheUseCase,
-          {
-            provide: RedisService,
-            useValue: mockRedisService,
-          },
-        ],
-      }).compile();
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        VotesCacheUseCase,
+        {
+          provide: RedisService,
+          useValue: mockRedisService,
+        },
+      ],
+    }).compile();
 
-    useCase = module.get<VotesCacheUseCase>(
-      VotesCacheUseCase,
-    );
+    useCase = module.get<VotesCacheUseCase>(VotesCacheUseCase);
 
     await useCase.onModuleInit();
   });
@@ -54,20 +49,12 @@ describe('VotesCacheUseCase', () => {
   });
 
   describe('VotesCacheUseCase', () => {
-
     it('debe guardar un voto en Redis', async () => {
       await useCase.setVote(1, 2, 10, 3);
 
-      expect(mockClient.hset).toHaveBeenCalledWith(
-        'votes:1:2',
-        '10',
-        '3',
-      );
+      expect(mockClient.hset).toHaveBeenCalledWith('votes:1:2', '10', '3');
 
-      expect(mockClient.expire).toHaveBeenCalledWith(
-        'votes:1:2',
-        3600,
-      );
+      expect(mockClient.expire).toHaveBeenCalledWith('votes:1:2', 3600);
     });
 
     it('debe usar memoria si Redis falla', async () => {
@@ -110,9 +97,7 @@ describe('VotesCacheUseCase', () => {
     it('debe eliminar votos', async () => {
       await useCase.clearVotes(1, 2);
 
-      expect(mockClient.del).toHaveBeenCalledWith(
-        'votes:1:2',
-      );
+      expect(mockClient.del).toHaveBeenCalledWith('votes:1:2');
     });
 
     it('debe restaurar votos al key original en memoria durante rollback', async () => {
@@ -127,9 +112,11 @@ describe('VotesCacheUseCase', () => {
       await useCase.rollbackVotes(processingKey, 1, 10);
 
       const originalVotes = await useCase.getVotes(1, 10);
-      expect(originalVotes).toContainEqual({ participanteId: 100, opcionId: 5 });
+      expect(originalVotes).toContainEqual({
+        participanteId: 100,
+        opcionId: 5,
+      });
       expect((useCase as any).memoryVotes.has(processingKey)).toBe(false);
     });
-
   });
 });

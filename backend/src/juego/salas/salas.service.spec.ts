@@ -255,7 +255,9 @@ describe('SalasService', () => {
       const result = await service.listBancosDisponibles(usuarioId);
 
       expect(result).toEqual(expectedResult);
-      expect(listBancosDisponiblesUseCase.execute).toHaveBeenCalledWith(usuarioId);
+      expect(listBancosDisponiblesUseCase.execute).toHaveBeenCalledWith(
+        usuarioId,
+      );
     });
   });
 

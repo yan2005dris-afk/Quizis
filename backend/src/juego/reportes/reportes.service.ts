@@ -36,7 +36,9 @@ export class ReportesService {
     }
 
     if (sala.estado !== 'FINALIZADO') {
-      throw new BadRequestException('Solo se pueden generar reportes de salas finalizadas.');
+      throw new BadRequestException(
+        'Solo se pueden generar reportes de salas finalizadas.',
+      );
     }
 
     if (sala.rondas.length === 0) {

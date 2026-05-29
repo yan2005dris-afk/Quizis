@@ -91,10 +91,7 @@
         </div>
 
         <div class="toggle-list">
-          @for (
-            comodin of ['PUBLICO', 'IA', 'LLAMADA', '50_50'];
-            track comodin
-          ) {
+          @for (comodin of ['PUBLICO', 'IA', 'LLAMADA', '50_50']; track comodin) {
             <label class="toggle-row">
               <span class="toggle-row__icon">
                 <lucide-icon [img]="comodinIcons[comodin]"></lucide-icon>

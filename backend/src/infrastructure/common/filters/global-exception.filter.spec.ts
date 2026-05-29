@@ -62,10 +62,7 @@ describe('GlobalExceptionFilter', () => {
   });
 
   it('HttpException genérica → status correcto', () => {
-    filter.catch(
-      new HttpException('Conflict', HttpStatus.CONFLICT),
-      mockHost,
-    );
+    filter.catch(new HttpException('Conflict', HttpStatus.CONFLICT), mockHost);
 
     expect(mockResponse.status).toHaveBeenCalledWith(409);
   });

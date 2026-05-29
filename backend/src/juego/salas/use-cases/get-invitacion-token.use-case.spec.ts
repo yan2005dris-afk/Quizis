@@ -71,7 +71,9 @@ describe('GetInvitacionTokenUseCase', () => {
   it('JWT_ROOM_SECRET leído de ConfigService', async () => {
     await useCase.execute(1);
 
-    expect(mockConfigService.getOrThrow).toHaveBeenCalledWith('JWT_ROOM_SECRET');
+    expect(mockConfigService.getOrThrow).toHaveBeenCalledWith(
+      'JWT_ROOM_SECRET',
+    );
   });
 
   it('retorna tokenInvitacion', async () => {

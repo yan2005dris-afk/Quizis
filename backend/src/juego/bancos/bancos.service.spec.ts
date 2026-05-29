@@ -72,13 +72,22 @@ describe('BancosService', () => {
     const questions = [{ texto: 'Q1' }];
     const usuarioId = 1;
     await service.crearPreguntas(1, questions, usuarioId);
-    expect(addQuestionsUseCase.execute).toHaveBeenCalledWith(1, questions, usuarioId);
+    expect(addQuestionsUseCase.execute).toHaveBeenCalledWith(
+      1,
+      questions,
+      usuarioId,
+    );
   });
 
   it('should call updateQuestionUseCase', async () => {
     const dto = { texto: 'Updated' };
     const usuarioId = 1;
     await service.updatePregunta(1, 1, dto as any, usuarioId);
-    expect(updateQuestionUseCase.execute).toHaveBeenCalledWith(1, 1, dto, usuarioId);
+    expect(updateQuestionUseCase.execute).toHaveBeenCalledWith(
+      1,
+      1,
+      dto,
+      usuarioId,
+    );
   });
 });

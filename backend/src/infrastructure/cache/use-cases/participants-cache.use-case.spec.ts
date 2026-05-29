@@ -48,8 +48,15 @@ describe('ParticipantsCacheUseCase', () => {
 
       await useCase.addParticipantOnline('token-abc', 'Juan');
 
-      expect(mockRedisClient.hincrby).toHaveBeenCalledWith('online:token-abc', 'Juan', 1);
-      expect(mockRedisClient.sadd).toHaveBeenCalledWith('history:token-abc', 'Juan');
+      expect(mockRedisClient.hincrby).toHaveBeenCalledWith(
+        'online:token-abc',
+        'Juan',
+        1,
+      );
+      expect(mockRedisClient.sadd).toHaveBeenCalledWith(
+        'history:token-abc',
+        'Juan',
+      );
     });
 
     it('establece TTL: 3600 para online, 14400 para history', async () => {
@@ -59,8 +66,14 @@ describe('ParticipantsCacheUseCase', () => {
 
       await useCase.addParticipantOnline('token-abc', 'Juan');
 
-      expect(mockRedisClient.expire).toHaveBeenCalledWith('online:token-abc', 3600);
-      expect(mockRedisClient.expire).toHaveBeenCalledWith('history:token-abc', 14400);
+      expect(mockRedisClient.expire).toHaveBeenCalledWith(
+        'online:token-abc',
+        3600,
+      );
+      expect(mockRedisClient.expire).toHaveBeenCalledWith(
+        'history:token-abc',
+        14400,
+      );
     });
 
     it('fallback a memoria si Redis no disponible', async () => {
@@ -92,8 +105,15 @@ describe('ParticipantsCacheUseCase', () => {
 
       await useCase.removeParticipantOnline('token-abc', 'Juan');
 
-      expect(mockRedisClient.hincrby).toHaveBeenCalledWith('online:token-abc', 'Juan', -1);
-      expect(mockRedisClient.hdel).toHaveBeenCalledWith('online:token-abc', 'Juan');
+      expect(mockRedisClient.hincrby).toHaveBeenCalledWith(
+        'online:token-abc',
+        'Juan',
+        -1,
+      );
+      expect(mockRedisClient.hdel).toHaveBeenCalledWith(
+        'online:token-abc',
+        'Juan',
+      );
     });
 
     it('NO toca el history set al remover', async () => {
@@ -154,7 +174,9 @@ describe('ParticipantsCacheUseCase', () => {
 
       await useCase.getHistoricalParticipants('token-abc');
 
-      expect(mockRedisClient.smembers).toHaveBeenCalledWith('history:token-abc');
+      expect(mockRedisClient.smembers).toHaveBeenCalledWith(
+        'history:token-abc',
+      );
     });
 
     it('fallback a memoria: incluye participantes añadidos sin Redis', async () => {

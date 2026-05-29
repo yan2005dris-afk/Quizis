@@ -14,7 +14,9 @@ describe('TipoIdentificacionUtil', () => {
     });
 
     it('cédula con caracteres no numéricos → false', () => {
-      expect(TipoIdentificacionUtil.validar('CEDULA', '171317507A')).toBe(false);
+      expect(TipoIdentificacionUtil.validar('CEDULA', '171317507A')).toBe(
+        false,
+      );
     });
 
     it('cédula con menos de 10 dígitos → false', () => {
@@ -22,15 +24,21 @@ describe('TipoIdentificacionUtil', () => {
     });
 
     it('cédula con más de 10 dígitos → false', () => {
-      expect(TipoIdentificacionUtil.validar('CEDULA', '12345678901')).toBe(false);
+      expect(TipoIdentificacionUtil.validar('CEDULA', '12345678901')).toBe(
+        false,
+      );
     });
 
     it('cédula con provincia inválida (00) → false', () => {
-      expect(TipoIdentificacionUtil.validar('CEDULA', '0013175071')).toBe(false);
+      expect(TipoIdentificacionUtil.validar('CEDULA', '0013175071')).toBe(
+        false,
+      );
     });
 
     it('cédula con dígito verificador incorrecto → false', () => {
-      expect(TipoIdentificacionUtil.validar('CEDULA', '1713175079')).toBe(false);
+      expect(TipoIdentificacionUtil.validar('CEDULA', '1713175079')).toBe(
+        false,
+      );
     });
   });
 
@@ -42,7 +50,9 @@ describe('TipoIdentificacionUtil', () => {
     });
 
     it('pasaporte código PASAPORTE → true', () => {
-      expect(TipoIdentificacionUtil.validar('PASAPORTE', 'P1234567')).toBe(true);
+      expect(TipoIdentificacionUtil.validar('PASAPORTE', 'P1234567')).toBe(
+        true,
+      );
     });
 
     it('pasaporte demasiado corto (< 6 chars) → false', () => {
@@ -50,9 +60,9 @@ describe('TipoIdentificacionUtil', () => {
     });
 
     it('pasaporte muy largo (> 15 chars) → false', () => {
-      expect(
-        TipoIdentificacionUtil.validar('PASAPORTE', 'A'.repeat(16)),
-      ).toBe(false);
+      expect(TipoIdentificacionUtil.validar('PASAPORTE', 'A'.repeat(16))).toBe(
+        false,
+      );
     });
   });
 
@@ -60,9 +70,7 @@ describe('TipoIdentificacionUtil', () => {
 
   describe('validar identificación extranjera (08 / IDENTIFICACION_EXTRANJERA)', () => {
     it('documento con 6+ caracteres → true', () => {
-      expect(
-        TipoIdentificacionUtil.validar('08', 'FOREIGN123'),
-      ).toBe(true);
+      expect(TipoIdentificacionUtil.validar('08', 'FOREIGN123')).toBe(true);
     });
 
     it('código IDENTIFICACION_EXTRANJERA → true', () => {
@@ -80,7 +88,9 @@ describe('TipoIdentificacionUtil', () => {
 
   describe('validar consumidor final (07 / CONSUMIDOR_FINAL)', () => {
     it('cualquier valor → true (consumidor final siempre válido)', () => {
-      expect(TipoIdentificacionUtil.validar('07', 'cualquier-valor')).toBe(true);
+      expect(TipoIdentificacionUtil.validar('07', 'cualquier-valor')).toBe(
+        true,
+      );
       expect(TipoIdentificacionUtil.validar('CONSUMIDOR_FINAL', '')).toBe(true);
     });
   });

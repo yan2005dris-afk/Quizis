@@ -96,9 +96,7 @@ describe('Salas Integration', () => {
     });
 
     it('401 — sin token retorna 401', async () => {
-      await request(app.getHttpServer())
-        .get('/api/v1/salas')
-        .expect(401);
+      await request(app.getHttpServer()).get('/api/v1/salas').expect(401);
     });
   });
 

@@ -34,7 +34,8 @@ export class FinalizeRoomUseCase {
 
     // El estado en tiempo real está en Redis — leer de ahí con fallback a DB
     const estadoActual =
-      (await this.roomStateCache.getRoomEstado(sala.tokenCompartido)) ?? sala.estado;
+      (await this.roomStateCache.getRoomEstado(sala.tokenCompartido)) ??
+      sala.estado;
 
     // Solo evitar doble finalización — permitir finalizar desde cualquier estado activo
     if (estadoActual === EstadoSala.FINALIZADO) {
@@ -45,7 +46,6 @@ export class FinalizeRoomUseCase {
 
     // Wrap DB mutations in a transaction for atomicity
     const result = await this.prisma.$transaction(async (tx) => {
-
       // 1. Obtener todos los nicknames históricos desde Redis
       const historicalNicknames =
         await this.participantsCache.getHistoricalParticipants(

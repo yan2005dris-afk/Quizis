@@ -89,13 +89,13 @@ describe('LoginUseCase', () => {
         rol: { nombre: 'admin', deletedAt: null },
       };
 
-      (prismaService.usuarios.findUnique as jest.Mock)
-        .mockResolvedValue(mockUser);
+      (prismaService.usuarios.findUnique as jest.Mock).mockResolvedValue(
+        mockUser,
+      );
 
       (bcrypt.compare as jest.Mock).mockResolvedValue(true);
 
-      (bcrypt.hash as jest.Mock)
-        .mockResolvedValue('hashed-refresh');
+      (bcrypt.hash as jest.Mock).mockResolvedValue('hashed-refresh');
 
       jwtService.signAsync
         .mockResolvedValueOnce('access-token')
@@ -117,16 +117,15 @@ describe('LoginUseCase', () => {
         'Chrome',
       );
 
-      expect(sessionsService.createSession)
-        .toHaveBeenCalledWith(
-          expect.objectContaining({
-            sesionId: 'test-uuid-1234-5678',
-            hashRefreshToken: 'hashed-refresh',
-            direccionIp: '127.0.0.1',
-            usuarioAgente: 'Chrome',
-            revocado: false,
-          }),
-        );
+      expect(sessionsService.createSession).toHaveBeenCalledWith(
+        expect.objectContaining({
+          sesionId: 'test-uuid-1234-5678',
+          hashRefreshToken: 'hashed-refresh',
+          direccionIp: '127.0.0.1',
+          usuarioAgente: 'Chrome',
+          revocado: false,
+        }),
+      );
     });
 
     it('should login successfully with minimal data retrieval', async () => {

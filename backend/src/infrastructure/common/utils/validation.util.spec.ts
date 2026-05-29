@@ -6,7 +6,9 @@ describe('ValidationUtil', () => {
 
   describe('requireNonEmpty', () => {
     it('string válido → no lanza', () => {
-      expect(() => ValidationUtil.requireNonEmpty('Juan', 'nombre')).not.toThrow();
+      expect(() =>
+        ValidationUtil.requireNonEmpty('Juan', 'nombre'),
+      ).not.toThrow();
     });
 
     it('string vacío → BadRequestException con fieldName', () => {
@@ -56,9 +58,9 @@ describe('ValidationUtil', () => {
     });
 
     it('string solo espacios → BadRequestException', () => {
-      expect(() =>
-        ValidationUtil.requireNonWhitespace('   ', 'campo'),
-      ).toThrow(BadRequestException);
+      expect(() => ValidationUtil.requireNonWhitespace('   ', 'campo')).toThrow(
+        BadRequestException,
+      );
     });
   });
 

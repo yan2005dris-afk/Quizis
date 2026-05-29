@@ -23,7 +23,9 @@ describe('Auth Register Integration', () => {
     app = await createAuthTestApp();
     prisma = app.get(PrismaService);
 
-    admin = await seedAdminUser(prisma, [{ recurso: 'users', accion: 'create' }]);
+    admin = await seedAdminUser(prisma, [
+      { recurso: 'users', accion: 'create' },
+    ]);
 
     // Ensure a default 'user' role exists (required by create-user use case)
     const existingDefaultRole = await prisma.roles.findFirst({
