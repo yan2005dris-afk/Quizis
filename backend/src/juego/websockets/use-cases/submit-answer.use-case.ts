@@ -20,8 +20,18 @@ export interface AnswerPayload {
 
 export type SubmitAnswerResult =
   | { status: 'pending'; votosRecibidos: number; totalRequeridos: number }
-  | { status: 'majority'; winningOpcionId: number; esCorrecta: boolean; feedback: string }
-  | { status: 'single'; winningOpcionId: number; esCorrecta: boolean; feedback: string }
+  | {
+      status: 'majority';
+      winningOpcionId: number;
+      esCorrecta: boolean;
+      feedback: string;
+    }
+  | {
+      status: 'single';
+      winningOpcionId: number;
+      esCorrecta: boolean;
+      feedback: string;
+    }
   | { status: 'no-majority' };
 
 @Injectable()
