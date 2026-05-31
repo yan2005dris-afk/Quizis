@@ -136,10 +136,7 @@ export class ConsensusCacheUseCase implements OnModuleInit, OnModuleDestroy {
     return entry ? new Map(entry.data) : new Map<string, number>();
   }
 
-  async getRequired(
-    token: string,
-    preguntaId: number,
-  ): Promise<Set<string>> {
+  async getRequired(token: string, preguntaId: number): Promise<Set<string>> {
     const key = this.getRequiredKey(token, preguntaId);
     const client = this.redisService.getClient();
 
