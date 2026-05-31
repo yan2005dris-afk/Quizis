@@ -89,7 +89,9 @@ describe('JoinRoomUseCase', () => {
 
     it('omite lógica de consenso si la pregunta ya fue respondida (status answered)', async () => {
       mockParticipantsCache.getOnlineParticipants.mockResolvedValue(['alice']);
-      mockRoomStateCache.getActiveQuestion.mockResolvedValue(mockActiveQuestion);
+      mockRoomStateCache.getActiveQuestion.mockResolvedValue(
+        mockActiveQuestion,
+      );
       mockRoomStateCache.getQuestionStatus.mockResolvedValue('answered');
 
       const result = await useCase.execute({
@@ -110,7 +112,9 @@ describe('JoinRoomUseCase', () => {
   describe('observador reconectándose', () => {
     it('omite consenso si el rol NO es estudiante', async () => {
       mockParticipantsCache.getOnlineParticipants.mockResolvedValue(['prof']);
-      mockRoomStateCache.getActiveQuestion.mockResolvedValue(mockActiveQuestion);
+      mockRoomStateCache.getActiveQuestion.mockResolvedValue(
+        mockActiveQuestion,
+      );
       mockRoomStateCache.getQuestionStatus.mockResolvedValue('released');
 
       const result = await useCase.execute({
@@ -127,7 +131,9 @@ describe('JoinRoomUseCase', () => {
 
     it('omite consenso si rol es undefined', async () => {
       mockParticipantsCache.getOnlineParticipants.mockResolvedValue(['guest']);
-      mockRoomStateCache.getActiveQuestion.mockResolvedValue(mockActiveQuestion);
+      mockRoomStateCache.getActiveQuestion.mockResolvedValue(
+        mockActiveQuestion,
+      );
       mockRoomStateCache.getQuestionStatus.mockResolvedValue('released');
 
       const result = await useCase.execute({
@@ -151,7 +157,9 @@ describe('JoinRoomUseCase', () => {
         'alice',
         'bob',
       ]);
-      mockRoomStateCache.getActiveQuestion.mockResolvedValue(mockActiveQuestion);
+      mockRoomStateCache.getActiveQuestion.mockResolvedValue(
+        mockActiveQuestion,
+      );
       mockRoomStateCache.getQuestionStatus.mockResolvedValue('released');
       mockConsensusCache.addToRequired.mockResolvedValue(undefined);
       mockEvaluateConsensus.execute.mockResolvedValue({
@@ -172,7 +180,10 @@ describe('JoinRoomUseCase', () => {
         1,
         'alice',
       );
-      expect(mockEvaluateConsensus.execute).toHaveBeenCalledWith('token-abc', 1);
+      expect(mockEvaluateConsensus.execute).toHaveBeenCalledWith(
+        'token-abc',
+        1,
+      );
       expect(result.consensusResult).toEqual({
         type: 'pending',
         votosRecibidos: 1,
@@ -182,7 +193,9 @@ describe('JoinRoomUseCase', () => {
 
     it('retorna consensusResult de tipo single si solo ese estudiante es requerido', async () => {
       mockParticipantsCache.getOnlineParticipants.mockResolvedValue(['alice']);
-      mockRoomStateCache.getActiveQuestion.mockResolvedValue(mockActiveQuestion);
+      mockRoomStateCache.getActiveQuestion.mockResolvedValue(
+        mockActiveQuestion,
+      );
       mockRoomStateCache.getQuestionStatus.mockResolvedValue('released');
       mockConsensusCache.addToRequired.mockResolvedValue(undefined);
       mockEvaluateConsensus.execute.mockResolvedValue({
