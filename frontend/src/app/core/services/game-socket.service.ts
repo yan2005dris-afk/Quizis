@@ -176,7 +176,7 @@ export class GameSocketService {
     });
 
     // Cuando la sala se finaliza (partida_finalizada), se deshabilita la sala
-    this.socket.on('partida_finalizada', (data: { totalParticipantes: number }) => {
+    this.socket.on('partida_finalizada', (_data: { totalParticipantes: number }) => {
       this.salaHabilitada.set(false);
     });
 
