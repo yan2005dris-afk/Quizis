@@ -2,7 +2,10 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ParticipantsCacheUseCase } from '../../../infrastructure/cache/use-cases/participants-cache.use-case';
 import { RoomStateCacheUseCase } from '../../../infrastructure/cache/use-cases/room-state-cache.use-case';
 import { ConsensusCacheUseCase } from '../../../infrastructure/cache/use-cases/consensus-cache.use-case';
-import { ConsensusResult, EvaluateConsensusUseCase } from './evaluate-consensus.use-case';
+import {
+  ConsensusResult,
+  EvaluateConsensusUseCase,
+} from './evaluate-consensus.use-case';
 
 @Injectable()
 export class JoinRoomUseCase {
