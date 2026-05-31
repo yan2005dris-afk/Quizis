@@ -63,7 +63,9 @@ export class JuegoGateway implements OnGatewayConnection, OnGatewayDisconnect {
     const pending = this.pendingBroadcasts.get(tokenCompartido);
     if (pending) {
       clearTimeout(pending.timer);
-      this.server.to(tokenCompartido).emit('voto_recibido', pending.distribucion);
+      this.server
+        .to(tokenCompartido)
+        .emit('voto_recibido', pending.distribucion);
       this.pendingBroadcasts.delete(tokenCompartido);
     }
   }
@@ -567,10 +569,11 @@ export class JuegoGateway implements OnGatewayConnection, OnGatewayDisconnect {
           await this.participantsCache.getOnlineParticipants(
             payload.tokenCompartido,
           );
-        const participantesDb = await this.salasService.getParticipantsWithRoles(
-          payload.tokenCompartido,
-          onlineNicknames,
-        );
+        const participantesDb =
+          await this.salasService.getParticipantsWithRoles(
+            payload.tokenCompartido,
+            onlineNicknames,
+          );
         const studentNicknames = participantesDb
           .filter((p: any) => p.rol === 'estudiante')
           .map((p: any) => p.nombre as string);
