@@ -83,7 +83,9 @@ describe('HandleDisconnectUseCase', () => {
 
     it('no llama lógica de consenso si la pregunta está en estado answered', async () => {
       mockParticipantsCache.getOnlineParticipants.mockResolvedValue(['bob']);
-      mockRoomStateCache.getActiveQuestion.mockResolvedValue(mockActiveQuestion);
+      mockRoomStateCache.getActiveQuestion.mockResolvedValue(
+        mockActiveQuestion,
+      );
       mockRoomStateCache.getQuestionStatus.mockResolvedValue('answered');
 
       const result = await useCase.execute(baseInfo);
@@ -99,7 +101,9 @@ describe('HandleDisconnectUseCase', () => {
   describe('desconexión antes de votar', () => {
     it('llama removeFromRequired, luego evaluateConsensus, retorna consensusResult', async () => {
       mockParticipantsCache.getOnlineParticipants.mockResolvedValue(['bob']);
-      mockRoomStateCache.getActiveQuestion.mockResolvedValue(mockActiveQuestion);
+      mockRoomStateCache.getActiveQuestion.mockResolvedValue(
+        mockActiveQuestion,
+      );
       mockRoomStateCache.getQuestionStatus.mockResolvedValue('released');
       // alice has NOT voted
       mockConsensusCache.getVotes.mockResolvedValue(new Map([['bob', 10]]));
@@ -117,7 +121,10 @@ describe('HandleDisconnectUseCase', () => {
         1,
         'alice',
       );
-      expect(mockEvaluateConsensus.execute).toHaveBeenCalledWith('token-abc', 1);
+      expect(mockEvaluateConsensus.execute).toHaveBeenCalledWith(
+        'token-abc',
+        1,
+      );
       expect(result.consensusResult).toEqual({
         type: 'pending',
         votosRecibidos: 1,
@@ -131,7 +138,9 @@ describe('HandleDisconnectUseCase', () => {
   describe('desconexión después de votar', () => {
     it('NO llama removeFromRequired, voto se retiene, evaluateConsensus sí se llama', async () => {
       mockParticipantsCache.getOnlineParticipants.mockResolvedValue(['bob']);
-      mockRoomStateCache.getActiveQuestion.mockResolvedValue(mockActiveQuestion);
+      mockRoomStateCache.getActiveQuestion.mockResolvedValue(
+        mockActiveQuestion,
+      );
       mockRoomStateCache.getQuestionStatus.mockResolvedValue('released');
       // alice HAS voted
       mockConsensusCache.getVotes.mockResolvedValue(
@@ -150,7 +159,10 @@ describe('HandleDisconnectUseCase', () => {
       const result = await useCase.execute(baseInfo);
 
       expect(mockConsensusCache.removeFromRequired).not.toHaveBeenCalled();
-      expect(mockEvaluateConsensus.execute).toHaveBeenCalledWith('token-abc', 1);
+      expect(mockEvaluateConsensus.execute).toHaveBeenCalledWith(
+        'token-abc',
+        1,
+      );
       expect(result.consensusResult).toEqual({
         type: 'majority',
         winningOpcionId: 10,
@@ -165,7 +177,9 @@ describe('HandleDisconnectUseCase', () => {
   describe('estructura del resultado', () => {
     it('retorna tokenCompartido, participants y consensusResult cuando hay pregunta activa', async () => {
       mockParticipantsCache.getOnlineParticipants.mockResolvedValue(['bob']);
-      mockRoomStateCache.getActiveQuestion.mockResolvedValue(mockActiveQuestion);
+      mockRoomStateCache.getActiveQuestion.mockResolvedValue(
+        mockActiveQuestion,
+      );
       mockRoomStateCache.getQuestionStatus.mockResolvedValue('released');
       mockConsensusCache.getVotes.mockResolvedValue(new Map());
       mockConsensusCache.removeFromRequired.mockResolvedValue(undefined);
