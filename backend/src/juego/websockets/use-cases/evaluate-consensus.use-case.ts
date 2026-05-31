@@ -3,7 +3,12 @@ import { ConsensusCacheUseCase } from '../../../infrastructure/cache/use-cases/c
 
 export type ConsensusResult =
   | { type: 'pending'; votosRecibidos: number; totalRequeridos: number }
-  | { type: 'majority'; winningOpcionId: number; votosRecibidos: number; totalRequeridos: number }
+  | {
+      type: 'majority';
+      winningOpcionId: number;
+      votosRecibidos: number;
+      totalRequeridos: number;
+    }
   | { type: 'no-majority'; votosRecibidos: number; totalRequeridos: number }
   | { type: 'single'; winningOpcionId: number };
 
@@ -51,7 +56,12 @@ export class EvaluateConsensusUseCase {
         this.logger.log(
           `Mayoría encontrada: opcionId=${opcionId} con ${count}/${totalRequeridos} votos`,
         );
-        return { type: 'majority', winningOpcionId: opcionId, votosRecibidos, totalRequeridos };
+        return {
+          type: 'majority',
+          winningOpcionId: opcionId,
+          votosRecibidos,
+          totalRequeridos,
+        };
       }
     }
 

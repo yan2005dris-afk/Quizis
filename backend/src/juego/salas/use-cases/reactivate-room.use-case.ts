@@ -7,7 +7,6 @@ import {
 import { PrismaService } from '../../../infrastructure/database/prisma/prisma.service';
 import { RoomStateCacheUseCase } from '../../../infrastructure/cache/use-cases/room-state-cache.use-case';
 import { EstadoSala } from '../dto/update-estado-sala.dto';
-import { RegenerateRoomTokenUseCase } from './regenerate-room-token.use-case';
 import { randomUUID } from 'crypto';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';

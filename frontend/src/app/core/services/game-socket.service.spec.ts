@@ -51,10 +51,7 @@ describe('GameSocketService (observer extension)', () => {
     mockSocket = createMockSocket();
 
     TestBed.configureTestingModule({
-      providers: [
-        GameSocketService,
-        { provide: ToastService, useValue: mockToastService },
-      ],
+      providers: [GameSocketService, { provide: ToastService, useValue: mockToastService }],
     });
     service = TestBed.inject(GameSocketService);
 
@@ -263,7 +260,9 @@ describe('GameSocketService (observer extension)', () => {
 
       mockSocket.trigger('comodin_llamada_error', { message: 'Consultor no disponible' });
 
-      expect(mockToasts.some(t => t.message === 'Consultor no disponible' && t.type === 'warning')).toBe(true);
+      expect(
+        mockToasts.some((t) => t.message === 'Consultor no disponible' && t.type === 'warning'),
+      ).toBe(true);
     });
 
     it('should show alert on enviar_pista_error', () => {
@@ -271,7 +270,9 @@ describe('GameSocketService (observer extension)', () => {
 
       mockSocket.trigger('enviar_pista_error', { message: 'Tiempo agotado' });
 
-      expect(mockToasts.some(t => t.message === 'Tiempo agotado' && t.type === 'warning')).toBe(true);
+      expect(mockToasts.some((t) => t.message === 'Tiempo agotado' && t.type === 'warning')).toBe(
+        true,
+      );
     });
   });
 

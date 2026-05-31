@@ -40,6 +40,11 @@ describe('ActiveQuestionComponent', () => {
       ultimoResultado: mockUltimoResultado,
       ultimoComodinBloqueado: signal<any>(null),
       opcionesEliminadas: mockOpcionesEliminadas,
+      votantesConfirmados: signal<number>(0),
+      totalVotantesRequeridos: signal<number>(0),
+      esperandoConsenso: signal<boolean>(false),
+      revotoSolicitado: signal<boolean>(false),
+      resetRevoto: vi.fn(),
     } as unknown as GameSocketService;
 
     await TestBed.configureTestingModule({
