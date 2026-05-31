@@ -11,7 +11,6 @@ describe('SubmitAnswerUseCase', () => {
   let cacheService: typeof mockCacheService;
   let recordAnswerUseCase: typeof mockRecordAnswerUseCase;
   let consensusCache: typeof mockConsensusCacheUseCase;
-  let evaluateConsensus: typeof mockEvaluateConsensusUseCase;
 
   const mockCacheService = {
     getActiveQuestion: jest.fn(),
@@ -60,7 +59,10 @@ describe('SubmitAnswerUseCase', () => {
         { provide: RoomStateCacheUseCase, useValue: mockCacheService },
         { provide: RecordAnswerUseCase, useValue: mockRecordAnswerUseCase },
         { provide: ConsensusCacheUseCase, useValue: mockConsensusCacheUseCase },
-        { provide: EvaluateConsensusUseCase, useValue: mockEvaluateConsensusUseCase },
+        {
+          provide: EvaluateConsensusUseCase,
+          useValue: mockEvaluateConsensusUseCase,
+        },
       ],
     }).compile();
 
@@ -68,7 +70,6 @@ describe('SubmitAnswerUseCase', () => {
     cacheService = module.get(RoomStateCacheUseCase);
     recordAnswerUseCase = module.get(RecordAnswerUseCase);
     consensusCache = module.get(ConsensusCacheUseCase);
-    evaluateConsensus = module.get(EvaluateConsensusUseCase);
     jest.clearAllMocks();
   });
 
@@ -282,7 +283,10 @@ describe('SubmitAnswerUseCase', () => {
       const result = await useCase.execute(basePayload);
 
       expect(result.status).toBe('no-majority');
-      expect(consensusCache.clearConsensus).toHaveBeenCalledWith('token-abc', 1);
+      expect(consensusCache.clearConsensus).toHaveBeenCalledWith(
+        'token-abc',
+        1,
+      );
       expect(recordAnswerUseCase.execute).not.toHaveBeenCalled();
     });
   });
