@@ -6,7 +6,9 @@
 import { PrismaClient } from '../../src/generated/prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 
-const dbUrl = process.env.DATABASE_URL ?? 'postgresql://admin:root123@localhost:5433/quizis_db';
+const dbUrl =
+  process.env.DATABASE_URL ??
+  'postgresql://admin:root123@localhost:5433/quizis_db';
 const adapter = new PrismaPg({ connectionString: dbUrl });
 const prisma = new PrismaClient({ adapter } as any);
 
@@ -25,14 +27,18 @@ async function main() {
   });
 
   if (!sala) {
-    console.error('ERROR: No hay salas disponibles. Crea una desde el frontend primero.');
+    console.error(
+      'ERROR: No hay salas disponibles. Crea una desde el frontend primero.',
+    );
     process.exit(1);
   }
 
   const ronda = sala.rondas[0];
 
   if (!ronda) {
-    console.error('ERROR: La sala no tiene rondas. Inicia una partida desde el frontend.');
+    console.error(
+      'ERROR: La sala no tiene rondas. Inicia una partida desde el frontend.',
+    );
     process.exit(1);
   }
 
@@ -52,8 +58,12 @@ async function main() {
   console.log(`SALA_ID:       ${sala.salaId}`);
   console.log(`RONDA_ID:      ${ronda.rondaId}`);
   console.log(`PREGUNTA_ID:   ${pregunta.preguntaId}`);
-  console.log(`OPCION_IDS:    ${pregunta.opciones.map((o) => o.opcionId).join(', ')}`);
-  console.log('\nIMPORTANTE: Libera la pregunta desde el frontend antes de correr el test.');
+  console.log(
+    `OPCION_IDS:    ${pregunta.opciones.map((o) => o.opcionId).join(', ')}`,
+  );
+  console.log(
+    '\nIMPORTANTE: Libera la pregunta desde el frontend antes de correr el test.',
+  );
 }
 
 main()

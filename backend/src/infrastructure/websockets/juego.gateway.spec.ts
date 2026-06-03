@@ -6,10 +6,14 @@ import { RoomStateCacheUseCase } from '../cache/use-cases/room-state-cache.use-c
 import { ParticipantsCacheUseCase } from '../cache/use-cases/participants-cache.use-case';
 import { ChatCacheUseCase } from '../cache/use-cases/chat-cache.use-case';
 import { HelperCacheUseCase } from '../cache/use-cases/helper-cache.use-case';
+import { ConsensusCacheUseCase } from '../cache/use-cases/consensus-cache.use-case';
+import { EvaluateConsensusUseCase } from '../../juego/websockets/use-cases/evaluate-consensus.use-case';
 
 describe('JuegoGateway — handleComodinBloqueado', () => {
   let gateway: JuegoGateway;
-  let roomStateCache: jest.Mocked<Pick<RoomStateCacheUseCase, 'addBlockedComodin'>>;
+  let roomStateCache: jest.Mocked<
+    Pick<RoomStateCacheUseCase, 'addBlockedComodin'>
+  >;
 
   const mockEmit = jest.fn();
   const mockTo = jest.fn().mockReturnValue({ emit: mockEmit });
@@ -28,6 +32,8 @@ describe('JuegoGateway — handleComodinBloqueado', () => {
         { provide: ParticipantsCacheUseCase, useValue: {} },
         { provide: ChatCacheUseCase, useValue: {} },
         { provide: HelperCacheUseCase, useValue: {} },
+        { provide: ConsensusCacheUseCase, useValue: {} },
+        { provide: EvaluateConsensusUseCase, useValue: {} },
       ],
     }).compile();
 
@@ -50,7 +56,10 @@ describe('JuegoGateway — handleComodinBloqueado', () => {
 
     await gateway.handleComodinBloqueado(payload);
 
-    expect(roomStateCache.addBlockedComodin).toHaveBeenCalledWith('token-123', 'IA');
+    expect(roomStateCache.addBlockedComodin).toHaveBeenCalledWith(
+      'token-123',
+      'IA',
+    );
     expect(mockTo).toHaveBeenCalledWith('token-123');
     expect(mockEmit).toHaveBeenCalledTimes(1);
     expect(mockEmit).toHaveBeenCalledWith('comodin_bloqueado', payload);
@@ -65,7 +74,10 @@ describe('JuegoGateway — handleComodinBloqueado', () => {
 
     await gateway.handleComodinBloqueado(payload);
 
-    expect(roomStateCache.addBlockedComodin).toHaveBeenCalledWith('token-123', 'PUBLICO');
+    expect(roomStateCache.addBlockedComodin).toHaveBeenCalledWith(
+      'token-123',
+      'PUBLICO',
+    );
     expect(mockEmit).toHaveBeenCalledTimes(2);
     expect(mockEmit).toHaveBeenCalledWith('comodin_bloqueado', payload);
     expect(mockEmit).toHaveBeenCalledWith('voto_recibido', {

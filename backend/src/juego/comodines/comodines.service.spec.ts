@@ -13,8 +13,6 @@ describe('ComodinesService', () => {
   let selectRandomConsultantUseCase: SelectRandomConsultantUseCase;
   let getPublicVoteResultsUseCase: GetPublicVoteResultsUseCase;
   let eliminateOptions5050UseCase: EliminateOptions5050UseCase;
-  let prisma: PrismaService;
-  let eventEmitter: EventEmitter2;
 
   const mockGetIaSuggestionUseCase = { execute: jest.fn() };
   const mockSelectRandomConsultantUseCase = { execute: jest.fn() };
@@ -63,8 +61,6 @@ describe('ComodinesService', () => {
     eliminateOptions5050UseCase = module.get<EliminateOptions5050UseCase>(
       EliminateOptions5050UseCase,
     );
-    eventEmitter = module.get<EventEmitter2>(EventEmitter2);
-    prisma = module.get<PrismaService>(PrismaService);
   });
 
   afterEach(() => {

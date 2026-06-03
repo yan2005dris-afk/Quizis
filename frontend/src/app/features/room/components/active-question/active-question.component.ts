@@ -110,6 +110,15 @@ export class ActiveQuestionComponent {
 
     // Clear 50/50 when round restarts (service signal is already cleared via WS event)
 
+    // Reaccionar a re-voto solicitado por el servidor (sin mayoría en consenso de equipo)
+    effect(() => {
+      if (this.gameSocket.revotoSolicitado()) {
+        this.respuestaConfirmada.set(false);
+        this.localSelectedId.set(null);
+        this.gameSocket.resetRevoto();
+      }
+    });
+
     // Reaccionar a respuestas en tiempo real vía socket
     effect(() => {
       const result = this.gameSocket.ultimoResultado();

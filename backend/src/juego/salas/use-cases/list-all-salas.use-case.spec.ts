@@ -4,7 +4,6 @@ import { PrismaService } from '../../../infrastructure/database/prisma/prisma.se
 
 describe('ListAllSalasUseCase', () => {
   let useCase: ListAllSalasUseCase;
-  let prisma: PrismaService;
 
   const mockPrisma = {
     salas: {
@@ -24,7 +23,6 @@ describe('ListAllSalasUseCase', () => {
     }).compile();
 
     useCase = module.get<ListAllSalasUseCase>(ListAllSalasUseCase);
-    prisma = module.get<PrismaService>(PrismaService);
     jest.clearAllMocks();
   });
 

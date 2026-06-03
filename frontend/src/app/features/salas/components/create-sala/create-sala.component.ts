@@ -20,7 +20,7 @@ import {
   Phone,
   Users,
 } from 'lucide-angular';
-import { ButtonComponent, AlertComponent } from '../../../../shared/ui';
+import { AlertComponent } from '../../../../shared/ui';
 import {
   BancosService,
   BancoPreguntas,

@@ -1,5 +1,4 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { signal } from '@angular/core';
 import { describe, it, expect, beforeEach } from 'vitest';
 import { GameOverComponent, GameOverParticipant } from './game-over.component';
 import { ReportesService } from '../../../../core/services/reportes.service';
@@ -76,7 +75,6 @@ function createMockReportesService() {
 }
 
 describe('GameOverComponent', () => {
-  let component: GameOverComponent;
   let fixture: ComponentFixture<GameOverComponent>;
 
   beforeEach(async () => {
@@ -86,7 +84,6 @@ describe('GameOverComponent', () => {
     }).compileComponents();
 
     fixture = TestBed.createComponent(GameOverComponent);
-    component = fixture.componentInstance;
     fixture.componentRef.setInput('salaId', 1);
     fixture.componentRef.setInput('nombreSala', 'Test Sala');
     fixture.detectChanges();

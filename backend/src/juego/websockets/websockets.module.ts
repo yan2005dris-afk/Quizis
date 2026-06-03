@@ -14,6 +14,7 @@ import { ToggleRoomEnabledUseCase } from './use-cases/toggle-room-enabled.use-ca
 import { SendMessageUseCase } from './use-cases/send-message.use-case';
 import { ActivateCallJokerUseCase } from './use-cases/activate-call-joker.use-case';
 import { SendHintUseCase } from './use-cases/send-hint.use-case';
+import { EvaluateConsensusUseCase } from './use-cases/evaluate-consensus.use-case';
 
 @Module({
   imports: [CacheModule, VotosModule, RespuestasModule, ComodinesModule],
@@ -29,6 +30,7 @@ import { SendHintUseCase } from './use-cases/send-hint.use-case';
     SendMessageUseCase,
     ActivateCallJokerUseCase,
     SendHintUseCase,
+    EvaluateConsensusUseCase,
   ],
   exports: [WebsocketsService],
 })
