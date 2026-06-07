@@ -30,14 +30,26 @@
 
         <div class="questions-list">
           @for (pregunta of preguntasList(); track pregunta.preguntaId || $index; let i = $index) {
-            <button
-              class="nav-item nav-item--question"
-              [class.active]="selectedQuestionId() === (pregunta.preguntaId || i)"
-              (click)="selectQuestion(pregunta.preguntaId || i)"
-            >
-              <span class="q-num">{{ i + 1 }}</span>
-              <span class="q-text">{{ pregunta.texto }}</span>
-            </button>
+            <div class="nav-item-wrapper">
+              <button
+                class="nav-item nav-item--question"
+                [class.active]="selectedQuestionId() === (pregunta.preguntaId || i)"
+                (click)="selectQuestion(pregunta.preguntaId || i)"
+              >
+                <span class="q-num">{{ i + 1 }}</span>
+                <span class="q-text">{{ pregunta.texto }}</span>
+              </button>
+              @if (!isNewBank() && pregunta.preguntaId) {
+                <button
+                  class="btn-delete-question"
+                  title="Eliminar pregunta"
+                  (click)="onEliminarPregunta(pregunta.preguntaId)"
+                  aria-label="Eliminar pregunta {{ i + 1 }}"
+                >
+                  ✕
+                </button>
+              }
+            </div>
           }
         </div>
 
@@ -469,3 +481,12 @@
     }
   </main>
 </div>
+
+@if (preguntaAEliminar() !== null) {
+  <app-confirm-modal
+    title="Eliminar pregunta"
+    message="¿Estás seguro de que querés eliminar esta pregunta? Esta acción no se puede deshacer."
+    (confirmed)="confirmarEliminar()"
+    (cancelled)="cancelarEliminar()"
+  />
+}
