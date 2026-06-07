@@ -15,7 +15,6 @@ import {
   ChevronLeft,
   ChevronRight,
   BrainCircuit,
-  Loader2,
 } from 'lucide-angular';
 import { AudienceBarsComponent, TimerComponent, QuestionProgressComponent, WildcardsPanelComponent } from '../../../../../shared/ui';
 import { ComodinSala, SalasService } from '../../../../../core/services/salas.service';
