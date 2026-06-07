@@ -1,0 +1,52 @@
+.timer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 0;
+
+  &__track {
+    flex: 1;
+    height: 6px;
+    border-radius: var(--radius-full);
+    background: var(--color-border);
+    overflow: hidden;
+  }
+
+  &__fill {
+    height: 100%;
+    border-radius: var(--radius-full);
+    background: var(--timer-color, var(--color-success));
+    transition:
+      width 0.9s linear,
+      background var(--transition-slow);
+  }
+
+  &__value {
+    min-width: 36px;
+    text-align: right;
+    font-weight: 700;
+    font-size: var(--text-sm);
+    color: var(--timer-color, var(--color-success));
+    transition: color var(--transition-slow);
+  }
+
+  &--advertencia {
+    --timer-color: var(--color-warning);
+  }
+
+  &--urgente {
+    --timer-color: var(--color-danger);
+
+    .timer__fill,
+    .timer__value {
+      animation: pulse 0.75s ease-in-out infinite;
+    }
+  }
+
+  &__transition {
+    text-align: center;
+    font-size: var(--text-sm);
+    color: var(--color-sub);
+    padding: 4px 0;
+  }
+}
