@@ -24,6 +24,7 @@ export interface SalaDetalle {
   nombre: string;
   estado: EstadoSala;
   limitePreguntas: number;
+  tiempoLimitePregunta: number;
   tokenCompartido: string;
   creadoEn: string;
   participantes: {
@@ -101,6 +102,7 @@ export class SalasService {
       nombre?: string;
       limitePreguntas?: number;
       maxEstudiantes?: number;
+      tiempoLimitePregunta?: number;
       comodines?: { comodinId: number; activo: boolean }[];
     },
   ): Observable<SalaDetalle> {

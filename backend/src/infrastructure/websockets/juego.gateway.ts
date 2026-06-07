@@ -47,6 +47,11 @@ export class JuegoGateway implements OnGatewayConnection, OnGatewayDisconnect {
     { distribucion: any; timer: NodeJS.Timeout }
   >();
 
+  /**
+   * Timers server-authoritative: tokenCompartido → interval activo
+   */
+  private readonly timersActivos = new Map<string, NodeJS.Timeout>();
+
   private scheduleBroadcast(tokenCompartido: string, distribucion: any): void {
     const existing = this.pendingBroadcasts.get(tokenCompartido);
     if (existing) clearTimeout(existing.timer);
@@ -119,6 +124,14 @@ export class JuegoGateway implements OnGatewayConnection, OnGatewayDisconnect {
         socketId: client.id,
       });
       this.socketMap.delete(client.id);
+
+      // Detener timer si la sala quedó vacía
+      const remainingInRoom = [...this.socketMap.values()].filter(
+        (v) => v.tokenCompartido === info.tokenCompartido,
+      ).length;
+      if (remainingInRoom === 0) {
+        this.detenerTimer(info.tokenCompartido);
+      }
 
       const participantesDb = await this.salasService.getParticipantsWithRoles(
         info.tokenCompartido,
@@ -359,6 +372,7 @@ export class JuegoGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
         case 'majority':
         case 'single':
+          this.detenerTimer(payload.tokenCompartido);
           this.server.to(payload.tokenCompartido).emit('pregunta_respondida', {
             preguntaId: payload.preguntaId,
             opcionId: result.winningOpcionId,
@@ -485,6 +499,7 @@ export class JuegoGateway implements OnGatewayConnection, OnGatewayDisconnect {
       `[WS:REINICIAR_RONDA] Recibido para token=${payload.tokenCompartido}`,
     );
     try {
+      this.detenerTimer(payload.tokenCompartido);
       await this.roomStateCache.clearRoundState(payload.tokenCompartido);
       this.logger.log(`[WS:REINICIAR_RONDA] Redis limpiado`);
 
@@ -594,6 +609,16 @@ export class JuegoGateway implements OnGatewayConnection, OnGatewayDisconnect {
         );
       }
 
+      // 4. Iniciar timer server-authoritative
+      try {
+        const tiempoLimite = await this.salasService.getTiempoLimite(
+          payload.tokenCompartido,
+        );
+        await this.iniciarTimer(payload.tokenCompartido, tiempoLimite);
+      } catch (timerError) {
+        this.logger.error(`[TIMER] Error iniciando timer: ${timerError}`);
+      }
+
       return { success: true };
     } catch (error: any) {
       this.logger.warn(`Bloqueo de liberación: ${error.message}`);
@@ -602,15 +627,6 @@ export class JuegoGateway implements OnGatewayConnection, OnGatewayDisconnect {
         message: error.message,
       };
     }
-  }
-
-  @SubscribeMessage('temporizador_actualizado')
-  handleTemporizador(
-    @MessageBody() payload: { tokenCompartido: string; tiempoRestante: number },
-  ) {
-    this.server
-      .to(payload.tokenCompartido)
-      .emit('temporizador_actualizado', payload.tiempoRestante);
   }
 
   @SubscribeMessage('comodin_bloqueado')
@@ -739,6 +755,7 @@ export class JuegoGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
       case 'majority':
       case 'single':
+        this.detenerTimer(token);
         this.server.to(token).emit('pregunta_respondida', {
           preguntaId,
           opcionId: result.winningOpcionId,
@@ -769,5 +786,44 @@ export class JuegoGateway implements OnGatewayConnection, OnGatewayDisconnect {
       }
     }
     return undefined;
+  }
+
+  private async iniciarTimer(
+    tokenCompartido: string,
+    segundos: number,
+  ): Promise<void> {
+    this.detenerTimer(tokenCompartido);
+    if (segundos <= 0) return;
+
+    let remaining = segundos;
+    this.server.to(tokenCompartido).emit('temporizador_actualizado', remaining);
+
+    const tick = setInterval(() => {
+      remaining -= 1;
+      this.server.to(tokenCompartido).emit('temporizador_actualizado', remaining);
+
+      if (remaining <= 0) {
+        this.detenerTimer(tokenCompartido);
+        this.server.to(tokenCompartido).emit('tiempo_agotado', { tokenCompartido });
+        setTimeout(() => {
+          this.server
+            .to(tokenCompartido)
+            .emit('transicion_pregunta', { segundos: 3 });
+        }, 500);
+        this.logger.log(`[TIMER] Tiempo agotado para sala ${tokenCompartido}`);
+      }
+    }, 1000);
+
+    this.timersActivos.set(tokenCompartido, tick);
+    this.logger.log(`[TIMER] Iniciado para sala ${tokenCompartido}: ${segundos}s`);
+  }
+
+  private detenerTimer(tokenCompartido: string): void {
+    const existing = this.timersActivos.get(tokenCompartido);
+    if (existing) {
+      clearInterval(existing);
+      this.timersActivos.delete(tokenCompartido);
+      this.logger.log(`[TIMER] Detenido para sala ${tokenCompartido}`);
+    }
   }
 }

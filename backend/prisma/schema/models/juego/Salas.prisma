@@ -7,8 +7,9 @@ model Salas {
   estado           String    @default("BORRADOR") @map("estado") // BORRADOR, ESPERANDO_ALUMNOS, EN_VIVO, FINALIZADO
 
   // Configuración
-  limitePreguntas  Int       @default(15) @map("limite_preguntas")
-  maxEstudiantes   Int       @default(1) @map("max_estudiantes")
+  limitePreguntas      Int @default(15) @map("limite_preguntas")
+  maxEstudiantes       Int @default(1)  @map("max_estudiantes")
+  tiempoLimitePregunta Int @default(30) @map("tiempo_limite_pregunta")
 
   
   createdAt        DateTime  @default(now()) @map("creado_en")

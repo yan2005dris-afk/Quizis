@@ -5,30 +5,31 @@
         <p class="observer-card__status"><span class="status-dot"></span> {{ statusText() }}</p>
 
         <!-- Temporizador visual -->
-        @if (tiempoRestante(); as t) {
-          <div class="observer-card__timer" [class.observer-card__timer--low]="t <= 5">
-            ⏱️ {{ t }}s
-          </div>
-        }
+        <app-timer [tiempoRestante]="tiempoRestante()" [totalTiempo]="totalTiempo()" />
 
-        <div class="observer-card__pagination">
-          <button
-            class="pagination-btn"
-            [disabled]="currentIndex() === 0"
-            (click)="prevQuestion()"
-            title="Pregunta anterior"
-          >
-            <lucide-icon [name]="PrevIcon" size="16"></lucide-icon>
-          </button>
-          <span class="pagination-info"> {{ currentIndex() + 1 }} / {{ preguntas().length }} </span>
-          <button
-            class="pagination-btn"
-            [disabled]="currentIndex() === maxVisibleIndex()"
-            (click)="nextQuestion()"
-            title="Siguiente pregunta"
-          >
-            <lucide-icon [name]="NextIcon" size="16"></lucide-icon>
-          </button>
+        <div class="observer-card__progress-wrapper">
+          <app-question-progress [segmentos]="segmentosProgreso()" />
+          <div class="observer-card__pagination">
+            <button
+              class="pagination-btn"
+              [disabled]="currentIndex() === 0"
+              (click)="prevQuestion()"
+              title="Pregunta anterior"
+            >
+              <lucide-icon [name]="PrevIcon" size="16"></lucide-icon>
+            </button>
+            <span class="pagination-info">
+              {{ currentIndex() + 1 }} / {{ preguntas().length }}
+            </span>
+            <button
+              class="pagination-btn"
+              [disabled]="currentIndex() === maxVisibleIndex()"
+              (click)="nextQuestion()"
+              title="Siguiente pregunta"
+            >
+              <lucide-icon [name]="NextIcon" size="16"></lucide-icon>
+            </button>
+          </div>
         </div>
       </div>
 

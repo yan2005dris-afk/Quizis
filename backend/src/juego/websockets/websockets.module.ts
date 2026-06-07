@@ -32,6 +32,6 @@ import { EvaluateConsensusUseCase } from './use-cases/evaluate-consensus.use-cas
     SendHintUseCase,
     EvaluateConsensusUseCase,
   ],
-  exports: [WebsocketsService],
+  exports: [WebsocketsService, EvaluateConsensusUseCase],
 })
 export class WebsocketsModule {}

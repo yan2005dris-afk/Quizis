@@ -164,4 +164,9 @@ export class SalasService {
   async reactivarSala(salaId: number) {
     return this.reactivateRoomUseCase.execute(salaId);
   }
+
+  async getTiempoLimite(tokenCompartido: string): Promise<number> {
+    const sala = await this.getSalaDetailsUseCase.execute(tokenCompartido);
+    return (sala as any).tiempoLimitePregunta ?? 30;
+  }
 }
