@@ -112,63 +112,23 @@ export class FileParserService {
       reader.onload = () => {
         try {
           const content = JSON.parse(reader.result as string);
-          let preguntasRaw: unknown[] = [];
+          const arrayResult = this.extractPreguntasArray(content);
 
-          if (Array.isArray(content)) {
-            preguntasRaw = content;
-          } else if (content.preguntas && Array.isArray(content.preguntas)) {
-            preguntasRaw = content.preguntas;
-          } else {
-            resolve({
-              preguntas: [],
-              errores: [{ fila: 0, mensaje: 'El JSON no contiene un array de preguntas.' }],
-              total: 0,
-            });
+          if ('mensaje' in arrayResult) {
+            resolve({ preguntas: [], errores: [arrayResult], total: 0 });
             return;
           }
 
           const preguntas: PreguntaDto[] = [];
           const errores: ParseError[] = [];
 
-          preguntasRaw.forEach((raw, i) => {
-            const item = raw as Record<string, unknown>;
-            const texto = item['texto'] as string | undefined;
-            const opcionesRaw = item['opciones'] as unknown[] | undefined;
-
-            const fieldErrors: string[] = [];
-            if (!texto || typeof texto !== 'string') fieldErrors.push('texto requerido');
-            if (!Array.isArray(opcionesRaw) || opcionesRaw.length < 2)
-              fieldErrors.push('opciones requeridas (mín. 2)');
-
-            if (fieldErrors.length > 0) {
-              errores.push({ fila: i + 1, mensaje: fieldErrors.join(', ') });
-              return;
+          arrayResult.forEach((raw, i) => {
+            const result = this.mapJsonRow(raw as Record<string, unknown>, i + 1);
+            if ('mensaje' in result) {
+              errores.push(result);
+            } else {
+              preguntas.push(result);
             }
-
-            const opciones = opcionesRaw!.map((o) => {
-              const opt = o as Record<string, unknown>;
-              return {
-                texto: String(opt['texto'] ?? ''),
-                esCorrecta: Boolean(opt['esCorrecta']),
-              };
-            });
-
-            const hasCorrecta = opciones.some((o) => o.esCorrecta);
-            if (!hasCorrecta) {
-              errores.push({ fila: i + 1, mensaje: 'Debe haber exactamente una opción correcta' });
-              return;
-            }
-
-            preguntas.push({
-              texto: texto!,
-              opciones,
-              categoria: item['categoria'] as string | undefined,
-              nivel: item['nivel'] as number | undefined,
-              monto: item['monto'] as number | undefined,
-              feedbackCorrecto: item['feedbackCorrecto'] as string | undefined,
-              feedbackIncorrecto: item['feedbackIncorrecto'] as string | undefined,
-              tiempoLimite: item['tiempoLimite'] as number | undefined,
-            });
           });
 
           resolve({ preguntas, errores, total: preguntas.length });
@@ -183,6 +143,60 @@ export class FileParserService {
       reader.onerror = () => reject(new Error('Error al leer el archivo.'));
       reader.readAsText(file);
     });
+  }
+
+  /**
+   * Extrae el array de preguntas desde distintas estructuras JSON.
+   * Soporta array directo o { preguntas: [...] }.
+   * Retorna el array si es válido, o un ParseError en caso contrario.
+   */
+  private extractPreguntasArray(content: unknown): unknown[] | ParseError {
+    if (Array.isArray(content)) return content;
+
+    const obj = content as Record<string, unknown>;
+    if (obj['preguntas'] && Array.isArray(obj['preguntas'])) return obj['preguntas'];
+
+    return { fila: 0, mensaje: 'El JSON no contiene un array de preguntas.' };
+  }
+
+  /**
+   * Mapea una fila JSON cruda a PreguntaDto validado, o retorna un ParseError.
+   */
+  private mapJsonRow(raw: Record<string, unknown>, fila: number): PreguntaDto | ParseError {
+    const texto = raw['texto'] as string | undefined;
+    const opcionesRaw = raw['opciones'] as unknown[] | undefined;
+
+    const fieldErrors: string[] = [];
+    if (!texto || typeof texto !== 'string') fieldErrors.push('texto requerido');
+    if (!Array.isArray(opcionesRaw) || opcionesRaw.length < 2)
+      fieldErrors.push('opciones requeridas (mín. 2)');
+
+    if (fieldErrors.length > 0) {
+      return { fila, mensaje: fieldErrors.join(', ') };
+    }
+
+    const opciones: OpcionDto[] = opcionesRaw!.map((o) => {
+      const opt = o as Record<string, unknown>;
+      return {
+        texto: String(opt['texto'] ?? ''),
+        esCorrecta: Boolean(opt['esCorrecta']),
+      };
+    });
+
+    if (!opciones.some((o) => o.esCorrecta)) {
+      return { fila, mensaje: 'Debe haber exactamente una opción correcta' };
+    }
+
+    return {
+      texto: texto!,
+      opciones,
+      categoria: raw['categoria'] as string | undefined,
+      nivel: raw['nivel'] as number | undefined,
+      monto: raw['monto'] as number | undefined,
+      feedbackCorrecto: raw['feedbackCorrecto'] as string | undefined,
+      feedbackIncorrecto: raw['feedbackIncorrecto'] as string | undefined,
+      tiempoLimite: raw['tiempoLimite'] as number | undefined,
+    };
   }
 
   // ── Tabular parsing (CSV / Excel) ─────────────────────

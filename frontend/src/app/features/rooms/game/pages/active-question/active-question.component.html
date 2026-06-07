@@ -110,44 +110,14 @@
       }
     </div>
 
-    <div class="observer-wildcards-panel observer-wildcards-panel--inline">
-      <div class="wildcards-title">Comodines</div>
-
-      <div class="wildcards-grid">
-        @for (comodin of comodines(); track comodin.nombre) {
-          @if (comodin.activo) {
-            <div
-              class="wildcard-node"
-              [class.wildcard-node--active]="comodin.nombre === 'PUBLICO' && comodinPublicoActivo()"
-              [class.wildcard-node--disabled]="isComodinUsado(comodin)"
-              [class.wildcard-node--clickable]="interactive() && !isComodinUsado(comodin)"
-              [title]="comodin.descripcion + ' - ' + getComodinEstadoTexto(comodin)"
-              role="button"
-              tabindex="0"
-              (click)="onComodinClick(comodin)"
-              (keyup.enter)="onComodinClick(comodin)"
-            >
-              <div class="wildcard-node__icon">
-                @if (comodin.nombre === 'IA' && cargandoIa()) {
-                  <lucide-icon [name]="LoaderIcon" size="16" class="observer-spin"></lucide-icon>
-                } @else {
-                  <span>{{ comodin.icono }}</span>
-                }
-              </div>
-              <span class="wildcard-node__label">{{ comodin.nombre | titlecase }}</span>
-              <span
-                class="wildcard-node__state"
-                [class.wildcard-node__state--used]="isComodinUsado(comodin)"
-              >
-                {{ getComodinEstadoTexto(comodin) }}
-              </span>
-            </div>
-          }
-        } @empty {
-          <p class="wildcards-empty">No hay comodines configurados en esta sesion.</p>
-        }
-      </div>
-    </div>
+    <app-wildcards-panel
+      [comodines]="comodines()"
+      [cargandoIa]="cargandoIa()"
+      [comodinPublicoActivo]="comodinPublicoActivo()"
+      [interactive]="interactive()"
+      [comodinBloqueado]="comodinBloqueado()"
+      (comodinClick)="onComodinClick($event)"
+    />
 
     <!-- Feedback después de responder -->
     @if (showFeedback(); as visible) {
@@ -194,46 +164,6 @@
         <p class="observer-ia-box__explanation">{{ sug.explicacion }}</p>
       </div>
     }
-
-    <!-- Panel de Comodines -->
-    <div class="observer-wildcards-panel">
-      <p class="wildcards-title">COMODINES EN ESTA RONDA</p>
-
-      <div class="wildcards-grid">
-        @for (comodin of comodines(); track comodin.nombre) {
-          @if (comodin.activo) {
-            <div
-              class="wildcard-node"
-              [class.wildcard-node--active]="comodin.nombre === 'PUBLICO' && comodinPublicoActivo()"
-              [class.wildcard-node--disabled]="isComodinUsado(comodin)"
-              [class.wildcard-node--clickable]="interactive() && !isComodinUsado(comodin)"
-              [title]="comodin.descripcion + ' · ' + getComodinEstadoTexto(comodin)"
-              role="button"
-              tabindex="0"
-              (click)="onComodinClick(comodin)"
-              (keyup.enter)="onComodinClick(comodin)"
-            >
-              <div class="wildcard-node__icon">
-                @if (comodin.nombre === 'IA' && cargandoIa()) {
-                  <lucide-icon [name]="LoaderIcon" size="20" class="observer-spin"></lucide-icon>
-                } @else {
-                  <span>{{ comodin.icono }}</span>
-                }
-              </div>
-              <span class="wildcard-node__label">{{ comodin.nombre | titlecase }}</span>
-              <span
-                class="wildcard-node__state"
-                [class.wildcard-node__state--used]="isComodinUsado(comodin)"
-              >
-                {{ getComodinEstadoTexto(comodin) }}
-              </span>
-            </div>
-          }
-        } @empty {
-          <p class="wildcards-empty">No hay comodines configurados en esta sesión.</p>
-        }
-      </div>
-    </div>
   } @else {
     <div class="observer-empty-state">
       <div class="spinner"></div>

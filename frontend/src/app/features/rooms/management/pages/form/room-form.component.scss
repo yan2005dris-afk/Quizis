@@ -258,6 +258,19 @@
   justify-content: space-between;
   gap: 12px;
   padding: 16px 18px 12px;
+
+  h3 {
+    margin: 0;
+    color: var(--color-text);
+    font-size: 13px;
+    font-weight: 700;
+  }
+
+  p {
+    margin: 4px 0 0;
+    color: var(--color-sub);
+    font-size: 12px;
+  }
 }
 
 .badge {

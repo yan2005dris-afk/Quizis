@@ -14,6 +14,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import {
   GameSocketService,
   ResultRespuesta,
+  PreguntaHistorial,
 } from '../../../../../core/services/game-socket.service';
 import { AuthService } from '../../../../../core/services/auth.service';
 
@@ -186,7 +187,7 @@ export class GameSessionComponent implements OnInit, OnDestroy {
     const active = this.preguntaActiva();
     const result = this.gameSocket.ultimoResultado();
     // Se puede liberar si: no hay pregunta activa, o la anterior fue respondida
-    return !active || !!result || !!this.salaDetalle()?.rondaActiva?.preguntaActual?.answerDada;
+    return !active || !!result || !!this.salaDetalle()?.rondaActiva?.preguntaActual?.respuestaDada;
   });
 
   protected readonly shareableLink = computed(() => {
@@ -197,12 +198,15 @@ export class GameSessionComponent implements OnInit, OnDestroy {
   });
 
   constructor() {
-    // NOTA: Ya NO redirigimos a /audiencia. Todos los usuarios (estudiantes y observadores)
-    // se quedan en GameSessionComponent. ActiveQuestionComponent maneja la interacción según el rol
-    // a través de la input `interactive` y GameSessionComponent.onResponder().
-    // Esto elimina el redirect loop y la necesidad de dos sockets separados.
+    this.listenRondaReiniciada();
+    this.recargarSalaAntePreguntaHuerfana();
+    this.detectarRondaCompletada();
+    this.syncContadoresRonda();
+    this.limpiarEstadoAlReiniciarRonda();
+    this.contarMensajesNoLeidos();
+  }
 
-    // Efecto ÚNICO para reaccionar al WS ronda_reiniciada
+  private listenRondaReiniciada(): void {
     effect(() => {
       const reinicio = this.gameSocket.rondaReiniciada();
       if (!reinicio?.rondaActiva) return;
@@ -217,9 +221,13 @@ export class GameSessionComponent implements OnInit, OnDestroy {
           : actual,
       );
     });
+  }
 
-    // Efecto: cuando llega una pregunta vía socket pero la sala no tiene rondaActiva,
-    // recargar los detalles de la sala (el HTTP inicial pudo ocurrir antes de crear la ronda)
+  /**
+   * Si el socket envía una pregunta pero el HTTP inicial se completó antes
+   * de que la ronda existiera, recargamos los detalles de la sala.
+   */
+  private recargarSalaAntePreguntaHuerfana(): void {
     effect(() => {
       const pregunta = this.gameSocket.preguntaActiva();
       const sala = this.salaDetalle();
@@ -234,8 +242,9 @@ export class GameSessionComponent implements OnInit, OnDestroy {
           });
       }
     });
+  }
 
-    // Efecto: detectar cuándo todas las preguntas de la ronda fueron contestadas
+  private detectarRondaCompletada(): void {
     effect(() => {
       const result = this.gameSocket.ultimoResultado();
       const total = this.totalPreguntasRonda();
@@ -249,24 +258,25 @@ export class GameSessionComponent implements OnInit, OnDestroy {
       this.preguntasContestadasRonda.update((c) => {
         const nuevo = c + 1;
         if (nuevo >= total) {
-          // Todas las preguntas respondidas → mostrar podio de ronda
           setTimeout(() => this.rondaCompletada.set(true), 500);
         }
         return nuevo;
       });
     });
+  }
 
-    // Inicializar contadores cuando se cargan los detalles de sala (nueva ronda)
+  private syncContadoresRonda(): void {
     effect(() => {
       const ronda = this.salaDetalle()?.rondaActiva;
       if (ronda?.historialPreguntas) {
-        const yaRespondidas = ronda.historialPreguntas.filter((p: any) => p.respuestaDada).length;
+        const yaRespondidas = ronda.historialPreguntas.filter((p) => p.respuestaDada).length;
         this.totalPreguntasRonda.set(ronda.historialPreguntas.length);
         this.preguntasContestadasRonda.set(yaRespondidas);
       }
     });
+  }
 
-    // Limpiar estado de ronda completada cuando se reinicia la ronda
+  private limpiarEstadoAlReiniciarRonda(): void {
     effect(() => {
       const reinicio = this.gameSocket.rondaReiniciada();
       if (reinicio) {
@@ -276,8 +286,9 @@ export class GameSessionComponent implements OnInit, OnDestroy {
         this.rondaActualNumero.update((n) => n + 1);
       }
     });
+  }
 
-    // Contador de mensajes no leídos
+  private contarMensajesNoLeidos(): void {
     effect(() => {
       const mensajes = this.gameSocket.mensajesChat();
       const activeTab = this.activeTab();
@@ -344,7 +355,7 @@ export class GameSessionComponent implements OnInit, OnDestroy {
               ? {
                   ronda: (() => {
                     const idx = sala.rondaActiva.historialPreguntas?.findIndex(
-                      (p: any) => p.preguntaId === sala.rondaActiva!.preguntaActualId,
+                      (p) => p.preguntaId === sala.rondaActiva!.preguntaActualId,
                     );
                     return idx !== undefined && idx >= 0 ? idx + 1 : 1;
                   })(),
@@ -515,7 +526,7 @@ export class GameSessionComponent implements OnInit, OnDestroy {
     this.liberarProximaPregunta(sala.tokenCompartido, sala.rondaActiva.historialPreguntas);
   }
 
-  private liberarProximaPregunta(tokenCompartido: string, historial: any[]): void {
+  private liberarProximaPregunta(tokenCompartido: string, historial: PreguntaHistorial[]): void {
     const proxima = (historial ?? []).find(
       (p) => !p.respuestaDada && p.preguntaId !== this.preguntaActiva()?.preguntaId,
     );
