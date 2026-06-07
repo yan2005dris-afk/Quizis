@@ -6,6 +6,7 @@ import { GetBancoUseCase } from './use-cases/get-banco.use-case';
 import { UpdateBancoUseCase } from './use-cases/update-banco.use-case';
 import { AddQuestionsUseCase } from './use-cases/add-questions.use-case';
 import { UpdateQuestionUseCase } from './use-cases/update-question.use-case';
+import { DeleteQuestionUseCase } from './use-cases/delete-question.use-case';
 
 describe('BancosService', () => {
   let service: BancosService;
@@ -15,6 +16,7 @@ describe('BancosService', () => {
   let updateUseCase: UpdateBancoUseCase;
   let addQuestionsUseCase: AddQuestionsUseCase;
   let updateQuestionUseCase: UpdateQuestionUseCase;
+  let deleteQuestionUseCase: DeleteQuestionUseCase;
 
   const mockUseCase = { execute: jest.fn() };
 
@@ -28,6 +30,7 @@ describe('BancosService', () => {
         { provide: UpdateBancoUseCase, useValue: mockUseCase },
         { provide: AddQuestionsUseCase, useValue: mockUseCase },
         { provide: UpdateQuestionUseCase, useValue: mockUseCase },
+        { provide: DeleteQuestionUseCase, useValue: mockUseCase },
       ],
     }).compile();
 
@@ -39,6 +42,9 @@ describe('BancosService', () => {
     addQuestionsUseCase = module.get<AddQuestionsUseCase>(AddQuestionsUseCase);
     updateQuestionUseCase = module.get<UpdateQuestionUseCase>(
       UpdateQuestionUseCase,
+    );
+    deleteQuestionUseCase = module.get<DeleteQuestionUseCase>(
+      DeleteQuestionUseCase,
     );
   });
 
@@ -89,5 +95,11 @@ describe('BancosService', () => {
       dto,
       usuarioId,
     );
+  });
+
+  it('should call deleteQuestionUseCase', async () => {
+    const usuarioId = 1;
+    await service.deletePregunta(1, 5, usuarioId);
+    expect(deleteQuestionUseCase.execute).toHaveBeenCalledWith(1, 5, usuarioId);
   });
 });

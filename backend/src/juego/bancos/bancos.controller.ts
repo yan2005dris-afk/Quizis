@@ -1,7 +1,10 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
+  HttpCode,
+  HttpStatus,
   Param,
   ParseIntPipe,
   Patch,
@@ -161,6 +164,33 @@ export class BancosController {
       success: true,
       message: 'Pregunta actualizada exitosamente',
       data: bancoActualizado,
+    };
+  }
+
+  @Delete(':bancoId/preguntas/:preguntaId')
+  @ApiOperation({
+    summary: 'Eliminar (borrado lógico) una pregunta de un banco',
+  })
+  @ApiParam({ name: 'bancoId', type: Number })
+  @ApiParam({ name: 'preguntaId', type: Number })
+  @ApiResponse({ status: 200, description: 'Pregunta eliminada exitosamente.' })
+  @ApiResponse({ status: 404, description: 'Pregunta o banco no encontrado.' })
+  @HttpCode(HttpStatus.OK)
+  @RequiredPermission('bancos', 'delete')
+  async deletePregunta(
+    @Param('bancoId', ParseIntPipe) bancoId: number,
+    @Param('preguntaId', ParseIntPipe) preguntaId: number,
+    @AuthUserId() usuarioId: number,
+  ) {
+    const result = await this.bancosService.deletePregunta(
+      bancoId,
+      preguntaId,
+      usuarioId,
+    );
+    return {
+      success: true,
+      message: 'Pregunta eliminada exitosamente',
+      data: result,
     };
   }
 }

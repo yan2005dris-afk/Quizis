@@ -37,6 +37,7 @@ describe('GetBancoUseCase', () => {
       where: { bancoId: 1 },
       include: {
         preguntas: {
+          where: { deletedAt: null },
           include: { opciones: true },
           orderBy: { preguntaId: 'asc' },
         },

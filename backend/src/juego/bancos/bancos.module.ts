@@ -7,6 +7,7 @@ import { GetBancoUseCase } from './use-cases/get-banco.use-case';
 import { UpdateBancoUseCase } from './use-cases/update-banco.use-case';
 import { AddQuestionsUseCase } from './use-cases/add-questions.use-case';
 import { UpdateQuestionUseCase } from './use-cases/update-question.use-case';
+import { DeleteQuestionUseCase } from './use-cases/delete-question.use-case';
 
 @Module({
   controllers: [BancosController],
@@ -18,6 +19,7 @@ import { UpdateQuestionUseCase } from './use-cases/update-question.use-case';
     UpdateBancoUseCase,
     AddQuestionsUseCase,
     UpdateQuestionUseCase,
+    DeleteQuestionUseCase,
   ],
   exports: [BancosService],
 })

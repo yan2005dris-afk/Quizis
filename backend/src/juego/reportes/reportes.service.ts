@@ -83,8 +83,11 @@ export class ReportesService {
 
     const rondas = sala.rondas.map((ronda) => {
       participantesUnicos.add(ronda.participante.nickname);
-      const { correctas, incorrectas, ronda: rondaData } =
-        this.procesarRonda(ronda);
+      const {
+        correctas,
+        incorrectas,
+        ronda: rondaData,
+      } = this.procesarRonda(ronda);
 
       totalCorrectasGlobal += correctas;
       totalIncorrectasGlobal += incorrectas;
@@ -138,8 +141,10 @@ export class ReportesService {
           respuestaElegida: respuesta.opcion?.texto || 'No respondida',
           esCorrecta: respuesta.esCorrecta,
           comodinUsado: respuesta.comodinUsado,
-          porcentajeVotosPublico:
-            this.calcularVotosPublico(respuesta, ronda.votos),
+          porcentajeVotosPublico: this.calcularVotosPublico(
+            respuesta,
+            ronda.votos,
+          ),
         };
       },
     );
@@ -179,8 +184,6 @@ export class ReportesService {
       (v) => v.opcion.esCorrecta,
     ).length;
 
-    return Number(
-      ((votosCorrectos / votosPregunta.length) * 100).toFixed(1),
-    );
+    return Number(((votosCorrectos / votosPregunta.length) * 100).toFixed(1));
   }
 }

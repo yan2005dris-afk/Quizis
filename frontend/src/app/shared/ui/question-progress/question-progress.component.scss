@@ -1,0 +1,20 @@
+.question-progress {
+  display: flex;
+  gap: 4px;
+  padding: 4px 0;
+
+  &__segment {
+    flex: 1;
+    height: 6px;
+    border-radius: var(--radius-full);
+    background: var(--color-border);
+    transition: background var(--transition-slow);
+
+    &--correcta   { background: var(--color-success); }
+    &--incorrecta { background: var(--color-danger); }
+    &--activa     {
+      background: var(--color-warning);
+      animation: pulse 0.75s ease-in-out infinite;
+    }
+  }
+}
