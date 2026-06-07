@@ -12,6 +12,8 @@ export type { OpcionPregunta } from './card-pregunta/card-pregunta.component';
 
 export { CountdownComponent } from './countdown/countdown.component';
 
+export { TimerComponent } from './timer/timer.component';
+
 export { AudienceBarsComponent } from './audience-bars/audience-bars.component';
 
 export { ToastComponent } from './toast/toast.component';
