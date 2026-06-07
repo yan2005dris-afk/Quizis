@@ -1,0 +1,210 @@
+@use 'hovers' as *;
+
+.observer-wildcards-panel {
+  background: var(--color-bg);
+  border-radius: 8px;
+  padding: 0.75rem;
+  border: 1px solid var(--color-info);
+  text-align: left;
+  width: 100%;
+  box-sizing: border-box;
+  box-shadow: var(--shadow-md);
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.wildcards-title {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--color-sub);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.wildcards-grid {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.wildcard-node {
+  min-width: 118px;
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr);
+  grid-template-areas:
+    'icon label'
+    'icon state';
+  align-items: center;
+  column-gap: 0.5rem;
+  padding: 0.5rem 0.65rem;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  transition:
+    border-color 0.15s,
+    background 0.15s,
+    box-shadow 0.15s,
+    opacity 0.15s;
+}
+
+.wildcard-node__icon {
+  grid-area: icon;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background-color: var(--color-info-bg);
+  border: 1px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  transition: all 0.2s;
+}
+
+.wildcard-node:has(.wildcard-node__label:nth-child(2)) {
+  border-color: var(--color-border);
+}
+
+.wildcard-node:has(.wildcard-node__label) .wildcard-node__icon {
+  color: var(--color-info);
+}
+
+.wildcard-node__label {
+  grid-area: label;
+  min-width: 0;
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: var(--color-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.wildcard-node__state {
+  grid-area: state;
+  min-width: 0;
+  font-size: 0.66rem;
+  font-weight: 600;
+  color: var(--color-sub);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.wildcard-node__state--used {
+  color: var(--color-purple);
+}
+
+.wildcard-node__state--disabled {
+  color: var(--color-danger);
+}
+
+/* Modificadores de estado de comodín desde el socket */
+.wildcard-node--active {
+  border-color: var(--color-info);
+  background: var(--color-info-bg);
+  box-shadow: 0 0 0 2px var(--color-info-bg);
+
+  .wildcard-node__icon {
+    background-color: var(--color-surface);
+    border-color: var(--color-info);
+  }
+
+  .wildcard-node__label {
+    color: var(--color-info);
+    font-weight: 800;
+  }
+}
+
+.wildcard-node:has(.wildcard-node__label) {
+  &:nth-child(2) .wildcard-node__icon {
+    background: var(--color-purple-bg);
+    color: var(--color-purple);
+    border-color: var(--color-purple-bg);
+  }
+
+  &:nth-child(3) .wildcard-node__icon {
+    background: var(--color-success-bg);
+    color: var(--color-success);
+    border-color: var(--color-success-bg);
+  }
+
+  &:nth-child(4) .wildcard-node__icon {
+    background: var(--color-warning-bg);
+    color: var(--color-warning);
+    border-color: var(--color-warning-bg);
+  }
+
+  &:nth-child(5) .wildcard-node__icon,
+  &:nth-child(6) .wildcard-node__icon {
+    background: var(--color-cyan-bg);
+    color: var(--color-cyan);
+    border-color: var(--color-cyan-bg);
+  }
+}
+
+.wildcard-node--disabled {
+  opacity: 0.55;
+
+  .wildcard-node__icon {
+    background-color: var(--color-bg);
+    border-color: var(--color-podium-silver);
+  }
+}
+
+.wildcard-node--clickable {
+  cursor: pointer;
+
+  @include hover-bg(var(--color-info-bg));
+
+  &:hover {
+    border-color: var(--color-info);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--color-info);
+    outline-offset: 4px;
+    border-radius: 8px;
+  }
+}
+
+.wildcards-empty {
+  font-size: 0.85rem;
+  color: var(--color-sub);
+  font-style: italic;
+  margin: 0;
+}
+
+.observer-spin {
+  animation: spin 1.5s linear infinite;
+  color: var(--color-info);
+}
+
+@media (max-width: 900px) {
+  .observer-wildcards-panel {
+    grid-template-columns: 1fr;
+  }
+
+  .wildcards-grid {
+    justify-content: flex-start;
+  }
+
+  .wildcard-node {
+    flex: 1 1 150px;
+  }
+}
+
+@media (max-width: 560px) {
+  .wildcards-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .wildcard-node {
+    min-width: 0;
+  }
+}

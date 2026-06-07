@@ -4,6 +4,7 @@ import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import type { EstadoSala } from '../constants/estados.constants';
 import { ESTADOS_SALA } from '../constants/estados.constants';
+import type { PreguntaHistorial } from './game-socket.service';
 
 /** Tipo para el listado de salas (backend mapea los valores) */
 export type EstadoSalaListado = 'borrador' | 'esperando' | 'jugando' | 'terminado';
@@ -37,8 +38,8 @@ export interface SalaDetalle {
     estado: string;
     fechaInicio: string | null;
     preguntaActualId?: number | null;
-    preguntaActual?: any;
-    historialPreguntas: any[];
+    preguntaActual?: PreguntaHistorial | null;
+    historialPreguntas: PreguntaHistorial[];
   } | null;
 }
 

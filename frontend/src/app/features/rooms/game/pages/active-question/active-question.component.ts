@@ -8,18 +8,15 @@ import {
   output,
   inject,
 } from '@angular/core';
-import { CommonModule, TitleCasePipe } from '@angular/common';
+import { CommonModule } from '@angular/common';
 
-import {
-  LucideAngularModule,
-  ChevronLeft,
-  ChevronRight,
-  BrainCircuit,
-  Loader2,
-} from 'lucide-angular';
-import { AudienceBarsComponent } from '../../../../../shared/ui';
+import { LucideAngularModule, ChevronLeft, ChevronRight, BrainCircuit } from 'lucide-angular';
+import { AudienceBarsComponent, WildcardsPanelComponent } from '../../../../../shared/ui';
 import { ComodinSala, SalasService } from '../../../../../core/services/salas.service';
-import { GameSocketService } from '../../../../../core/services/game-socket.service';
+import {
+  GameSocketService,
+  PreguntaHistorial,
+} from '../../../../../core/services/game-socket.service';
 import { ToastService } from '../../../../../core/services/toast.service';
 
 export interface OpcionVoto {
@@ -37,7 +34,7 @@ export interface OpcionVoto {
 @Component({
   selector: 'app-active-question',
   standalone: true,
-  imports: [CommonModule, TitleCasePipe, LucideAngularModule, AudienceBarsComponent],
+  imports: [CommonModule, LucideAngularModule, AudienceBarsComponent, WildcardsPanelComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './active-question.component.html',
   styleUrl: './active-question.component.scss',
@@ -48,7 +45,7 @@ export class ActiveQuestionComponent {
   private readonly toastService = inject(ToastService);
 
   readonly preguntaActivaId = input<number | null>(null);
-  readonly preguntas = input<any[]>([]);
+  readonly preguntas = input<PreguntaHistorial[]>([]);
   readonly tiempoRestante = input<number | null>(null);
   readonly comodinBloqueado = input<string[]>([]);
   readonly comodines = input<ComodinSala[]>([]);
@@ -72,7 +69,6 @@ export class ActiveQuestionComponent {
   protected readonly PrevIcon = ChevronLeft;
   protected readonly NextIcon = ChevronRight;
   protected readonly IaIcon = BrainCircuit;
-  protected readonly LoaderIcon = Loader2;
 
   constructor() {
     // Sincronizar el índice cuando cambia la pregunta activa en el socket
@@ -180,8 +176,8 @@ export class ActiveQuestionComponent {
       p.respuestaDada ||
       (isViewingActive && result && result.preguntaId === p.preguntaId ? result : null);
 
-    return p.opciones.map((o: any) => {
-      const votos = isViewingActive && v ? ((v as any)[o.letra] ?? 0) : 0;
+    return p.opciones.map((o) => {
+      const votos = isViewingActive && v ? (v[o.letra] ?? 0) : 0;
       const total = isViewingActive && v ? v.total : 0;
 
       return {
@@ -362,7 +358,7 @@ export class ActiveQuestionComponent {
       error: (err) => {
         console.error('[COMODIN:IA] Error al solicitar ayuda:', err);
         this.cargandoIa.set(false);
-        alert('No se pudo obtener la sugerencia de la IA. Por favor, intenta más tarde.');
+        this.toastService.show('No se pudo obtener la sugerencia de la IA', 'danger', 'Comodín IA');
       },
     });
   }
@@ -387,15 +383,5 @@ export class ActiveQuestionComponent {
         console.error('[COMODIN:50_50] Error:', err);
       },
     });
-  }
-
-  protected isComodinUsado(comodin: ComodinSala): boolean {
-    return this.comodinBloqueado().includes(comodin.nombre);
-  }
-
-  protected getComodinEstadoTexto(comodin: ComodinSala): string {
-    if (!comodin.activo) return 'Deshabilitado en la configuración';
-    if (this.isComodinUsado(comodin)) return 'Usado en esta ronda';
-    return 'Disponible';
   }
 }
