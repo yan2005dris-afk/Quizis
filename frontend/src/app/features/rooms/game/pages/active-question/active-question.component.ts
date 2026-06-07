@@ -10,13 +10,12 @@ import {
 } from '@angular/core';
 import { CommonModule, TitleCasePipe } from '@angular/common';
 
+import { LucideAngularModule, ChevronLeft, ChevronRight, BrainCircuit } from 'lucide-angular';
 import {
-  LucideAngularModule,
-  ChevronLeft,
-  ChevronRight,
-  BrainCircuit,
-} from 'lucide-angular';
-import { AudienceBarsComponent, TimerComponent, QuestionProgressComponent, WildcardsPanelComponent } from '../../../../../shared/ui';
+  AudienceBarsComponent,
+  TimerComponent,
+  WildcardsPanelComponent,
+} from '../../../../../shared/ui';
 import { ComodinSala, SalasService } from '../../../../../core/services/salas.service';
 import {
   GameSocketService,
@@ -39,7 +38,14 @@ export interface OpcionVoto {
 @Component({
   selector: 'app-active-question',
   standalone: true,
-  imports: [CommonModule, TitleCasePipe, LucideAngularModule, AudienceBarsComponent, TimerComponent, QuestionProgressComponent, WildcardsPanelComponent],
+  imports: [
+    CommonModule,
+    TitleCasePipe,
+    LucideAngularModule,
+    AudienceBarsComponent,
+    TimerComponent,
+    WildcardsPanelComponent,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './active-question.component.html',
   styleUrl: './active-question.component.scss',
