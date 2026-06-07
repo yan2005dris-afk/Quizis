@@ -30,14 +30,14 @@ export const routes: Routes = [
   {
     path: 'show',
     loadComponent: () =>
-      import('./features/game/pages/active-question/active-question.component').then(
+      import('./features/rooms/game/pages/active-question/active-question.component').then(
         (m) => m.ActiveQuestionComponent,
       ),
   },
   {
     path: 'join/:token',
     loadComponent: () =>
-      import('./features/game/pages/join-room/join-room.component').then(
+      import('./features/rooms/game/pages/join-room/join-room.component').then(
         (m) => m.JoinRoomComponent,
       ),
   },
@@ -45,7 +45,7 @@ export const routes: Routes = [
   {
     path: 'salas/unirse',
     loadComponent: () =>
-      import('./features/game/pages/join-room/join-room.component').then(
+      import('./features/rooms/game/pages/join-room/join-room.component').then(
         (m) => m.JoinRoomComponent,
       ),
   },
@@ -62,7 +62,7 @@ export const routes: Routes = [
       {
         path: 'salas',
         canActivate: [authGuard],
-        loadChildren: () => import('./features/room/salas.routes').then((m) => m.SALAS_ROUTES),
+        loadChildren: () => import('./features/rooms/management/salas.routes').then((m) => m.SALAS_ROUTES),
       },
       {
         path: 'bancos',
@@ -89,7 +89,7 @@ export const routes: Routes = [
       // Rutas de Sala (Públicas pero dentro del layout)
       {
         path: 'sala',
-        loadChildren: () => import('./features/game/game.routes').then((m) => m.GAME_ROUTES),
+        loadChildren: () => import('./features/rooms/game/play.routes').then((m) => m.PLAY_ROUTES),
       },
 
       { path: '', redirectTo: 'home', pathMatch: 'full' },
