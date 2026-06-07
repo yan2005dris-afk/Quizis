@@ -7,6 +7,7 @@ import { GetBancoUseCase } from './use-cases/get-banco.use-case';
 import { UpdateBancoUseCase } from './use-cases/update-banco.use-case';
 import { AddQuestionsUseCase } from './use-cases/add-questions.use-case';
 import { UpdateQuestionUseCase } from './use-cases/update-question.use-case';
+import { DeleteQuestionUseCase } from './use-cases/delete-question.use-case';
 
 @Injectable()
 export class BancosService {
@@ -17,6 +18,7 @@ export class BancosService {
     private readonly updateBancoUseCase: UpdateBancoUseCase,
     private readonly addQuestionsUseCase: AddQuestionsUseCase,
     private readonly updateQuestionUseCase: UpdateQuestionUseCase,
+    private readonly deleteQuestionUseCase: DeleteQuestionUseCase,
   ) {}
 
   async create(dto: CreateBancoDto, usuarioId: number) {
@@ -55,5 +57,9 @@ export class BancosService {
       dto,
       usuarioId,
     );
+  }
+
+  async deletePregunta(bancoId: number, preguntaId: number, usuarioId: number) {
+    return this.deleteQuestionUseCase.execute(bancoId, preguntaId, usuarioId);
   }
 }
