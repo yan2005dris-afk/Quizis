@@ -5,11 +5,10 @@
         <p class="observer-card__status"><span class="status-dot"></span> {{ statusText() }}</p>
 
         <!-- Temporizador visual -->
-        @if (tiempoRestante(); as t) {
-          <div class="observer-card__timer" [class.observer-card__timer--low]="t <= 5">
-            ⏱️ {{ t }}s
-          </div>
-        }
+        <app-timer
+          [tiempoRestante]="tiempoRestante()"
+          [totalTiempo]="totalTiempo()"
+        />
 
         <div class="observer-card__pagination">
           <button

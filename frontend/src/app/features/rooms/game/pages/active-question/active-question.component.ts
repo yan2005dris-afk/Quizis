@@ -17,7 +17,7 @@ import {
   BrainCircuit,
   Loader2,
 } from 'lucide-angular';
-import { AudienceBarsComponent } from '../../../../../shared/ui';
+import { AudienceBarsComponent, TimerComponent } from '../../../../../shared/ui';
 import { ComodinSala, SalasService } from '../../../../../core/services/salas.service';
 import { GameSocketService } from '../../../../../core/services/game-socket.service';
 import { ToastService } from '../../../../../core/services/toast.service';
@@ -37,7 +37,7 @@ export interface OpcionVoto {
 @Component({
   selector: 'app-active-question',
   standalone: true,
-  imports: [CommonModule, TitleCasePipe, LucideAngularModule, AudienceBarsComponent],
+  imports: [CommonModule, TitleCasePipe, LucideAngularModule, AudienceBarsComponent, TimerComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './active-question.component.html',
   styleUrl: './active-question.component.scss',
@@ -50,6 +50,7 @@ export class ActiveQuestionComponent {
   readonly preguntaActivaId = input<number | null>(null);
   readonly preguntas = input<any[]>([]);
   readonly tiempoRestante = input<number | null>(null);
+  readonly totalTiempo = input<number>(30);
   readonly comodinBloqueado = input<string[]>([]);
   readonly comodines = input<ComodinSala[]>([]);
   readonly tokenCompartido = input<string>('');
