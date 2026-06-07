@@ -17,7 +17,7 @@ import {
   BrainCircuit,
   Loader2,
 } from 'lucide-angular';
-import { AudienceBarsComponent, TimerComponent } from '../../../../../shared/ui';
+import { AudienceBarsComponent, TimerComponent, QuestionProgressComponent } from '../../../../../shared/ui';
 import { ComodinSala, SalasService } from '../../../../../core/services/salas.service';
 import { GameSocketService } from '../../../../../core/services/game-socket.service';
 import { ToastService } from '../../../../../core/services/toast.service';
@@ -37,7 +37,7 @@ export interface OpcionVoto {
 @Component({
   selector: 'app-active-question',
   standalone: true,
-  imports: [CommonModule, TitleCasePipe, LucideAngularModule, AudienceBarsComponent, TimerComponent],
+  imports: [CommonModule, TitleCasePipe, LucideAngularModule, AudienceBarsComponent, TimerComponent, QuestionProgressComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './active-question.component.html',
   styleUrl: './active-question.component.scss',
@@ -68,6 +68,15 @@ export class ActiveQuestionComponent {
 
   // 50/50 State — derived from GameSocketService singleton (survives round restarts)
   protected readonly opcionesEliminadas = computed(() => this.gameSocket.opcionesEliminadas());
+
+  protected readonly segmentosProgreso = computed(() =>
+    this.preguntas().map((p: any) => {
+      if (p.preguntaId === this.preguntaActivaId()) return 'activa';
+      if (p.respuestaDada?.esCorrecta === true)    return 'correcta';
+      if (p.respuestaDada?.esCorrecta === false)   return 'incorrecta';
+      return 'pendiente';
+    })
+  );
 
   // Iconos
   protected readonly PrevIcon = ChevronLeft;
