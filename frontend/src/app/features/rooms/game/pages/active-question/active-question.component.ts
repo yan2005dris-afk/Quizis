@@ -8,12 +8,13 @@ import {
   output,
   inject,
 } from '@angular/core';
-import { CommonModule, TitleCasePipe } from '@angular/common';
+import { CommonModule } from '@angular/common';
 
 import { LucideAngularModule, ChevronLeft, ChevronRight, BrainCircuit } from 'lucide-angular';
 import {
   AudienceBarsComponent,
   TimerComponent,
+  QuestionProgressComponent,
   WildcardsPanelComponent,
 } from '../../../../../shared/ui';
 import { ComodinSala, SalasService } from '../../../../../core/services/salas.service';
@@ -44,6 +45,7 @@ export interface OpcionVoto {
     LucideAngularModule,
     AudienceBarsComponent,
     TimerComponent,
+    QuestionProgressComponent,
     WildcardsPanelComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
