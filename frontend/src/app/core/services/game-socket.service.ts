@@ -116,7 +116,6 @@ export class GameSocketService {
 
     this.setupConnectionListeners();
     this.setupPreguntaListeners();
-    this.setupVotosPublicoListener();
     this.setupComodinListeners();
     this.setupComodinLlamadaListeners();
     this.setupComodinIAListener();
