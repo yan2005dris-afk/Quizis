@@ -1,0 +1,46 @@
+/* ─── Hover Mixins ─────────────────────────────────────────
+   Reusable hover effects. Components should `@use 'hovers';`
+   at the top of their .scss and apply the mixin in their
+   selector block. All mixins use `&:hover:not(:disabled)`
+   to skip the effect on disabled controls, which is the
+   consistent convention across the app.
+*/
+
+@mixin hover-lift($distance: 2px) {
+  transition: transform var(--transition), box-shadow var(--transition);
+
+  &:hover:not(:disabled) {
+    transform: translateY(-$distance);
+  }
+}
+
+@mixin hover-glow($shadow: 0 6px 18px rgba(0, 0, 0, .15)) {
+  transition: box-shadow var(--transition), transform var(--transition);
+
+  &:hover:not(:disabled) {
+    box-shadow: $shadow;
+    transform: translateY(-2px);
+  }
+}
+
+@mixin hover-bg($color: var(--color-bg)) {
+  transition: background var(--transition);
+
+  &:hover:not(:disabled) {
+    background: $color;
+  }
+}
+
+@mixin hover-underline($color: var(--color-primary)) {
+  transition: color var(--transition);
+
+  &:hover {
+    color: $color;
+    text-decoration: underline;
+  }
+}
+
+@mixin hover-card {
+  @include hover-lift;
+  @include hover-glow(0 8px 24px rgba(29, 38, 103, .12));
+}

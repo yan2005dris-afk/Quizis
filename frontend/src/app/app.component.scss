@@ -20,23 +20,12 @@ app-alert {
   animation: toast-fly-in 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-@keyframes toast-fly-in {
-  from {
-    transform: translateX(120%) scale(0.9);
-    opacity: 0;
-  }
-  to {
-    transform: translateX(0) scale(1);
-    opacity: 1;
-  }
-}
-
 // Estilo agresivo para asegurar que se vea como toast
 :host ::ng-deep {
   .toast-container .alert {
     margin: 0 !important;
     border: 1px solid rgba(0,0,0,0.08) !important;
-    border-radius: 12px !important;
+    border-radius: var(--radius-lg) !important;
     box-shadow: none !important;
     background-clip: padding-box;
   }

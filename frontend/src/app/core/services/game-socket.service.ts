@@ -1,6 +1,11 @@
 import { Injectable, signal, inject } from '@angular/core';
 import { io, Socket } from 'socket.io-client';
-import { ChatMessage, SalaEvento, Participante, RondaInfo } from '../../features/rooms/game/play.types';
+import {
+  ChatMessage,
+  SalaEvento,
+  Participante,
+  RondaInfo,
+} from '../../features/rooms/game/play.types';
 import { ToastService } from './toast.service';
 
 // Representa una opción de respuesta individual dentro de una pregunta

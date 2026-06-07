@@ -3,9 +3,11 @@
    ═══════════════════════════════════════════════ */
 
 // ── Variables locales ──────────────────────────
-$gold:   var(--color-warning);
-$silver: #94A3B8;
-$bronze: #C47B2B;
+@use 'hovers' as *;
+
+$gold:   var(--color-podium-gold);
+$silver: var(--color-podium-silver);
+$bronze: var(--color-podium-bronze);
 
 // ── Wrapper principal ──────────────────────────
 .game-over {
@@ -16,7 +18,7 @@ $bronze: #C47B2B;
   flex-direction: column;
   align-items: center;
   padding: 2.5rem 1.5rem 4rem;
-  background: linear-gradient(135deg, var(--color-bg) 0%, #E2E8F0 100%);
+  background: linear-gradient(135deg, var(--color-bg) 0%, var(--color-border) 100%);
   font-family: 'DM Sans', var(--font-sans);
   color: var(--color-text);
   gap: 2rem;
@@ -58,16 +60,6 @@ $bronze: #C47B2B;
   left: calc(var(--i) * 5.2%);
   top: calc(var(--i) * 4.7%);
   animation: twinkle calc(2s + var(--i) * 0.3s) ease-in-out infinite;
-}
-
-@keyframes orbFloat {
-  0%, 100% { transform: translateY(0) scale(1); }
-  50%       { transform: translateY(-30px) scale(1.06); }
-}
-
-@keyframes twinkle {
-  0%, 100% { opacity: 0; }
-  50%       { opacity: .5; }
 }
 
 // ── Z-index base para contenido ────────────────
@@ -187,7 +179,7 @@ $bronze: #C47B2B;
     width: 64px;
     height: 64px;
     border-radius: 50%;
-    background: linear-gradient(135deg, var(--color-primary), #2a3580);
+    background: linear-gradient(135deg, var(--color-primary), var(--color-primary-hover));
     border: 3px solid var(--color-border);
     display: flex;
     align-items: center;
@@ -197,7 +189,7 @@ $bronze: #C47B2B;
       width: 80px;
       height: 80px;
       border-color: $gold;
-      box-shadow: 0 0 28px rgba(245, 158, 11, .45);
+      box-shadow: 0 0 28px rgba(255, 215, 0, .45);
     }
   }
 
@@ -212,7 +204,7 @@ $bronze: #C47B2B;
     font-family: 'Syne', sans-serif;
     font-size: 1.1rem;
     font-weight: 800;
-    color: #fff;
+    color: var(--color-surface);
   }
 
   &__nombre {
@@ -252,7 +244,7 @@ $bronze: #C47B2B;
     justify-content: center;
     border: 1px solid var(--color-border);
 
-    &--1 { height: 96px;  background: linear-gradient(180deg, rgba(245, 158, 11, .25) 0%, rgba(245, 158, 11, .08) 100%); border-color: rgba(245, 158, 11, .35); }
+    &--1 { height: 96px;  background: linear-gradient(180deg, rgba(255, 215, 0, .25) 0%, rgba(255, 215, 0, .08) 100%); border-color: rgba(255, 215, 0, .35); }
     &--2 { height: 72px;  background: linear-gradient(180deg, rgba(148, 163, 184, .18) 0%, rgba(148, 163, 184, .05) 100%); border-color: rgba(148, 163, 184, .3); }
     &--3 { height: 52px;  background: linear-gradient(180deg, rgba(196, 123, 43, .18) 0%, rgba(196, 123, 43, .05) 100%); border-color: rgba(196, 123, 43, .3); }
   }
@@ -267,11 +259,6 @@ $bronze: #C47B2B;
   &__slot--1 { order: 2; }
   &__slot--2 { order: 1; }
   &__slot--3 { order: 3; }
-}
-
-@keyframes crownBounce {
-  0%, 100% { transform: translateY(0) rotate(-5deg); }
-  50%       { transform: translateY(-8px) rotate(5deg); }
 }
 
 // ── Tabla de posiciones ────────────────────────
@@ -307,9 +294,10 @@ $bronze: #C47B2B;
     padding: .6rem 1rem;
     transition: box-shadow var(--transition), border-color var(--transition);
 
+    @include hover-glow(var(--shadow-sm));
+
     &:hover {
       border-color: var(--color-primary);
-      box-shadow: var(--shadow-sm);
     }
   }
 
@@ -383,15 +371,15 @@ $bronze: #C47B2B;
   cursor: pointer;
   transition: transform var(--transition), box-shadow var(--transition), opacity var(--transition);
 
-  &:hover  { transform: translateY(-2px); }
+  @include hover-lift;
   &:active { transform: translateY(0); }
 
   &--analytics {
     background: var(--color-primary);
-    color: #fff;
+    color: var(--color-surface);
     box-shadow: 0 4px 16px rgba(29,38,103,.5);
 
-    &:hover { box-shadow: 0 8px 24px rgba(29,38,103,.6); }
+    @include hover-glow(0 8px 24px rgba(29,38,103,.6));
   }
 
   &--home {
@@ -399,15 +387,15 @@ $bronze: #C47B2B;
     color: rgba(238,242,255,.7);
     border: 1px solid rgba(255,255,255,.12);
 
-    &:hover { background: rgba(255,255,255,.12); }
+    @include hover-bg(rgba(255,255,255,.12));
   }
 
   &--primary {
     background: var(--color-primary);
-    color: #fff;
+    color: var(--color-surface);
     box-shadow: 0 4px 16px rgba(29,38,103,.5);
 
-    &:hover { box-shadow: 0 8px 24px rgba(29,38,103,.6); }
+    @include hover-glow(0 8px 24px rgba(29,38,103,.6));
   }
 }
 
@@ -429,10 +417,6 @@ $bronze: #C47B2B;
     border-radius: 50%;
     animation: spin .8s linear infinite;
   }
-}
-
-@keyframes spin {
-  to { transform: rotate(360deg); }
 }
 
 // ── Error ──────────────────────────────────────

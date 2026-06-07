@@ -1,24 +1,4 @@
-@use 'sass:color';
-
-// Variables estéticas heredadas de la línea de diseño principal
-$color-bg-canvas: #f4f6f9;
-$color-card-white: #ffffff;
-$color-ui-primary: #3b82f6;
-$color-ui-primary-light: #eff6ff;
-$color-text-main: #1e293b;
-$color-text-muted: #64748b;
-
-// Colores de feedback semántico
-$color-success: #10b981;
-$color-success-bg: #ecfdf5;
-$color-danger: #ef4444;
-$color-danger-bg: #fef2f2;
-$color-warning: #f59e0b;
-$color-warning-bg: #fffbeb;
-$color-purple: #7c3aed;
-$color-purple-bg: #f5f3ff;
-$color-cyan: #0891b2;
-$color-cyan-bg: #ecfeff;
+@use 'hovers' as *;
 
 .active-question-container {
   width: 100%;
@@ -38,11 +18,11 @@ $color-cyan-bg: #ecfeff;
 .observer-card {
   position: relative;
   overflow: hidden;
-  background: $color-card-white;
+  background: var(--color-surface);
   border-radius: 8px;
   padding: 2rem;
-  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.05);
-  border: 1px solid #e2e8f0;
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--color-border);
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
@@ -53,7 +33,7 @@ $color-cyan-bg: #ecfeff;
   position: absolute;
   inset: 0 0 auto;
   height: 4px;
-  background: #2563eb;
+  background: var(--color-info);
 }
 
 .observer-card__header {
@@ -61,7 +41,7 @@ $color-cyan-bg: #ecfeff;
   justify-content: space-between;
   align-items: center;
   gap: 1rem;
-  border-bottom: 1px solid #dbeafe;
+  border-bottom: 1px solid var(--color-info-bg);
   padding-bottom: 1rem;
 }
 
@@ -69,7 +49,7 @@ $color-cyan-bg: #ecfeff;
   margin: 0;
   font-size: 0.85rem;
   font-weight: 600;
-  color: $color-text-muted;
+  color: var(--color-sub);
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -77,10 +57,10 @@ $color-cyan-bg: #ecfeff;
   .status-dot {
     width: 8px;
     height: 8px;
-    background-color: #22c55e;
+    background-color: var(--color-success);
     border-radius: 50%;
     display: inline-block;
-    box-shadow: 0 0 8px rgba(59, 130, 246, 0.5);
+    box-shadow: var(--shadow-md);
   }
 }
 
@@ -88,16 +68,16 @@ $color-cyan-bg: #ecfeff;
 .observer-card__timer {
   font-size: 0.85rem;
   font-weight: 700;
-  color: #1d4ed8;
-  background: #dbeafe;
+  color: var(--color-info);
+  background: var(--color-info-bg);
   padding: 4px 10px;
   border-radius: 8px;
   white-space: nowrap;
 }
 
 .observer-card__timer--low {
-  color: $color-danger;
-  background: $color-danger-bg;
+  color: var(--color-danger);
+  background: var(--color-danger-bg);
   animation: pulse 1s infinite;
 }
 
@@ -106,10 +86,10 @@ $color-cyan-bg: #ecfeff;
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  background-color: #ffffff;
+  background-color: var(--color-surface);
   padding: 4px 12px;
   border-radius: 30px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--color-border);
 }
 
 .pagination-btn {
@@ -120,25 +100,23 @@ $color-cyan-bg: #ecfeff;
   height: 26px;
   border: none;
   background: transparent;
-  color: $color-ui-primary;
+  color: var(--color-info);
   cursor: pointer;
   border-radius: 50%;
   transition: all 0.2s;
 
   &:disabled {
-    color: #cbd5e1;
+color: var(--color-podium-silver);
     cursor: not-allowed;
   }
 
-  &:not(:disabled):hover {
-    background-color: #e2e8f0;
-  }
+  @include hover-bg(var(--color-border));
 }
 
 .pagination-info {
   font-size: 0.75rem;
   font-weight: 700;
-  color: #475569;
+  color: var(--color-sub);
   min-width: 35px;
   text-align: left;
 }
@@ -147,7 +125,7 @@ $color-cyan-bg: #ecfeff;
   margin: 0;
   font-size: clamp(1.3rem, 2.2vw, 1.8rem);
   font-weight: 800;
-  color: #0f172a;
+  color: var(--color-text);
   text-align: center;
   line-height: 1.4;
   padding: 0.75rem 0 0.5rem;
@@ -170,16 +148,19 @@ $color-cyan-bg: #ecfeff;
   flex-direction: column;
   gap: 0.5rem;
   padding: 1rem 1.25rem;
-  background: #ffffff;
+  background: var(--color-surface);
   border-radius: 8px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--color-border);
   transition: all 0.2s ease;
   position: relative;
 }
 
-.option-item:hover {
-  border-color: #bfdbfe;
-  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.05);
+.option-item {
+  @include hover-glow(var(--shadow-md));
+
+  &:hover {
+    border-color: var(--color-info);
+  }
 }
 
 .option-item__body {
@@ -195,8 +176,8 @@ $color-cyan-bg: #ecfeff;
   width: 28px;
   height: 28px;
   border-radius: 50%;
-  background-color: #dbeafe;
-  color: #1d4ed8;
+  background-color: var(--color-info-bg);
+  color: var(--color-info);
   font-size: 0.8rem;
   font-weight: 700;
   flex-shrink: 0;
@@ -206,20 +187,20 @@ $color-cyan-bg: #ecfeff;
   flex: 1;
   font-size: 0.95rem;
   font-weight: 600;
-  color: $color-text-main;
+  color: var(--color-text);
 }
 
 .option-item__percentage {
   font-size: 1rem;
   font-weight: 800;
-  color: $color-ui-primary;
+  color: var(--color-info);
 }
 
 /* Barras de Votos del Público Integradas */
 .option-item__progress-track {
   width: 100%;
   height: 6px;
-  background-color: #e2e8f0;
+  background-color: var(--color-border);
   border-radius: 10px;
   overflow: hidden;
   margin-top: 0.25rem;
@@ -227,7 +208,7 @@ $color-cyan-bg: #ecfeff;
 
 .option-item__progress-fill {
   height: 100%;
-  background-color: $color-ui-primary;
+  background-color: var(--color-info);
   border-radius: 10px;
   transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
 }
@@ -242,63 +223,63 @@ $color-cyan-bg: #ecfeff;
 
 /* Estados Dinámicos del Servidor */
 .option-item--selected {
-  border-color: $color-ui-primary;
-  background-color: $color-ui-primary-light;
+  border-color: var(--color-info);
+  background-color: var(--color-info-bg);
 
   /*Animacion agregada*/
   transform: translateY(-1px);
-  box-shadow: 0 10px 22px rgba(37, 99, 235, 0.16);
+  box-shadow: var(--shadow-md);
   animation: blinkSelect 0.8s infinite;
 
   .option-item__letter {
-    background-color: $color-ui-primary;
-    color: white;
+    background-color: var(--color-info);
+    color: var(--color-surface);
   }
 }
 
 .option-item--correct {
-  border-color: $color-success;
-  background-color: $color-success-bg;
+  border-color: var(--color-success);
+  background-color: var(--color-success-bg);
 
   /*Animacion agregada*/
   animation: pulse 0.6s ease;
-  box-shadow: 0 10px 22px rgba(16, 185, 129, 0.16);
+  box-shadow: var(--shadow-md);
 
   .option-item__letter {
-    background-color: $color-success;
-    color: white;
+    background-color: var(--color-success);
+    color: var(--color-surface);
   }
   .option-item__percentage {
-    color: $color-success;
+    color: var(--color-success);
   }
   .option-item__progress-fill {
-    background-color: $color-success;
+    background-color: var(--color-success);
   }
   .option-item__badge {
-    color: #059646;
+    color: var(--color-success);
   }
 }
 
 .option-item--incorrect {
-  border-color: $color-danger;
-  background-color: $color-danger-bg;
+  border-color: var(--color-danger);
+  background-color: var(--color-danger-bg);
 
   /*Animacion agregada*/
   animation: shake 0.4s ease;
-  box-shadow: 0 10px 22px rgba(239, 68, 68, 0.14);
+  box-shadow: var(--shadow-md);
 
   .option-item__letter {
-    background-color: $color-danger;
-    color: white;
+    background-color: var(--color-danger);
+    color: var(--color-surface);
   }
   .option-item__percentage {
-    color: $color-danger;
+    color: var(--color-danger);
   }
   .option-item__progress-fill {
-    background-color: $color-danger;
+    background-color: var(--color-danger);
   }
   .option-item__badge {
-    color: #c22222;
+    color: var(--color-danger);
   }
 }
 
@@ -311,13 +292,13 @@ $color-cyan-bg: #ecfeff;
 
 /* Pre-seleccionado (antes de confirmar) */
 .option-item--pre-selected {
-  border-color: $color-ui-primary;
-  background-color: $color-ui-primary-light;
-  box-shadow: 0 0 0 2px rgba($color-ui-primary, 0.15);
+  border-color: var(--color-info);
+  background-color: var(--color-info-bg);
+  box-shadow: 0 0 0 2px var(--color-info-bg);
 
   .option-item__letter {
-    background-color: $color-ui-primary;
-    color: white;
+    background-color: var(--color-info);
+    color: var(--color-surface);
   }
 }
 
@@ -325,13 +306,14 @@ $color-cyan-bg: #ecfeff;
 .option-item--clickable {
   cursor: pointer;
 
+  @include hover-bg(var(--color-info-bg));
+
   &:hover {
-    border-color: $color-ui-primary;
-    background-color: $color-ui-primary-light;
+    border-color: var(--color-info);
   }
 
   &:focus-visible {
-    outline: 2px solid $color-ui-primary;
+    outline: 2px solid var(--color-info);
     outline-offset: 2px;
   }
 }
@@ -346,8 +328,8 @@ $color-cyan-bg: #ecfeff;
 
 .confirm-btn {
   padding: 0.75rem 2.5rem;
-  background-color: $color-ui-primary;
-  color: white;
+  background-color: var(--color-info);
+  color: var(--color-surface);
   border: none;
   border-radius: 8px;
   font-size: 0.95rem;
@@ -356,10 +338,11 @@ $color-cyan-bg: #ecfeff;
   transition: all 0.2s;
   letter-spacing: 0.5px;
 
+  @include hover-lift(-1px);
+
   &:hover {
-    background-color: color.adjust($color-ui-primary, $lightness: -8%);
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba($color-ui-primary, 0.3);
+    background-color: var(--color-primary-hover);
+    box-shadow: var(--shadow-md);
   }
 
   &:active {
@@ -371,14 +354,14 @@ $color-cyan-bg: #ecfeff;
 /* Panel de Comodines Inferior */
 /* ───────────────────────────────────── */
 .observer-wildcards-panel {
-  background: #f8fafc;
+  background: var(--color-bg);
   border-radius: 8px;
   padding: 0.75rem;
-  border: 1px solid #bfdbfe;
+  border: 1px solid var(--color-info);
   text-align: left;
   width: 100%;
   box-sizing: border-box;
-  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.04);
+  box-shadow: var(--shadow-md);
 }
 
 .observer-wildcards-panel--inline {
@@ -391,7 +374,7 @@ $color-cyan-bg: #ecfeff;
 .wildcards-title {
   font-size: 0.7rem;
   font-weight: 700;
-  color: $color-text-muted;
+  color: var(--color-sub);
   letter-spacing: 0.08em;
   text-transform: uppercase;
   white-space: nowrap;
@@ -414,8 +397,8 @@ $color-cyan-bg: #ecfeff;
   align-items: center;
   column-gap: 0.5rem;
   padding: 0.5rem 0.65rem;
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
   border-radius: 8px;
   transition:
     border-color 0.15s,
@@ -429,8 +412,8 @@ $color-cyan-bg: #ecfeff;
   width: 32px;
   height: 32px;
   border-radius: 8px;
-  background-color: $color-ui-primary-light;
-  border: 1px solid #e2e8f0;
+  background-color: var(--color-info-bg);
+  border: 1px solid var(--color-border);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -439,11 +422,11 @@ $color-cyan-bg: #ecfeff;
 }
 
 .wildcard-node:has(.wildcard-node__label:nth-child(2)) {
-  border-color: #e2e8f0;
+  border-color: var(--color-border);
 }
 
 .wildcard-node:has(.wildcard-node__label) .wildcard-node__icon {
-  color: #1d4ed8;
+  color: var(--color-info);
 }
 
 .wildcard-node__label {
@@ -451,7 +434,7 @@ $color-cyan-bg: #ecfeff;
   min-width: 0;
   font-size: 0.76rem;
   font-weight: 700;
-  color: $color-text-main;
+  color: var(--color-text);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -462,61 +445,61 @@ $color-cyan-bg: #ecfeff;
   min-width: 0;
   font-size: 0.66rem;
   font-weight: 600;
-  color: $color-text-muted;
+  color: var(--color-sub);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .wildcard-node__state--used {
-  color: $color-purple;
+  color: var(--color-purple);
 }
 
 .wildcard-node__state--disabled {
-  color: $color-danger;
+  color: var(--color-danger);
 }
 
 /* Modificadores de estado de comodín desde el socket */
 .wildcard-node--active {
-  border-color: $color-ui-primary;
-  background: $color-ui-primary-light;
-  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.08);
+  border-color: var(--color-info);
+  background: var(--color-info-bg);
+  box-shadow: 0 0 0 2px var(--color-info-bg);
 
   .wildcard-node__icon {
-    background-color: #ffffff;
-    border-color: $color-ui-primary;
+    background-color: var(--color-surface);
+    border-color: var(--color-info);
   }
 
   .wildcard-node__label {
-    color: $color-ui-primary;
+    color: var(--color-info);
     font-weight: 800;
   }
 }
 
 .wildcard-node:has(.wildcard-node__label) {
   &:nth-child(2) .wildcard-node__icon {
-    background: $color-purple-bg;
-    color: $color-purple;
-    border-color: #ddd6fe;
+    background: var(--color-purple-bg);
+    color: var(--color-purple);
+    border-color: var(--color-purple-bg);
   }
 
   &:nth-child(3) .wildcard-node__icon {
-    background: $color-success-bg;
-    color: $color-success;
-    border-color: #bbf7d0;
+    background: var(--color-success-bg);
+    color: var(--color-success);
+    border-color: var(--color-success-bg);
   }
 
   &:nth-child(4) .wildcard-node__icon {
-    background: $color-warning-bg;
-    color: $color-warning;
-    border-color: #fde68a;
+    background: var(--color-warning-bg);
+    color: var(--color-warning);
+    border-color: var(--color-warning-bg);
   }
 
   &:nth-child(5) .wildcard-node__icon,
   &:nth-child(6) .wildcard-node__icon {
-    background: $color-cyan-bg;
-    color: $color-cyan;
-    border-color: #a5f3fc;
+    background: var(--color-cyan-bg);
+    color: var(--color-cyan);
+    border-color: var(--color-cyan-bg);
   }
 }
 
@@ -524,21 +507,22 @@ $color-cyan-bg: #ecfeff;
   opacity: 0.55;
 
   .wildcard-node__icon {
-    background-color: #f1f5f9;
-    border-color: #cbd5e1;
+    background-color: var(--color-bg);
+    border-color: var(--color-podium-silver);
   }
 }
 
 .wildcard-node--clickable {
   cursor: pointer;
 
+  @include hover-bg(var(--color-info-bg));
+
   &:hover {
-    background-color: $color-ui-primary-light;
-    border-color: $color-ui-primary;
+    border-color: var(--color-info);
   }
 
   &:focus-visible {
-    outline: 2px solid $color-ui-primary;
+    outline: 2px solid var(--color-info);
     outline-offset: 4px;
     border-radius: 8px;
   }
@@ -546,7 +530,7 @@ $color-cyan-bg: #ecfeff;
 
 .wildcards-empty {
   font-size: 0.85rem;
-  color: $color-text-muted;
+  color: var(--color-sub);
   font-style: italic;
   margin: 0;
 }
@@ -560,24 +544,24 @@ $color-cyan-bg: #ecfeff;
   padding: 1.5rem 2rem;
   border-radius: 24px;
   animation: fadeIn 0.3s ease-out;
-  border: 1px solid rgba(0, 0, 0, 0.03);
+  border: 1px solid var(--color-border);
 }
 
 .feedback-card--correct {
-  background-color: $color-success-bg;
-  border-color: $color-success;
+  background-color: var(--color-success-bg);
+  border-color: var(--color-success);
 
   .feedback-card__title {
-    color: #059669;
+    color: var(--color-success);
   }
 }
 
 .feedback-card--incorrect {
-  background-color: $color-danger-bg;
-  border-color: $color-danger;
+  background-color: var(--color-danger-bg);
+  border-color: var(--color-danger);
 
   .feedback-card__title {
-    color: #dc2626;
+    color: var(--color-danger);
   }
 }
 
@@ -601,25 +585,25 @@ $color-cyan-bg: #ecfeff;
 .feedback-card__text {
   margin: 0;
   font-size: 0.85rem;
-  color: $color-text-muted;
+  color: var(--color-sub);
   line-height: 1.4;
 }
 
 /* ─── Resultados del Público ─────────── */
 
 .observer-audience-results {
-  background-color: $color-card-white;
+  background-color: var(--color-surface);
   border-radius: 8px;
   padding: 1.5rem 2rem;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.02);
-  border: 1px solid rgba(0, 0, 0, 0.03);
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--color-border);
   animation: fadeIn 0.3s ease-out;
 }
 
 .observer-audience-results__title {
   font-size: 0.75rem;
   font-weight: 700;
-  color: $color-text-muted;
+  color: var(--color-sub);
   letter-spacing: 2px;
   margin: 0 0 1rem 0;
   text-transform: uppercase;
@@ -628,8 +612,8 @@ $color-cyan-bg: #ecfeff;
 /* ─── Sugerencia IA ──────────────────── */
 
 .observer-ia-box {
-  background: #f5f3ff;
-  border: 1px solid #ddd6fe;
+  background: var(--color-purple-bg);
+  border: 1px solid var(--color-purple-bg);
   border-radius: 8px;
   padding: 1.5rem 2rem;
   animation: fadeIn 0.3s ease-out;
@@ -641,7 +625,7 @@ $color-cyan-bg: #ecfeff;
   gap: 8px;
   font-size: 0.75rem;
   font-weight: 700;
-  color: #0369a1;
+  color: var(--color-cyan);
   margin-bottom: 0.75rem;
   text-transform: uppercase;
   letter-spacing: 2px;
@@ -650,19 +634,19 @@ $color-cyan-bg: #ecfeff;
 .observer-ia-box__content {
   margin: 0 0 4px 0;
   font-size: 0.95rem;
-  color: #0c4a6e;
+  color: var(--color-cyan);
 }
 
 .observer-ia-box__explanation {
   margin: 0;
   font-size: 0.85rem;
-  color: #075985;
+  color: var(--color-cyan);
   line-height: 1.4;
 }
 
 .observer-spin {
   animation: spin 1.5s linear infinite;
-  color: $color-ui-primary;
+  color: var(--color-info);
 }
 
 /* Estado de carga */
@@ -672,90 +656,24 @@ $color-cyan-bg: #ecfeff;
   align-items: center;
   gap: 1rem;
   padding: 4rem 2rem;
-  background-color: $color-card-white;
+  background-color: var(--color-surface);
   border-radius: 8px;
-  border: 1px solid rgba(0, 0, 0, 0.03);
+  border: 1px solid var(--color-border);
   font-size: 0.85rem;
-  color: $color-text-muted;
+  color: var(--color-sub);
   font-style: italic;
 }
 
 .spinner {
   width: 32px;
   height: 32px;
-  border: 3px solid #e2e8f0;
-  border-top-color: $color-ui-primary;
+  border: 3px solid var(--color-border);
+  border-top-color: var(--color-info);
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }
 
-/* Animaciones globales */
-@keyframes pulse {
-  0% {
-    transform: scale(1);
-  }
-  50% {
-    transform: scale(1.05);
-  }
-  100% {
-    transform: scale(1);
-  }
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(-4px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
 /* ─── Animaciones adicionales ─────────── */
-
-@keyframes shake {
-  0%,
-  100% {
-    transform: translateX(0);
-  }
-  25% {
-    transform: translateX(-5px);
-  }
-  50% {
-    transform: translateX(5px);
-  }
-  75% {
-    transform: translateX(-5px);
-  }
-}
-
-@keyframes blink {
-  50% {
-    opacity: 0.3;
-  }
-}
-
-@keyframes blinkSelect {
-  0% {
-    transform: translateY(-1px);
-    opacity: 1;
-  }
-  50% {
-    transform: translateY(-2px);
-    opacity: 0.82;
-  }
-  100% {
-    transform: translateY(-1px);
-    opacity: 1;
-  }
-}
 
 @media (max-width: 900px) {
   .observer-card {

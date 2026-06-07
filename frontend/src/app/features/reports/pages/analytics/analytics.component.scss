@@ -1,6 +1,7 @@
 /* ═══════════════════════════════════════════════
    ANALYTICS — Cuadro de analíticas del docente
    ═══════════════════════════════════════════════ */
+@use 'hovers' as *;
 
 .analytics {
   padding: 2rem 2.5rem;
@@ -63,23 +64,23 @@
   overflow: hidden;
 
   &:disabled { opacity: .55; cursor: not-allowed; }
-  &:not(:disabled):hover { transform: translateY(-2px); }
+  @include hover-lift;
   &:not(:disabled):active { transform: none; }
 
   &--excel {
-    background: #217346;
-    color: #fff;
+    background: var(--color-success);
+    color: var(--color-surface);
     box-shadow: 0 3px 12px rgba(33,115,70,.35);
 
-    &:not(:disabled):hover { box-shadow: 0 6px 18px rgba(33,115,70,.45); }
+    @include hover-glow(0 6px 18px rgba(33,115,70,.45));
   }
 
   &--pdf {
-    background: #C7372F;
-    color: #fff;
+    background: var(--color-danger);
+    color: var(--color-surface);
     box-shadow: 0 3px 12px rgba(199,55,47,.35);
 
-    &:not(:disabled):hover { box-shadow: 0 6px 18px rgba(199,55,47,.45); }
+    @include hover-glow(0 6px 18px rgba(199,55,47,.45));
   }
 }
 
@@ -88,12 +89,10 @@
   width: 14px;
   height: 14px;
   border: 2px solid rgba(255,255,255,.3);
-  border-top-color: #fff;
+  border-top-color: var(--color-surface);
   border-radius: 50%;
   animation: spin .7s linear infinite;
 }
-
-@keyframes spin { to { transform: rotate(360deg); } }
 
 // ── KPIs ───────────────────────────────────────
 .an-kpis {
@@ -114,14 +113,14 @@
   box-shadow: var(--shadow-sm);
   transition: box-shadow var(--transition), transform var(--transition);
 
-  &:hover { box-shadow: var(--shadow-md); transform: translateY(-2px); }
+  @include hover-glow(var(--shadow-md));
 
   &__icon { color: var(--color-sub); margin-bottom: .1rem; }
   &__val  { font-size: 1.75rem; font-weight: 800; color: var(--color-text); line-height: 1; }
   &__lbl  { font-size: var(--text-xs); color: var(--color-sub); text-transform: uppercase; letter-spacing: .07em; }
 
   &--primary { border-color: var(--color-primary); .an-kpi__val { color: var(--color-primary); } .an-kpi__icon { color: var(--color-primary); } }
-  &--ok      { border-color: var(--color-success);  .an-kpi__val { color: #16a34a; } .an-kpi__icon { color: #16a34a; } }
+  &--ok      { border-color: var(--color-success);  .an-kpi__val { color: var(--color-success); } .an-kpi__icon { color: var(--color-success); } }
   &--fail    { border-color: var(--color-danger);   .an-kpi__val { color: var(--color-danger); } .an-kpi__icon { color: var(--color-danger); } }
 }
 
@@ -223,9 +222,9 @@
   border-bottom: 1px solid var(--color-border);
   transition: background var(--transition-fast);
 
-  &:hover { background: var(--color-bg); }
-  &.expanded { background: #EEF2FF; border-bottom-color: transparent; }
-  &.row-top td { background: #fafbff; }
+  @include hover-bg(var(--color-bg));
+  &.expanded { background: var(--color-info-bg); border-bottom-color: transparent; }
+  &.row-top td { background: var(--color-info-bg); }
 
   td { padding: .7rem 1rem; vertical-align: middle; }
 }
@@ -245,9 +244,9 @@
   justify-content: center;
   width: 32px;
   height: 32px;
-  background: linear-gradient(135deg, var(--color-primary), #2a3580);
+  background: linear-gradient(135deg, var(--color-primary), var(--color-primary-hover));
   border-radius: 50%;
-  color: #fff;
+  color: var(--color-surface);
   font-size: .65rem;
   font-weight: 700;
   flex-shrink: 0;
@@ -257,7 +256,7 @@
 
 .an-nick { font-weight: 500; color: var(--color-text); vertical-align: middle; }
 
-.ok          { color: #16a34a; font-weight: 600; }
+.ok          { color: var(--color-success); font-weight: 600; }
 .fail        { color: var(--color-danger); font-weight: 600; }
 .comodines-count { color: var(--color-ai); font-weight: 600; }
 
@@ -281,9 +280,9 @@
   border-radius: var(--radius-full);
   transition: width .5s ease;
 
-  &.pct-high { background: linear-gradient(90deg, var(--color-success), #6ee7b7); }
-  &.pct-mid  { background: linear-gradient(90deg, var(--color-warning), #fcd34d); }
-  &.pct-low  { background: linear-gradient(90deg, var(--color-danger), #fca5a5); }
+  &.pct-high { background: linear-gradient(90deg, var(--color-success), var(--color-success-bg)); }
+  &.pct-mid  { background: linear-gradient(90deg, var(--color-warning), var(--color-warning-bg)); }
+  &.pct-low  { background: linear-gradient(90deg, var(--color-danger), var(--color-danger-bg)); }
 }
 
 .pct-label {
@@ -307,7 +306,7 @@
 }
 
 // ── Fila de detalle expandida ──────────────────
-.an-detail-row td { padding: 0; background: #F8FAFF; border-bottom: 1px solid var(--color-border); }
+.an-detail-row td { padding: 0; background: var(--color-info-bg); border-bottom: 1px solid var(--color-border); }
 
 .an-detail {
   padding: 1.25rem 1.5rem 1.5rem;
@@ -349,14 +348,14 @@
     font-size: .7rem;
     font-weight: 600;
 
-    &.ok      { background: #dcfce7; color: #16a34a; }
-    &.fail    { background: #fee2e2; color: #dc2626; }
-    &.comodin { background: #ede9fe; color: var(--color-ai); }
+    &.ok      { background: var(--color-success-bg); color: var(--color-success); }
+    &.fail    { background: var(--color-danger-bg); color: var(--color-danger); }
+    &.comodin { background: var(--color-purple-bg); color: var(--color-ai); }
   }
 
   &__preguntas {
     list-style: none;
-    background: #FAFBFF;
+    background: var(--color-info-bg);
   }
 }
 
@@ -375,7 +374,7 @@
   .p-resp   { color: var(--color-sub); font-style: italic; flex-shrink: 0; max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .p-comodin { color: var(--color-ai); font-size: .65rem; flex-shrink: 0; }
 
-  &.p-ok  .p-icon { color: #16a34a; }
+  &.p-ok  .p-icon { color: var(--color-success); }
   &.p-fail .p-icon { color: var(--color-danger); }
 }
 
@@ -408,10 +407,10 @@
 }
 
 .an-error {
-  background: #fee2e2;
-  border: 1px solid #fca5a5;
+  background: var(--color-danger-bg);
+  border: 1px solid var(--color-danger-bg);
   border-radius: var(--radius-md);
   padding: .9rem 1.2rem;
-  color: #dc2626;
+  color: var(--color-danger);
   font-size: var(--text-sm);
 }

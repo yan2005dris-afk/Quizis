@@ -50,12 +50,7 @@
     .countdown__progress { stroke: var(--color-danger); }
     .countdown__numero   {
       color: var(--color-danger);
-      animation: pulso-countdown 0.75s ease-in-out infinite;
+      animation: pulse 0.75s ease-in-out infinite;
     }
   }
-}
-
-@keyframes pulso-countdown {
-  0%, 100% { transform: scale(1); }
-  50%       { transform: scale(1.12); }
 }

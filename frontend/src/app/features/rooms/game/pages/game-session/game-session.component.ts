@@ -11,7 +11,10 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
-import { GameSocketService, ResultRespuesta } from '../../../../../core/services/game-socket.service';
+import {
+  GameSocketService,
+  ResultRespuesta,
+} from '../../../../../core/services/game-socket.service';
 import { AuthService } from '../../../../../core/services/auth.service';
 
 import {

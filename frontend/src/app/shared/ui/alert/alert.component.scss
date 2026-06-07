@@ -1,3 +1,5 @@
+@use 'hovers' as *;
+
 .alert {
   display: flex;
   align-items: flex-start;
@@ -9,28 +11,28 @@
 
   /* ── Type variants ─────────────────────── */
   &--success {
-    background-color: #f0fdf4;
+    background-color: var(--color-success-bg);
     border-left-color: var(--color-success);
     .alert__icon  { color: var(--color-success); }
-    .alert__title { color: #166534; }
+    .alert__title { color: var(--color-success); }
   }
 
   &--warning {
-    background-color: #fffbeb;
+    background-color: var(--color-warning-bg);
     border-left-color: var(--color-warning);
     .alert__icon  { color: var(--color-warning); }
-    .alert__title { color: #92400e; }
+    .alert__title { color: var(--color-banner-warning-fg); }
   }
 
   &--danger {
-    background-color: #fef2f2;
+    background-color: var(--color-danger-bg);
     border-left-color: var(--color-danger);
     .alert__icon  { color: var(--color-danger); }
-    .alert__title { color: #991b1b; }
+    .alert__title { color: var(--color-danger); }
   }
 
   &--info {
-    background-color: #eff6ff;
+    background-color: var(--color-info-bg);
     border-left-color: var(--color-primary);
     .alert__icon  { color: var(--color-primary); }
     .alert__title { color: var(--color-primary); }

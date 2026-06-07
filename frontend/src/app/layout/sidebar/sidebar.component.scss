@@ -1,3 +1,5 @@
+@use 'hovers' as *;
+
 .sidebar {
   width: 260px;
   height: 100vh;
@@ -26,7 +28,7 @@
 
       .logo-icon {
         background-color: var(--color-primary);
-        color: #fff;
+        color: var(--color-surface);
         width: 32px;
         height: 32px;
         border-radius: var(--radius-md);
@@ -92,12 +94,12 @@
     white-space: nowrap;
 
     &:hover {
-      background-color: #f8faff;
+      background-color: var(--color-info-bg);
       color: var(--color-primary);
     }
 
     &.active {
-      background-color: #eff6ff;
+      background-color: var(--color-info-bg);
       color: var(--color-primary);
     }
 
@@ -116,7 +118,7 @@
       font-family: var(--font-sans);
 
       &:hover {
-        background-color: #fff5f5;
+        background-color: var(--color-danger-bg);
         color: var(--color-danger);
       }
     }

@@ -1,7 +1,7 @@
 :host {
   display: block;
   min-height: 100vh;
-  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+  background: linear-gradient(135deg, var(--color-bg) 0%, var(--color-border) 100%);
 }
 
 .join-page {
@@ -15,10 +15,10 @@
 .join-card {
   width: 100%;
   max-width: 440px;
-  background: #ffffff;
+  background: var(--color-surface);
   border-radius: 20px;
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--color-border);
   overflow: hidden;
 }
 
@@ -30,8 +30,8 @@
 .join-card__icon-wrapper {
   width: 64px;
   height: 64px;
-  background: #eff6ff;
-  color: #2563eb;
+  background: var(--color-info-bg);
+  color: var(--color-info);
   border-radius: 16px;
   display: flex;
   align-items: center;
@@ -42,13 +42,13 @@
 .join-card__title {
   font-size: 24px;
   font-weight: 800;
-  color: #1e293b;
+  color: var(--color-text);
   margin: 0 0 8px;
 }
 
 .join-card__subtitle {
   font-size: 14px;
-  color: #64748b;
+  color: var(--color-sub);
   margin: 0;
 }
 
@@ -63,22 +63,22 @@
   justify-content: center;
   padding: 40px 0;
   gap: 16px;
-  color: #64748b;
+  color: var(--color-sub);
   font-size: 14px;
 }
 
 .sala-info {
-  background: #f1f5f9;
+  background: var(--color-bg);
   padding: 16px;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   margin-bottom: 24px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--color-border);
 }
 
 .sala-info__label {
   font-size: 11px;
   font-weight: 700;
-  color: #64748b;
+  color: var(--color-sub);
   text-transform: uppercase;
   letter-spacing: 0.5px;
   margin-bottom: 4px;
@@ -87,28 +87,28 @@
 .sala-info__name {
   font-size: 18px;
   font-weight: 700;
-  color: #1e293b;
+  color: var(--color-text);
   margin: 0;
 }
 
 .join-form__hint {
   font-size: 12px;
-  color: #94a3b8;
+  color: var(--color-podium-silver);
   margin-top: 8px;
   line-height: 1.5;
 }
 
 .join-card__footer {
   padding: 20px;
-  background: #f8fafc;
-  border-top: 1px solid #e2e8f0;
+  background: var(--color-bg);
+  border-top: 1px solid var(--color-border);
   text-align: center;
-  
+
   p {
     margin: 0;
     font-size: 11px;
     font-weight: 600;
-    color: #94a3b8;
+    color: var(--color-podium-silver);
     text-transform: uppercase;
     letter-spacing: 0.5px;
   }
@@ -124,12 +124,8 @@
 .spinner {
   width: 32px;
   height: 32px;
-  border: 3px solid #e2e8f0;
-  border-top-color: #2563eb;
+  border: 3px solid var(--color-border);
+  border-top-color: var(--color-info);
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
-}
-
-@keyframes spin {
-  to { transform: rotate(360deg); }
 }

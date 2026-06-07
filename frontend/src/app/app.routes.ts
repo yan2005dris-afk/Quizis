@@ -62,7 +62,8 @@ export const routes: Routes = [
       {
         path: 'salas',
         canActivate: [authGuard],
-        loadChildren: () => import('./features/rooms/management/salas.routes').then((m) => m.SALAS_ROUTES),
+        loadChildren: () =>
+          import('./features/rooms/management/salas.routes').then((m) => m.SALAS_ROUTES),
       },
       {
         path: 'bancos',

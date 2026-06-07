@@ -28,25 +28,25 @@ import { ChangeDetectionStrategy, Component, input, output } from '@angular/core
       }
 
       .modal-content {
-        background: #ffffff;
+        background: var(--color-surface);
         padding: 24px;
-        border-radius: 12px;
+        border-radius: var(--radius-lg);
         width: 90%;
         max-width: 400px;
-        box-shadow: 0 10px 24px rgba(15, 23, 42, 0.12);
-        font-family: inherit;
+        box-shadow: var(--shadow-lg);
+        font-family: var(--font-sans);
         border-top: 4px solid var(--color-primary);
       }
 
       h3 {
         margin: 0 0 12px;
-        color: #1e293b;
+        color: var(--color-text);
         font-size: 1.1rem;
         font-weight: 700;
       }
 
       p {
-        color: #475569;
+        color: var(--color-sub);
         margin: 0 0 24px;
         font-size: 0.9rem;
         line-height: 1.5;
@@ -60,30 +60,30 @@ import { ChangeDetectionStrategy, Component, input, output } from '@angular/core
 
       button {
         padding: 8px 16px;
-        border-radius: 6px;
+        border-radius: var(--radius-sm);
         font-size: 13px;
         font-weight: 600;
         cursor: pointer;
         border: 1px solid transparent;
         transition:
-          background 0.15s,
-          border-color 0.15s;
+          background var(--transition),
+          border-color var(--transition);
       }
 
       .btn-cancel {
-        background: #ffffff;
-        color: #374151;
-        border-color: #d1d5db;
+        background: var(--color-surface);
+        color: var(--color-text);
+        border-color: var(--color-border);
 
         &:hover {
-          background: #f9fafb;
-          border-color: #cbd5e1;
+          background: var(--color-bg);
+          border-color: var(--color-podium-silver);
         }
       }
 
       .btn-confirm {
         background: var(--color-primary);
-        color: #ffffff;
+        color: var(--color-surface);
         border-color: var(--color-primary-hover);
 
         &:hover {

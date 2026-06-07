@@ -1,0 +1,85 @@
+/* ─── Centralized Animations ───────────────────────────────
+   Keyframe definitions consumed across the Quizis frontend.
+   Components should NOT redeclare these locally — reference
+   the animation by name in CSS rules (e.g. `animation: spin
+   0.7s linear infinite;`). The matching @keyframes will be
+   picked up from this partial via the main entry point.
+*/
+
+/* Spinner — loaders, refresh buttons, async indicators */
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Pulse — emphasis, attention, breathing effects */
+@keyframes pulse {
+  0%, 100% { transform: scale(1);    opacity: 1;    }
+  50%      { transform: scale(1.05); opacity: 0.85; }
+}
+
+/* Pulso-countdown — urgency, time-running-out timer */
+@keyframes pulso-countdown {
+  0%, 100% { transform: scale(1);    }
+  50%      { transform: scale(1.08); }
+}
+
+/* Fade in — entry transition for content blocks */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0);   }
+}
+
+/* Fade-in overlay — modal / dialog backdrop entry */
+@keyframes fadeInOverlay {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* Shake — error / invalid feedback */
+@keyframes shake {
+  0%, 100% { transform: translateX(0);    }
+  25%      { transform: translateX(-8px); }
+  75%      { transform: translateX(8px);  }
+}
+
+/* Blink — generic attention blink */
+@keyframes blink {
+  50% { opacity: 0.3; }
+}
+
+/* Blink-select — answer option reveal (active-question) */
+@keyframes blinkSelect {
+  0%, 100% { background-color: var(--color-primary);       }
+  50%      { background-color: var(--color-primary-hover); }
+}
+
+/* Orb float — atmospheric background animation */
+@keyframes orbFloat {
+  0%, 100% { transform: translate(0, 0)        scale(1);    }
+  33%      { transform: translate(30px, -20px) scale(1.05); }
+  66%      { transform: translate(-20px, 15px) scale(0.95); }
+}
+
+/* Twinkle — star-like effect */
+@keyframes twinkle {
+  0%, 100% { opacity: 0.2; transform: scale(0.8); }
+  50%      { opacity: 1;   transform: scale(1.1); }
+}
+
+/* Crown bounce — winner indicator */
+@keyframes crownBounce {
+  0%, 100% { transform: translateY(0);     }
+  50%      { transform: translateY(-10px); }
+}
+
+/* Toast fly-in — notification entry (bouncy) */
+@keyframes toast-fly-in {
+  from { transform: translateY(100%) scale(0.9); opacity: 0; }
+  to   { transform: translateY(0)     scale(1);   opacity: 1; }
+}
+
+/* Toast-in — alternate notification entry (slide) */
+@keyframes toast-in {
+  from { transform: translateX(120%); }
+  to   { transform: translateX(0);    }
+}

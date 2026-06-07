@@ -52,19 +52,19 @@
   /* ── Variants ──────────────────────────── */
   &--primary {
     background-color: var(--color-primary);
-    color: #fff;
+    color: var(--color-surface);
     &:hover:not(:disabled) { background-color: var(--color-primary-hover); }
   }
 
   &--secondary {
     background-color: var(--color-success);
-    color: #fff;
+    color: var(--color-surface);
     &:hover:not(:disabled) { background-color: var(--color-success-hover); }
   }
 
   &--danger {
     background-color: var(--color-danger);
-    color: #fff;
+    color: var(--color-surface);
     &:hover:not(:disabled) { background-color: var(--color-danger-hover); }
   }
 
@@ -76,7 +76,7 @@
 
   &--ai {
     background-color: var(--color-ai);
-    color: #fff;
+    color: var(--color-surface);
     &:hover:not(:disabled) { background-color: var(--color-ai-hover); }
   }
 
@@ -86,7 +86,7 @@
     border-color: var(--color-primary);
     &:hover:not(:disabled) {
       background-color: var(--color-primary);
-      color: #fff;
+      color: var(--color-surface);
     }
   }
 
@@ -106,10 +106,6 @@
   border: 2px solid currentColor;
   border-top-color: transparent;
   border-radius: 50%;
-  animation: btn-spin 0.7s linear infinite;
+  animation: spin 0.7s linear infinite;
   flex-shrink: 0;
-}
-
-@keyframes btn-spin {
-  to { transform: rotate(360deg); }
 }

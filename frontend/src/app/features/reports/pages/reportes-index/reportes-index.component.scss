@@ -1,3 +1,5 @@
+@use 'hovers' as *;
+
 .reportes {
   padding: 0;
 }
@@ -27,9 +29,10 @@
   cursor: pointer;
   transition: border-color var(--transition), color var(--transition);
 
+  @include hover-underline;
+
   &:hover {
     border-color: var(--color-primary);
-    color: var(--color-primary);
   }
 }
 
@@ -127,14 +130,10 @@
   animation: spin 0.8s linear infinite;
 }
 
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
-
 .reportes__error {
-  background: #fee2e2;
-  border: 1px solid #fca5a5;
-  color: #dc2626;
+  background: var(--color-danger-bg);
+  border: 1px solid var(--color-danger-bg);
+  color: var(--color-danger);
   padding: .75rem 1rem;
   border-radius: var(--radius-md);
   font-size: var(--text-sm);
@@ -168,9 +167,10 @@
   cursor: pointer;
   transition: border-color var(--transition), background var(--transition), transform var(--transition-fast);
 
+  @include hover-bg(var(--color-info-bg));
+
   &:hover {
     border-color: var(--color-primary);
-    background: #f8faff;
     transform: translateX(3px);
   }
 }
@@ -202,10 +202,10 @@
   text-transform: uppercase;
   letter-spacing: .05em;
 
-  &--finalizado  { background: #d1fae5; color: #065f46; }
-  &--en_vivo     { background: #fed7aa; color: #9a3412; }
-  &--esperando_alumnos { background: #dbeafe; color: #1e40af; }
-  &--borrador    { background: #f1f5f9; color: #475569; }
+  &--finalizado  { background: var(--color-success-bg); color: var(--color-success); }
+  &--en_vivo     { background: var(--color-warning-bg); color: var(--color-warning); }
+  &--esperando_alumnos { background: var(--color-info-bg); color: var(--color-info); }
+  &--borrador    { background: var(--color-bg); color: var(--color-sub); }
 }
 
 .reportes__item-date,

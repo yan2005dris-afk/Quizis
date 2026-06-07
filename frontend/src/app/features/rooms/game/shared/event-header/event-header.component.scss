@@ -7,11 +7,11 @@
   align-items: center;
   gap: 16px;
   padding: 18px 20px;
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
   border-left: 4px solid var(--color-primary);
-  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
+  box-shadow: var(--shadow-md);
 }
 
 .event-header__badge-wrapper {
@@ -21,24 +21,14 @@
 .event-header__live-badge {
   display: inline-block;
   padding: 4px 12px;
-  background: #ef4444;
-  color: #ffffff;
+  background: var(--color-danger);
+  color: var(--color-surface);
   font-size: 12px;
   font-weight: 700;
   border-radius: 999px;
   text-transform: uppercase;
   letter-spacing: 0.5px;
   animation: pulse 2s ease-in-out infinite;
-}
-
-@keyframes pulse {
-  0%,
-  100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.6;
-  }
 }
 
 .event-header__info {
@@ -53,7 +43,7 @@
   margin: 0;
   font-size: 18px;
   font-weight: 700;
-  color: #1e293b;
+  color: var(--color-text);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -75,23 +65,23 @@
 
 .event-header__prize-label {
   font-size: 13px;
-  color: #64748b;
+  color: var(--color-sub);
   margin-right: 4px;
 }
 
 .event-header__prize-value {
   font-size: 16px;
   font-weight: 700;
-  color: #0f172a;
+  color: var(--color-text);
 }
 
 .event-header__progress-text {
   font-size: 13px;
-  color: #64748b;
+  color: var(--color-sub);
 }
 
 .event-header__waiting {
-  color: #64748b;
+  color: var(--color-sub);
   padding: 8px 0;
 }
 
