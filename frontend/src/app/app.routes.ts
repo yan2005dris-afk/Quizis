@@ -1,7 +1,7 @@
 import { Routes } from '@angular/router';
-import { DashboardLayoutComponent } from './layout/dashboard-layout/dashboard-layout.component';
 import { authGuard } from './core/guards/auth.guard';
 import { PageNotFoundComponent } from './core/components/page-not-found/page-not-found.component';
+import { MainLayoutComponent } from './layout/main-layout/main-layout.component';
 
 export const routes: Routes = [
   // Redirección inicial: si no hay ruta, va a login
@@ -30,14 +30,14 @@ export const routes: Routes = [
   {
     path: 'show',
     loadComponent: () =>
-      import('./features/room/components/active-question/active-question.component').then(
+      import('./features/rooms/game/pages/active-question/active-question.component').then(
         (m) => m.ActiveQuestionComponent,
       ),
   },
   {
     path: 'join/:token',
     loadComponent: () =>
-      import('./features/room/pages/join-room/join-room.component').then(
+      import('./features/rooms/game/pages/join-room/join-room.component').then(
         (m) => m.JoinRoomComponent,
       ),
   },
@@ -45,26 +45,24 @@ export const routes: Routes = [
   {
     path: 'salas/unirse',
     loadComponent: () =>
-      import('./features/room/pages/join-room/join-room.component').then(
+      import('./features/rooms/game/pages/join-room/join-room.component').then(
         (m) => m.JoinRoomComponent,
       ),
   },
   {
     path: '',
-    component: DashboardLayoutComponent,
+    component: MainLayoutComponent,
     children: [
       // Rutas Privadas
-
       {
-        path: 'dashboard',
+        path: 'home',
         canActivate: [authGuard],
-        loadChildren: () =>
-          import('./features/dashboard/dashboard.routes').then((m) => m.DASHBOARD_ROUTES),
+        loadChildren: () => import('./features/home/home.routes').then((m) => m.HOME_ROUTES),
       },
       {
         path: 'salas',
         canActivate: [authGuard],
-        loadChildren: () => import('./features/salas/salas.routes').then((m) => m.SALAS_ROUTES),
+        loadChildren: () => import('./features/rooms/management/salas.routes').then((m) => m.SALAS_ROUTES),
       },
       {
         path: 'bancos',
@@ -76,27 +74,25 @@ export const routes: Routes = [
       },
 
       // Fallbacks para placeholders
-      { path: 'preguntas', redirectTo: 'dashboard', pathMatch: 'full' },
+      { path: 'preguntas', redirectTo: 'home', pathMatch: 'full' },
       { path: 'usuarios', redirectTo: 'reportes', pathMatch: 'full' },
-      { path: 'configuracion', redirectTo: 'dashboard', pathMatch: 'full' },
+      { path: 'configuracion', redirectTo: 'home', pathMatch: 'full' },
 
       // Reportes / Analytics
       {
         path: 'reportes',
         canActivate: [authGuard],
-        loadComponent: () =>
-          import('./features/room/pages/reportes-index/reportes-index.component').then(
-            (m) => m.ReportesIndexComponent,
-          ),
+        loadChildren: () =>
+          import('./features/reports/reports.routes').then((m) => m.REPORTS_ROUTES),
       },
 
       // Rutas de Sala (Públicas pero dentro del layout)
       {
         path: 'sala',
-        loadChildren: () => import('./features/room/room.routes').then((m) => m.ROOM_ROUTES),
+        loadChildren: () => import('./features/rooms/game/play.routes').then((m) => m.PLAY_ROUTES),
       },
 
-      { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
+      { path: '', redirectTo: 'home', pathMatch: 'full' },
     ],
   },
 
