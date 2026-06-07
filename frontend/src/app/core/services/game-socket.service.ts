@@ -54,6 +54,8 @@ export class GameSocketService {
   // Estado reactivo del juego — cualquier componente que los lea se actualiza automáticamente al cambiar
   readonly preguntaActiva = signal<Pregunta | null>(null);
   readonly tiempoRestante = signal<number | null>(null);
+  readonly enTransicion = signal<boolean>(false);
+  readonly transicionSegundos = signal<number | null>(null);
   readonly votosPublico = signal<VotosPublico | null>(null);
   readonly comodinBloqueado = signal<string[]>([]);
   readonly salaHabilitada = signal<boolean>(true);
@@ -116,6 +118,10 @@ export class GameSocketService {
       this.pistaConsultor.set(null);
       this.iaSugerenciaGlobal.set(null);
 
+      // Resetear transición al liberar nueva pregunta
+      this.enTransicion.set(false);
+      this.transicionSegundos.set(null);
+
       // Resetear estado de consenso al liberar nueva pregunta
       this.votantesConfirmados.set(0);
       this.totalVotantesRequeridos.set(0);
@@ -133,9 +139,22 @@ export class GameSocketService {
       });
     });
 
-    // Recibe el tiempo restante de la pregunta activa
+    // Recibe el tiempo restante de la pregunta activa (server-authoritative)
     this.socket.on('temporizador_actualizado', (data: number) => {
       this.tiempoRestante.set(data);
+    });
+
+    this.socket.on('tiempo_agotado', () => {
+      this.tiempoRestante.set(0);
+    });
+
+    this.socket.on('transicion_pregunta', (data: { segundos: number }) => {
+      this.enTransicion.set(true);
+      this.transicionSegundos.set(data.segundos);
+      setTimeout(() => {
+        this.enTransicion.set(false);
+        this.transicionSegundos.set(null);
+      }, (data.segundos + 1) * 1000);
     });
 
     // Actualiza los votos del público en tiempo real (batchteado por RAF)
@@ -277,6 +296,8 @@ export class GameSocketService {
       this.preguntaActiva.set(null);
       this.ultimoResultado.set(null);
       this.tiempoRestante.set(null);
+      this.enTransicion.set(false);
+      this.transicionSegundos.set(null);
       this.votosPublico.set(null);
       this.comodinBloqueado.set([]);
       this.llamadaActiva.set(false);
