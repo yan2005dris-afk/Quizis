@@ -157,14 +157,15 @@
                 <h3 class="detail-title">Editar pregunta</h3>
 
                 <div class="form-group">
-                  <label class="form-label">Texto de la pregunta</label>
-                  <textarea [(ngModel)]="pregunta.texto" class="form-textarea" rows="3"></textarea>
+                  <label class="form-label" for="edit-texto">Texto de la pregunta</label>
+                  <textarea id="edit-texto" [(ngModel)]="pregunta.texto" class="form-textarea" rows="3"></textarea>
                 </div>
 
                 <div class="form-row">
                   <div class="form-group">
-                    <label class="form-label">Categoría</label>
+                    <label class="form-label" for="edit-categoria">Categoría</label>
                     <input
+                      id="edit-categoria"
                       type="text"
                       [(ngModel)]="pregunta.categoria"
                       class="form-input"
@@ -172,8 +173,9 @@
                     />
                   </div>
                   <div class="form-group">
-                    <label class="form-label">Nivel</label>
+                    <label class="form-label" for="edit-nivel">Nivel</label>
                     <input
+                      id="edit-nivel"
                       type="number"
                       [(ngModel)]="pregunta.nivel"
                       class="form-input"
@@ -182,8 +184,9 @@
                     />
                   </div>
                   <div class="form-group">
-                    <label class="form-label">Tiempo (s)</label>
+                    <label class="form-label" for="edit-tiempo">Tiempo (s)</label>
                     <input
+                      id="edit-tiempo"
                       type="number"
                       [(ngModel)]="pregunta.tiempoLimite"
                       class="form-input"
@@ -192,8 +195,9 @@
                     />
                   </div>
                   <div class="form-group">
-                    <label class="form-label">Monto</label>
+                    <label class="form-label" for="edit-monto">Monto</label>
                     <input
+                      id="edit-monto"
                       type="number"
                       [(ngModel)]="pregunta.monto"
                       class="form-input"
@@ -203,8 +207,9 @@
                 </div>
 
                 <div class="form-group">
-                  <label class="form-label">Feedback correcto</label>
+                  <label class="form-label" for="edit-feedback-correcto">Feedback correcto</label>
                   <input
+                    id="edit-feedback-correcto"
                     type="text"
                     [(ngModel)]="pregunta.feedbackCorrecto"
                     class="form-input"
@@ -213,8 +218,9 @@
                 </div>
 
                 <div class="form-group">
-                  <label class="form-label">Feedback incorrecto</label>
+                  <label class="form-label" for="edit-feedback-incorrecto">Feedback incorrecto</label>
                   <input
+                    id="edit-feedback-incorrecto"
                     type="text"
                     [(ngModel)]="pregunta.feedbackIncorrecto"
                     class="form-input"
@@ -223,7 +229,7 @@
                 </div>
 
                 <div class="form-group">
-                  <label class="form-label">Opciones de respuesta</label>
+                  <p class="form-label">Opciones de respuesta</p>
                   <div class="options-editor">
                     @for (opcion of pregunta.opciones; track $index) {
                       <div class="option-edit-row" [class.correct]="opcion.esCorrecta">
