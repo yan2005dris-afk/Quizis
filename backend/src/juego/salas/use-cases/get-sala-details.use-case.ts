@@ -146,6 +146,7 @@ export class GetSalaDetailsUseCase {
       estado: estadoActual,
       maxEstudiantes: sala.maxEstudiantes,
       limitePreguntas: sala.limitePreguntas,
+      tiempoLimitePregunta: sala.tiempoLimitePregunta,
       tokenCompartido: sala.tokenCompartido,
       totalParticipantes: sala.participantes.length,
       createdAt: sala.createdAt,
