@@ -89,7 +89,6 @@
                   [(ngModel)]="bankName"
                   class="form-input form-input--lg"
                   placeholder="Ej: Cultura General, Historia Argentina..."
-                  autofocus
                 />
               </div>
 
@@ -158,7 +157,12 @@
 
                 <div class="form-group">
                   <label class="form-label" for="edit-texto">Texto de la pregunta</label>
-                  <textarea id="edit-texto" [(ngModel)]="pregunta.texto" class="form-textarea" rows="3"></textarea>
+                  <textarea
+                    id="edit-texto"
+                    [(ngModel)]="pregunta.texto"
+                    class="form-textarea"
+                    rows="3"
+                  ></textarea>
                 </div>
 
                 <div class="form-row">
@@ -218,7 +222,9 @@
                 </div>
 
                 <div class="form-group">
-                  <label class="form-label" for="edit-feedback-incorrecto">Feedback incorrecto</label>
+                  <label class="form-label" for="edit-feedback-incorrecto"
+                    >Feedback incorrecto</label
+                  >
                   <input
                     id="edit-feedback-incorrecto"
                     type="text"
