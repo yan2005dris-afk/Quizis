@@ -27,7 +27,7 @@ export class UpdateQuestionUseCase {
     }
 
     const preguntaExistente = await this.prisma.preguntas.findFirst({
-      where: { preguntaId, bancoId },
+      where: { preguntaId, bancoId, deletedAt: null },
     });
 
     if (!preguntaExistente) {
