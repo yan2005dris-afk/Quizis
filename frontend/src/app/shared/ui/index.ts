@@ -15,7 +15,10 @@ export { CountdownComponent } from './countdown/countdown.component';
 export { TimerComponent } from './timer/timer.component';
 
 export { QuestionProgressComponent } from './question-progress/question-progress.component';
+export type { SegmentoProgreso } from './question-progress/question-progress.component';
 
 export { AudienceBarsComponent } from './audience-bars/audience-bars.component';
+
+export { WildcardsPanelComponent } from './wildcards-panel/wildcards-panel.component';
 
 export { ToastComponent } from './toast/toast.component';

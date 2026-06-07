@@ -1,489 +1,471 @@
-<div class="bank-detail-page">
-  <header class="page-header">
-    <a routerLink="/bancos" class="back-link">← Volver a Bancos</a>
-  </header>
-
-  @if (isLoading()) {
-    <div class="loading-state" role="status">
-      <div class="spinner"></div>
-      <span class="sr-only">Cargando banco...</span>
+<div class="split-layout">
+  <!-- ═══════════════════════════════════════════ -->
+  <!-- LEFT SIDEBAR                              -->
+  <!-- ═══════════════════════════════════════════ -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <a routerLink="/bancos" class="back-link">← Bancos</a>
+      <h2 class="sidebar-title">
+        {{ isNewBank() ? 'Nuevo Banco' : bankName() || banco()?.nombre || 'Sin nombre' }}
+      </h2>
     </div>
-  } @else if (error()) {
-    <div class="bank-info-card">
-      <app-alert
-        type="danger"
-        message="No se pudo cargar el banco de preguntas. Intenta de nuevo más tarde."
-      />
-      <div class="mt-4">
-        <app-button variant="ghost" routerLink="/bancos">Volver a la lista</app-button>
+
+    @if (isLoading()) {
+      <div class="sidebar-loading">
+        <div class="spinner spinner--sm"></div>
       </div>
-    </div>
-  } @else if (isNewBank() || banco()) {
-    @let bancoValue = banco();
+    } @else if (!error()) {
+      <nav class="sidebar-nav">
+        <button
+          class="nav-item"
+          [class.active]="activeView() === 'info'"
+          (click)="activeView.set('info'); selectedQuestionId.set(null)"
+        >
+          <span class="nav-icon">📋</span>
+          Información del banco
+        </button>
 
-    <!-- Bank info -->
-    <div class="bank-info-card">
-      <div class="bank-info-header">
-        @if (isEditingBank()) {
-          <div class="bank-edit-form">
-            <h1 class="bank-title">
-              {{ isNewBank() ? 'Crear Nuevo Banco' : 'Editar Información' }}
-            </h1>
+        <div class="nav-divider"></div>
+        <div class="nav-section-label">Preguntas</div>
 
-            <app-input
-              label="Nombre del Banco"
-              placeholder="Ej: Cultura General"
-              [(ngModel)]="bankName"
-            />
-
-            <div class="form-group">
-              <label for="bank-desc">Descripción (opcional)</label>
-              <textarea
-                id="bank-desc"
-                [(ngModel)]="bankDesc"
-                class="question-textarea"
-                rows="2"
-                placeholder="De qué trata este banco..."
-              ></textarea>
-            </div>
-          </div>
-        } @else if (bancoValue) {
-          <div class="bank-display">
-            <div class="bank-title-row">
-              <h1 class="bank-title">{{ bancoValue.nombre }}</h1>
-              <app-button variant="ghost" size="sm" (clicked)="toggleEditBank()"
-                >Editar Info</app-button
-              >
-            </div>
-            @if (bancoValue.descripcion) {
-              <p class="bank-desc">{{ bancoValue.descripcion }}</p>
-            }
-            <div class="bank-meta">
-              <span>{{ bancoValue.preguntas.length }} preguntas en total</span>
-              <span>Creado el {{ bancoValue.createdAt | date: 'dd/MM/yyyy' }}</span>
-            </div>
-          </div>
-        }
-      </div>
-    </div>
-
-    <!-- File upload section -->
-    <div class="upload-card">
-      <details class="upload-details">
-        <summary class="upload-summary">
-          <span class="upload-summary-icon" aria-hidden="true">📤</span>
-          Importar preguntas desde archivo
-          <span class="upload-summary-hint">CSV, Excel o JSON</span>
-        </summary>
-
-        <div class="upload-body">
-          <p class="upload-desc">
-            Cargá un archivo con preguntas para agregarlas a este banco. El archivo se procesa en tu
-            navegador — no se sube al servidor.
-          </p>
-
-          <div class="form-group">
-            <div class="file-upload-zone">
-              <input
-                id="detail-file-upload"
-                type="file"
-                accept=".csv,.xlsx,.xls,.json"
-                class="file-input"
-                (change)="onFileSelected($event)"
-                aria-label="Seleccionar archivo de preguntas"
-              />
-              <div class="file-zone-content">
-                @if (isParsing()) {
-                  <div class="upload-spinner" role="status">
-                    <div class="spinner"></div>
-                    <span>Procesando archivo...</span>
-                  </div>
-                } @else {
-                  <span class="file-icon" aria-hidden="true">📄</span>
-                  <span class="file-label">{{ fileLabel() }}</span>
-                  <span class="file-hint">CSV, Excel (.xlsx/.xls) o JSON</span>
-                }
-              </div>
-            </div>
-          </div>
-
-          <!-- Parse error -->
-          @if (parseError()) {
-            <div class="error-section">
-              <app-alert
-                type="danger"
-                [message]="parseError()"
-                [dismissible]="true"
-                (dismissed)="parseError.set('')"
-              />
-            </div>
+        <div class="questions-list">
+          @for (pregunta of preguntasList(); track pregunta.preguntaId || $index; let i = $index) {
+            <button
+              class="nav-item nav-item--question"
+              [class.active]="selectedQuestionId() === (pregunta.preguntaId || i)"
+              (click)="selectQuestion(pregunta.preguntaId || i)"
+            >
+              <span class="q-num">{{ i + 1 }}</span>
+              <span class="q-text">{{ pregunta.texto }}</span>
+            </button>
           }
+        </div>
 
-          <!-- Preview -->
-          @if (parseResult(); as result) {
-            <hr class="divider" />
+        <button class="nav-item nav-item--action" (click)="addManualQuestion()">
+          <span class="nav-icon">＋</span>
+          Nueva pregunta
+        </button>
 
-            <div class="result-header">
-              <div class="result-info">
-                <span class="badge-success">✓ Analizado</span>
-                <span class="result-text">
-                  {{ result.total }} preguntas detectadas
-                  @if (result.errores.length > 0) {
-                    <span class="result-errors">· {{ result.errores.length }} error(es)</span>
-                  }
-                </span>
-              </div>
-            </div>
+        <button
+          class="nav-item nav-item--action"
+          [class.active]="activeView() === 'importar'"
+          (click)="activeView.set('importar'); selectedQuestionId.set(null)"
+        >
+          <span class="nav-icon">📤</span>
+          Importar desde archivo
+        </button>
+      </nav>
+    }
+  </aside>
 
-            @if (hasParseErrors()) {
-              <div class="errors-section">
-                <app-alert
-                  type="warning"
-                  [title]="result.errores.length + ' errores de parseo'"
-                  [message]="'Algunas filas no pudieron importarse. Revisá los detalles abajo.'"
+  <!-- ═══════════════════════════════════════════ -->
+  <!-- RIGHT PANEL (Detail)                      -->
+  <!-- ═══════════════════════════════════════════ -->
+  <main class="detail">
+    @if (isLoading()) {
+      <div class="detail-empty">
+        <div class="spinner"></div>
+        <p>Cargando banco...</p>
+      </div>
+    } @else if (error()) {
+      <div class="detail-empty">
+        <app-alert type="danger" message="No se pudo cargar el banco de preguntas." />
+      </div>
+    } @else {
+      <!-- ── VIEW: Info ────────────────────────── -->
+      @if (activeView() === 'info') {
+        <div class="detail-card">
+          @if (isEditingBank() || isNewBank()) {
+            <div class="detail-form">
+              <h3 class="detail-title">
+                {{ isNewBank() ? 'Crear banco de preguntas' : 'Editar información' }}
+              </h3>
+
+              <div class="form-group">
+                <label class="form-label" for="bank-name">Nombre del banco</label>
+                <input
+                  id="bank-name"
+                  type="text"
+                  [(ngModel)]="bankName"
+                  class="form-input form-input--lg"
+                  placeholder="Ej: Cultura General, Historia Argentina..."
                 />
-                <div class="errors-table">
-                  @for (err of result.errores; track err.fila) {
-                    <div class="error-row">
-                      <span class="error-fila">Fila {{ err.fila }}</span>
-                      <span class="error-msg">{{ err.mensaje }}</span>
-                      @if (err.campo) {
-                        <span class="error-campo">Campo: {{ err.campo }}</span>
-                      }
-                    </div>
-                  }
-                </div>
               </div>
-            }
 
-            @if (paginatedPreguntas().length > 0) {
-              <div class="preview-section">
-                <p class="section-label">Vista previa de preguntas</p>
-
-                <div class="preview-table-wrapper">
-                  <table class="preview-table" role="grid">
-                    <thead>
-                      <tr>
-                        <th>#</th>
-                        <th>Pregunta</th>
-                        <th>Categoría</th>
-                        <th>Nivel</th>
-                        <th>Opciones</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      @for (pregunta of paginatedPreguntas(); track $index; let i = $index) {
-                        <tr>
-                          <td>{{ currentPage() * pageSize + i + 1 }}</td>
-                          <td class="cell-text">{{ pregunta.texto }}</td>
-                          <td>{{ pregunta.categoria || '-' }}</td>
-                          <td>{{ pregunta.nivel || '-' }}</td>
-                          <td class="cell-opts">
-                            @for (op of pregunta.opciones; track $index) {
-                              <span class="opt-tag" [class.opt-correct]="op.esCorrecta">
-                                {{ op.texto }}
-                              </span>
-                            }
-                          </td>
-                        </tr>
-                      }
-                    </tbody>
-                  </table>
-                </div>
-
-                <div class="pagination">
-                  <app-button
-                    variant="ghost"
-                    size="sm"
-                    [disabled]="currentPage() === 0"
-                    (clicked)="goToPage(currentPage() - 1)"
-                  >
-                    Anterior
-                  </app-button>
-                  <span class="pagination-text">
-                    Página {{ currentPage() + 1 }} de {{ totalPages() }}
-                  </span>
-                  <app-button
-                    variant="ghost"
-                    size="sm"
-                    [disabled]="currentPage() >= totalPages() - 1"
-                    (clicked)="goToPage(currentPage() + 1)"
-                  >
-                    Siguiente
-                  </app-button>
-                </div>
+              <div class="form-group">
+                <label class="form-label" for="bank-desc">Descripción</label>
+                <textarea
+                  id="bank-desc"
+                  [(ngModel)]="bankDesc"
+                  class="form-textarea"
+                  rows="4"
+                  placeholder="¿De qué trata este banco? ¿Qué temas cubre?..."
+                ></textarea>
               </div>
-            }
 
-            <div class="upload-actions">
-              <app-button variant="ghost" (clicked)="resetFileUpload()"> Nuevo archivo </app-button>
-              <app-button
-                variant="primary"
-                [disabled]="!canConfirmImport()"
-                [loading]="isImporting()"
-                (clicked)="confirmImport()"
-              >
-                {{
-                  isNewBank()
-                    ? 'Añadir a la lista'
-                    : 'Agregar ' + parseResult()?.total + ' preguntas'
-                }}
-              </app-button>
-            </div>
-          }
-        </div>
-      </details>
-    </div>
+              @if (!isNewBank() && banco()) {
+                <div class="detail-meta">
+                  <span>Creado el {{ banco()!.createdAt | date: 'dd/MM/yyyy' }}</span>
+                  <span>{{ banco()!.preguntas.length }} preguntas</span>
+                </div>
+              }
 
-    <!-- Questions list -->
-    <div class="questions-list">
-      <div class="list-header">
-        <h2 class="list-title">Revisión de Preguntas</h2>
-        <div class="header-actions">
-          @if (totalQuestions() > 0) {
-            <div class="pagination-controls ml-4">
-              <app-button
-                variant="ghost"
-                size="sm"
-                [disabled]="currentQuestionIndex() === 0"
-                (clicked)="prevQuestion()"
-              >
-                Anterior
-              </app-button>
-              <span class="pagination-text"
-                >Pregunta {{ currentQuestionIndex() + 1 }} de {{ totalQuestions() }}</span
-              >
-              <app-button
-                variant="ghost"
-                size="sm"
-                [disabled]="currentQuestionIndex() === totalQuestions() - 1"
-                (clicked)="nextQuestion()"
-              >
-                Siguiente
-              </app-button>
-            </div>
-          }
-        </div>
-      </div>
-
-      @if (currentQuestion(); as pregunta) {
-        <div class="question-box" [class.editing]="isEditing()">
-          <div class="question-header">
-            <div class="question-badges">
-              <span class="badge-nivel">
-                Nivel:
-                @if (isEditing()) {
-                  <input
-                    type="number"
-                    [(ngModel)]="pregunta.nivel"
-                    class="inline-input num-input"
-                    min="1"
-                    max="5"
-                  />
-                } @else {
-                  {{ pregunta.nivel }}
+              <div class="form-actions">
+                @if (!isNewBank()) {
+                  <app-button variant="ghost" (clicked)="toggleEditBank()">Cancelar</app-button>
                 }
-              </span>
-              <span class="badge-tiempo">
-                Tiempo:
-                @if (isEditing()) {
-                  <input
-                    type="number"
-                    [(ngModel)]="pregunta.tiempoLimite"
-                    class="inline-input num-input"
-                    min="5"
-                    step="5"
-                  />s
-                } @else {
-                  {{ pregunta.tiempoLimite }}s
-                }
-              </span>
-            </div>
-
-            <div class="actions">
-              @if (isEditing()) {
-                <app-button variant="ghost" size="sm" (clicked)="toggleEdit()">Cancelar</app-button>
                 <app-button
                   variant="primary"
-                  size="sm"
-                  (clicked)="saveQuestion()"
-                  [loading]="isSaving()"
-                  >Guardar</app-button
+                  [disabled]="!bankName().trim()"
+                  [loading]="isSavingBank()"
+                  (clicked)="saveBank()"
                 >
-                <app-button
-                  variant="ghost"
-                  size="sm"
-                  (clicked)="addManualQuestion()"
-                  [loading]="isCreatingQuestion()"
-                >
-                  + Nueva
+                  {{ isNewBank() ? 'Crear banco' : 'Guardar cambios' }}
                 </app-button>
-              } @else {
-                <app-button variant="ghost" size="sm" (clicked)="toggleEdit()">Editar</app-button>
-                <app-button
-                  variant="ghost"
-                  size="sm"
-                  (clicked)="addManualQuestion()"
-                  [loading]="isCreatingQuestion()"
-                >
-                  + Nueva Pregunta
-                </app-button>
-              }
+              </div>
             </div>
-          </div>
+          } @else if (banco()) {
+            <div class="detail-display">
+              <div class="detail-display-header">
+                <div>
+                  <h3 class="detail-title">{{ banco()!.nombre }}</h3>
+                  @if (banco()!.descripcion) {
+                    <p class="detail-desc">{{ banco()!.descripcion }}</p>
+                  }
+                </div>
+                <app-button variant="ghost" size="sm" (clicked)="toggleEditBank()">
+                  Editar
+                </app-button>
+              </div>
+              <div class="detail-meta">
+                <span>Creado el {{ banco()!.createdAt | date: 'dd/MM/yyyy' }}</span>
+                <span>{{ banco()!.preguntas.length }} preguntas</span>
+              </div>
+            </div>
+          }
+        </div>
+      }
 
-          <div class="question-body">
-            @if (isEditing()) {
-              <div class="edit-grid">
-                <div class="field">
-                  <label [for]="'q-text-' + (pregunta.preguntaId || 'new')"
-                    >Texto de la pregunta</label
-                  >
+      <!-- ── VIEW: Pregunta ────────────────────── -->
+      @if (activeView() === 'pregunta') {
+        @if (selectedQuestion(); as pregunta) {
+          <div class="detail-card">
+            @if (isQuestionEditing(pregunta.preguntaId || selectedQuestionId()!)) {
+              <!-- Edit mode -->
+              <div class="detail-form">
+                <h3 class="detail-title">Editar pregunta</h3>
+
+                <div class="form-group">
+                  <label class="form-label" for="edit-texto">Texto de la pregunta</label>
                   <textarea
-                    [id]="'q-text-' + (pregunta.preguntaId || 'new')"
+                    id="edit-texto"
                     [(ngModel)]="pregunta.texto"
-                    class="question-textarea"
+                    class="form-textarea"
                     rows="3"
                   ></textarea>
                 </div>
-                <div class="field-row">
-                  <app-input
-                    label="Categoría"
-                    placeholder="Ej: Cine"
-                    [(ngModel)]="pregunta.categoria"
-                  />
 
-                  <app-input
-                    label="Monto/Puntos"
-                    type="number"
-                    placeholder="Ej: 1000"
-                    [(ngModel)]="pregunta.monto"
+                <div class="form-row">
+                  <div class="form-group">
+                    <label class="form-label" for="edit-categoria">Categoría</label>
+                    <input
+                      id="edit-categoria"
+                      type="text"
+                      [(ngModel)]="pregunta.categoria"
+                      class="form-input"
+                      placeholder="Ej: Cine"
+                    />
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label" for="edit-nivel">Nivel</label>
+                    <input
+                      id="edit-nivel"
+                      type="number"
+                      [(ngModel)]="pregunta.nivel"
+                      class="form-input"
+                      min="1"
+                      max="5"
+                    />
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label" for="edit-tiempo">Tiempo (s)</label>
+                    <input
+                      id="edit-tiempo"
+                      type="number"
+                      [(ngModel)]="pregunta.tiempoLimite"
+                      class="form-input"
+                      min="5"
+                      step="5"
+                    />
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label" for="edit-monto">Monto</label>
+                    <input
+                      id="edit-monto"
+                      type="number"
+                      [(ngModel)]="pregunta.monto"
+                      class="form-input"
+                      placeholder="1000"
+                    />
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label" for="edit-feedback-correcto">Feedback correcto</label>
+                  <input
+                    id="edit-feedback-correcto"
+                    type="text"
+                    [(ngModel)]="pregunta.feedbackCorrecto"
+                    class="form-input"
+                    placeholder="Explicación para respuesta correcta"
                   />
                 </div>
 
-                <app-input
-                  label="Feedback Correcto"
-                  placeholder="Explicación para respuesta correcta"
-                  [(ngModel)]="pregunta.feedbackCorrecto"
-                />
+                <div class="form-group">
+                  <label class="form-label" for="edit-feedback-incorrecto"
+                    >Feedback incorrecto</label
+                  >
+                  <input
+                    id="edit-feedback-incorrecto"
+                    type="text"
+                    [(ngModel)]="pregunta.feedbackIncorrecto"
+                    class="form-input"
+                    placeholder="Explicación para respuesta incorrecta"
+                  />
+                </div>
 
-                <app-input
-                  label="Feedback Incorrecto"
-                  placeholder="Explicación para respuesta incorrecta"
-                  [(ngModel)]="pregunta.feedbackIncorrecto"
-                />
+                <div class="form-group">
+                  <p class="form-label">Opciones de respuesta</p>
+                  <div class="options-editor">
+                    @for (opcion of pregunta.opciones; track $index) {
+                      <div class="option-edit-row" [class.correct]="opcion.esCorrecta">
+                        <button
+                          type="button"
+                          class="opt-check"
+                          [class.active]="opcion.esCorrecta"
+                          (click)="toggleCorrectOption(opcion)"
+                        >
+                          @if (opcion.esCorrecta) {
+                            ✓
+                          }
+                        </button>
+                        <input
+                          type="text"
+                          [(ngModel)]="opcion.texto"
+                          class="form-input option-input"
+                          [placeholder]="'Opción ' + ($index + 1)"
+                        />
+                      </div>
+                    }
+                  </div>
+                </div>
+
+                <div class="form-actions">
+                  <app-button variant="ghost" (clicked)="cancelEditing()">Cancelar</app-button>
+                  <app-button
+                    variant="primary"
+                    [loading]="isSaving()"
+                    (clicked)="saveQuestion(pregunta.preguntaId || selectedQuestionId()!)"
+                  >
+                    Guardar pregunta
+                  </app-button>
+                </div>
               </div>
             } @else {
-              <p class="question-text">{{ pregunta.texto }}</p>
-
-              <div class="question-info-grid">
-                @if (pregunta.categoria) {
-                  <div class="info-item">
-                    <span class="info-label">Categoría:</span>
-                    <span class="info-value">{{ pregunta.categoria }}</span>
+              <!-- View mode -->
+              <div class="detail-display">
+                <div class="detail-display-header">
+                  <div>
+                    <h3 class="detail-title">{{ pregunta.texto }}</h3>
+                    <div class="detail-tags">
+                      @if (pregunta.categoria) {
+                        <span class="tag">{{ pregunta.categoria }}</span>
+                      }
+                      <span class="tag tag--level">Nivel {{ pregunta.nivel || 1 }}</span>
+                      <span class="tag tag--time">{{ pregunta.tiempoLimite || 30 }}s</span>
+                      @if (pregunta.monto) {
+                        <span class="tag tag--money">${{ pregunta.monto }}</span>
+                      }
+                    </div>
                   </div>
-                }
-                @if (pregunta.monto) {
-                  <div class="info-item">
-                    <span class="info-label">Monto/Puntos:</span>
-                    <span class="info-value">$ {{ pregunta.monto }}</span>
+                  <app-button
+                    variant="ghost"
+                    size="sm"
+                    (clicked)="startEditingQuestion(pregunta.preguntaId || selectedQuestionId()!)"
+                  >
+                    Editar
+                  </app-button>
+                </div>
+
+                <div class="detail-section">
+                  <h4 class="section-subtitle">Opciones</h4>
+                  <div class="options-display">
+                    @for (opcion of pregunta.opciones; track $index) {
+                      <div class="option-badge" [class.correct]="opcion.esCorrecta">
+                        <span class="option-mark">{{ opcion.esCorrecta ? '✓' : '○' }}</span>
+                        {{ opcion.texto }}
+                      </div>
+                    }
+                  </div>
+                </div>
+
+                @if (pregunta.feedbackCorrecto || pregunta.feedbackIncorrecto) {
+                  <div class="detail-section detail-section--feedback">
+                    @if (pregunta.feedbackCorrecto) {
+                      <p class="feedback-line feedback-line--correct">
+                        <strong>✓ Correcta:</strong> {{ pregunta.feedbackCorrecto }}
+                      </p>
+                    }
+                    @if (pregunta.feedbackIncorrecto) {
+                      <p class="feedback-line feedback-line--incorrect">
+                        <strong>✗ Incorrecta:</strong> {{ pregunta.feedbackIncorrecto }}
+                      </p>
+                    }
                   </div>
                 }
               </div>
             }
           </div>
+        } @else {
+          <div class="detail-empty">
+            <p>Seleccioná una pregunta de la lista para ver sus detalles.</p>
+          </div>
+        }
+      }
 
-          <div class="options-section">
-            <h3 class="options-title">Opciones de respuesta</h3>
-            <div class="options-grid">
-              @for (opcion of pregunta.opciones; track $index) {
-                @if (isEditing()) {
-                  <div class="opt" [class.correct]="opcion.esCorrecta">
-                    <button
-                      type="button"
-                      class="checkbox-square"
-                      [class.active]="opcion.esCorrecta"
-                      (click)="toggleCorrectOption(opcion)"
-                      [attr.aria-pressed]="opcion.esCorrecta"
-                    >
-                      @if (opcion.esCorrecta) {
-                        ✓
-                      }
-                    </button>
-                    <label [for]="'opt-' + $index" class="sr-only">Opción {{ $index + 1 }}</label>
-                    <input
-                      [id]="'opt-' + $index"
-                      type="text"
-                      [(ngModel)]="opcion.texto"
-                      class="inline-input flex-1"
-                    />
-                  </div>
-                } @else {
-                  <div class="opt" [class.correct]="opcion.esCorrecta">
-                    <span class="opt-indicator">
-                      @if (opcion.esCorrecta) {
-                        ✓
-                      } @else {
-                        ○
-                      }
-                    </span>
-                    {{ opcion.texto }}
-                  </div>
-                }
+      <!-- ── VIEW: Importar ────────────────────── -->
+      @if (activeView() === 'importar') {
+        <div class="detail-card">
+          <h3 class="detail-title">Importar preguntas</h3>
+          <p class="detail-desc">
+            Cargá preguntas desde CSV, Excel o JSON. El procesamiento es local.
+          </p>
+
+          <div class="drop-zone" [class.has-file]="selectedFile()">
+            <input
+              id="detail-file-upload"
+              type="file"
+              accept=".csv,.xlsx,.xls,.json"
+              class="file-input"
+              (change)="onFileSelected($event)"
+            />
+            <div class="drop-content">
+              @if (isParsing()) {
+                <div class="spinner spinner--sm"></div>
+                <span>Procesando archivo...</span>
+              } @else if (selectedFile()) {
+                <span class="drop-icon">📄</span>
+                <span class="drop-name">{{ selectedFile()!.name }}</span>
+                <span class="drop-hint">Click para cambiar</span>
+              } @else {
+                <span class="drop-icon">📤</span>
+                <span>Arrastrá un archivo o click para seleccionar</span>
+                <span class="drop-hint">CSV, Excel (.xlsx/.xls) o JSON</span>
               }
             </div>
+          </div>
 
-            @if (!isEditing() && (pregunta.feedbackCorrecto || pregunta.feedbackIncorrecto)) {
-              <div class="feedback-section">
-                @if (pregunta.feedbackCorrecto) {
-                  <p class="feedback feedback--correct">
-                    <strong>✓ Feedback (+):</strong> {{ pregunta.feedbackCorrecto }}
-                  </p>
-                }
-                @if (pregunta.feedbackIncorrecto) {
-                  <p class="feedback feedback--incorrect">
-                    <strong>× Feedback (-):</strong> {{ pregunta.feedbackIncorrecto }}
-                  </p>
+          @if (parseError()) {
+            <app-alert
+              type="danger"
+              [message]="parseError()"
+              [dismissible]="true"
+              (dismissed)="parseError.set('')"
+            />
+          }
+
+          @if (parseResult(); as result) {
+            <div class="parse-results">
+              <div class="results-badges">
+                <span class="badge badge--ok">✓ {{ result.total }} preguntas</span>
+                @if (result.errores.length > 0) {
+                  <span class="badge badge--warn">{{ result.errores.length }} errores</span>
                 }
               </div>
-            }
-          </div>
-        </div>
-      } @else {
-        <div class="empty-questions">
-          <p>
-            Este banco no tiene preguntas registradas. Usá la sección de importación o el botón de
-            arriba para agregar preguntas.
-          </p>
-          @if (isNewBank()) {
-            <p class="mt-2 text-sm">
-              Podés cargar preguntas ahora y se guardarán cuando confirmes la creación del banco.
-            </p>
-          }
-        </div>
-      }
 
-      @if (isEditingBank()) {
-        <div class="form-actions mt-6">
-          @if (!isNewBank()) {
-            <app-button variant="ghost" size="sm" (clicked)="toggleEditBank()">Cancelar</app-button>
+              @if (hasParseErrors()) {
+                <div class="errors-box">
+                  @for (err of result.errores; track err.fila) {
+                    <div class="error-line">
+                      <strong>Fila {{ err.fila }}:</strong> {{ err.mensaje }}
+                    </div>
+                  }
+                </div>
+              }
+
+              @if (paginatedPreguntas().length > 0) {
+                <div class="preview-box">
+                  <h4 class="section-subtitle">Vista previa</h4>
+                  <div class="preview-table-wrap">
+                    <table class="preview-table">
+                      <thead>
+                        <tr>
+                          <th>#</th>
+                          <th>Pregunta</th>
+                          <th>Cat.</th>
+                          <th>Opciones</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        @for (p of paginatedPreguntas(); track $index; let i = $index) {
+                          <tr>
+                            <td class="td-num">{{ currentPage() * pageSize + i + 1 }}</td>
+                            <td class="td-text">{{ p.texto }}</td>
+                            <td>{{ p.categoria || '-' }}</td>
+                            <td class="td-opts">
+                              @for (o of p.opciones; track $index) {
+                                <span class="opt-chip" [class.correct]="o.esCorrecta">{{
+                                  o.texto
+                                }}</span>
+                              }
+                            </td>
+                          </tr>
+                        }
+                      </tbody>
+                    </table>
+                  </div>
+
+                  <div class="pagination-row">
+                    <app-button
+                      variant="ghost"
+                      size="sm"
+                      [disabled]="currentPage() === 0"
+                      (clicked)="goToPage(currentPage() - 1)"
+                    >
+                      ← Anterior
+                    </app-button>
+                    <span>Pág. {{ currentPage() + 1 }} / {{ totalPages() }}</span>
+                    <app-button
+                      variant="ghost"
+                      size="sm"
+                      [disabled]="currentPage() >= totalPages() - 1"
+                      (clicked)="goToPage(currentPage() + 1)"
+                    >
+                      Siguiente →
+                    </app-button>
+                  </div>
+                </div>
+              }
+
+              <div class="form-actions">
+                <app-button variant="ghost" (clicked)="resetFileUpload()">Cancelar</app-button>
+                <app-button
+                  variant="primary"
+                  [disabled]="!canConfirmImport()"
+                  [loading]="isImporting()"
+                  (clicked)="confirmImport()"
+                >
+                  {{
+                    isNewBank()
+                      ? 'Añadir ' + result.total + ' preguntas'
+                      : 'Importar ' + result.total + ' preguntas'
+                  }}
+                </app-button>
+              </div>
+            </div>
           }
-          <app-button
-            variant="primary"
-            size="sm"
-            (clicked)="saveBank()"
-            [disabled]="!bankName().trim() || (isNewBank() && totalQuestions() === 0)"
-            [loading]="isSavingBank()"
-          >
-            {{
-              isNewBank()
-                ? 'Guardar Banco' +
-                  (totalQuestions() > 0 ? ' (' + totalQuestions() + ' preguntas)' : '')
-                : 'Guardar Información'
-            }}
-          </app-button>
         </div>
       }
-    </div>
-  }
+    }
+  </main>
 </div>

@@ -26,6 +26,18 @@ export interface Pregunta {
   feedbackIncorrecto?: string;
 }
 
+// Resultado de una respuesta dada por el usuario a una pregunta
+export interface RespuestaDada {
+  opcionId: number;
+  esCorrecta: boolean;
+  feedback: string;
+}
+
+// Pregunta con el historial de respuesta del usuario (usada en el carrusel de historial)
+export interface PreguntaHistorial extends Pregunta {
+  respuestaDada?: RespuestaDada;
+}
+
 // Representa la distribución de votos del público por opción en una ronda activa
 export interface VotosPublico {
   [letra: string]: number | undefined;
@@ -102,14 +114,32 @@ export class GameSocketService {
     this.desconectar();
     this.socket = this.createSocketConnection(url, token);
 
-    // Actualiza el estado de conexión según el ciclo de vida del socket
+    this.setupConnectionListeners();
+    this.setupPreguntaListeners();
+    this.setupComodinListeners();
+    this.setupComodinLlamadaListeners();
+    this.setupComodinIAListener();
+    this.setupSalaListeners();
+    this.setupObserverListeners();
+    this.setupRondaListener();
+  }
+
+  // ─── Connection lifecycle ───
+
+  private setupConnectionListeners(): void {
+    if (!this.socket) return;
     this.socket.on('connect', () => this.conectado.set(true));
     this.socket.on('disconnect', () => this.conectado.set(false));
+  }
 
-    // Al llegar una nueva pregunta, la almacena y limpia los votos/resultados anteriores
+  // ─── Pregunta / Gameplay ───
+
+  private setupPreguntaListeners(): void {
+    if (!this.socket) return;
+
     this.socket.on('pregunta_liberada', (data: Pregunta) => {
       this.preguntaActiva.set(data);
-      this._cancelPendingVoto(); // No aplicar votos viejos después de liberar
+      this._cancelPendingVoto();
       this.votosPublico.set(null);
       this.ultimoResultado.set(null);
       this.llamadaActiva.set(false);
@@ -128,10 +158,8 @@ export class GameSocketService {
       this.esperandoConsenso.set(false);
       this.revotoSolicitado.set(false);
 
-      // Auto-incrementar el número de pregunta (ronda) en la interfaz
       this.infoRonda.update((info) => {
         if (!info) return info;
-        // Si no hemos llegado al total, sumamos 1 a la ronda mostrada
         return {
           ...info,
           ronda: info.ronda < info.totalRondas ? info.ronda + 1 : info.ronda,
@@ -151,10 +179,13 @@ export class GameSocketService {
     this.socket.on('transicion_pregunta', (data: { segundos: number }) => {
       this.enTransicion.set(true);
       this.transicionSegundos.set(data.segundos);
-      setTimeout(() => {
-        this.enTransicion.set(false);
-        this.transicionSegundos.set(null);
-      }, (data.segundos + 1) * 1000);
+      setTimeout(
+        () => {
+          this.enTransicion.set(false);
+          this.transicionSegundos.set(null);
+        },
+        (data.segundos + 1) * 1000,
+      );
     });
 
     // Actualiza los votos del público en tiempo real (batchteado por RAF)
@@ -170,8 +201,13 @@ export class GameSocketService {
         });
       }
     });
+  }
 
-    // Acumula comodines bloqueados en tiempo real y propaga datos detallados (opcionesEliminadas, preguntaId)
+  // ─── Comodines (bloqueo, uso, estado inicial) ───
+
+  private setupComodinListeners(): void {
+    if (!this.socket) return;
+
     this.socket.on(
       'comodin_bloqueado',
       (data: { tipoComodin: string; opcionesEliminadas?: number[]; preguntaId?: number }) => {
@@ -182,56 +218,22 @@ export class GameSocketService {
       },
     );
 
-    // Listener para comodin_usado (ej. comodín LLAMADA desde el backend)
     this.socket.on('comodin_usado', (data: { tipoComodin: string }) => {
       this.comodinBloqueado.update((list) =>
         list.includes(data.tipoComodin) ? list : [...list, data.tipoComodin],
       );
     });
 
-    // Estado inicial de comodines bloqueados al unirse (para quien entra tarde)
     this.socket.on('comodines_bloqueados', (data: string[]) => {
       this.comodinBloqueado.set(data);
     });
+  }
 
-    // Recibe cambios en el estado de habilitación de la sala
-    this.socket.on('sala_estado_cambiado', (data: { habilitada: boolean }) => {
-      this.salaHabilitada.set(data.habilitada);
-    });
+  // ─── Comodín Llamada ───
 
-    // Cuando la sala se finaliza (partida_finalizada), se deshabilita la sala
-    this.socket.on('partida_finalizada', (_data: { totalParticipantes: number }) => {
-      this.salaHabilitada.set(false);
-    });
+  private setupComodinLlamadaListeners(): void {
+    if (!this.socket) return;
 
-    // Recibe el resultado de una respuesta procesada (broadcast)
-    this.socket.on('pregunta_respondida', (data: ResultRespuesta) => {
-      this.ultimoResultado.set(data);
-      // Limpiar estado de consenso al resolverse la pregunta
-      this.votantesConfirmados.set(0);
-      this.totalVotantesRequeridos.set(0);
-      this.esperandoConsenso.set(false);
-      this.revotoSolicitado.set(false);
-    });
-
-    // Progreso de consenso de equipo — N de M estudiantes han votado
-    this.socket.on(
-      'voto_confirmado',
-      (data: { preguntaId: number; votosRecibidos: number; totalRequeridos: number }) => {
-        this.votantesConfirmados.set(data.votosRecibidos);
-        this.totalVotantesRequeridos.set(data.totalRequeridos);
-        this.esperandoConsenso.set(true);
-      },
-    );
-
-    // Sin mayoría — solicitar re-voto a todos los estudiantes
-    this.socket.on('revoto_solicitado', (_data: { preguntaId: number; motivo: string }) => {
-      this.revotoSolicitado.set(true);
-      this.esperandoConsenso.set(false);
-      this.votantesConfirmados.set(0);
-    });
-
-    // ——— Listeners para Comodín Llamada ———
     this.socket.on('consultor_seleccionado', (data: { pregunta: Pregunta }) => {
       this.llamadaActiva.set(true);
       this.preguntaConsultor.set(data.pregunta);
@@ -260,16 +262,40 @@ export class GameSocketService {
     this.socket.on('enviar_pista_error', (data: { message: string }) => {
       this.toast.show(data.message ?? 'Error al enviar pista', 'warning', 'Consultor');
     });
+  }
 
-    // IA suggestion broadcast to all participants (Bug 3 fix)
+  // ─── Comodín IA ───
+
+  private setupComodinIAListener(): void {
+    if (!this.socket) return;
+
     this.socket.on(
       'ia_sugerencia_recibida',
       (data: { preguntaId: number; literal: string; explicacion: string }) => {
         this.iaSugerenciaGlobal.set({ literal: data.literal, explicacion: data.explicacion });
       },
     );
+  }
 
-    // ——— Observers ———
+  // ─── Estado de sala ───
+
+  private setupSalaListeners(): void {
+    if (!this.socket) return;
+
+    this.socket.on('sala_estado_cambiado', (data: { habilitada: boolean }) => {
+      this.salaHabilitada.set(data.habilitada);
+    });
+
+    this.socket.on('partida_finalizada', (_data: { totalParticipantes: number }) => {
+      this.salaHabilitada.set(false);
+    });
+  }
+
+  // ─── Observers (chat, participantes, eventos, info_ronda) ───
+
+  private setupObserverListeners(): void {
+    if (!this.socket) return;
+
     this.socket.on('mensaje_chat', (data: ChatMessage[]) => {
       this.mensajesChat.set(data);
     });
@@ -289,6 +315,12 @@ export class GameSocketService {
     this.socket.on('info_ronda', (data: RondaInfo) => {
       this.infoRonda.set(data);
     });
+  }
+
+  // ─── Ronda (reinicio completo) ───
+
+  private setupRondaListener(): void {
+    if (!this.socket) return;
 
     this.socket.on('ronda_reiniciada', (data: any) => {
       console.log('[WS:ronda_reiniciada] Evento recibido', data);
@@ -310,7 +342,7 @@ export class GameSocketService {
         this.infoRonda.set({
           ronda: (() => {
             const idx = data.rondaActiva.historialPreguntas?.findIndex(
-              (p: any) => p.preguntaId === data.rondaActiva!.preguntaActualId,
+              (p: PreguntaHistorial) => p.preguntaId === data.rondaActiva!.preguntaActualId,
             );
             return idx !== undefined && idx >= 0 ? idx + 1 : 1;
           })(),
