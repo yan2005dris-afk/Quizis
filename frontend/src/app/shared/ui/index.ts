@@ -17,6 +17,8 @@ export { TimerComponent } from './timer/timer.component';
 export { QuestionProgressComponent } from './question-progress/question-progress.component';
 export type { SegmentoProgreso } from './question-progress/question-progress.component';
 
+export { ConfirmModalComponent } from './confirm-modal/confirm-modal.component';
+
 export { AudienceBarsComponent } from './audience-bars/audience-bars.component';
 
 export { WildcardsPanelComponent } from './wildcards-panel/wildcards-panel.component';
