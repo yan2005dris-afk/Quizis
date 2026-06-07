@@ -1,7 +1,7 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../../infrastructure/database/prisma/prisma.service';
-import { ParticipantsCacheUseCase } from '../../../infrastructure/cache/use-cases/participants-cache.use-case';
-import { RoomStateCacheUseCase } from '../../../infrastructure/cache/use-cases/room-state-cache.use-case';
+import { ParticipantsCacheService } from '../cache/participants-cache.service';
+import { RoomStateCacheService } from '../cache/room-state-cache.service';
 
 // ── Tipos locales para las funciones puras de mapeo ──
 
@@ -57,8 +57,8 @@ export class GetSalaDetailsUseCase {
 
   constructor(
     private readonly prisma: PrismaService,
-    private readonly cacheService: ParticipantsCacheUseCase,
-    private readonly roomStateCache: RoomStateCacheUseCase,
+    private readonly cacheService: ParticipantsCacheService,
+    private readonly roomStateCache: RoomStateCacheService,
   ) {}
 
   /**

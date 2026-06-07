@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { SendMessageUseCase } from './send-message.use-case';
-import { ChatCacheUseCase } from 'src/infrastructure/cache/use-cases/chat-cache.use-case';
+import { ChatCacheService } from 'src/juego/websockets/cache/chat-cache.service';
 
 describe('SendMessageUseCase', () => {
   let useCase: SendMessageUseCase;
@@ -20,7 +20,7 @@ describe('SendMessageUseCase', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         SendMessageUseCase,
-        { provide: ChatCacheUseCase, useValue: mockChatCache },
+        { provide: ChatCacheService, useValue: mockChatCache },
       ],
     }).compile();
 

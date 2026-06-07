@@ -3,8 +3,8 @@ import { Test } from '@nestjs/testing';
 import { NotFoundException, BadRequestException } from '@nestjs/common';
 import { UpdateEstadoSalaUseCase } from './update-estado-sala.use-case';
 import { PrismaService } from 'src/infrastructure/database/prisma/prisma.service';
-import { RoomStateCacheUseCase } from 'src/infrastructure/cache/use-cases/room-state-cache.use-case';
-import { ParticipantsCacheUseCase } from 'src/infrastructure/cache/use-cases/participants-cache.use-case';
+import { RoomStateCacheService } from 'src/juego/salas/cache/room-state-cache.service';
+import { ParticipantsCacheService } from 'src/juego/salas/cache/participants-cache.service';
 import { EstadoSala } from '../dto/update-estado-sala.dto';
 
 describe('UpdateEstadoSalaUseCase', () => {
@@ -38,8 +38,8 @@ describe('UpdateEstadoSalaUseCase', () => {
       providers: [
         UpdateEstadoSalaUseCase,
         { provide: PrismaService, useValue: mockPrisma },
-        { provide: RoomStateCacheUseCase, useValue: mockRoomStateCache },
-        { provide: ParticipantsCacheUseCase, useValue: mockParticipantsCache },
+        { provide: RoomStateCacheService, useValue: mockRoomStateCache },
+        { provide: ParticipantsCacheService, useValue: mockParticipantsCache },
       ],
     }).compile();
 

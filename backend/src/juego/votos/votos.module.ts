@@ -6,6 +6,7 @@ import { DatabaseModule } from '../../infrastructure/database/prisma/prisma.modu
 import { RegisterVoteUseCase } from './use-cases/register-vote.use-case';
 import { GetVotesFromCacheUseCase } from './use-cases/get-votes-from-cache.use-case';
 import { PersistVotesUseCase } from './use-cases/persist-votes.use-case';
+import { VotesCacheService } from './cache/votes-cache.service';
 
 @Module({
   imports: [CacheModule, DatabaseModule],
@@ -15,6 +16,7 @@ import { PersistVotesUseCase } from './use-cases/persist-votes.use-case';
     RegisterVoteUseCase,
     GetVotesFromCacheUseCase,
     PersistVotesUseCase,
+    VotesCacheService,
   ],
   exports: [VotosService],
 })

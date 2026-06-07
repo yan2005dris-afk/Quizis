@@ -1,49 +1,14 @@
-import {
-  Injectable,
-  Logger,
-  OnModuleDestroy,
-  OnModuleInit,
-} from '@nestjs/common';
-import { RedisService } from '../../database/redis/redis.service';
-
-interface MemoryDataEntry {
-  data: any;
-  expiresAt: number;
-}
+import { Injectable, Logger } from '@nestjs/common';
+import { RedisService } from '../../../infrastructure/database/redis/redis.service';
+import { MemoryCacheStore } from '../../../infrastructure/cache/memory-cache.store';
 
 @Injectable()
-export class ConsensusCacheUseCase implements OnModuleInit, OnModuleDestroy {
-  private readonly logger = new Logger(ConsensusCacheUseCase.name);
-  private memoryData = new Map<string, MemoryDataEntry>();
-  private gcInterval: NodeJS.Timeout | null = null;
+export class ConsensusCacheService {
+  private readonly logger = new Logger(ConsensusCacheService.name);
+  private readonly votesMemory = new MemoryCacheStore<Map<string, number>>();
+  private readonly requiredMemory = new MemoryCacheStore<Set<string>>();
 
   constructor(private readonly redisService: RedisService) {}
-
-  async onModuleInit() {
-    this.gcInterval = setInterval(() => this.runMemoryGC(), 300000);
-  }
-
-  private runMemoryGC() {
-    const now = Date.now();
-    let count = 0;
-
-    for (const [key, entry] of this.memoryData.entries()) {
-      if (entry.expiresAt < now) {
-        this.memoryData.delete(key);
-        count++;
-      }
-    }
-
-    if (count > 0) {
-      this.logger.log(
-        `[CACHE:GC] Recolector de basura liberó ${count} claves en memoria expiradas.`,
-      );
-    }
-  }
-
-  async onModuleDestroy() {
-    if (this.gcInterval) clearInterval(this.gcInterval);
-  }
 
   private getVotesKey(token: string, preguntaId: number): string {
     return `consensus:${token}:${preguntaId}:votes`;
@@ -71,15 +36,12 @@ export class ConsensusCacheUseCase implements OnModuleInit, OnModuleDestroy {
         return;
       } catch (error) {
         this.logger.warn(
-          `[CACHE:WARN] Fallo initializeRequired Redis: ${error}`,
+          `[CONSENSUS:CACHE] Fallo initializeRequired: ${error}`,
         );
       }
     }
 
-    this.memoryData.set(key, {
-      data: new Set<string>(nicknames),
-      expiresAt: Date.now() + 3600 * 1000,
-    });
+    this.requiredMemory.set(key, new Set(nicknames), 3_600_000);
   }
 
   async recordVote(
@@ -97,19 +59,13 @@ export class ConsensusCacheUseCase implements OnModuleInit, OnModuleDestroy {
         await client.expire(key, 3600);
         return;
       } catch (error) {
-        this.logger.warn(`[CACHE:WARN] Fallo recordVote Redis: ${error}`);
+        this.logger.warn(`[CONSENSUS:CACHE] Fallo recordVote: ${error}`);
       }
     }
 
-    const entry = this.memoryData.get(key);
-    const votes: Map<string, number> = entry
-      ? entry.data
-      : new Map<string, number>();
+    const votes = this.votesMemory.get(key) ?? new Map<string, number>();
     votes.set(nickname, opcionId);
-    this.memoryData.set(key, {
-      data: votes,
-      expiresAt: Date.now() + 3600 * 1000,
-    });
+    this.votesMemory.set(key, votes, 3_600_000);
   }
 
   async getVotes(
@@ -127,13 +83,13 @@ export class ConsensusCacheUseCase implements OnModuleInit, OnModuleDestroy {
           result.set(nickname, parseInt(opcionIdStr, 10));
         }
         return result;
-      } catch (error) {
-        this.logger.warn(`[CACHE:WARN] Fallo getVotes Redis: ${error}`);
+      } catch {
+        // fallback a memoria
       }
     }
 
-    const entry = this.memoryData.get(key);
-    return entry ? new Map(entry.data) : new Map<string, number>();
+    const memVotes = this.votesMemory.get(key);
+    return memVotes ? new Map(memVotes) : new Map();
   }
 
   async getRequired(token: string, preguntaId: number): Promise<Set<string>> {
@@ -143,14 +99,13 @@ export class ConsensusCacheUseCase implements OnModuleInit, OnModuleDestroy {
     if (client) {
       try {
         const members = await client.smembers(key);
-        return new Set<string>(members);
-      } catch (error) {
-        this.logger.warn(`[CACHE:WARN] Fallo getRequired Redis: ${error}`);
+        return new Set(members);
+      } catch {
+        // fallback
       }
     }
 
-    const entry = this.memoryData.get(key);
-    return entry ? new Set<string>(entry.data) : new Set<string>();
+    return this.requiredMemory.get(key) ?? new Set();
   }
 
   async removeFromRequired(
@@ -167,14 +122,15 @@ export class ConsensusCacheUseCase implements OnModuleInit, OnModuleDestroy {
         return;
       } catch (error) {
         this.logger.warn(
-          `[CACHE:WARN] Fallo removeFromRequired Redis: ${error}`,
+          `[CONSENSUS:CACHE] Fallo removeFromRequired: ${error}`,
         );
       }
     }
 
-    const entry = this.memoryData.get(key);
-    if (entry) {
-      (entry.data as Set<string>).delete(nickname);
+    const required = this.requiredMemory.get(key);
+    if (required) {
+      required.delete(nickname);
+      this.requiredMemory.set(key, required, 3_600_000);
     }
   }
 
@@ -192,19 +148,13 @@ export class ConsensusCacheUseCase implements OnModuleInit, OnModuleDestroy {
         await client.expire(key, 3600);
         return;
       } catch (error) {
-        this.logger.warn(`[CACHE:WARN] Fallo addToRequired Redis: ${error}`);
+        this.logger.warn(`[CONSENSUS:CACHE] Fallo addToRequired: ${error}`);
       }
     }
 
-    const entry = this.memoryData.get(key);
-    if (entry) {
-      (entry.data as Set<string>).add(nickname);
-    } else {
-      this.memoryData.set(key, {
-        data: new Set<string>([nickname]),
-        expiresAt: Date.now() + 3600 * 1000,
-      });
-    }
+    const required = this.requiredMemory.get(key) ?? new Set<string>();
+    required.add(nickname);
+    this.requiredMemory.set(key, required, 3_600_000);
   }
 
   async clearConsensus(token: string, preguntaId: number): Promise<void> {
@@ -217,11 +167,11 @@ export class ConsensusCacheUseCase implements OnModuleInit, OnModuleDestroy {
         await client.del(votesKey, requiredKey);
         return;
       } catch (error) {
-        this.logger.warn(`[CACHE:WARN] Fallo clearConsensus Redis: ${error}`);
+        this.logger.warn(`[CONSENSUS:CACHE] Fallo clearConsensus: ${error}`);
       }
     }
 
-    this.memoryData.delete(votesKey);
-    this.memoryData.delete(requiredKey);
+    this.votesMemory.delete(votesKey);
+    this.requiredMemory.delete(requiredKey);
   }
 }

@@ -1,7 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { ParticipantsCacheUseCase } from '../../../infrastructure/cache/use-cases/participants-cache.use-case';
-import { RoomStateCacheUseCase } from '../../../infrastructure/cache/use-cases/room-state-cache.use-case';
-import { ConsensusCacheUseCase } from '../../../infrastructure/cache/use-cases/consensus-cache.use-case';
+import { ParticipantsCacheService } from '../../salas/cache/participants-cache.service';
+import { RoomStateCacheService } from '../../salas/cache/room-state-cache.service';
+import { ConsensusCacheService } from '../cache/consensus-cache.service';
+import { SalasService } from '../../salas/salas.service';
 import {
   ConsensusResult,
   EvaluateConsensusUseCase,
@@ -12,22 +13,22 @@ export class JoinRoomUseCase {
   private readonly logger = new Logger(JoinRoomUseCase.name);
 
   constructor(
-    private readonly cacheService: ParticipantsCacheUseCase,
-    private readonly roomStateCache: RoomStateCacheUseCase,
-    private readonly consensusCache: ConsensusCacheUseCase,
+    private readonly cacheService: ParticipantsCacheService,
+    private readonly roomStateCache: RoomStateCacheService,
+    private readonly consensusCache: ConsensusCacheService,
     private readonly evaluateConsensus: EvaluateConsensusUseCase,
+    private readonly salasService: SalasService,
   ) {}
 
   async execute(payload: {
     tokenCompartido: string;
     nombre: string;
     socketId: string;
-    rol?: string;
   }): Promise<{
     tokenCompartido: string;
     nickname: string;
     participants: string[];
-    consensusResult?: ConsensusResult;
+    consensus?: { preguntaId: number; result: ConsensusResult };
   }> {
     this.logger.log(
       `${payload.nombre} se unió a la sala con token: ${payload.tokenCompartido} (Socket: ${payload.socketId})`,
@@ -42,6 +43,14 @@ export class JoinRoomUseCase {
       payload.tokenCompartido,
     );
 
+    // Determine participant's role via DB
+    const participantesDb = await this.salasService.getParticipantsWithRoles(
+      payload.tokenCompartido,
+      participants,
+    );
+    const yo = participantesDb.find((p: any) => p.nombre === payload.nombre);
+    const rol = yo?.rol;
+
     // Check if there is an active question with status 'released' and participant is a student
     const [activeQuestion, questionStatus] = await Promise.all([
       this.roomStateCache.getActiveQuestion(payload.tokenCompartido),
@@ -51,7 +60,7 @@ export class JoinRoomUseCase {
     if (
       !activeQuestion ||
       questionStatus !== 'released' ||
-      payload.rol !== 'estudiante'
+      rol !== 'estudiante'
     ) {
       return {
         tokenCompartido: payload.tokenCompartido,
@@ -83,7 +92,7 @@ export class JoinRoomUseCase {
       tokenCompartido: payload.tokenCompartido,
       nickname: payload.nombre,
       participants,
-      consensusResult,
+      consensus: { preguntaId, result: consensusResult },
     };
   }
 }

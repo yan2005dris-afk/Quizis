@@ -14,15 +14,7 @@ import { WebsocketsService } from '../../juego/websockets/websockets.service';
 import * as ProcessVote from '../../juego/websockets/use-cases/process-audience-vote.use-case';
 import * as SubmitAnswer from '../../juego/websockets/use-cases/submit-answer.use-case';
 import { SalasService } from '../../juego/salas/salas.service';
-import { RoomStateCacheUseCase } from '../cache/use-cases/room-state-cache.use-case';
-import { ParticipantsCacheUseCase } from '../cache/use-cases/participants-cache.use-case';
-import { ChatCacheUseCase } from '../cache/use-cases/chat-cache.use-case';
-import { HelperCacheUseCase } from '../cache/use-cases/helper-cache.use-case';
-import { ConsensusCacheUseCase } from '../cache/use-cases/consensus-cache.use-case';
-import {
-  EvaluateConsensusUseCase,
-  ConsensusResult,
-} from '../../juego/websockets/use-cases/evaluate-consensus.use-case';
+import { ConsensusResult } from '../../juego/websockets/use-cases/evaluate-consensus.use-case';
 
 @WebSocketGateway({ cors: { origin: '*' } })
 export class JuegoGateway implements OnGatewayConnection, OnGatewayDisconnect {
@@ -73,12 +65,6 @@ export class JuegoGateway implements OnGatewayConnection, OnGatewayDisconnect {
   constructor(
     private readonly websocketsService: WebsocketsService,
     private readonly salasService: SalasService,
-    private readonly roomStateCache: RoomStateCacheUseCase,
-    private readonly participantsCache: ParticipantsCacheUseCase,
-    private readonly chatCache: ChatCacheUseCase,
-    private readonly helperCache: HelperCacheUseCase,
-    private readonly consensusCache: ConsensusCacheUseCase,
-    private readonly evaluateConsensus: EvaluateConsensusUseCase,
   ) {}
 
   // ─── Bug 3: IA broadcast to all participants via EventEmitter ───────
@@ -128,25 +114,19 @@ export class JuegoGateway implements OnGatewayConnection, OnGatewayDisconnect {
         .to(result.tokenCompartido)
         .emit('participantes', participantesDb);
 
-      // (Task 3.3 / CRITICAL-2 fix) Use consensusResult from HandleDisconnectUseCase.
+      // (Task 3.3 / CRITICAL-2 fix) Use consensus from HandleDisconnectUseCase.
       // The use case correctly handles the voted-student protection (only removes from
       // required SET if the student had NOT yet voted). The previous duplicate block
       // unconditionally called removeFromRequired, bypassing that protection.
-      if (result.consensusResult) {
-        const activeQuestion = await this.roomStateCache.getActiveQuestion(
+      if (result.consensus) {
+        this.emitConsensusResult(
           info.tokenCompartido,
+          result.consensus.preguntaId,
+          result.consensus.result,
         );
-        if (activeQuestion) {
-          const preguntaId: number = activeQuestion.preguntaId;
-          this.emitConsensusResult(
-            info.tokenCompartido,
-            preguntaId,
-            result.consensusResult,
-          );
-          this.logger.log(
-            `[CONSENSUS:DISCONNECT] Evaluado tras desconexión de ${info.nickname}: ${result.consensusResult.type}`,
-          );
-        }
+        this.logger.log(
+          `[CONSENSUS:DISCONNECT] Evaluado tras desconexión de ${info.nickname}: ${result.consensus.result.type}`,
+        );
       }
     } else {
       this.logger.log(`Cliente desconectado sin registro previo: ${client.id}`);
@@ -208,60 +188,27 @@ export class JuegoGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     this.server.to(info.tokenCompartido).emit('participantes', participantesDb);
 
-    // (Task 3.3) On reconnect, add student back to required set and re-evaluate consensus
-    try {
-      const activeQuestion = await this.roomStateCache.getActiveQuestion(
+    // Resultado de consenso ya fue evaluado por JoinRoomUseCase
+    if (info.consensus) {
+      this.emitConsensusResult(
         info.tokenCompartido,
+        info.consensus.preguntaId,
+        info.consensus.result,
       );
-      const questionStatus = await this.roomStateCache.getQuestionStatus(
-        info.tokenCompartido,
-      );
-
-      if (activeQuestion && questionStatus === 'released') {
-        const preguntaId: number = activeQuestion.preguntaId;
-        const reconnectedParticipant = participantesDb.find(
-          (p: any) => p.nombre === info.nickname,
-        );
-        const isStudent = reconnectedParticipant?.rol === 'estudiante';
-
-        if (isStudent) {
-          // Add back to required set (they are now part of the team again)
-          await this.consensusCache.addToRequired(
-            info.tokenCompartido,
-            preguntaId,
-            info.nickname,
-          );
-
-          // Re-evaluate consensus — reconnecting student may still need to vote
-          const consensusResult = await this.evaluateConsensus.execute(
-            info.tokenCompartido,
-            preguntaId,
-          );
-
-          this.emitConsensusResult(
-            info.tokenCompartido,
-            preguntaId,
-            consensusResult,
-          );
-
-          this.logger.log(
-            `[CONSENSUS:JOIN] Evaluado tras reconexión de ${info.nickname}: ${consensusResult.type}`,
-          );
-        }
-      }
-    } catch (consensusError) {
-      this.logger.error(
-        `[CONSENSUS:JOIN] Error evaluando consenso: ${consensusError}`,
+      this.logger.log(
+        `[CONSENSUS:JOIN] Evaluado tras reconexión de ${info.nickname}: ${info.consensus.result.type}`,
       );
     }
 
-    const bloqueados = await this.roomStateCache.getBlockedComodines(
+    const bloqueados = await this.websocketsService.getBlockedPowerups(
       info.tokenCompartido,
     );
     client.emit('comodines_bloqueados', bloqueados);
 
     // Enviar historial de chat al usuario que se une
-    const mensajesChat = await this.chatCache.getMessages(info.tokenCompartido);
+    const mensajesChat = await this.websocketsService.getChatMessages(
+      info.tokenCompartido,
+    );
     if (mensajesChat.length > 0) {
       client.emit('mensaje_chat', mensajesChat);
     }
@@ -277,25 +224,12 @@ export class JuegoGateway implements OnGatewayConnection, OnGatewayDisconnect {
     },
   ) {
     try {
-      // Obtener online nicknames ANTES de validar el límite
-      const onlineNicknames =
-        await this.participantsCache.getOnlineParticipants(
+      const participantesDb =
+        await this.websocketsService.changeParticipantRole(
           payload.tokenCompartido,
+          payload.nickname,
+          payload.nuevoRol,
         );
-
-      // Validar límite solo contra estudiantes ONLINE
-      await this.salasService.updateParticipantRole(
-        payload.tokenCompartido,
-        payload.nickname,
-        payload.nuevoRol,
-        onlineNicknames,
-      );
-
-      // Refrescar lista después del cambio
-      const participantesDb = await this.salasService.getParticipantsWithRoles(
-        payload.tokenCompartido,
-        onlineNicknames,
-      );
 
       this.server
         .to(payload.tokenCompartido)
@@ -377,27 +311,12 @@ export class JuegoGateway implements OnGatewayConnection, OnGatewayDisconnect {
           // the next vote triggers EvaluateConsensusUseCase with an empty required SET
           // → no-majority → revoto_solicitado → infinite loop.
           try {
-            const onlineNicknames =
-              await this.participantsCache.getOnlineParticipants(
-                payload.tokenCompartido,
-              );
-            const participantesDb =
-              await this.salasService.getParticipantsWithRoles(
-                payload.tokenCompartido,
-                onlineNicknames,
-              );
-            const studentNicknames = participantesDb
-              .filter((p: any) => p.rol === 'estudiante')
-              .map((p: any) => p.nombre as string);
-
-            await this.consensusCache.initializeRequired(
+            await this.websocketsService.initConsensusRequired(
               payload.tokenCompartido,
               payload.preguntaId,
-              studentNicknames,
             );
-
             this.logger.log(
-              `[CONSENSUS:REVOTO] Required SET reinicializado para pregunta ${payload.preguntaId} con ${studentNicknames.length} estudiantes`,
+              `[CONSENSUS:REVOTO] Required SET reinicializado para pregunta ${payload.preguntaId}`,
             );
           } catch (reinitError) {
             this.logger.error(
@@ -446,7 +365,7 @@ export class JuegoGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @MessageBody() payload: { salaId: number; tokenAnterior: string },
   ) {
     try {
-      const res = await this.salasService.regenerarToken(payload.salaId);
+      const res = await this.websocketsService.regenerateToken(payload.salaId);
 
       // Notificar a la sala antigua que el token cambió
       this.server.to(payload.tokenAnterior).emit('token_sala_actualizado', {
@@ -465,7 +384,7 @@ export class JuegoGateway implements OnGatewayConnection, OnGatewayDisconnect {
   ) {
     try {
       this.flushBroadcast(payload.tokenCompartido);
-      const res = await this.salasService.finalizarSala(payload.salaId);
+      const res = await this.websocketsService.finalizeGame(payload.salaId);
 
       this.server.to(payload.tokenCompartido).emit('partida_finalizada', {
         totalParticipantes: res.totalParticipantes,
@@ -485,7 +404,7 @@ export class JuegoGateway implements OnGatewayConnection, OnGatewayDisconnect {
       `[WS:REINICIAR_RONDA] Recibido para token=${payload.tokenCompartido}`,
     );
     try {
-      await this.roomStateCache.clearRoundState(payload.tokenCompartido);
+      await this.websocketsService.restartRound(payload.tokenCompartido);
       this.logger.log(`[WS:REINICIAR_RONDA] Redis limpiado`);
 
       this.server.to(payload.tokenCompartido).emit('ronda_reiniciada', {
@@ -562,30 +481,14 @@ export class JuegoGateway implements OnGatewayConnection, OnGatewayDisconnect {
         .to(payload.tokenCompartido)
         .emit('pregunta_liberada', payload.pregunta);
 
-      // 3. (Task 3.1) Inicializar el SET de requeridos para consenso
-      //    Obtener participantes online y filtrar por rol 'estudiante'
+      // 3. Inicializar el SET de requeridos para consenso
       try {
-        const onlineNicknames =
-          await this.participantsCache.getOnlineParticipants(
-            payload.tokenCompartido,
-          );
-        const participantesDb =
-          await this.salasService.getParticipantsWithRoles(
-            payload.tokenCompartido,
-            onlineNicknames,
-          );
-        const studentNicknames = participantesDb
-          .filter((p: any) => p.rol === 'estudiante')
-          .map((p: any) => p.nombre as string);
-
-        await this.consensusCache.initializeRequired(
+        await this.websocketsService.initConsensusRequired(
           payload.tokenCompartido,
           payload.pregunta.preguntaId,
-          studentNicknames,
         );
-
         this.logger.log(
-          `[CONSENSUS] Inicializado para pregunta ${payload.pregunta.preguntaId} con ${studentNicknames.length} estudiantes`,
+          `[CONSENSUS] Inicializado para pregunta ${payload.pregunta.preguntaId}`,
         );
       } catch (consensusError) {
         // Non-fatal: consensus initialization failure should not block question release
@@ -622,7 +525,7 @@ export class JuegoGateway implements OnGatewayConnection, OnGatewayDisconnect {
       tipoComodin: string;
     },
   ) {
-    await this.roomStateCache.addBlockedComodin(
+    await this.websocketsService.blockPowerup(
       payload.tokenCompartido,
       payload.tipoComodin,
     );
@@ -679,7 +582,7 @@ export class JuegoGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @MessageBody()
     payload: { tokenCompartido: string; preguntaId: number; pista: string },
   ) {
-    const helperNickname = await this.helperCache.getActiveHelper(
+    const helperNickname = await this.websocketsService.getActiveHelper(
       payload.tokenCompartido,
     );
 

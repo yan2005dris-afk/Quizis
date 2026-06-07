@@ -1,8 +1,8 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { HandleDisconnectUseCase } from './handle-disconnect.use-case';
-import { ParticipantsCacheUseCase } from '../../../infrastructure/cache/use-cases/participants-cache.use-case';
-import { RoomStateCacheUseCase } from '../../../infrastructure/cache/use-cases/room-state-cache.use-case';
-import { ConsensusCacheUseCase } from '../../../infrastructure/cache/use-cases/consensus-cache.use-case';
+import { ParticipantsCacheService } from '../../salas/cache/participants-cache.service';
+import { RoomStateCacheService } from '../../salas/cache/room-state-cache.service';
+import { ConsensusCacheService } from '../cache/consensus-cache.service';
 import { EvaluateConsensusUseCase } from './evaluate-consensus.use-case';
 
 describe('HandleDisconnectUseCase', () => {
@@ -39,9 +39,9 @@ describe('HandleDisconnectUseCase', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         HandleDisconnectUseCase,
-        { provide: ParticipantsCacheUseCase, useValue: mockParticipantsCache },
-        { provide: RoomStateCacheUseCase, useValue: mockRoomStateCache },
-        { provide: ConsensusCacheUseCase, useValue: mockConsensusCache },
+        { provide: ParticipantsCacheService, useValue: mockParticipantsCache },
+        { provide: RoomStateCacheService, useValue: mockRoomStateCache },
+        { provide: ConsensusCacheService, useValue: mockConsensusCache },
         { provide: EvaluateConsensusUseCase, useValue: mockEvaluateConsensus },
       ],
     }).compile();
@@ -78,7 +78,7 @@ describe('HandleDisconnectUseCase', () => {
       expect(mockConsensusCache.getVotes).not.toHaveBeenCalled();
       expect(mockConsensusCache.removeFromRequired).not.toHaveBeenCalled();
       expect(mockEvaluateConsensus.execute).not.toHaveBeenCalled();
-      expect(result.consensusResult).toBeUndefined();
+      expect(result.consensus).toBeUndefined();
     });
 
     it('no llama lógica de consenso si la pregunta está en estado answered', async () => {
@@ -92,7 +92,7 @@ describe('HandleDisconnectUseCase', () => {
 
       expect(mockConsensusCache.getVotes).not.toHaveBeenCalled();
       expect(mockEvaluateConsensus.execute).not.toHaveBeenCalled();
-      expect(result.consensusResult).toBeUndefined();
+      expect(result.consensus).toBeUndefined();
     });
   });
 
@@ -125,10 +125,13 @@ describe('HandleDisconnectUseCase', () => {
         'token-abc',
         1,
       );
-      expect(result.consensusResult).toEqual({
-        type: 'pending',
-        votosRecibidos: 1,
-        totalRequeridos: 1,
+      expect(result.consensus).toEqual({
+        preguntaId: 1,
+        result: {
+          type: 'pending',
+          votosRecibidos: 1,
+          totalRequeridos: 1,
+        },
       });
     });
   });
@@ -163,11 +166,14 @@ describe('HandleDisconnectUseCase', () => {
         'token-abc',
         1,
       );
-      expect(result.consensusResult).toEqual({
-        type: 'majority',
-        winningOpcionId: 10,
-        votosRecibidos: 2,
-        totalRequeridos: 2,
+      expect(result.consensus).toEqual({
+        preguntaId: 1,
+        result: {
+          type: 'majority',
+          winningOpcionId: 10,
+          votosRecibidos: 2,
+          totalRequeridos: 2,
+        },
       });
     });
   });
@@ -192,7 +198,7 @@ describe('HandleDisconnectUseCase', () => {
 
       expect(result.tokenCompartido).toBe('token-abc');
       expect(result.participants).toEqual(['bob']);
-      expect(result.consensusResult).toBeDefined();
+      expect(result.consensus).toBeDefined();
     });
   });
 });

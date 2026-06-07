@@ -1,9 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { JoinRoomUseCase } from './join-room.use-case';
-import { ParticipantsCacheUseCase } from '../../../infrastructure/cache/use-cases/participants-cache.use-case';
-import { RoomStateCacheUseCase } from '../../../infrastructure/cache/use-cases/room-state-cache.use-case';
-import { ConsensusCacheUseCase } from '../../../infrastructure/cache/use-cases/consensus-cache.use-case';
+import { ParticipantsCacheService } from '../../salas/cache/participants-cache.service';
+import { RoomStateCacheService } from '../../salas/cache/room-state-cache.service';
+import { ConsensusCacheService } from '../cache/consensus-cache.service';
 import { EvaluateConsensusUseCase } from './evaluate-consensus.use-case';
+import { SalasService } from '../../salas/salas.service';
 
 describe('JoinRoomUseCase', () => {
   let useCase: JoinRoomUseCase;
@@ -26,16 +27,21 @@ describe('JoinRoomUseCase', () => {
     execute: jest.fn(),
   };
 
+  const mockSalasService = {
+    getParticipantsWithRoles: jest.fn(),
+  };
+
   const mockActiveQuestion = { preguntaId: 1, texto: 'Pregunta activa' };
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         JoinRoomUseCase,
-        { provide: ParticipantsCacheUseCase, useValue: mockParticipantsCache },
-        { provide: RoomStateCacheUseCase, useValue: mockRoomStateCache },
-        { provide: ConsensusCacheUseCase, useValue: mockConsensusCache },
+        { provide: ParticipantsCacheService, useValue: mockParticipantsCache },
+        { provide: RoomStateCacheService, useValue: mockRoomStateCache },
+        { provide: ConsensusCacheService, useValue: mockConsensusCache },
         { provide: EvaluateConsensusUseCase, useValue: mockEvaluateConsensus },
+        { provide: SalasService, useValue: mockSalasService },
       ],
     }).compile();
 
@@ -47,6 +53,7 @@ describe('JoinRoomUseCase', () => {
 
   it('registra participante online y retorna nickname y participants', async () => {
     mockParticipantsCache.getOnlineParticipants.mockResolvedValue(['User1']);
+    mockSalasService.getParticipantsWithRoles.mockResolvedValue([]);
     mockRoomStateCache.getActiveQuestion.mockResolvedValue(null);
     mockRoomStateCache.getQuestionStatus.mockResolvedValue(null);
 
@@ -72,6 +79,9 @@ describe('JoinRoomUseCase', () => {
   describe('sin pregunta activa', () => {
     it('omite lógica de consenso si no hay pregunta activa', async () => {
       mockParticipantsCache.getOnlineParticipants.mockResolvedValue(['alice']);
+      mockSalasService.getParticipantsWithRoles.mockResolvedValue([
+        { nombre: 'alice', rol: 'estudiante' },
+      ]);
       mockRoomStateCache.getActiveQuestion.mockResolvedValue(null);
       mockRoomStateCache.getQuestionStatus.mockResolvedValue(null);
 
@@ -79,16 +89,18 @@ describe('JoinRoomUseCase', () => {
         tokenCompartido: 'token-abc',
         nombre: 'alice',
         socketId: 'S1',
-        rol: 'estudiante',
       });
 
       expect(mockConsensusCache.addToRequired).not.toHaveBeenCalled();
       expect(mockEvaluateConsensus.execute).not.toHaveBeenCalled();
-      expect(result.consensusResult).toBeUndefined();
+      expect(result.consensus).toBeUndefined();
     });
 
     it('omite lógica de consenso si la pregunta ya fue respondida (status answered)', async () => {
       mockParticipantsCache.getOnlineParticipants.mockResolvedValue(['alice']);
+      mockSalasService.getParticipantsWithRoles.mockResolvedValue([
+        { nombre: 'alice', rol: 'estudiante' },
+      ]);
       mockRoomStateCache.getActiveQuestion.mockResolvedValue(
         mockActiveQuestion,
       );
@@ -98,20 +110,22 @@ describe('JoinRoomUseCase', () => {
         tokenCompartido: 'token-abc',
         nombre: 'alice',
         socketId: 'S1',
-        rol: 'estudiante',
       });
 
       expect(mockConsensusCache.addToRequired).not.toHaveBeenCalled();
       expect(mockEvaluateConsensus.execute).not.toHaveBeenCalled();
-      expect(result.consensusResult).toBeUndefined();
+      expect(result.consensus).toBeUndefined();
     });
   });
 
-  // ─── reconexión como observador ────────────────────────────────────────────
+  // ─── reconexión como profesor ──────────────────────────────────────────────
 
-  describe('observador reconectándose', () => {
+  describe('profesor reconectándose', () => {
     it('omite consenso si el rol NO es estudiante', async () => {
       mockParticipantsCache.getOnlineParticipants.mockResolvedValue(['prof']);
+      mockSalasService.getParticipantsWithRoles.mockResolvedValue([
+        { nombre: 'prof', rol: 'profesor' },
+      ]);
       mockRoomStateCache.getActiveQuestion.mockResolvedValue(
         mockActiveQuestion,
       );
@@ -121,16 +135,16 @@ describe('JoinRoomUseCase', () => {
         tokenCompartido: 'token-abc',
         nombre: 'prof',
         socketId: 'S1',
-        rol: 'profesor',
       });
 
       expect(mockConsensusCache.addToRequired).not.toHaveBeenCalled();
       expect(mockEvaluateConsensus.execute).not.toHaveBeenCalled();
-      expect(result.consensusResult).toBeUndefined();
+      expect(result.consensus).toBeUndefined();
     });
 
-    it('omite consenso si rol es undefined', async () => {
+    it('omite consenso si el participante no está en DB (rol undefined)', async () => {
       mockParticipantsCache.getOnlineParticipants.mockResolvedValue(['guest']);
+      mockSalasService.getParticipantsWithRoles.mockResolvedValue([]);
       mockRoomStateCache.getActiveQuestion.mockResolvedValue(
         mockActiveQuestion,
       );
@@ -140,22 +154,25 @@ describe('JoinRoomUseCase', () => {
         tokenCompartido: 'token-abc',
         nombre: 'guest',
         socketId: 'S1',
-        // rol omitted → undefined
       });
 
       expect(mockConsensusCache.addToRequired).not.toHaveBeenCalled();
       expect(mockEvaluateConsensus.execute).not.toHaveBeenCalled();
-      expect(result.consensusResult).toBeUndefined();
+      expect(result.consensus).toBeUndefined();
     });
   });
 
   // ─── reconexión como estudiante con pregunta activa ────────────────────────
 
   describe('estudiante reconectándose con pregunta activa (status released)', () => {
-    it('llama addToRequired, luego evaluateConsensus y retorna consensusResult', async () => {
+    it('llama addToRequired, luego evaluateConsensus y retorna consensus', async () => {
       mockParticipantsCache.getOnlineParticipants.mockResolvedValue([
         'alice',
         'bob',
+      ]);
+      mockSalasService.getParticipantsWithRoles.mockResolvedValue([
+        { nombre: 'alice', rol: 'estudiante' },
+        { nombre: 'bob', rol: 'estudiante' },
       ]);
       mockRoomStateCache.getActiveQuestion.mockResolvedValue(
         mockActiveQuestion,
@@ -172,7 +189,6 @@ describe('JoinRoomUseCase', () => {
         tokenCompartido: 'token-abc',
         nombre: 'alice',
         socketId: 'S1',
-        rol: 'estudiante',
       });
 
       expect(mockConsensusCache.addToRequired).toHaveBeenCalledWith(
@@ -184,15 +200,21 @@ describe('JoinRoomUseCase', () => {
         'token-abc',
         1,
       );
-      expect(result.consensusResult).toEqual({
-        type: 'pending',
-        votosRecibidos: 1,
-        totalRequeridos: 2,
+      expect(result.consensus).toEqual({
+        preguntaId: 1,
+        result: {
+          type: 'pending',
+          votosRecibidos: 1,
+          totalRequeridos: 2,
+        },
       });
     });
 
-    it('retorna consensusResult de tipo single si solo ese estudiante es requerido', async () => {
+    it('retorna consensus de tipo single si solo ese estudiante es requerido', async () => {
       mockParticipantsCache.getOnlineParticipants.mockResolvedValue(['alice']);
+      mockSalasService.getParticipantsWithRoles.mockResolvedValue([
+        { nombre: 'alice', rol: 'estudiante' },
+      ]);
       mockRoomStateCache.getActiveQuestion.mockResolvedValue(
         mockActiveQuestion,
       );
@@ -207,12 +229,14 @@ describe('JoinRoomUseCase', () => {
         tokenCompartido: 'token-abc',
         nombre: 'alice',
         socketId: 'S1',
-        rol: 'estudiante',
       });
 
-      expect(result.consensusResult).toEqual({
-        type: 'single',
-        winningOpcionId: 10,
+      expect(result.consensus).toEqual({
+        preguntaId: 1,
+        result: {
+          type: 'single',
+          winningOpcionId: 10,
+        },
       });
       expect(result.nickname).toBe('alice');
     });

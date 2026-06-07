@@ -1,13 +1,13 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { ParticipantsCacheUseCase } from '../../../infrastructure/cache/use-cases/participants-cache.use-case';
+import { ParticipantsCacheService } from '../../salas/cache/participants-cache.service';
 
 @Injectable()
 export class ValidateVoteUniquenessUseCase {
   private readonly logger = new Logger(ValidateVoteUniquenessUseCase.name);
 
   constructor(
-    private readonly cacheService: ParticipantsCacheUseCase,
+    private readonly cacheService: ParticipantsCacheService,
     private readonly configService: ConfigService,
   ) {}
 

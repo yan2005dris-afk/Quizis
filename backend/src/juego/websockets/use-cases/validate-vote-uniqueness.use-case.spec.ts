@@ -1,18 +1,18 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ValidateVoteUniquenessUseCase } from './validate-vote-uniqueness.use-case';
 import { ConfigService } from '@nestjs/config';
-import { ParticipantsCacheUseCase } from '../../../infrastructure/cache/use-cases/participants-cache.use-case';
+import { ParticipantsCacheService } from '../../salas/cache/participants-cache.service';
 
 describe('ValidateVoteUniquenessUseCase', () => {
   let useCase: ValidateVoteUniquenessUseCase;
-  let cacheService: ParticipantsCacheUseCase;
+  let cacheService: ParticipantsCacheService;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         ValidateVoteUniquenessUseCase,
         {
-          provide: ParticipantsCacheUseCase,
+          provide: ParticipantsCacheService,
           useValue: {
             checkAndSetDuplicate: jest.fn(),
           },
@@ -29,8 +29,8 @@ describe('ValidateVoteUniquenessUseCase', () => {
     useCase = module.get<ValidateVoteUniquenessUseCase>(
       ValidateVoteUniquenessUseCase,
     );
-    cacheService = module.get<ParticipantsCacheUseCase>(
-      ParticipantsCacheUseCase,
+    cacheService = module.get<ParticipantsCacheService>(
+      ParticipantsCacheService,
     );
   });
 

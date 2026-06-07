@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { BadRequestException } from '@nestjs/common';
 import { ReleaseQuestionUseCase } from './release-question.use-case';
-import { RoomStateCacheUseCase } from 'src/infrastructure/cache/use-cases/room-state-cache.use-case';
+import { RoomStateCacheService } from 'src/juego/salas/cache/room-state-cache.service';
 
 describe('ReleaseQuestionUseCase', () => {
   let useCase: ReleaseQuestionUseCase;
@@ -22,7 +22,7 @@ describe('ReleaseQuestionUseCase', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         ReleaseQuestionUseCase,
-        { provide: RoomStateCacheUseCase, useValue: mockCacheService },
+        { provide: RoomStateCacheService, useValue: mockCacheService },
       ],
     }).compile();
 

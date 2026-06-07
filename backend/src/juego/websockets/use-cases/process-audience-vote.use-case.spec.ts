@@ -5,15 +5,15 @@ import {
 } from './process-audience-vote.use-case';
 import { ValidateVoteUniquenessUseCase } from './validate-vote-uniqueness.use-case';
 import { VotosService } from '../../votos/votos.service';
-import { RoomStateCacheUseCase } from '../../../infrastructure/cache/use-cases/room-state-cache.use-case';
-import { VotesCacheUseCase } from '../../../infrastructure/cache/use-cases/votes-cache.use-case';
+import { RoomStateCacheService } from '../../salas/cache/room-state-cache.service';
+import { VotesCacheService } from '../../votos/cache/votes-cache.service';
 
 describe('ProcessAudienceVoteUseCase', () => {
   let useCase: ProcessAudienceVoteUseCase;
   let validateUniqueness: ValidateVoteUniquenessUseCase;
   let votosService: VotosService;
-  let roomStateCache: RoomStateCacheUseCase;
-  let votesCache: VotesCacheUseCase;
+  let roomStateCache: RoomStateCacheService;
+  let votesCache: VotesCacheService;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -33,13 +33,13 @@ describe('ProcessAudienceVoteUseCase', () => {
           },
         },
         {
-          provide: RoomStateCacheUseCase,
+          provide: RoomStateCacheService,
           useValue: {
             getActiveQuestion: jest.fn(),
           },
         },
         {
-          provide: VotesCacheUseCase,
+          provide: VotesCacheService,
           useValue: {
             getDistribution: jest.fn(),
           },
@@ -54,8 +54,8 @@ describe('ProcessAudienceVoteUseCase', () => {
       ValidateVoteUniquenessUseCase,
     );
     votosService = module.get<VotosService>(VotosService);
-    roomStateCache = module.get<RoomStateCacheUseCase>(RoomStateCacheUseCase);
-    votesCache = module.get<VotesCacheUseCase>(VotesCacheUseCase);
+    roomStateCache = module.get<RoomStateCacheService>(RoomStateCacheService);
+    votesCache = module.get<VotesCacheService>(VotesCacheService);
   });
 
   const mockPayload: VotePayload = {

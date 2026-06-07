@@ -4,9 +4,9 @@ import {
   BadRequestException,
   NotFoundException,
 } from '@nestjs/common';
-import { RoomStateCacheUseCase } from '../../../infrastructure/cache/use-cases/room-state-cache.use-case';
+import { RoomStateCacheService } from '../../salas/cache/room-state-cache.service';
 import { RecordAnswerUseCase } from '../../respuestas/use-cases/record-answer.use-case';
-import { ConsensusCacheUseCase } from '../../../infrastructure/cache/use-cases/consensus-cache.use-case';
+import { ConsensusCacheService } from '../cache/consensus-cache.service';
 import { EvaluateConsensusUseCase } from './evaluate-consensus.use-case';
 
 export interface AnswerPayload {
@@ -39,9 +39,9 @@ export class SubmitAnswerUseCase {
   private readonly logger = new Logger(SubmitAnswerUseCase.name);
 
   constructor(
-    private readonly cacheService: RoomStateCacheUseCase,
+    private readonly cacheService: RoomStateCacheService,
     private readonly recordAnswerUseCase: RecordAnswerUseCase,
-    private readonly consensusCache: ConsensusCacheUseCase,
+    private readonly consensusCache: ConsensusCacheService,
     private readonly evaluateConsensus: EvaluateConsensusUseCase,
   ) {}
 

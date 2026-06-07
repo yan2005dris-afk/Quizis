@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { PersistVotesUseCase } from './persist-votes.use-case';
 import { PrismaService } from '../../../infrastructure/database/prisma/prisma.service';
-import { VotesCacheUseCase } from '../../../infrastructure/cache/use-cases/votes-cache.use-case';
+import { VotesCacheService } from '../cache/votes-cache.service';
 
 describe('PersistVotesUseCase', () => {
   let useCase: PersistVotesUseCase;
@@ -23,7 +23,7 @@ describe('PersistVotesUseCase', () => {
       providers: [
         PersistVotesUseCase,
         { provide: PrismaService, useValue: mockPrisma },
-        { provide: VotesCacheUseCase, useValue: mockCache },
+        { provide: VotesCacheService, useValue: mockCache },
       ],
     }).compile();
 

@@ -4,16 +4,16 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '../../../infrastructure/database/prisma/prisma.service';
-import { RoomStateCacheUseCase } from '../../../infrastructure/cache/use-cases/room-state-cache.use-case';
-import { ParticipantsCacheUseCase } from '../../../infrastructure/cache/use-cases/participants-cache.use-case';
+import { RoomStateCacheService } from '../cache/room-state-cache.service';
+import { ParticipantsCacheService } from '../cache/participants-cache.service';
 import { UpdateEstadoSalaDto, EstadoSala } from '../dto/update-estado-sala.dto';
 
 @Injectable()
 export class UpdateEstadoSalaUseCase {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly roomStateCache: RoomStateCacheUseCase,
-    private readonly participantsCache: ParticipantsCacheUseCase,
+    private readonly roomStateCache: RoomStateCacheService,
+    private readonly participantsCache: ParticipantsCacheService,
   ) {}
 
   async execute(id: number, updateEstadoSalaDto: UpdateEstadoSalaDto) {

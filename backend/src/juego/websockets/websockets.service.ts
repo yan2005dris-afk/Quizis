@@ -17,6 +17,12 @@ import {
   SendHintUseCase,
   SendHintPayload,
 } from './use-cases/send-hint.use-case';
+import { SalasService } from '../salas/salas.service';
+import { RoomStateCacheService } from '../salas/cache/room-state-cache.service';
+import { ParticipantsCacheService } from '../salas/cache/participants-cache.service';
+import { ConsensusCacheService } from './cache/consensus-cache.service';
+import { ChatCacheService } from './cache/chat-cache.service';
+import { HelperCacheService } from '../comodines/cache/helper-cache.service';
 
 @Injectable()
 export class WebsocketsService {
@@ -30,7 +36,15 @@ export class WebsocketsService {
     private readonly sendMessageUseCase: SendMessageUseCase,
     private readonly activateCallJokerUseCase: ActivateCallJokerUseCase,
     private readonly sendHintUseCase: SendHintUseCase,
+    private readonly salasService: SalasService,
+    private readonly roomStateCache: RoomStateCacheService,
+    private readonly participantsCache: ParticipantsCacheService,
+    private readonly consensusCache: ConsensusCacheService,
+    private readonly chatCache: ChatCacheService,
+    private readonly helperCache: HelperCacheService,
   ) {}
+
+  // ─── Use-case delegates ────────────────────────────────────────────────────
 
   async joinRoom(payload: {
     tokenCompartido: string;
@@ -79,5 +93,74 @@ export class WebsocketsService {
 
   async sendHint(payload: SendHintPayload) {
     return this.sendHintUseCase.execute(payload);
+  }
+
+  // ─── Sala operations ────────────────────────────────────────────────────────
+
+  async regenerateToken(salaId: number) {
+    return this.salasService.regenerarToken(salaId);
+  }
+
+  async finalizeGame(salaId: number) {
+    return this.salasService.finalizarSala(salaId);
+  }
+
+  async changeParticipantRole(
+    token: string,
+    nickname: string,
+    nuevoRol: string,
+  ) {
+    const nicknames = await this.participantsCache.getOnlineParticipants(token);
+    await this.salasService.updateParticipantRole(
+      token,
+      nickname,
+      nuevoRol,
+      nicknames,
+    );
+    return this.salasService.getParticipantsWithRoles(token, nicknames);
+  }
+
+  // ─── Cache operations ───────────────────────────────────────────────────────
+
+  async restartRound(tokenCompartido: string) {
+    return this.roomStateCache.clearRoundState(tokenCompartido);
+  }
+
+  async blockPowerup(tokenCompartido: string, tipoComodin: string) {
+    return this.roomStateCache.addBlockedComodin(tokenCompartido, tipoComodin);
+  }
+
+  async getBlockedPowerups(tokenCompartido: string) {
+    return this.roomStateCache.getBlockedComodines(tokenCompartido);
+  }
+
+  async getChatMessages(tokenCompartido: string) {
+    return this.chatCache.getMessages(tokenCompartido);
+  }
+
+  async getActiveHelper(tokenCompartido: string) {
+    return this.helperCache.getActiveHelper(tokenCompartido);
+  }
+
+  // ─── Consensus helpers ──────────────────────────────────────────────────────
+
+  /**
+   * Obtiene los estudiantes online de una sala e inicializa el SET de
+   * requeridos para el consenso de una pregunta.
+   */
+  async initConsensusRequired(
+    token: string,
+    preguntaId: number,
+  ): Promise<void> {
+    const nicknames = await this.participantsCache.getOnlineParticipants(token);
+    const participantesDb = await this.salasService.getParticipantsWithRoles(
+      token,
+      nicknames,
+    );
+    const students = participantesDb
+      .filter((p: any) => p.rol === 'estudiante')
+      .map((p: any) => p.nombre as string);
+
+    await this.consensusCache.initializeRequired(token, preguntaId, students);
   }
 }

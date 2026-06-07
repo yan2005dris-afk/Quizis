@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { SelectRandomConsultantUseCase } from '../../comodines/use-cases/select-random-consultant.use-case';
-import { HelperCacheUseCase } from '../../../infrastructure/cache/use-cases/helper-cache.use-case';
+import { HelperCacheService } from '../../comodines/cache/helper-cache.service';
 
 @Injectable()
 export class ActivateCallJokerUseCase {
@@ -8,7 +8,7 @@ export class ActivateCallJokerUseCase {
 
   constructor(
     private readonly selectRandomConsultant: SelectRandomConsultantUseCase,
-    private readonly helperCache: HelperCacheUseCase,
+    private readonly helperCache: HelperCacheService,
   ) {}
 
   async execute(

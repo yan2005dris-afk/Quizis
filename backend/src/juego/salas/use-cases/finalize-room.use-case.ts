@@ -5,9 +5,9 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../../../infrastructure/database/prisma/prisma.service';
-import { ParticipantsCacheUseCase } from '../../../infrastructure/cache/use-cases/participants-cache.use-case';
-import { RoomStateCacheUseCase } from '../../../infrastructure/cache/use-cases/room-state-cache.use-case';
-import { ChatCacheUseCase } from '../../../infrastructure/cache/use-cases/chat-cache.use-case';
+import { ParticipantsCacheService } from '../cache/participants-cache.service';
+import { RoomStateCacheService } from '../cache/room-state-cache.service';
+import { ChatCacheService } from '../../websockets/cache/chat-cache.service';
 import { EstadoSala } from '../dto/update-estado-sala.dto';
 
 @Injectable()
@@ -16,9 +16,9 @@ export class FinalizeRoomUseCase {
 
   constructor(
     private readonly prisma: PrismaService,
-    private readonly participantsCache: ParticipantsCacheUseCase,
-    private readonly roomStateCache: RoomStateCacheUseCase,
-    private readonly chatCache: ChatCacheUseCase,
+    private readonly participantsCache: ParticipantsCacheService,
+    private readonly roomStateCache: RoomStateCacheService,
+    private readonly chatCache: ChatCacheService,
   ) {}
 
   async execute(salaId: number) {

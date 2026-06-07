@@ -17,6 +17,9 @@ import { UpdateParticipantRoleUseCase } from './use-cases/update-participant-rol
 import { GetParticipantsWithRolesUseCase } from './use-cases/get-participants-with-roles.use-case';
 import { RestartRoundUseCase } from './use-cases/restart-round.use-case';
 import { ReactivateRoomUseCase } from './use-cases/reactivate-room.use-case';
+import { ParticipantsCacheService } from './cache/participants-cache.service';
+import { RoomStateCacheService } from './cache/room-state-cache.service';
+import { ChatCacheService } from '../websockets/cache/chat-cache.service';
 import { AuthModule } from '../../identity/auth/auth.module';
 import { CacheModule } from '../../infrastructure/cache/cache.module';
 
@@ -41,6 +44,9 @@ import { CacheModule } from '../../infrastructure/cache/cache.module';
     GetParticipantsWithRolesUseCase,
     RestartRoundUseCase,
     ReactivateRoomUseCase,
+    ParticipantsCacheService,
+    RoomStateCacheService,
+    ChatCacheService,
   ],
   exports: [SalasService],
 })

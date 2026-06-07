@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { ParticipantsCacheUseCase } from '../../../infrastructure/cache/use-cases/participants-cache.use-case';
-import { RoomStateCacheUseCase } from '../../../infrastructure/cache/use-cases/room-state-cache.use-case';
-import { ConsensusCacheUseCase } from '../../../infrastructure/cache/use-cases/consensus-cache.use-case';
+import { ParticipantsCacheService } from '../../salas/cache/participants-cache.service';
+import { RoomStateCacheService } from '../../salas/cache/room-state-cache.service';
+import { ConsensusCacheService } from '../cache/consensus-cache.service';
 import {
   ConsensusResult,
   EvaluateConsensusUseCase,
@@ -12,9 +12,9 @@ export class HandleDisconnectUseCase {
   private readonly logger = new Logger(HandleDisconnectUseCase.name);
 
   constructor(
-    private readonly cacheService: ParticipantsCacheUseCase,
-    private readonly roomStateCache: RoomStateCacheUseCase,
-    private readonly consensusCache: ConsensusCacheUseCase,
+    private readonly cacheService: ParticipantsCacheService,
+    private readonly roomStateCache: RoomStateCacheService,
+    private readonly consensusCache: ConsensusCacheService,
     private readonly evaluateConsensus: EvaluateConsensusUseCase,
   ) {}
 
@@ -25,7 +25,7 @@ export class HandleDisconnectUseCase {
   }): Promise<{
     tokenCompartido: string;
     participants: string[];
-    consensusResult?: ConsensusResult;
+    consensus?: { preguntaId: number; result: ConsensusResult };
   }> {
     await this.cacheService.removeParticipantOnline(
       info.tokenCompartido,
@@ -85,7 +85,7 @@ export class HandleDisconnectUseCase {
     return {
       tokenCompartido: info.tokenCompartido,
       participants,
-      consensusResult,
+      consensus: { preguntaId, result: consensusResult },
     };
   }
 }

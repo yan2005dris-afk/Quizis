@@ -1,12 +1,12 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { ChatCacheUseCase } from '../../../infrastructure/cache/use-cases/chat-cache.use-case';
+import { ChatCacheService } from '../cache/chat-cache.service';
 import { ChatMessage } from '../types/chat.types';
 
 @Injectable()
 export class SendMessageUseCase {
   private readonly logger = new Logger(SendMessageUseCase.name);
 
-  constructor(private readonly chatCache: ChatCacheUseCase) {}
+  constructor(private readonly chatCache: ChatCacheService) {}
 
   async execute(payload: {
     tokenCompartido: string;

@@ -2,9 +2,9 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { NotFoundException, BadRequestException } from '@nestjs/common';
 import { FinalizeRoomUseCase } from './finalize-room.use-case';
 import { PrismaService } from 'src/infrastructure/database/prisma/prisma.service';
-import { ParticipantsCacheUseCase } from 'src/infrastructure/cache/use-cases/participants-cache.use-case';
-import { RoomStateCacheUseCase } from 'src/infrastructure/cache/use-cases/room-state-cache.use-case';
-import { ChatCacheUseCase } from 'src/infrastructure/cache/use-cases/chat-cache.use-case';
+import { ParticipantsCacheService } from 'src/juego/salas/cache/participants-cache.service';
+import { RoomStateCacheService } from 'src/juego/salas/cache/room-state-cache.service';
+import { ChatCacheService } from 'src/juego/websockets/cache/chat-cache.service';
 import { EstadoSala } from '../dto/update-estado-sala.dto';
 
 describe('FinalizeRoomUseCase', () => {
@@ -42,9 +42,9 @@ describe('FinalizeRoomUseCase', () => {
       providers: [
         FinalizeRoomUseCase,
         { provide: PrismaService, useValue: mockPrisma },
-        { provide: ParticipantsCacheUseCase, useValue: mockParticipantsCache },
-        { provide: RoomStateCacheUseCase, useValue: mockRoomStateCache },
-        { provide: ChatCacheUseCase, useValue: mockChatCache },
+        { provide: ParticipantsCacheService, useValue: mockParticipantsCache },
+        { provide: RoomStateCacheService, useValue: mockRoomStateCache },
+        { provide: ChatCacheService, useValue: mockChatCache },
       ],
     }).compile();
 

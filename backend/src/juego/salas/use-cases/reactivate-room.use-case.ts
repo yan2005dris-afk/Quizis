@@ -5,7 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../../../infrastructure/database/prisma/prisma.service';
-import { RoomStateCacheUseCase } from '../../../infrastructure/cache/use-cases/room-state-cache.use-case';
+import { RoomStateCacheService } from '../cache/room-state-cache.service';
 import { EstadoSala } from '../dto/update-estado-sala.dto';
 import { randomUUID } from 'crypto';
 import { JwtService } from '@nestjs/jwt';
@@ -17,7 +17,7 @@ export class ReactivateRoomUseCase {
 
   constructor(
     private readonly prisma: PrismaService,
-    private readonly roomStateCache: RoomStateCacheUseCase,
+    private readonly roomStateCache: RoomStateCacheService,
     private readonly jwtService: JwtService,
     private readonly config: ConfigService,
   ) {}

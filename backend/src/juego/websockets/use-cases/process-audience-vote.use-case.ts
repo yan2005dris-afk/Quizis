@@ -1,8 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ValidateVoteUniquenessUseCase } from './validate-vote-uniqueness.use-case';
 import { VotosService } from '../../votos/votos.service';
-import { RoomStateCacheUseCase } from '../../../infrastructure/cache/use-cases/room-state-cache.use-case';
-import { VotesCacheUseCase } from '../../../infrastructure/cache/use-cases/votes-cache.use-case';
+import { RoomStateCacheService } from '../../salas/cache/room-state-cache.service';
+import { VotesCacheService } from '../../votos/cache/votes-cache.service';
 
 export interface VotePayload {
   salaId: number;
@@ -20,8 +20,8 @@ export class ProcessAudienceVoteUseCase {
   constructor(
     private readonly validateVoteUniquenessUseCase: ValidateVoteUniquenessUseCase,
     private readonly votosService: VotosService,
-    private readonly cacheService: RoomStateCacheUseCase,
-    private readonly votesCacheUseCase: VotesCacheUseCase,
+    private readonly cacheService: RoomStateCacheService,
+    private readonly votesCacheUseCase: VotesCacheService,
   ) {}
 
   async execute(payload: VotePayload) {

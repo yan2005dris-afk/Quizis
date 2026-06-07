@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { WebsocketsService } from './websockets.service';
 import { CacheModule } from '../../infrastructure/cache/cache.module';
+import { SalasModule } from '../salas/salas.module';
 import { VotosModule } from '../votos/votos.module';
 import { RespuestasModule } from '../respuestas/respuestas.module';
 import { ComodinesModule } from '../comodines/comodines.module';
@@ -15,9 +16,17 @@ import { SendMessageUseCase } from './use-cases/send-message.use-case';
 import { ActivateCallJokerUseCase } from './use-cases/activate-call-joker.use-case';
 import { SendHintUseCase } from './use-cases/send-hint.use-case';
 import { EvaluateConsensusUseCase } from './use-cases/evaluate-consensus.use-case';
+import { ChatCacheService } from './cache/chat-cache.service';
+import { ConsensusCacheService } from './cache/consensus-cache.service';
 
 @Module({
-  imports: [CacheModule, VotosModule, RespuestasModule, ComodinesModule],
+  imports: [
+    CacheModule,
+    SalasModule,
+    VotosModule,
+    RespuestasModule,
+    ComodinesModule,
+  ],
   providers: [
     WebsocketsService,
     ValidateVoteUniquenessUseCase,
@@ -31,6 +40,8 @@ import { EvaluateConsensusUseCase } from './use-cases/evaluate-consensus.use-cas
     ActivateCallJokerUseCase,
     SendHintUseCase,
     EvaluateConsensusUseCase,
+    ChatCacheService,
+    ConsensusCacheService,
   ],
   exports: [WebsocketsService],
 })

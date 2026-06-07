@@ -5,8 +5,8 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '../../../infrastructure/database/prisma/prisma.service';
-import { RoomStateCacheUseCase } from '../../../infrastructure/cache/use-cases/room-state-cache.use-case';
-import { ParticipantsCacheUseCase } from '../../../infrastructure/cache/use-cases/participants-cache.use-case';
+import { RoomStateCacheService } from '../cache/room-state-cache.service';
+import { ParticipantsCacheService } from '../cache/participants-cache.service';
 
 @Injectable()
 export class RestartRoundUseCase {
@@ -14,8 +14,8 @@ export class RestartRoundUseCase {
 
   constructor(
     private readonly prisma: PrismaService,
-    private readonly roomStateCache: RoomStateCacheUseCase,
-    private readonly participantsCache: ParticipantsCacheUseCase,
+    private readonly roomStateCache: RoomStateCacheService,
+    private readonly participantsCache: ParticipantsCacheService,
   ) {}
 
   async execute(salaId: number) {

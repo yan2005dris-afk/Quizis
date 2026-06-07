@@ -1,16 +1,16 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { SubmitAnswerUseCase } from './submit-answer.use-case';
-import { RoomStateCacheUseCase } from 'src/infrastructure/cache/use-cases/room-state-cache.use-case';
+import { RoomStateCacheService } from 'src/juego/salas/cache/room-state-cache.service';
 import { RecordAnswerUseCase } from '../../respuestas/use-cases/record-answer.use-case';
-import { ConsensusCacheUseCase } from 'src/infrastructure/cache/use-cases/consensus-cache.use-case';
+import { ConsensusCacheService } from 'src/juego/websockets/cache/consensus-cache.service';
 import { EvaluateConsensusUseCase } from './evaluate-consensus.use-case';
 
 describe('SubmitAnswerUseCase', () => {
   let useCase: SubmitAnswerUseCase;
   let cacheService: typeof mockCacheService;
   let recordAnswerUseCase: typeof mockRecordAnswerUseCase;
-  let consensusCache: typeof mockConsensusCacheUseCase;
+  let consensusCache: typeof mockConsensusCacheService;
 
   const mockCacheService = {
     getActiveQuestion: jest.fn(),
@@ -22,7 +22,7 @@ describe('SubmitAnswerUseCase', () => {
     execute: jest.fn(),
   };
 
-  const mockConsensusCacheUseCase = {
+  const mockConsensusCacheService = {
     recordVote: jest.fn(),
     clearConsensus: jest.fn(),
   };
@@ -56,9 +56,9 @@ describe('SubmitAnswerUseCase', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         SubmitAnswerUseCase,
-        { provide: RoomStateCacheUseCase, useValue: mockCacheService },
+        { provide: RoomStateCacheService, useValue: mockCacheService },
         { provide: RecordAnswerUseCase, useValue: mockRecordAnswerUseCase },
-        { provide: ConsensusCacheUseCase, useValue: mockConsensusCacheUseCase },
+        { provide: ConsensusCacheService, useValue: mockConsensusCacheService },
         {
           provide: EvaluateConsensusUseCase,
           useValue: mockEvaluateConsensusUseCase,
@@ -67,9 +67,9 @@ describe('SubmitAnswerUseCase', () => {
     }).compile();
 
     useCase = module.get<SubmitAnswerUseCase>(SubmitAnswerUseCase);
-    cacheService = module.get(RoomStateCacheUseCase);
+    cacheService = module.get(RoomStateCacheService);
     recordAnswerUseCase = module.get(RecordAnswerUseCase);
-    consensusCache = module.get(ConsensusCacheUseCase);
+    consensusCache = module.get(ConsensusCacheService);
     jest.clearAllMocks();
   });
 
@@ -79,7 +79,7 @@ describe('SubmitAnswerUseCase', () => {
       mockCacheService.getQuestionStatus.mockResolvedValue('released');
       mockCacheService.setQuestionStatus.mockResolvedValue(undefined);
       mockRecordAnswerUseCase.execute.mockResolvedValue(undefined);
-      mockConsensusCacheUseCase.recordVote.mockResolvedValue(undefined);
+      mockConsensusCacheService.recordVote.mockResolvedValue(undefined);
       mockEvaluateConsensusUseCase.execute.mockResolvedValue({
         type: 'single',
         winningOpcionId: 10,
@@ -103,7 +103,7 @@ describe('SubmitAnswerUseCase', () => {
       mockCacheService.getQuestionStatus.mockResolvedValue('released');
       mockCacheService.setQuestionStatus.mockResolvedValue(undefined);
       mockRecordAnswerUseCase.execute.mockResolvedValue(undefined);
-      mockConsensusCacheUseCase.recordVote.mockResolvedValue(undefined);
+      mockConsensusCacheService.recordVote.mockResolvedValue(undefined);
       mockEvaluateConsensusUseCase.execute.mockResolvedValue({
         type: 'single',
         winningOpcionId: 11,
@@ -123,7 +123,7 @@ describe('SubmitAnswerUseCase', () => {
     it('devuelve status pending con conteos correctos', async () => {
       mockCacheService.getActiveQuestion.mockResolvedValue(mockQuestion);
       mockCacheService.getQuestionStatus.mockResolvedValue('released');
-      mockConsensusCacheUseCase.recordVote.mockResolvedValue(undefined);
+      mockConsensusCacheService.recordVote.mockResolvedValue(undefined);
       mockEvaluateConsensusUseCase.execute.mockResolvedValue({
         type: 'pending',
         votosRecibidos: 1,
@@ -146,8 +146,8 @@ describe('SubmitAnswerUseCase', () => {
     it('limpia el consenso y devuelve status no-majority', async () => {
       mockCacheService.getActiveQuestion.mockResolvedValue(mockQuestion);
       mockCacheService.getQuestionStatus.mockResolvedValue('released');
-      mockConsensusCacheUseCase.recordVote.mockResolvedValue(undefined);
-      mockConsensusCacheUseCase.clearConsensus.mockResolvedValue(undefined);
+      mockConsensusCacheService.recordVote.mockResolvedValue(undefined);
+      mockConsensusCacheService.clearConsensus.mockResolvedValue(undefined);
       mockEvaluateConsensusUseCase.execute.mockResolvedValue({
         type: 'no-majority',
         votosRecibidos: 2,
@@ -171,7 +171,7 @@ describe('SubmitAnswerUseCase', () => {
       mockCacheService.getQuestionStatus.mockResolvedValue('released');
       mockCacheService.setQuestionStatus.mockResolvedValue(undefined);
       mockRecordAnswerUseCase.execute.mockResolvedValue(undefined);
-      mockConsensusCacheUseCase.recordVote.mockResolvedValue(undefined);
+      mockConsensusCacheService.recordVote.mockResolvedValue(undefined);
       mockEvaluateConsensusUseCase.execute.mockResolvedValue({
         type: 'majority',
         winningOpcionId: 10,
@@ -198,7 +198,7 @@ describe('SubmitAnswerUseCase', () => {
       mockCacheService.getQuestionStatus.mockResolvedValue('released');
       mockCacheService.setQuestionStatus.mockResolvedValue(undefined);
       mockRecordAnswerUseCase.execute.mockResolvedValue(undefined);
-      mockConsensusCacheUseCase.recordVote.mockResolvedValue(undefined);
+      mockConsensusCacheService.recordVote.mockResolvedValue(undefined);
       mockEvaluateConsensusUseCase.execute.mockResolvedValue({
         type: 'majority',
         winningOpcionId: 11,
@@ -224,7 +224,7 @@ describe('SubmitAnswerUseCase', () => {
       await expect(useCase.execute(basePayload)).rejects.toThrow(
         BadRequestException,
       );
-      expect(mockConsensusCacheUseCase.recordVote).not.toHaveBeenCalled();
+      expect(mockConsensusCacheService.recordVote).not.toHaveBeenCalled();
     });
 
     it('un solo estudiante requerido (single) → evaluateConsensus retorna single, persiste y responde', async () => {
@@ -232,7 +232,7 @@ describe('SubmitAnswerUseCase', () => {
       mockCacheService.getQuestionStatus.mockResolvedValue('released');
       mockCacheService.setQuestionStatus.mockResolvedValue(undefined);
       mockRecordAnswerUseCase.execute.mockResolvedValue(undefined);
-      mockConsensusCacheUseCase.recordVote.mockResolvedValue(undefined);
+      mockConsensusCacheService.recordVote.mockResolvedValue(undefined);
       mockEvaluateConsensusUseCase.execute.mockResolvedValue({
         type: 'single',
         winningOpcionId: 10,
@@ -251,7 +251,7 @@ describe('SubmitAnswerUseCase', () => {
     it('2 de 3 votaron → pending, NO persiste en DB, NO cambia status', async () => {
       mockCacheService.getActiveQuestion.mockResolvedValue(mockQuestion);
       mockCacheService.getQuestionStatus.mockResolvedValue('released');
-      mockConsensusCacheUseCase.recordVote.mockResolvedValue(undefined);
+      mockConsensusCacheService.recordVote.mockResolvedValue(undefined);
       mockEvaluateConsensusUseCase.execute.mockResolvedValue({
         type: 'pending',
         votosRecibidos: 2,
@@ -272,8 +272,8 @@ describe('SubmitAnswerUseCase', () => {
     it('todos votan, sin mayoría → clearConsensus llamado, status no-majority', async () => {
       mockCacheService.getActiveQuestion.mockResolvedValue(mockQuestion);
       mockCacheService.getQuestionStatus.mockResolvedValue('released');
-      mockConsensusCacheUseCase.recordVote.mockResolvedValue(undefined);
-      mockConsensusCacheUseCase.clearConsensus.mockResolvedValue(undefined);
+      mockConsensusCacheService.recordVote.mockResolvedValue(undefined);
+      mockConsensusCacheService.clearConsensus.mockResolvedValue(undefined);
       mockEvaluateConsensusUseCase.execute.mockResolvedValue({
         type: 'no-majority',
         votosRecibidos: 3,
@@ -338,7 +338,7 @@ describe('SubmitAnswerUseCase', () => {
       mockCacheService.getQuestionStatus.mockResolvedValue('released');
       mockCacheService.setQuestionStatus.mockResolvedValue(undefined);
       mockRecordAnswerUseCase.execute.mockResolvedValue(undefined);
-      mockConsensusCacheUseCase.recordVote.mockResolvedValue(undefined);
+      mockConsensusCacheService.recordVote.mockResolvedValue(undefined);
       mockEvaluateConsensusUseCase.execute.mockResolvedValue({
         type: 'single',
         winningOpcionId: 10,
@@ -360,7 +360,7 @@ describe('SubmitAnswerUseCase', () => {
       mockCacheService.getQuestionStatus.mockResolvedValue('released');
       mockCacheService.setQuestionStatus.mockResolvedValue(undefined);
       mockRecordAnswerUseCase.execute.mockResolvedValue(undefined);
-      mockConsensusCacheUseCase.recordVote.mockResolvedValue(undefined);
+      mockConsensusCacheService.recordVote.mockResolvedValue(undefined);
       mockEvaluateConsensusUseCase.execute.mockResolvedValue({
         type: 'single',
         winningOpcionId: 10,

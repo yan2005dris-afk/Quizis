@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { SelectRandomConsultantUseCase } from './select-random-consultant.use-case';
 import { PrismaService } from '../../../infrastructure/database/prisma/prisma.service';
-import { ParticipantsCacheUseCase } from '../../../infrastructure/cache/use-cases/participants-cache.use-case';
+import { ParticipantsCacheService } from '../../salas/cache/participants-cache.service';
 
 describe('SelectRandomConsultantUseCase', () => {
   let useCase: SelectRandomConsultantUseCase;
@@ -24,7 +24,7 @@ describe('SelectRandomConsultantUseCase', () => {
       providers: [
         SelectRandomConsultantUseCase,
         { provide: PrismaService, useValue: mockPrismaService },
-        { provide: ParticipantsCacheUseCase, useValue: mockCacheService },
+        { provide: ParticipantsCacheService, useValue: mockCacheService },
       ],
     }).compile();
 

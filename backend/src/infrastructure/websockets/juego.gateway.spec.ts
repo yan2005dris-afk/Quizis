@@ -2,17 +2,17 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { JuegoGateway } from './juego.gateway';
 import { WebsocketsService } from '../../juego/websockets/websockets.service';
 import { SalasService } from '../../juego/salas/salas.service';
-import { RoomStateCacheUseCase } from '../cache/use-cases/room-state-cache.use-case';
-import { ParticipantsCacheUseCase } from '../cache/use-cases/participants-cache.use-case';
-import { ChatCacheUseCase } from '../cache/use-cases/chat-cache.use-case';
-import { HelperCacheUseCase } from '../cache/use-cases/helper-cache.use-case';
-import { ConsensusCacheUseCase } from '../cache/use-cases/consensus-cache.use-case';
+import { RoomStateCacheService } from '../../juego/salas/cache/room-state-cache.service';
+import { ParticipantsCacheService } from '../../juego/salas/cache/participants-cache.service';
+import { ChatCacheService } from '../../juego/websockets/cache/chat-cache.service';
+import { HelperCacheService } from '../../juego/comodines/cache/helper-cache.service';
+import { ConsensusCacheService } from '../../juego/websockets/cache/consensus-cache.service';
 import { EvaluateConsensusUseCase } from '../../juego/websockets/use-cases/evaluate-consensus.use-case';
 
 describe('JuegoGateway — handleComodinBloqueado', () => {
   let gateway: JuegoGateway;
   let roomStateCache: jest.Mocked<
-    Pick<RoomStateCacheUseCase, 'addBlockedComodin'>
+    Pick<RoomStateCacheService, 'addBlockedComodin'>
   >;
 
   const mockEmit = jest.fn();
@@ -26,19 +26,19 @@ describe('JuegoGateway — handleComodinBloqueado', () => {
         { provide: WebsocketsService, useValue: {} },
         { provide: SalasService, useValue: {} },
         {
-          provide: RoomStateCacheUseCase,
+          provide: RoomStateCacheService,
           useValue: { addBlockedComodin: jest.fn() },
         },
-        { provide: ParticipantsCacheUseCase, useValue: {} },
-        { provide: ChatCacheUseCase, useValue: {} },
-        { provide: HelperCacheUseCase, useValue: {} },
-        { provide: ConsensusCacheUseCase, useValue: {} },
+        { provide: ParticipantsCacheService, useValue: {} },
+        { provide: ChatCacheService, useValue: {} },
+        { provide: HelperCacheService, useValue: {} },
+        { provide: ConsensusCacheService, useValue: {} },
         { provide: EvaluateConsensusUseCase, useValue: {} },
       ],
     }).compile();
 
     gateway = module.get<JuegoGateway>(JuegoGateway);
-    roomStateCache = module.get(RoomStateCacheUseCase);
+    roomStateCache = module.get(RoomStateCacheService);
 
     // Inyectar el server mock
     (gateway as any).server = mockServer;

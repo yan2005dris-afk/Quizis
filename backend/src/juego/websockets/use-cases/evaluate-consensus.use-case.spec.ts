@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { EvaluateConsensusUseCase } from './evaluate-consensus.use-case';
-import { ConsensusCacheUseCase } from 'src/infrastructure/cache/use-cases/consensus-cache.use-case';
+import { ConsensusCacheService } from 'src/juego/websockets/cache/consensus-cache.service';
 
 describe('EvaluateConsensusUseCase', () => {
   let useCase: EvaluateConsensusUseCase;
@@ -14,7 +14,7 @@ describe('EvaluateConsensusUseCase', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         EvaluateConsensusUseCase,
-        { provide: ConsensusCacheUseCase, useValue: mockConsensusCache },
+        { provide: ConsensusCacheService, useValue: mockConsensusCache },
       ],
     }).compile();
 

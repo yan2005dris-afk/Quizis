@@ -1,11 +1,11 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { RoomStateCacheUseCase } from '../../../infrastructure/cache/use-cases/room-state-cache.use-case';
+import { RoomStateCacheService } from '../../salas/cache/room-state-cache.service';
 
 @Injectable()
 export class ToggleRoomEnabledUseCase {
   private readonly logger = new Logger(ToggleRoomEnabledUseCase.name);
 
-  constructor(private readonly cacheService: RoomStateCacheUseCase) {}
+  constructor(private readonly cacheService: RoomStateCacheService) {}
 
   async execute(tokenCompartido: string, enabled: boolean) {
     this.logger.log(

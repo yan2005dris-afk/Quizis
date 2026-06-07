@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { ConsensusCacheUseCase } from '../../../infrastructure/cache/use-cases/consensus-cache.use-case';
+import { ConsensusCacheService } from '../cache/consensus-cache.service';
 
 export type ConsensusResult =
   | { type: 'pending'; votosRecibidos: number; totalRequeridos: number }
@@ -16,7 +16,7 @@ export type ConsensusResult =
 export class EvaluateConsensusUseCase {
   private readonly logger = new Logger(EvaluateConsensusUseCase.name);
 
-  constructor(private readonly consensusCache: ConsensusCacheUseCase) {}
+  constructor(private readonly consensusCache: ConsensusCacheService) {}
 
   async execute(token: string, preguntaId: number): Promise<ConsensusResult> {
     const [votes, required] = await Promise.all([

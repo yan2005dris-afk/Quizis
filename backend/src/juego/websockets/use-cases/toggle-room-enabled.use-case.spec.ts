@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ToggleRoomEnabledUseCase } from './toggle-room-enabled.use-case';
-import { RoomStateCacheUseCase } from 'src/infrastructure/cache/use-cases/room-state-cache.use-case';
+import { RoomStateCacheService } from 'src/juego/salas/cache/room-state-cache.service';
 
 describe('ToggleRoomEnabledUseCase', () => {
   let useCase: ToggleRoomEnabledUseCase;
@@ -13,7 +13,7 @@ describe('ToggleRoomEnabledUseCase', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         ToggleRoomEnabledUseCase,
-        { provide: RoomStateCacheUseCase, useValue: mockCacheService },
+        { provide: RoomStateCacheService, useValue: mockCacheService },
       ],
     }).compile();
 
