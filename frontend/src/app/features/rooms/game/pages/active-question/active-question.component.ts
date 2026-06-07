@@ -41,7 +41,6 @@ export interface OpcionVoto {
   standalone: true,
   imports: [
     CommonModule,
-    TitleCasePipe,
     LucideAngularModule,
     AudienceBarsComponent,
     TimerComponent,
