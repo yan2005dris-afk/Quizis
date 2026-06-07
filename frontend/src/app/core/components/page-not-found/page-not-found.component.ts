@@ -18,7 +18,7 @@ export class PageNotFoundComponent implements OnInit {
 
   ngOnInit(): void {
     if (this.authService.isAuthenticated()) {
-      this.router.navigate(['/dashboard'], { replaceUrl: true });
+      this.router.navigate(['/home'], { replaceUrl: true });
     } else {
       this.router.navigate(['/login'], { replaceUrl: true });
     }

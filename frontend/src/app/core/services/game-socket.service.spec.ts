@@ -7,7 +7,7 @@ import type {
   SalaEvento,
   Participante,
   RondaInfo,
-} from '../../features/room/room.types';
+} from '../../features/game/game.types';
 
 // --- Mock socket without vi.mock ---
 // Angular's @angular/build:unit-test bundles modules before vitest can

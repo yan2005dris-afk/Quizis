@@ -4,16 +4,16 @@ export const QUESTION_BANK_ROUTES: Routes = [
   {
     path: '',
     loadComponent: () =>
-      import('./pages/bank-list/bank-list.component').then((m) => m.BankListComponent),
+      import('./pages/index/bank-index.component').then((m) => m.BankIndexComponent),
   },
   {
     path: 'crear',
     loadComponent: () =>
-      import('./pages/bank-detail/bank-detail.component').then((m) => m.BankDetailComponent),
+      import('./pages/form/bank-form.component').then((m) => m.BankFormComponent),
   },
   {
     path: ':id',
     loadComponent: () =>
-      import('./pages/bank-detail/bank-detail.component').then((m) => m.BankDetailComponent),
+      import('./pages/form/bank-form.component').then((m) => m.BankFormComponent),
   },
 ];

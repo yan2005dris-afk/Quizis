@@ -51,7 +51,7 @@ export class AuthService {
       );
 
       this.handleAuthSuccess(response);
-      await this.router.navigate(['/dashboard']);
+      await this.router.navigate(['/home']);
     } catch (error) {
       console.error('Login failed', error);
       throw error;
