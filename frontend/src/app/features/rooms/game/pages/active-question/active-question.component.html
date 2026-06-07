@@ -5,10 +5,7 @@
         <p class="observer-card__status"><span class="status-dot"></span> {{ statusText() }}</p>
 
         <!-- Temporizador visual -->
-        <app-timer
-          [tiempoRestante]="tiempoRestante()"
-          [totalTiempo]="totalTiempo()"
-        />
+        <app-timer [tiempoRestante]="tiempoRestante()" [totalTiempo]="totalTiempo()" />
 
         <div class="observer-card__progress-wrapper">
           <app-question-progress [segmentos]="segmentosProgreso()" />
@@ -21,7 +18,9 @@
             >
               <lucide-icon [name]="PrevIcon" size="16"></lucide-icon>
             </button>
-            <span class="pagination-info"> {{ currentIndex() + 1 }} / {{ preguntas().length }} </span>
+            <span class="pagination-info">
+              {{ currentIndex() + 1 }} / {{ preguntas().length }}
+            </span>
             <button
               class="pagination-btn"
               [disabled]="currentIndex() === maxVisibleIndex()"

@@ -179,10 +179,13 @@ export class GameSocketService {
     this.socket.on('transicion_pregunta', (data: { segundos: number }) => {
       this.enTransicion.set(true);
       this.transicionSegundos.set(data.segundos);
-      setTimeout(() => {
-        this.enTransicion.set(false);
-        this.transicionSegundos.set(null);
-      }, (data.segundos + 1) * 1000);
+      setTimeout(
+        () => {
+          this.enTransicion.set(false);
+          this.transicionSegundos.set(null);
+        },
+        (data.segundos + 1) * 1000,
+      );
     });
 
     // Actualiza los votos del público en tiempo real (batchteado por RAF)
