@@ -800,11 +800,15 @@ export class JuegoGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     const tick = setInterval(() => {
       remaining -= 1;
-      this.server.to(tokenCompartido).emit('temporizador_actualizado', remaining);
+      this.server
+        .to(tokenCompartido)
+        .emit('temporizador_actualizado', remaining);
 
       if (remaining <= 0) {
         this.detenerTimer(tokenCompartido);
-        this.server.to(tokenCompartido).emit('tiempo_agotado', { tokenCompartido });
+        this.server
+          .to(tokenCompartido)
+          .emit('tiempo_agotado', { tokenCompartido });
         setTimeout(() => {
           this.server
             .to(tokenCompartido)
@@ -815,7 +819,9 @@ export class JuegoGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }, 1000);
 
     this.timersActivos.set(tokenCompartido, tick);
-    this.logger.log(`[TIMER] Iniciado para sala ${tokenCompartido}: ${segundos}s`);
+    this.logger.log(
+      `[TIMER] Iniciado para sala ${tokenCompartido}: ${segundos}s`,
+    );
   }
 
   private detenerTimer(tokenCompartido: string): void {
