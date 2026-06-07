@@ -11,7 +11,7 @@ import { FileParserService, type ParseResult } from '../../../../core/services/f
 import { toSignal } from '@angular/core/rxjs-interop';
 import { switchMap, catchError, tap, map, startWith } from 'rxjs/operators';
 import { of, Subject } from 'rxjs';
-import { ButtonComponent, AlertComponent, InputComponent } from '../../../../shared/ui';
+import { ButtonComponent, AlertComponent } from '../../../../shared/ui';
 import { ToastService } from '../../../../core/services/toast.service';
 
 interface BankState {
@@ -26,7 +26,7 @@ const PAGE_SIZE = 10;
 @Component({
   selector: 'app-bank-form',
   standalone: true,
-  imports: [CommonModule, RouterLink, FormsModule, ButtonComponent, AlertComponent, InputComponent],
+  imports: [CommonModule, RouterLink, FormsModule, ButtonComponent, AlertComponent],
   templateUrl: './bank-form.component.html',
   styleUrls: ['./bank-form.component.scss'],
 })
@@ -39,6 +39,11 @@ export class BankFormComponent {
 
   readonly pageSize = PAGE_SIZE;
 
+  // ── Split-panel navigation ────────────────────────
+  readonly activeView = signal<'info' | 'pregunta' | 'importar'>('info');
+  readonly selectedQuestionId = signal<number | null>(null);
+  readonly editingQuestionId = signal<number | null>(null);
+
   // ── Bank metadata editing ──────────────────────────
   isEditingBank = signal(false);
   isSavingBank = signal(false);
@@ -46,8 +51,6 @@ export class BankFormComponent {
   bankDesc = signal('');
 
   // ── Question editing state ─────────────────────────
-  currentQuestionIndex = signal(0);
-  isEditing = signal(false);
   isSaving = signal(false);
 
   // ── Pending questions for new bank ─────────────────
@@ -121,7 +124,6 @@ export class BankFormComponent {
                   this.bankName.set(res.data.nombre);
                   this.bankDesc.set(res.data.descripcion || '');
                 }
-                this.isEditing.set(false);
                 this.isEditingBank.set(false);
               }),
               catchError(() => of({ data: null, error: true, loading: false } as BankState)),
@@ -137,18 +139,6 @@ export class BankFormComponent {
   banco = computed(() => this.state().data);
   isLoading = computed(() => this.state().loading);
   error = computed(() => this.state().error);
-
-  currentQuestion = computed(() => {
-    if (this.isNewBank()) {
-      const pending = this.pendingPreguntas();
-      if (pending.length === 0) return null;
-      return pending[this.currentQuestionIndex()];
-    }
-
-    const b = this.banco();
-    if (!b || !b.preguntas || b.preguntas.length === 0) return null;
-    return b.preguntas[this.currentQuestionIndex()];
-  });
 
   totalQuestions = computed(() => {
     if (this.isNewBank()) {
@@ -230,28 +220,41 @@ export class BankFormComponent {
     }
   }
 
-  // ── Question navigation ────────────────────────────
-  nextQuestion() {
-    if (this.currentQuestionIndex() < this.totalQuestions() - 1) {
-      this.currentQuestionIndex.update((i) => i + 1);
-      this.isEditing.set(false);
-    }
-  }
-
-  prevQuestion() {
-    if (this.currentQuestionIndex() > 0) {
-      this.currentQuestionIndex.update((i) => i - 1);
-      this.isEditing.set(false);
-    }
-  }
-
-  toggleEdit() {
-    this.isEditing.update((v) => !v);
-  }
-
   toggleCorrectOption(opcion: Opcion) {
-    if (!this.isEditing()) return;
     opcion.esCorrecta = !opcion.esCorrecta;
+  }
+
+  // ── Question list helpers ─────────────────────────
+
+  preguntasList = computed(() => {
+    if (this.isNewBank()) return this.pendingPreguntas();
+    const b = this.banco();
+    return b?.preguntas || [];
+  });
+
+  selectedQuestion = computed(() => {
+    const id = this.selectedQuestionId();
+    if (id === null) return null;
+    if (this.isNewBank()) return this.pendingPreguntas()[id] ?? null;
+    return this.banco()?.preguntas.find((p: any) => p.preguntaId === id) ?? null;
+  });
+
+  selectQuestion(id: number): void {
+    this.selectedQuestionId.set(id);
+    this.activeView.set('pregunta');
+    this.editingQuestionId.set(null);
+  }
+
+  isQuestionEditing(id: number): boolean {
+    return this.editingQuestionId() === id;
+  }
+
+  startEditingQuestion(id: number): void {
+    this.editingQuestionId.set(id);
+  }
+
+  cancelEditing(): void {
+    this.editingQuestionId.set(null);
   }
 
   addManualQuestion() {
@@ -269,8 +272,12 @@ export class BankFormComponent {
 
     if (this.isNewBank()) {
       this.pendingPreguntas.update((p) => [...p, newQ]);
-      this.currentQuestionIndex.set(this.pendingPreguntas().length - 1);
-      this.isEditing.set(true);
+      const newIndex = this.pendingPreguntas().length - 1;
+      this.activeView.set('pregunta');
+      setTimeout(() => {
+        this.selectedQuestionId.set(newIndex);
+        this.editingQuestionId.set(newIndex);
+      });
     } else {
       this.pendingPreguntas.set([newQ]);
       this.crearPreguntasManualmente();
@@ -296,8 +303,11 @@ export class BankFormComponent {
     });
   }
 
-  saveQuestion() {
-    const question = this.currentQuestion();
+  saveQuestion(questionId: number | string): void {
+    const question = this.isNewBank()
+      ? this.pendingPreguntas()[typeof questionId === 'number' ? questionId : 0]
+      : this.banco()?.preguntas.find((p: any) => p.preguntaId === questionId);
+
     if (!question || this.isSaving()) return;
 
     const cleanQuestion = {
@@ -317,13 +327,11 @@ export class BankFormComponent {
     if (this.isNewBank()) {
       this.pendingPreguntas.update((prev) => {
         const updated = [...prev];
-        updated[this.currentQuestionIndex()] = {
-          ...updated[this.currentQuestionIndex()],
-          ...cleanQuestion,
-        };
+        const idx = typeof questionId === 'number' ? questionId : 0;
+        updated[idx] = { ...updated[idx], ...cleanQuestion };
         return updated;
       });
-      this.isEditing.set(false);
+      this.cancelEditing();
       this.toastService.show('Pregunta actualizada en memoria', 'info', 'Pendiente de guardar');
       return;
     }
@@ -336,7 +344,7 @@ export class BankFormComponent {
       next: () => {
         this.toastService.show('Pregunta actualizada correctamente', 'success', '¡Éxito!');
         this.isSaving.set(false);
-        this.isEditing.set(false);
+        this.cancelEditing();
         this.refresh$.next();
       },
       error: () => {
