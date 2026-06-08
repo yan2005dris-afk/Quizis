@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../../../infrastructure/database/prisma/prisma.service';
-import { VotesCacheUseCase } from '../../../infrastructure/cache/use-cases/votes-cache.use-case';
+import { VotesCacheService } from '../cache/votes-cache.service';
 
 @Injectable()
 export class PersistVotesUseCase {
@@ -8,7 +8,7 @@ export class PersistVotesUseCase {
 
   constructor(
     private readonly prisma: PrismaService,
-    private readonly cacheService: VotesCacheUseCase,
+    private readonly cacheService: VotesCacheService,
   ) {}
 
   async execute(

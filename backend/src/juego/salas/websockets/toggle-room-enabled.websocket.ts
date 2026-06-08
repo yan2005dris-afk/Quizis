@@ -1,0 +1,23 @@
+import { Injectable, Logger } from '@nestjs/common';
+import { RoomStateCacheService } from '../../salas/cache/room-state-cache.service';
+
+@Injectable()
+export class ToggleRoomEnabledWebsocket {
+  private readonly logger = new Logger(ToggleRoomEnabledWebsocket.name);
+
+  constructor(private readonly cacheService: RoomStateCacheService) {}
+
+  async execute(tokenCompartido: string, enabled: boolean) {
+    this.logger.log(
+      `Cambiando estado de sala ${tokenCompartido} a: ${enabled ? 'Habilitada' : 'Deshabilitada'}`,
+    );
+
+    await this.cacheService.setRoomEnabled(tokenCompartido, enabled);
+
+    return {
+      success: true,
+      enabled,
+      message: `Sala ${enabled ? 'habilitada' : 'deshabilitada'} correctamente en caché.`,
+    };
+  }
+}

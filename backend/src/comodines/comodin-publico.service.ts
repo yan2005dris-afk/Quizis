@@ -1,12 +1,12 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { VotesCacheUseCase } from '../infrastructure/cache/use-cases/votes-cache.use-case';
+import { VotesCacheService } from '../juego/votos/cache/votes-cache.service';
 import { SalasService } from '../juego/salas/salas.service';
 
 @Injectable()
 export class ComodinPublicoService {
   constructor(
-    private readonly votesCacheUseCase: VotesCacheUseCase,
+    private readonly votesCacheUseCase: VotesCacheService,
     private readonly eventEmitter: EventEmitter2,
     private readonly salasService: SalasService,
   ) {}

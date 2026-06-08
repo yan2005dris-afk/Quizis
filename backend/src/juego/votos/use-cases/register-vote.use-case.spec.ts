@@ -1,10 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { RegisterVoteUseCase } from './register-vote.use-case';
-import { VotesCacheUseCase } from '../../../infrastructure/cache/use-cases/votes-cache.use-case';
+import { VotesCacheService } from '../cache/votes-cache.service';
 
 describe('RegisterVoteUseCase', () => {
   let useCase: RegisterVoteUseCase;
-  let cache: VotesCacheUseCase;
+  let cache: VotesCacheService;
 
   const mockCache = {
     setVote: jest.fn(),
@@ -14,12 +14,12 @@ describe('RegisterVoteUseCase', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         RegisterVoteUseCase,
-        { provide: VotesCacheUseCase, useValue: mockCache },
+        { provide: VotesCacheService, useValue: mockCache },
       ],
     }).compile();
 
     useCase = module.get<RegisterVoteUseCase>(RegisterVoteUseCase);
-    cache = module.get<VotesCacheUseCase>(VotesCacheUseCase);
+    cache = module.get<VotesCacheService>(VotesCacheService);
   });
 
   it('should call cacheService.setVote', async () => {

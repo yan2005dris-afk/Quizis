@@ -18,6 +18,8 @@ import { UpdateParticipantRoleUseCase } from './use-cases/update-participant-rol
 import { GetParticipantsWithRolesUseCase } from './use-cases/get-participants-with-roles.use-case';
 import { RestartRoundUseCase } from './use-cases/restart-round.use-case';
 import { ReactivateRoomUseCase } from './use-cases/reactivate-room.use-case';
+import { ParticipantsCacheService } from './cache/participants-cache.service';
+import { RoomStateCacheService } from './cache/room-state-cache.service';
 
 /**
  * Servicio fachada para el módulo de Salas.
@@ -43,6 +45,8 @@ export class SalasService {
     private readonly getParticipantsWithRolesUseCase: GetParticipantsWithRolesUseCase,
     private readonly restartRoundUseCase: RestartRoundUseCase,
     private readonly reactivateRoomUseCase: ReactivateRoomUseCase,
+    private readonly participantsCache: ParticipantsCacheService,
+    private readonly roomStateCache: RoomStateCacheService,
   ) {}
 
   /**
@@ -163,6 +167,24 @@ export class SalasService {
 
   async reactivarSala(salaId: number) {
     return this.reactivateRoomUseCase.execute(salaId);
+  }
+
+  async changeParticipantRole(
+    token: string,
+    nickname: string,
+    nuevoRol: string,
+  ) {
+    const nicknames = await this.participantsCache.getOnlineParticipants(token);
+    await this.updateParticipantRole(token, nickname, nuevoRol, nicknames);
+    return this.getParticipantsWithRoles(token, nicknames);
+  }
+
+  async addBlockedComodin(tokenCompartido: string, tipoComodin: string) {
+    return this.roomStateCache.addBlockedComodin(tokenCompartido, tipoComodin);
+  }
+
+  async getBlockedComodines(tokenCompartido: string) {
+    return this.roomStateCache.getBlockedComodines(tokenCompartido);
   }
 
   async getTiempoLimite(tokenCompartido: string): Promise<number> {

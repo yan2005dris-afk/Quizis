@@ -1,18 +1,22 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { JuegoGateway } from './juego.gateway';
-import { WebsocketsService } from '../../juego/websockets/websockets.service';
 import { SalasService } from '../../juego/salas/salas.service';
-import { RoomStateCacheUseCase } from '../cache/use-cases/room-state-cache.use-case';
-import { ParticipantsCacheUseCase } from '../cache/use-cases/participants-cache.use-case';
-import { ChatCacheUseCase } from '../cache/use-cases/chat-cache.use-case';
-import { HelperCacheUseCase } from '../cache/use-cases/helper-cache.use-case';
-import { ConsensusCacheUseCase } from '../cache/use-cases/consensus-cache.use-case';
-import { EvaluateConsensusUseCase } from '../../juego/websockets/use-cases/evaluate-consensus.use-case';
+import { VotosService } from '../../juego/votos/votos.service';
+import { ChatService } from '../../juego/chat/chat.service';
+import { ComodinesService } from '../../juego/comodines/comodines.service';
+import { HandleJoinRoomWebsocket } from '../../juego/salas/websockets/handle-join-room.websocket';
+import { HandleDisconnectWebsocket } from '../../juego/salas/websockets/handle-disconnect.websocket';
+import { ToggleRoomEnabledWebsocket } from '../../juego/salas/websockets/toggle-room-enabled.websocket';
+import { ProcessAudienceVoteWebsocket } from '../../juego/votos/websockets/process-audience-vote.websocket';
+import { SubmitAnswerWebsocket } from '../../juego/votos/websockets/submit-answer.websocket';
+import { ReleaseQuestionWebsocket } from '../../juego/rondas/websockets/release-question.websocket';
+import { ActivateCallJokerWebsocket } from '../../juego/comodines/websockets/activate-call-joker.websocket';
+import { SendHintWebsocket } from '../../juego/comodines/websockets/send-hint.websocket';
 
 describe('JuegoGateway — handleComodinBloqueado', () => {
   let gateway: JuegoGateway;
-  let roomStateCache: jest.Mocked<
-    Pick<RoomStateCacheUseCase, 'addBlockedComodin'>
+  let salasService: jest.Mocked<
+    Pick<SalasService, 'addBlockedComodin'>
   >;
 
   const mockEmit = jest.fn();
@@ -23,22 +27,26 @@ describe('JuegoGateway — handleComodinBloqueado', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         JuegoGateway,
-        { provide: WebsocketsService, useValue: {} },
-        { provide: SalasService, useValue: {} },
         {
-          provide: RoomStateCacheUseCase,
+          provide: SalasService,
           useValue: { addBlockedComodin: jest.fn() },
         },
-        { provide: ParticipantsCacheUseCase, useValue: {} },
-        { provide: ChatCacheUseCase, useValue: {} },
-        { provide: HelperCacheUseCase, useValue: {} },
-        { provide: ConsensusCacheUseCase, useValue: {} },
-        { provide: EvaluateConsensusUseCase, useValue: {} },
+        { provide: VotosService, useValue: {} },
+        { provide: ChatService, useValue: {} },
+        { provide: ComodinesService, useValue: {} },
+        { provide: HandleJoinRoomWebsocket, useValue: {} },
+        { provide: HandleDisconnectWebsocket, useValue: {} },
+        { provide: ToggleRoomEnabledWebsocket, useValue: {} },
+        { provide: ProcessAudienceVoteWebsocket, useValue: {} },
+        { provide: SubmitAnswerWebsocket, useValue: {} },
+        { provide: ReleaseQuestionWebsocket, useValue: {} },
+        { provide: ActivateCallJokerWebsocket, useValue: {} },
+        { provide: SendHintWebsocket, useValue: {} },
       ],
     }).compile();
 
     gateway = module.get<JuegoGateway>(JuegoGateway);
-    roomStateCache = module.get(RoomStateCacheUseCase);
+    salasService = module.get(SalasService) as any;
 
     // Inyectar el server mock
     (gateway as any).server = mockServer;
@@ -56,7 +64,7 @@ describe('JuegoGateway — handleComodinBloqueado', () => {
 
     await gateway.handleComodinBloqueado(payload);
 
-    expect(roomStateCache.addBlockedComodin).toHaveBeenCalledWith(
+    expect(salasService.addBlockedComodin).toHaveBeenCalledWith(
       'token-123',
       'IA',
     );
@@ -74,7 +82,7 @@ describe('JuegoGateway — handleComodinBloqueado', () => {
 
     await gateway.handleComodinBloqueado(payload);
 
-    expect(roomStateCache.addBlockedComodin).toHaveBeenCalledWith(
+    expect(salasService.addBlockedComodin).toHaveBeenCalledWith(
       'token-123',
       'PUBLICO',
     );
@@ -87,21 +95,5 @@ describe('JuegoGateway — handleComodinBloqueado', () => {
       D: 0,
       total: 0,
     });
-  });
-
-  it('comodín PUBLICO → voto_recibido tiene total: 0 (no división por cero en frontend)', async () => {
-    const payload = {
-      tokenCompartido: 'sala-abc',
-      userId: 'user-2',
-      tipoComodin: 'PUBLICO',
-    };
-
-    await gateway.handleComodinBloqueado(payload);
-
-    const votoRecibidoCall = mockEmit.mock.calls.find(
-      (call) => call[0] === 'voto_recibido',
-    );
-    expect(votoRecibidoCall).toBeDefined();
-    expect(votoRecibidoCall![1].total).toBe(0);
   });
 });

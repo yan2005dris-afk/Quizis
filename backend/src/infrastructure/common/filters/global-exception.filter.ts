@@ -5,6 +5,7 @@ import {
   HttpException,
   HttpStatus,
   BadRequestException,
+  Logger,
   ValidationError,
 } from '@nestjs/common';
 import type { Request, Response } from 'express';
@@ -27,6 +28,8 @@ interface ErrorResponse {
 
 @Catch()
 export class GlobalExceptionFilter implements ExceptionFilter {
+  private readonly logger = new Logger(GlobalExceptionFilter.name);
+
   catch(exception: unknown, host: ArgumentsHost) {
     const ctx = host.switchToHttp();
     const response = ctx.getResponse<Response>();
@@ -73,17 +76,13 @@ export class GlobalExceptionFilter implements ExceptionFilter {
     }
     // Errores no manejados (deberían ser 500)
     else if (exception instanceof Error) {
-      // En desarrollo, mostrar el mensaje real
-      // En producción, mostrar mensaje genérico
+      this.logger.error(
+        `[${request.method}] ${request.url} — ${exception.constructor?.name}: ${exception.message}\n${exception.stack}`,
+      );
       message =
         process.env.NODE_ENV === 'development'
           ? exception.message
           : 'Error interno del servidor';
-
-      // Log the error for debugging - in production this would go to the logger
-      if (process.env.NODE_ENV === 'development') {
-        console.error('Unhandled error:', exception);
-      }
     }
 
     const errorResponse: ErrorResponse = {

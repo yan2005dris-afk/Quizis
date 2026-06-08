@@ -17,11 +17,17 @@ import { UpdateParticipantRoleUseCase } from './use-cases/update-participant-rol
 import { GetParticipantsWithRolesUseCase } from './use-cases/get-participants-with-roles.use-case';
 import { RestartRoundUseCase } from './use-cases/restart-round.use-case';
 import { ReactivateRoomUseCase } from './use-cases/reactivate-room.use-case';
+import { HandleJoinRoomWebsocket } from './websockets/handle-join-room.websocket';
+import { HandleDisconnectWebsocket } from './websockets/handle-disconnect.websocket';
+import { ToggleRoomEnabledWebsocket } from './websockets/toggle-room-enabled.websocket';
+import { ParticipantsCacheService } from './cache/participants-cache.service';
+import { RoomStateCacheService } from './cache/room-state-cache.service';
 import { AuthModule } from '../../identity/auth/auth.module';
 import { CacheModule } from '../../infrastructure/cache/cache.module';
+import { ChatModule } from '../chat/chat.module';
 
 @Module({
-  imports: [AuthModule, CacheModule],
+  imports: [AuthModule, CacheModule, ChatModule],
   controllers: [SalasController],
   providers: [
     SalasService,
@@ -41,7 +47,19 @@ import { CacheModule } from '../../infrastructure/cache/cache.module';
     GetParticipantsWithRolesUseCase,
     RestartRoundUseCase,
     ReactivateRoomUseCase,
+    HandleJoinRoomWebsocket,
+    HandleDisconnectWebsocket,
+    ToggleRoomEnabledWebsocket,
+    ParticipantsCacheService,
+    RoomStateCacheService,
   ],
-  exports: [SalasService],
+  exports: [
+    SalasService,
+    ParticipantsCacheService,
+    RoomStateCacheService,
+    HandleJoinRoomWebsocket,
+    HandleDisconnectWebsocket,
+    ToggleRoomEnabledWebsocket,
+  ],
 })
 export class SalasModule {}

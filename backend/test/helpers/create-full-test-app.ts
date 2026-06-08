@@ -1,6 +1,7 @@
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { ConfigModule } from '@nestjs/config';
+import { EventEmitterModule } from '@nestjs/event-emitter';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import cookieParser from 'cookie-parser';
 import { DatabaseModule } from 'src/infrastructure/database/prisma/prisma.module';
@@ -51,6 +52,7 @@ export async function createFullTestApp(): Promise<INestApplication> {
         isGlobal: true,
         envFilePath: ['.env.test'],
       }),
+      EventEmitterModule.forRoot(),
       ThrottlerModule.forRoot([{ ttl: 60000, limit: 1000 }]),
       DatabaseModule,
       AuthModule,

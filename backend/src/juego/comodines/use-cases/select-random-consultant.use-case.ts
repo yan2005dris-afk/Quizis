@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../../../infrastructure/database/prisma/prisma.service';
-import { ParticipantsCacheUseCase } from '../../../infrastructure/cache/use-cases/participants-cache.use-case';
+import { ParticipantsCacheService } from '../../salas/cache/participants-cache.service';
 
 @Injectable()
 export class SelectRandomConsultantUseCase {
@@ -8,7 +8,7 @@ export class SelectRandomConsultantUseCase {
 
   constructor(
     private readonly prisma: PrismaService,
-    private readonly cacheService: ParticipantsCacheUseCase,
+    private readonly cacheService: ParticipantsCacheService,
   ) {}
 
   async execute(tokenCompartido: string) {
