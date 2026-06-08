@@ -3,14 +3,22 @@
     class="timer"
     [class.timer--urgente]="urgente()"
     [class.timer--advertencia]="advertencia()"
+    [class.timer--respondido]="respondido()"
     role="timer"
     [attr.aria-label]="'Tiempo restante: ' + tiempoRestante() + ' segundos'"
     aria-live="off"
   >
-    <div class="timer__track">
-      <div class="timer__fill" [style.width.%]="porcentaje()"></div>
-    </div>
-    <span class="timer__value">{{ tiempoRestante() }}s</span>
+    <svg class="timer__svg" viewBox="0 0 36 36" aria-hidden="true">
+      <circle class="timer__track" cx="18" cy="18" r="15.9" />
+      <circle
+        class="timer__fill"
+        cx="18"
+        cy="18"
+        r="15.9"
+        [style.stroke-dashoffset]="strokeDashoffset()"
+      />
+    </svg>
+    <span class="timer__value">{{ tiempoRestante() }}</span>
   </div>
 }
 

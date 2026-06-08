@@ -1,33 +1,47 @@
 .timer {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 4px 0;
+  position: relative;
+  width: 72px;
+  height: 72px;
+  flex-shrink: 0;
+  transition: opacity var(--transition-slow);
+
+  &__svg {
+    width: 100%;
+    height: 100%;
+    // Start arc from top (12 o'clock) instead of 3 o'clock
+    transform: rotate(-90deg);
+    display: block;
+  }
 
   &__track {
-    flex: 1;
-    height: 6px;
-    border-radius: var(--radius-full);
-    background: var(--color-border);
-    overflow: hidden;
+    fill: none;
+    stroke: var(--color-border);
+    stroke-width: 3;
   }
 
   &__fill {
-    height: 100%;
-    border-radius: var(--radius-full);
-    background: var(--timer-color, var(--color-success));
+    fill: none;
+    stroke: var(--timer-color, var(--color-success));
+    stroke-width: 3;
+    stroke-linecap: round;
+    // Circumference ≈ 2π × 15.9 ≈ 100, so dasharray=100 maps 1% = 1 unit
+    stroke-dasharray: 100;
     transition:
-      width 0.9s linear,
-      background var(--transition-slow);
+      stroke-dashoffset 0.9s linear,
+      stroke var(--transition-slow);
   }
 
   &__value {
-    min-width: 36px;
-    text-align: right;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
     font-weight: 700;
     font-size: var(--text-sm);
     color: var(--timer-color, var(--color-success));
     transition: color var(--transition-slow);
+    line-height: 1;
+    pointer-events: none;
   }
 
   &--advertencia {
@@ -40,6 +54,21 @@
     .timer__fill,
     .timer__value {
       animation: pulse 0.75s ease-in-out infinite;
+    }
+  }
+
+  // Answer already sent — dim the timer, it no longer matters
+  &--respondido {
+    opacity: 0.45;
+
+    .timer__fill {
+      stroke: var(--color-success);
+      animation: none;
+    }
+
+    .timer__value {
+      color: var(--color-success);
+      animation: none;
     }
   }
 
