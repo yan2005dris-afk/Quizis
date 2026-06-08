@@ -11,5 +11,6 @@
     "^(\\.\\.?/.*)\\.js$": "$1"
   },
   "testTimeout": 30000,
-  "forceExit": true
+  "forceExit": true,
+  "modulePathIgnorePatterns": ["<rootDir>/dist"]
 }
