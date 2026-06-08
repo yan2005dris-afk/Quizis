@@ -1,17 +1,194 @@
 # Quizis — Backlog de mejoras y correcciones
 
-> Generado el 2026-06-03 a partir de análisis estático con codegraph + revisión manual del código.
+> Generado el 2026-06-03. Actualizado el 2026-06-08 tras merge de PRs #56–#59.
 > Prioridades: 🔴 Alta · 🟡 Media · 🟢 Baja
 
 ---
 
 ## Índice
 
+0. [Análisis PR #54 — Validación por consenso](#0-análisis-pr-54)
+0b. [Análisis PRs #56–#59 — Timer, Progreso, Refactor cache, Fix visual](#0b-análisis-prs-5659)
 1. [Correcciones (bugs / code smells)](#1-correcciones)
-2. [Feature: Timer server-authoritative + visual](#2-feature-timer)
-3. [Feature: Barra de progreso de preguntas](#3-feature-progreso)
+2. [Feature: Timer server-authoritative + visual](#2-feature-timer) ✅ Implementado
+3. [Feature: Barra de progreso de preguntas](#3-feature-progreso) ✅ Implementado
 4. [Feature: Feedback de pregunta — estado actual y gaps](#4-feature-feedback)
 5. [Deuda técnica — complejidad alta](#5-deuda-técnica)
+6. [Feature: Eliminar pregunta de banco](#6-feature-eliminar-pregunta) ✅ Implementado
+
+---
+
+## 0. Análisis PR #54 — Validación por consenso
+
+> Merge: `brydyan/validacion_confirmacion_respuesta` · 2026-06-03  
+> Archivos cambiados: 29 · +2158 / -171 líneas
+
+### Qué se hizo
+
+**Nueva feature — Validación por consenso de equipo**
+
+En modo multi-jugador (varios estudiantes en una sala), el sistema ahora valida las respuestas
+por consenso antes de darlas por definitivas. Si no hay acuerdo entre los estudiantes, la
+respuesta no se confirma. Cambios clave:
+
+| Archivo nuevo | Rol |
+|---|---|
+| `consensus-cache.use-case.ts` | Cache en memoria (con GC propio) que acumula los votos por sala/pregunta |
+| `evaluate-consensus.use-case.ts` | Lógica de evaluación: ¿se alcanzó el umbral de acuerdo? |
+| `docs/validacion-consenso-equipo.md` | Documentación del diseño |
+
+**Schema:** `RespuestasRonda` ahora incluye `participanteId Int?` — las respuestas quedan
+trazadas por participante. Antes eran anónimas por ronda.
+
+**Frontend:** `ActiveQuestionComponent` recibió un nuevo `effect()` para reaccionar al estado
+de consenso en tiempo real desde `GameSocketService`.
+
+**Tests:** Cobertura agregada en `consensus-cache.use-case.spec.ts`,
+`evaluate-consensus.use-case.spec.ts`, y actualizaciones en `submit-answer`, `join-room`,
+`handle-disconnect`.
+
+---
+
+### Qué NO se corrigió
+
+Ninguna de las tareas del backlog previo fue tocada en este PR. Los bugs B1–B4,
+las features T1–T9, P1–P2 y F1–F3 siguen pendientes exactamente igual.
+
+---
+
+### Regresiones introducidas
+
+**R1 — `ActiveQuestionComponent.constructor` — complejidad subió**
+
+El nuevo `effect()` de consenso se agregó directamente al constructor, que ya estaba al borde
+del umbral (cognitive 22). Quedó en **cognitive 24, cyclomatic 16**.
+
+```
+Antes (53b7d15): cognitive 22 · cyclomatic 15 · MI 57.2
+Después (PR #54): cognitive 24 · cyclomatic 16 · MI 55.0
+```
+
+El effect debería extraerse a un método privado `_syncConsensusState()` y llamarse desde el
+constructor, igual que los otros effects ya existentes en el componente.
+
+**R2 — `GameSocketService.conectar` — creció +28 LOC**
+
+El PR agregó más listeners de consenso dentro del método `conectar`, que ya estaba en 179 LOC.
+Quedó en **207 LOC**. La deuda D2 pasa de baja a media en urgencia.
+
+```
+Antes: 179 LOC · MI 37.3 · bugs estimados Halstead: 2.03
+Después: 207 LOC · MI 36.1 · bugs estimados Halstead: 2.39
+```
+
+---
+
+### Métricas globales antes/después
+
+| Métrica | Antes (53b7d15) | Después (PR #54) | Δ |
+|---|---|---|---|
+| Archivos | 378 | 382 | +4 |
+| Nodos | 3,429 | 3,510 | +81 |
+| Edges | 5,890 | 6,042 | +152 |
+| Funciones analizadas | 673 | 692 | +19 |
+| Funciones sobre umbral | 34 | 37 | **+3** |
+| Cognitive máximo | 30 | 30 | = |
+| MI mínimo | 17.5 | 17.5 | = |
+
+---
+
+---
+
+## 0b. Análisis PRs #56–#59
+
+> Merges: 2026-06-07 · 4 PRs sobre `develop`
+
+### PR #56 — `brydyan/sc-23/feat-time-terminar-completar-el-timer`
+
+**Implementó el timer completo (T1–T9).**
+
+| Archivo | Cambio |
+|---|---|
+| `Salas.prisma` | Campo `tiempoLimitePregunta Int @default(30)` + migración |
+| `update-configuracion-sala.dto.ts` | Expone `tiempoLimitePregunta` |
+| `update-configuracion-sala.use-case.ts` | Persiste el nuevo campo |
+| `juego.gateway.ts` | Timer server-authoritative con `setInterval`; emite `tiempo_agotado` y `transicion_pregunta { segundos: 3 }` |
+| `game-socket.service.ts` | Escucha `tiempo_agotado` y `transicion_pregunta` |
+| `timer.component.ts/html/scss` | Nuevo componente `TimerComponent` (barra circular, estados de color) |
+| `question-progress.component.ts` | Primer esqueleto del componente de progreso |
+| `active-question.component.html` | Reemplaza `⏱️ {{ t }}s` por `<app-timer>` |
+| `bank-form.component.html` | Campos `tiempoLimitePregunta` expuestos en el formulario |
+
+**Métricas:** 20 archivos · +363 / -73 líneas.
+
+---
+
+### PR #57 — `yandris-rivera/refactor-cache/-websockets`
+
+**Refactorizó toda la infraestructura de cache y websockets (D2/R2).**
+
+El gateway monolítico fue descompuesto: cada dominio tiene ahora sus propios handlers y servicios de cache.
+
+| Antes | Después |
+|---|---|
+| `infrastructure/cache/use-cases/` con 5 use-cases de cache mezclados | Cache movido a cada módulo de dominio (`salas/cache/`, `votos/cache/`, `chat/cache/`, `comodines/cache/`) |
+| `juego/websockets/` con use-cases y service monolíticos | Handlers separados por dominio: `salas/websockets/`, `votos/websockets/`, `comodines/websockets/`, `chat/websockets/` |
+| `juego.gateway.ts` delegaba y acumulaba lógica | `juego.gateway.ts` ahora solo despacha a los handlers |
+| `participants-cache`, `room-state-cache`, `votes-cache`, `chat-cache`, `consensus-cache` en un mismo módulo | Cada uno en su dominio correspondiente como `@Injectable()` service |
+
+Se agregó `memory-cache.store.ts` como abstracción base compartida.
+
+**Métricas:** 88 archivos · +1975 / -3889 líneas (net -1914 — reducción de código).
+
+---
+
+### PR #58 — `brydyan/feat-progreso-de-preguntas`
+
+**Completó el componente de progreso y agregó CRUD de preguntas.**
+
+| Archivo | Cambio |
+|---|---|
+| `question-progress.component.ts/html/scss` | Segmentos de color por estado: `activa` · `correcta` · `incorrecta` · `pendiente` (P1, P2) |
+| `bank-form.component.html/scss/ts` | Inputs `feedbackCorrecto` / `feedbackIncorrecto` visibles en el formulario (F1) |
+| `delete-question.use-case.ts` | Nuevo use-case para eliminar pregunta de un banco |
+| `bancos.controller.ts` | Endpoint `DELETE /bancos/:id/preguntas/:questionId` |
+| `bancos.service.ts` | Método `deleteQuestion()` |
+| `reportes.service.ts` | Ajustes en `construirReporte` para nuevos campos de feedback |
+| `juego.gateway.ts` | +12 líneas (ajustes menores de compatibilidad) |
+
+**Métricas:** 18 archivos · +286 / -50 líneas.
+
+---
+
+### PR #59 — `brydyan/fix-respuesta-visual`
+
+**Fixes visuales sobre el timer y la selección de respuesta.**
+
+| Commit | Qué resolvió |
+|---|---|
+| `timer circular` | `TimerComponent` rediseñado como anillo SVG circular con `stroke-dashoffset` animado |
+| `color de seleccionado` | Color de la opción seleccionada en `active-question` ahora es consistente con el design system |
+| `timer freeze al responder` | El timer se congela visualmente al confirmar respuesta (evitaba confusión de seguir contando) |
+
+**Métricas:** 6 archivos · +78 / -34 líneas.
+
+---
+
+### Impacto sobre el backlog
+
+| Tarea | Estado tras estos PRs |
+|---|---|
+| T1–T9 Timer | ✅ Completo |
+| P1–P2 Progreso | ✅ Completo |
+| F1 Feedback en formulario | ✅ Completo |
+| F2 Fallback texto vacío | ⬜ Pendiente |
+| F3 Visibilidad host/admin | ⬜ Pendiente |
+| D2 Refactor gateway | ✅ Completo |
+| R2 Gateway LOC | ✅ Resuelto por D2 |
+| B1–B4 Bugs | ⬜ Sin tocar |
+| D1, D3, D4, D5 Deuda | ⬜ Pendientes |
+| R1 Constructor complexity | ⬜ Pendiente |
+| N1 Eliminar pregunta (nuevo) | ✅ Implementado PR #58 |
 
 ---
 
@@ -346,6 +523,33 @@ en cuanto haya tiempo:
 | `FileParserService.parseJson` | `file-parser.service.ts:109` | 28 | Dividir en parsers por tipo de formato con early returns |
 | `GetSalaDetailsUseCase.execute` | `get-sala-details.use-case.ts:27` | 18 / 160 LOC | Extraer mapeo a funciones puras separadas |
 | `ReportesService.construirReporte` | `reportes.service.ts:51` | 18 / nesting 5 | Aplanar los niveles de nesting con extracciones |
+
+> **Nota:** `GameSocketService.conectar` (D2) fue resuelto en PR #57. La tabla refleja el estado previo a ese refactor; ver sección 0b para detalle.
+
+---
+
+## 6. Feature: Eliminar pregunta de banco
+
+> Implementado en PR #58 · 2026-06-07
+
+### Qué se hizo
+
+Se agregó la capacidad de eliminar una pregunta individual de un banco sin borrar el banco completo.
+
+| Archivo | Rol |
+|---|---|
+| `delete-question.use-case.ts` | Valida que la pregunta pertenezca al banco y ejecuta el delete en Prisma |
+| `bancos.controller.ts` | Endpoint `DELETE /bancos/:id/preguntas/:questionId` |
+| `bancos.service.ts` | Método `deleteQuestion(bancoId, questionId)` |
+| `bancos.service.spec.ts` | Tests del nuevo método |
+| `get-banco.use-case.ts` | Ajuste menor para consistencia tras el delete |
+| `bank-form.component.ts/html` | Botón de eliminar pregunta en el formulario del banco |
+| `bancos.service.ts` (frontend) | Método `deleteQuestion()` para llamar al endpoint |
+
+### Pendiente de verificar
+
+- Confirmar que el endpoint devuelve 404 cuando la pregunta no existe o no pertenece al banco.
+- Verificar que al eliminar una pregunta usada en rondas activas no rompe el historial de respuestas.
 
 ---
 
