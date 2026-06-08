@@ -88,6 +88,9 @@ export class UpdateConfiguracionSalaUseCase {
     if (updateConfigDto.maxEstudiantes !== undefined) {
       data.maxEstudiantes = updateConfigDto.maxEstudiantes;
     }
+    if (updateConfigDto.tiempoLimitePregunta !== undefined) {
+      data.tiempoLimitePregunta = updateConfigDto.tiempoLimitePregunta;
+    }
     await this.prisma.salas.update({
       where: { salaId: id },
       data,

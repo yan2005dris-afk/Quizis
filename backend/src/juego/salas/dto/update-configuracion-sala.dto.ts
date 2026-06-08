@@ -63,4 +63,16 @@ export class UpdateConfiguracionSalaDto {
   @Max(100)
   @IsOptional()
   maxEstudiantes?: number;
+
+  /** Tiempo límite en segundos para responder cada pregunta (0 = sin límite) */
+  @ApiPropertyOptional({
+    example: 30,
+    default: 30,
+    description: 'Tiempo límite en segundos por pregunta (0 = sin límite)',
+  })
+  @IsInt()
+  @Min(0)
+  @Max(300)
+  @IsOptional()
+  tiempoLimitePregunta?: number;
 }

@@ -13,6 +13,7 @@ export class GetBancoUseCase {
       where: { bancoId: id },
       include: {
         preguntas: {
+          where: { deletedAt: null },
           include: {
             opciones: true,
           },

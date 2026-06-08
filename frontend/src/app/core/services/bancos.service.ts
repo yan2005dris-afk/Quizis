@@ -107,4 +107,8 @@ export class BancosService {
       .patch<BancoDetalleResponse>(`${this.apiUrl}/${bancoId}/preguntas/${preguntaId}`, pregunta)
       .pipe(map((res) => res.data));
   }
+
+  deletePregunta(bancoId: number, preguntaId: number): Observable<void> {
+    return this.http.delete<void>(`${this.apiUrl}/${bancoId}/preguntas/${preguntaId}`);
+  }
 }

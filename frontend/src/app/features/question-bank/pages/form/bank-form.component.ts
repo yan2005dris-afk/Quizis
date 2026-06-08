@@ -11,7 +11,7 @@ import { FileParserService, type ParseResult } from '../../../../core/services/f
 import { toSignal } from '@angular/core/rxjs-interop';
 import { switchMap, catchError, tap, map, startWith } from 'rxjs/operators';
 import { of, Subject } from 'rxjs';
-import { ButtonComponent, AlertComponent } from '../../../../shared/ui';
+import { ButtonComponent, AlertComponent, ConfirmModalComponent } from '../../../../shared/ui';
 import { ToastService } from '../../../../core/services/toast.service';
 
 interface BankState {
@@ -26,7 +26,14 @@ const PAGE_SIZE = 10;
 @Component({
   selector: 'app-bank-form',
   standalone: true,
-  imports: [CommonModule, RouterLink, FormsModule, ButtonComponent, AlertComponent],
+  imports: [
+    CommonModule,
+    RouterLink,
+    FormsModule,
+    ButtonComponent,
+    AlertComponent,
+    ConfirmModalComponent,
+  ],
   templateUrl: './bank-form.component.html',
   styleUrls: ['./bank-form.component.scss'],
 })
@@ -52,6 +59,10 @@ export class BankFormComponent {
 
   // ── Question editing state ─────────────────────────
   isSaving = signal(false);
+
+  // ── Delete question state ──────────────────────────
+  preguntaAEliminar = signal<number | null>(null);
+  isDeleting = signal(false);
 
   // ── Pending questions for new bank ─────────────────
   pendingPreguntas = signal<any[]>([]);
@@ -350,6 +361,40 @@ export class BankFormComponent {
       error: () => {
         this.toastService.show('Error al intentar actualizar la pregunta', 'danger', 'Error');
         this.isSaving.set(false);
+      },
+    });
+  }
+
+  // ── Delete question handlers ───────────────────────
+  onEliminarPregunta(preguntaId: number): void {
+    this.preguntaAEliminar.set(preguntaId);
+  }
+
+  cancelarEliminar(): void {
+    this.preguntaAEliminar.set(null);
+  }
+
+  confirmarEliminar(): void {
+    const preguntaId = this.preguntaAEliminar();
+    if (preguntaId === null || this.isDeleting()) return;
+
+    const bancoId = this.bancoId();
+    this.isDeleting.set(true);
+    this.preguntaAEliminar.set(null);
+
+    this.bancosService.deletePregunta(bancoId, preguntaId).subscribe({
+      next: () => {
+        this.isDeleting.set(false);
+        if (this.selectedQuestionId() === preguntaId) {
+          this.selectedQuestionId.set(null);
+          this.activeView.set('info');
+        }
+        this.toastService.show('Pregunta eliminada correctamente', 'success', '¡Éxito!');
+        this.refresh$.next();
+      },
+      error: () => {
+        this.isDeleting.set(false);
+        this.toastService.show('Error al eliminar la pregunta', 'danger', 'Error');
       },
     });
   }

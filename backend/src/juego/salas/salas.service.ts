@@ -186,4 +186,9 @@ export class SalasService {
   async getBlockedComodines(tokenCompartido: string) {
     return this.roomStateCache.getBlockedComodines(tokenCompartido);
   }
+
+  async getTiempoLimite(tokenCompartido: string): Promise<number> {
+    const sala = await this.getSalaDetailsUseCase.execute(tokenCompartido);
+    return (sala as any).tiempoLimitePregunta ?? 30;
+  }
 }

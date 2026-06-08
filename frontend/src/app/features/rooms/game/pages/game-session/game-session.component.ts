@@ -135,6 +135,12 @@ export class GameSessionComponent implements OnInit, OnDestroy {
 
   protected readonly preguntaActiva = this.gameSocket.preguntaActiva;
   protected readonly tiempoRestante = this.gameSocket.tiempoRestante;
+  protected readonly enTransicion = this.gameSocket.enTransicion;
+  protected readonly transicionSegundos = this.gameSocket.transicionSegundos;
+
+  protected readonly tiempoLimiteSala = computed(
+    () => this.salaDetalle()?.tiempoLimitePregunta ?? 30,
+  );
 
   protected readonly isHost = computed(() => this.auth.isAuthenticated());
 

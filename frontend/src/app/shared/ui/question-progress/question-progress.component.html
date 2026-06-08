@@ -1,0 +1,15 @@
+@if (segmentos().length > 0) {
+  <div
+    class="question-progress"
+    role="progressbar"
+    [attr.aria-label]="'Progreso: ' + segmentos().length + ' preguntas'"
+  >
+    @for (estado of segmentos(); track $index) {
+      <div
+        class="question-progress__segment"
+        [class]="'question-progress__segment--' + estado"
+        [attr.aria-label]="estado"
+      ></div>
+    }
+  </div>
+}
