@@ -47,10 +47,10 @@
   50% { opacity: 0.3; }
 }
 
-/* Blink-select — answer option reveal (active-question) */
+/* Blink-select — answer option pending confirmation (active-question) */
 @keyframes blinkSelect {
-  0%, 100% { background-color: var(--color-primary);       }
-  50%      { background-color: var(--color-primary-hover); }
+  0%, 100% { background-color: color-mix(in srgb, var(--color-success) 12%, white); }
+  50%      { background-color: color-mix(in srgb, var(--color-success) 22%, white); }
 }
 
 /* Orb float — atmospheric background animation */

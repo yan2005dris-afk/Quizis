@@ -11,6 +11,7 @@ export class TimerComponent {
   readonly totalTiempo = input<number>(30);
   readonly enTransicion = input<boolean>(false);
   readonly transicionSegundos = input<number | null>(null);
+  readonly respondido = input<boolean>(false);
 
   protected readonly porcentaje = computed(() => {
     const t = this.tiempoRestante();
@@ -19,12 +20,16 @@ export class TimerComponent {
     return Math.max(0, Math.min(100, (t / total) * 100));
   });
 
-  protected readonly urgente = computed(() => this.porcentaje() < 20);
+  protected readonly urgente = computed(() => !this.respondido() && this.porcentaje() < 20);
 
   protected readonly advertencia = computed(() => {
+    if (this.respondido()) return false;
     const p = this.porcentaje();
     return p >= 20 && p < 50;
   });
 
   protected readonly visible = computed(() => this.tiempoRestante() !== null);
+
+  // stroke-dasharray = 100, so dashoffset = 100 - porcentaje empties the circle over time
+  protected readonly strokeDashoffset = computed(() => 100 - this.porcentaje());
 }

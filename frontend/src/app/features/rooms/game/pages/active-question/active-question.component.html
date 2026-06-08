@@ -5,7 +5,11 @@
         <p class="observer-card__status"><span class="status-dot"></span> {{ statusText() }}</p>
 
         <!-- Temporizador visual -->
-        <app-timer [tiempoRestante]="tiempoRestante()" [totalTiempo]="totalTiempo()" />
+        <app-timer
+          [tiempoRestante]="tiempoRestante()"
+          [totalTiempo]="totalTiempo()"
+          [respondido]="respuestaConfirmada() || !!p.respuestaDada"
+        />
 
         <div class="observer-card__progress-wrapper">
           <app-question-progress [segmentos]="segmentosProgreso()" />
