@@ -10,11 +10,42 @@ import {
 import { Logger } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
 import { Server, Socket } from 'socket.io';
-import { WebsocketsService } from '../../juego/websockets/websockets.service';
-import * as ProcessVote from '../../juego/websockets/use-cases/process-audience-vote.use-case';
-import * as SubmitAnswer from '../../juego/websockets/use-cases/submit-answer.use-case';
+
+// Domain Services
 import { SalasService } from '../../juego/salas/salas.service';
-import { ConsensusResult } from '../../juego/websockets/use-cases/evaluate-consensus.use-case';
+import { VotosService } from '../../juego/votos/votos.service';
+import { ChatService } from '../../juego/chat/chat.service';
+import { ComodinesService } from '../../juego/comodines/comodines.service';
+
+// WebSocket Use Cases
+import { HandleJoinRoomWebsocket } from '../../juego/salas/websockets/handle-join-room.websocket';
+import { HandleDisconnectWebsocket } from '../../juego/salas/websockets/handle-disconnect.websocket';
+import { ToggleRoomEnabledWebsocket } from '../../juego/salas/websockets/toggle-room-enabled.websocket';
+import { ProcessAudienceVoteWebsocket } from '../../juego/votos/websockets/process-audience-vote.websocket';
+import { SubmitAnswerWebsocket } from '../../juego/votos/websockets/submit-answer.websocket';
+import { ReleaseQuestionWebsocket } from '../../juego/rondas/websockets/release-question.websocket';
+import { ActivateCallJokerWebsocket } from '../../juego/comodines/websockets/activate-call-joker.websocket';
+import { SendHintWebsocket } from '../../juego/comodines/websockets/send-hint.websocket';
+
+// Infrastructure / Common
+import {
+  GameEvents,
+} from '../common/events/game-events.types';
+import type { ConsensusEvaluatedEvent } from '../common/events/game-events.types';
+import type { VotePayload } from '../../juego/votos/websockets/process-audience-vote.websocket';
+import type { AnswerPayload } from '../../juego/votos/websockets/submit-answer.websocket';
+
+type ParticipantInfo = { id: string; nombre: string; puntaje: number; rol: string };
+type VoteDistribution = { total: number; [letra: string]: number };
+type ConsensusInput = {
+  type?: string;
+  status?: string;
+  votosRecibidos?: number;
+  totalRequeridos?: number;
+  winningOpcionId?: number;
+  esCorrecta?: boolean | null;
+  feedback?: string | null;
+};
 
 @WebSocketGateway({ cors: { origin: '*' } })
 export class JuegoGateway implements OnGatewayConnection, OnGatewayDisconnect {
@@ -36,10 +67,10 @@ export class JuegoGateway implements OnGatewayConnection, OnGatewayDisconnect {
    */
   private readonly pendingBroadcasts = new Map<
     string,
-    { distribucion: any; timer: NodeJS.Timeout }
+    { distribucion: VoteDistribution; timer: NodeJS.Timeout }
   >();
 
-  private scheduleBroadcast(tokenCompartido: string, distribucion: any): void {
+  private scheduleBroadcast(tokenCompartido: string, distribucion: VoteDistribution): void {
     const existing = this.pendingBroadcasts.get(tokenCompartido);
     if (existing) clearTimeout(existing.timer);
 
@@ -63,11 +94,22 @@ export class JuegoGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   constructor(
-    private readonly websocketsService: WebsocketsService,
     private readonly salasService: SalasService,
+    private readonly votosService: VotosService,
+    private readonly chatService: ChatService,
+    private readonly comodinesService: ComodinesService,
+    private readonly handleJoinRoom: HandleJoinRoomWebsocket,
+    private readonly handleDisconnectWebsocket: HandleDisconnectWebsocket,
+    private readonly toggleRoomEnabledWebsocket: ToggleRoomEnabledWebsocket,
+    private readonly processAudienceVote: ProcessAudienceVoteWebsocket,
+    private readonly submitAnswerWebsocket: SubmitAnswerWebsocket,
+    private readonly releaseQuestionWebsocket: ReleaseQuestionWebsocket,
+    private readonly activateCallJokerWebsocket: ActivateCallJokerWebsocket,
+    private readonly sendHintWebsocket: SendHintWebsocket,
   ) {}
 
-  // ─── Bug 3: IA broadcast to all participants via EventEmitter ───────
+  // ─── Events Listeners ──────────────────────────────────────────────────────
+
   @OnEvent('comodin.ia.suggestion')
   handleIaSuggestionBroadcast(payload: {
     preguntaId: number;
@@ -82,8 +124,7 @@ export class JuegoGateway implements OnGatewayConnection, OnGatewayDisconnect {
     });
   }
 
-  // ─── Bug 3: Público vote broadcast to all participants via EventEmitter ───────
-  @OnEvent('publico.voto.recibido')
+  @OnEvent(GameEvents.VOTOS.VOTO_PUBLICO_RECIBIDO)
   handlePublicoVoteBroadcast(payload: {
     tokenCompartido: string;
     resultado: any;
@@ -93,6 +134,17 @@ export class JuegoGateway implements OnGatewayConnection, OnGatewayDisconnect {
       .emit('voto_recibido', payload.resultado);
   }
 
+  @OnEvent(GameEvents.VOTOS.CONSENSO_EVALUADO)
+  handleConsensusEvaluated(event: ConsensusEvaluatedEvent) {
+    this.emitConsensusResult(
+      event.tokenCompartido,
+      event.preguntaId,
+      event.result,
+    );
+  }
+
+  // ─── Lifecycle ─────────────────────────────────────────────────────────────
+
   handleConnection(client: Socket) {
     this.logger.log(`Cliente conectado: ${client.id}`);
   }
@@ -100,7 +152,7 @@ export class JuegoGateway implements OnGatewayConnection, OnGatewayDisconnect {
   async handleDisconnect(client: Socket) {
     const info = this.socketMap.get(client.id);
     if (info) {
-      const result = await this.websocketsService.handleDisconnect({
+      const result = await this.handleDisconnectWebsocket.execute({
         ...info,
         socketId: client.id,
       });
@@ -113,32 +165,17 @@ export class JuegoGateway implements OnGatewayConnection, OnGatewayDisconnect {
       this.server
         .to(result.tokenCompartido)
         .emit('participantes', participantesDb);
-
-      // (Task 3.3 / CRITICAL-2 fix) Use consensus from HandleDisconnectUseCase.
-      // The use case correctly handles the voted-student protection (only removes from
-      // required SET if the student had NOT yet voted). The previous duplicate block
-      // unconditionally called removeFromRequired, bypassing that protection.
-      if (result.consensus) {
-        this.emitConsensusResult(
-          info.tokenCompartido,
-          result.consensus.preguntaId,
-          result.consensus.result,
-        );
-        this.logger.log(
-          `[CONSENSUS:DISCONNECT] Evaluado tras desconexión de ${info.nickname}: ${result.consensus.result.type}`,
-        );
-      }
     } else {
       this.logger.log(`Cliente desconectado sin registro previo: ${client.id}`);
     }
   }
 
   @SubscribeMessage('unirse_sala')
-  async handleJoinRoom(
+  async handleJoinRoomMessage(
     @ConnectedSocket() client: Socket,
     @MessageBody() payload: { tokenCompartido: string; nombre: string },
   ) {
-    const info = await this.websocketsService.joinRoom({
+    const info = await this.handleJoinRoom.execute({
       ...payload,
       socketId: client.id,
     });
@@ -149,19 +186,17 @@ export class JuegoGateway implements OnGatewayConnection, OnGatewayDisconnect {
       nickname: info.nickname,
     });
 
-    // Si el participante se reconecta con rol 'estudiante' pero ya no hay cupo,
-    // se le reasigna como 'observador' automáticamente
     const onlineNicknames = info.participants;
     const participantesDb = await this.salasService.getParticipantsWithRoles(
       info.tokenCompartido,
       onlineNicknames,
     );
-    const yo = participantesDb.find((p: any) => p.nombre === info.nickname);
+    const yo = participantesDb.find((p: ParticipantInfo) => p.nombre === info.nickname);
     if (yo?.rol === 'estudiante') {
       const sala = await this.salasService.obtenerPorId(info.tokenCompartido);
       if (sala) {
         const onlineStudents = participantesDb.filter(
-          (p: any) => p.rol === 'estudiante' && p.nombre !== info.nickname,
+          (p: ParticipantInfo) => p.rol === 'estudiante' && p.nombre !== info.nickname,
         ).length;
         if (onlineStudents >= sala.maxEstudiantes) {
           this.logger.log(
@@ -173,7 +208,6 @@ export class JuegoGateway implements OnGatewayConnection, OnGatewayDisconnect {
             'observador',
             onlineNicknames,
           );
-          // Refrescar lista tras el cambio
           const updatedList = await this.salasService.getParticipantsWithRoles(
             info.tokenCompartido,
             onlineNicknames,
@@ -188,25 +222,12 @@ export class JuegoGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     this.server.to(info.tokenCompartido).emit('participantes', participantesDb);
 
-    // Resultado de consenso ya fue evaluado por JoinRoomUseCase
-    if (info.consensus) {
-      this.emitConsensusResult(
-        info.tokenCompartido,
-        info.consensus.preguntaId,
-        info.consensus.result,
-      );
-      this.logger.log(
-        `[CONSENSUS:JOIN] Evaluado tras reconexión de ${info.nickname}: ${info.consensus.result.type}`,
-      );
-    }
-
-    const bloqueados = await this.websocketsService.getBlockedPowerups(
+    const bloqueados = await this.salasService.getBlockedComodines(
       info.tokenCompartido,
     );
     client.emit('comodines_bloqueados', bloqueados);
 
-    // Enviar historial de chat al usuario que se une
-    const mensajesChat = await this.websocketsService.getChatMessages(
+    const mensajesChat = await this.chatService.getChatMessages(
       info.tokenCompartido,
     );
     if (mensajesChat.length > 0) {
@@ -225,7 +246,7 @@ export class JuegoGateway implements OnGatewayConnection, OnGatewayDisconnect {
   ) {
     try {
       const participantesDb =
-        await this.websocketsService.changeParticipantRole(
+        await this.salasService.changeParticipantRole(
           payload.tokenCompartido,
           payload.nickname,
           payload.nuevoRol,
@@ -245,16 +266,16 @@ export class JuegoGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @SubscribeMessage('audience:vote')
   async handleVote(
     @ConnectedSocket() client: Socket,
-    @MessageBody() payload: ProcessVote.VotePayload,
+    @MessageBody() payload: VotePayload,
   ) {
     try {
-      const result = await this.websocketsService.processVote(payload);
+      const result = await this.processAudienceVote.execute(payload);
 
       if (!result.success) {
         return result;
       }
 
-      this.scheduleBroadcast(result.data!.tokenCompartido, result.distribucion);
+      this.scheduleBroadcast(result.data!.tokenCompartido, result.distribucion as VoteDistribution);
 
       return result;
     } catch (error) {
@@ -269,61 +290,34 @@ export class JuegoGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @SubscribeMessage('responder_pregunta')
   async handleAnswer(
     @ConnectedSocket() client: Socket,
-    @MessageBody() payload: SubmitAnswer.AnswerPayload,
+    @MessageBody() payload: AnswerPayload,
   ) {
     try {
-      // (Task 3.2) Resolve nickname from socketMap — gateway owns this mapping
       const socketInfo = this.socketMap.get(client.id);
       const nickname = socketInfo?.nickname ?? payload.nickname ?? 'unknown';
 
-      const result = await this.websocketsService.submitAnswer({
+      const result = await this.submitAnswerWebsocket.execute({
         ...payload,
         nickname,
       });
 
-      // Switch on consensus result status
-      switch (result.status) {
-        case 'pending':
-          this.server.to(payload.tokenCompartido).emit('voto_confirmado', {
-            preguntaId: payload.preguntaId,
-            votosRecibidos: result.votosRecibidos,
-            totalRequeridos: result.totalRequeridos,
-          });
-          break;
+      const consensusInput: ConsensusInput = { type: result.status, ...result };
+      this.emitConsensusResult(payload.tokenCompartido, payload.preguntaId, consensusInput);
 
-        case 'majority':
-        case 'single':
-          this.server.to(payload.tokenCompartido).emit('pregunta_respondida', {
-            preguntaId: payload.preguntaId,
-            opcionId: result.winningOpcionId,
-            esCorrecta: result.esCorrecta,
-            feedback: result.feedback,
-          });
-          break;
-
-        case 'no-majority':
-          this.server.to(payload.tokenCompartido).emit('revoto_solicitado', {
-            preguntaId: payload.preguntaId,
-            motivo: 'sin_mayoria',
-          });
-          // Reinitialize the required SET so the next round of votes has a valid set to evaluate.
-          // clearConsensus() deleted BOTH keys (votes HASH + required SET), so without this
-          // the next vote triggers EvaluateConsensusUseCase with an empty required SET
-          // → no-majority → revoto_solicitado → infinite loop.
-          try {
-            await this.websocketsService.initConsensusRequired(
-              payload.tokenCompartido,
-              payload.preguntaId,
-            );
-            this.logger.log(
-              `[CONSENSUS:REVOTO] Required SET reinicializado para pregunta ${payload.preguntaId}`,
-            );
-          } catch (reinitError) {
-            this.logger.error(
-              `[CONSENSUS:REVOTO] Error reinicializando required SET: ${reinitError}`,
-            );
-          }
-          break;
+      if (result.status === 'no-majority') {
+        try {
+          await this.votosService.initConsensusRequired(
+            payload.tokenCompartido,
+            payload.preguntaId,
+          );
+          this.logger.log(
+            `[CONSENSUS:REVOTO] Required SET reinicializado para pregunta ${payload.preguntaId}`,
+          );
+        } catch (reinitError) {
+          this.logger.error(
+            `[CONSENSUS:REVOTO] Error reinicializando required SET: ${reinitError}`,
+          );
+        }
       }
 
       return result;
@@ -341,7 +335,7 @@ export class JuegoGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @MessageBody() payload: { tokenCompartido: string; habilitada: boolean },
   ) {
     try {
-      const result = await this.websocketsService.toggleRoomEnabled(
+      const result = await this.toggleRoomEnabledWebsocket.execute(
         payload.tokenCompartido,
         payload.habilitada,
       );
@@ -365,9 +359,8 @@ export class JuegoGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @MessageBody() payload: { salaId: number; tokenAnterior: string },
   ) {
     try {
-      const res = await this.websocketsService.regenerateToken(payload.salaId);
+      const res = await this.salasService.regenerarToken(payload.salaId);
 
-      // Notificar a la sala antigua que el token cambió
       this.server.to(payload.tokenAnterior).emit('token_sala_actualizado', {
         nuevoToken: res.tokenCompartido,
       });
@@ -384,7 +377,7 @@ export class JuegoGateway implements OnGatewayConnection, OnGatewayDisconnect {
   ) {
     try {
       this.flushBroadcast(payload.tokenCompartido);
-      const res = await this.websocketsService.finalizeGame(payload.salaId);
+      const res = await this.salasService.finalizarSala(payload.salaId);
 
       this.server.to(payload.tokenCompartido).emit('partida_finalizada', {
         totalParticipantes: res.totalParticipantes,
@@ -398,21 +391,20 @@ export class JuegoGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   @SubscribeMessage('reiniciar_ronda')
   async handleReiniciarRonda(
-    @MessageBody() payload: { tokenCompartido: string; rondaActiva: any },
+    @MessageBody() payload: { tokenCompartido: string; rondaActiva: unknown },
   ) {
     this.logger.log(
       `[WS:REINICIAR_RONDA] Recibido para token=${payload.tokenCompartido}`,
     );
     try {
-      await this.websocketsService.restartRound(payload.tokenCompartido);
-      this.logger.log(`[WS:REINICIAR_RONDA] Redis limpiado`);
+      const sala = await this.salasService.obtenerPorId(payload.tokenCompartido);
+      if (!sala) throw new Error('Sala no encontrada');
+      
+      await this.salasService.reiniciarRonda(sala.salaId);
 
       this.server.to(payload.tokenCompartido).emit('ronda_reiniciada', {
         rondaActiva: payload.rondaActiva,
       });
-      this.logger.log(
-        `[WS:REINICIAR_RONDA] Broadcast ronda_reiniciada emitido a sala ${payload.tokenCompartido}`,
-      );
 
       return { success: true };
     } catch (error) {
@@ -432,28 +424,26 @@ export class JuegoGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
 
     try {
-      const mensajes = await this.websocketsService.sendMessage({
+      const mensajes = await this.chatService.sendMessage({
         tokenCompartido: info.tokenCompartido,
         nickname: info.nickname,
         texto: payload.texto,
         tipo: payload.tipo,
       });
 
-      // Emitir solo el mensaje nuevo (no todo el historial)
       const nuevoMensaje = mensajes[mensajes.length - 1];
       if (nuevoMensaje) {
         this.server
           .to(info.tokenCompartido)
-          .emit('mensaje_chat_nuevo', nuevoMensaje);
+          .emit('mensaje_chat', [nuevoMensaje]);
       }
+
       return { success: true };
     } catch (error) {
       this.logger.error(`Error en Gateway al enviar mensaje:`, error);
       return { success: false, message: 'Error al enviar mensaje.' };
     }
   }
-
-  // REENVÍO DE EVENTOS DE CICLO DE VIDA (Relays)
 
   @SubscribeMessage('sala_creada')
   handleSalaCreada(
@@ -467,23 +457,19 @@ export class JuegoGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @MessageBody() payload: { tokenCompartido: string; pregunta: any },
   ) {
     try {
-      // Flush votos pendientes de la pregunta anterior antes de liberar la nueva
       this.flushBroadcast(payload.tokenCompartido);
 
-      // 1. Guardar en Redis y validar si se puede liberar
-      await this.websocketsService.releaseQuestion(
+      await this.releaseQuestionWebsocket.execute(
         payload.tokenCompartido,
         payload.pregunta,
       );
 
-      // 2. Emitir a la sala
       this.server
         .to(payload.tokenCompartido)
         .emit('pregunta_liberada', payload.pregunta);
 
-      // 3. Inicializar el SET de requeridos para consenso
       try {
-        await this.websocketsService.initConsensusRequired(
+        await this.votosService.initConsensusRequired(
           payload.tokenCompartido,
           payload.pregunta.preguntaId,
         );
@@ -491,7 +477,6 @@ export class JuegoGateway implements OnGatewayConnection, OnGatewayDisconnect {
           `[CONSENSUS] Inicializado para pregunta ${payload.pregunta.preguntaId}`,
         );
       } catch (consensusError) {
-        // Non-fatal: consensus initialization failure should not block question release
         this.logger.error(
           `[CONSENSUS] Error inicializando required SET: ${consensusError}`,
         );
@@ -525,14 +510,12 @@ export class JuegoGateway implements OnGatewayConnection, OnGatewayDisconnect {
       tipoComodin: string;
     },
   ) {
-    await this.websocketsService.blockPowerup(
+    await this.salasService.addBlockedComodin(
       payload.tokenCompartido,
       payload.tipoComodin,
     );
     this.server.to(payload.tokenCompartido).emit('comodin_bloqueado', payload);
 
-    // Al activar el comodín del público, emitir distribución inicial (zeros)
-    // para que los observadores puedan votar (puedeInteractuar checks votosPublico !== null)
     if (payload.tipoComodin === 'PUBLICO') {
       this.server
         .to(payload.tokenCompartido)
@@ -545,7 +528,7 @@ export class JuegoGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @ConnectedSocket() client: Socket,
     @MessageBody() payload: { tokenCompartido: string; pregunta: any },
   ) {
-    const result = await this.websocketsService.activateCallJoker(
+    const result = await this.activateCallJokerWebsocket.execute(
       payload.tokenCompartido,
     );
 
@@ -554,8 +537,14 @@ export class JuegoGateway implements OnGatewayConnection, OnGatewayDisconnect {
       return;
     }
 
+    const consultorNickname = result.consultor?.nickname;
+    if (!consultorNickname) {
+       client.emit('comodin_llamada_error', { message: 'No hay consultor disponible.' });
+       return;
+    }
+
     const consultorSocketId = this.findSocketId(
-      result.consultor.nickname,
+      consultorNickname,
       payload.tokenCompartido,
     );
 
@@ -572,7 +561,7 @@ export class JuegoGateway implements OnGatewayConnection, OnGatewayDisconnect {
     });
 
     this.server.to(payload.tokenCompartido).emit('comodin_llamada_iniciado', {
-      nicknameConsultor: result.consultor.nickname,
+      nicknameConsultor: consultorNickname,
     });
   }
 
@@ -582,7 +571,7 @@ export class JuegoGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @MessageBody()
     payload: { tokenCompartido: string; preguntaId: number; pista: string },
   ) {
-    const helperNickname = await this.websocketsService.getActiveHelper(
+    const helperNickname = await this.comodinesService.getActiveHelper(
       payload.tokenCompartido,
     );
 
@@ -605,7 +594,7 @@ export class JuegoGateway implements OnGatewayConnection, OnGatewayDisconnect {
       return;
     }
 
-    const result = await this.websocketsService.sendHint(payload);
+    const result = await this.sendHintWebsocket.execute(payload);
 
     if (!result.success) {
       client.emit('enviar_pista_error', { message: result.message });
@@ -622,16 +611,13 @@ export class JuegoGateway implements OnGatewayConnection, OnGatewayDisconnect {
     });
   }
 
-  /**
-   * Emite el evento WS correspondiente al resultado de consenso.
-   * Centralized helper used by handleAnswer, handleDisconnect, handleJoinRoom.
-   */
   private emitConsensusResult(
     token: string,
     preguntaId: number,
-    result: ConsensusResult,
+    result: ConsensusInput,
   ): void {
-    switch (result.type) {
+    const type = result.type ?? result.status;
+    switch (type) {
       case 'pending':
         this.server.to(token).emit('voto_confirmado', {
           preguntaId,
@@ -645,8 +631,8 @@ export class JuegoGateway implements OnGatewayConnection, OnGatewayDisconnect {
         this.server.to(token).emit('pregunta_respondida', {
           preguntaId,
           opcionId: result.winningOpcionId,
-          esCorrecta: (result as any).esCorrecta ?? null,
-          feedback: (result as any).feedback ?? null,
+          esCorrecta: result.esCorrecta ?? null,
+          feedback: result.feedback ?? null,
         });
         break;
 

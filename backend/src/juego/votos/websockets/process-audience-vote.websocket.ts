@@ -1,8 +1,10 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { ValidateVoteUniquenessUseCase } from './validate-vote-uniqueness.use-case';
-import { VotosService } from '../../votos/votos.service';
+import { ValidateVoteUniquenessWebsocket } from './validate-vote-uniqueness.websocket';
+import { VotosService } from '../votos.service';
 import { RoomStateCacheService } from '../../salas/cache/room-state-cache.service';
-import { VotesCacheService } from '../../votos/cache/votes-cache.service';
+import { VotesCacheService } from '../cache/votes-cache.service';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { PrismaService } from '../../../infrastructure/database/prisma/prisma.service';
 
 export interface VotePayload {
   salaId: number;
@@ -14,20 +16,22 @@ export interface VotePayload {
 }
 
 @Injectable()
-export class ProcessAudienceVoteUseCase {
-  private readonly logger = new Logger(ProcessAudienceVoteUseCase.name);
+export class ProcessAudienceVoteWebsocket {
+  private readonly logger = new Logger(ProcessAudienceVoteWebsocket.name);
 
   constructor(
-    private readonly validateVoteUniquenessUseCase: ValidateVoteUniquenessUseCase,
+    private readonly validateVoteUniqueness: ValidateVoteUniquenessWebsocket,
     private readonly votosService: VotosService,
     private readonly cacheService: RoomStateCacheService,
-    private readonly votesCacheUseCase: VotesCacheService,
+    private readonly votesCache: VotesCacheService,
+    private readonly prisma: PrismaService,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   async execute(payload: VotePayload) {
     // 1. Validar duplicados con Redis (Atómico)
-    const votoPermitido = await this.validateVoteUniquenessUseCase.execute(
-      payload.rondaId,
+    const votoPermitido = await this.validateVoteUniqueness.execute(
+      payload.salaId,
       payload.preguntaId,
       payload.participanteId,
     );
@@ -53,7 +57,7 @@ export class ProcessAudienceVoteUseCase {
     );
 
     // 3. Calcular nueva distribución (O(4) en lugar de O(N))
-    const distMap = await this.votesCacheUseCase.getDistribution(
+    const distMap = await this.votesCache.getDistribution(
       payload.rondaId,
       payload.preguntaId,
     );

@@ -5,7 +5,7 @@ import { MemoryCacheStore } from '../../../infrastructure/cache/memory-cache.sto
 @Injectable()
 export class RoomStateCacheService {
   private readonly logger = new Logger(RoomStateCacheService.name);
-  private readonly memory = new MemoryCacheStore<any>();
+  private readonly memory = new MemoryCacheStore<unknown>();
 
   constructor(private readonly redisService: RedisService) {}
 
@@ -39,7 +39,7 @@ export class RoomStateCacheService {
         /* fallback */
       }
     }
-    return this.memory.get(k) ?? null;
+    return (this.memory.get(k) as string | undefined) ?? null;
   }
 
   // ── Pregunta activa ──
@@ -102,7 +102,7 @@ export class RoomStateCacheService {
         /* fallback */
       }
     }
-    return this.memory.get(sk) ?? null;
+    return (this.memory.get(sk) as string | undefined) ?? null;
   }
 
   // ── Habilitación ──
@@ -151,7 +151,7 @@ export class RoomStateCacheService {
         /* fallback */
       }
     }
-    const current: string[] = this.memory.get(k) ?? [];
+    const current = (this.memory.get(k) as string[] | undefined) ?? [];
     if (!current.includes(tipoComodin)) current.push(tipoComodin);
     this.memory.set(k, current, 86_400_000);
   }

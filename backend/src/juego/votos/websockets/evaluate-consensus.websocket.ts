@@ -13,8 +13,8 @@ export type ConsensusResult =
   | { type: 'single'; winningOpcionId: number };
 
 @Injectable()
-export class EvaluateConsensusUseCase {
-  private readonly logger = new Logger(EvaluateConsensusUseCase.name);
+export class EvaluateConsensusWebsocket {
+  private readonly logger = new Logger(EvaluateConsensusWebsocket.name);
 
   constructor(private readonly consensusCache: ConsensusCacheService) {}
 

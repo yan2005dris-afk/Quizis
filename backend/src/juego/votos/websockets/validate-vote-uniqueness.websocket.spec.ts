@@ -1,16 +1,16 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { ValidateVoteUniquenessUseCase } from './validate-vote-uniqueness.use-case';
+import { ValidateVoteUniquenessWebsocket } from './validate-vote-uniqueness.websocket';
 import { ConfigService } from '@nestjs/config';
 import { ParticipantsCacheService } from '../../salas/cache/participants-cache.service';
 
-describe('ValidateVoteUniquenessUseCase', () => {
-  let useCase: ValidateVoteUniquenessUseCase;
+describe('ValidateVoteUniquenessWebsocket', () => {
+  let websocket: ValidateVoteUniquenessWebsocket;
   let cacheService: ParticipantsCacheService;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
-        ValidateVoteUniquenessUseCase,
+        ValidateVoteUniquenessWebsocket,
         {
           provide: ParticipantsCacheService,
           useValue: {
@@ -26,8 +26,8 @@ describe('ValidateVoteUniquenessUseCase', () => {
       ],
     }).compile();
 
-    useCase = module.get<ValidateVoteUniquenessUseCase>(
-      ValidateVoteUniquenessUseCase,
+    websocket = module.get<ValidateVoteUniquenessWebsocket>(
+      ValidateVoteUniquenessWebsocket,
     );
     cacheService = module.get<ParticipantsCacheService>(
       ParticipantsCacheService,
@@ -37,7 +37,7 @@ describe('ValidateVoteUniquenessUseCase', () => {
   it('debería retornar true si el voto es nuevo (no duplicado)', async () => {
     jest.spyOn(cacheService, 'checkAndSetDuplicate').mockResolvedValue(true);
 
-    const result = await useCase.execute(1, 10, 100);
+    const result = await websocket.execute(1, 10, 100);
 
     expect(result).toBe(true);
     expect(cacheService.checkAndSetDuplicate).toHaveBeenCalledWith(
@@ -50,7 +50,7 @@ describe('ValidateVoteUniquenessUseCase', () => {
   it('debería retornar false si el voto ya existe (duplicado)', async () => {
     jest.spyOn(cacheService, 'checkAndSetDuplicate').mockResolvedValue(false);
 
-    const result = await useCase.execute(1, 10, 100);
+    const result = await websocket.execute(1, 10, 100);
 
     expect(result).toBe(false);
   });
@@ -60,7 +60,7 @@ describe('ValidateVoteUniquenessUseCase', () => {
       .spyOn(cacheService, 'checkAndSetDuplicate')
       .mockRejectedValue(new Error('Redis Down'));
 
-    const result = await useCase.execute(1, 10, 100);
+    const result = await websocket.execute(1, 10, 100);
 
     expect(result).toBe(true);
   });

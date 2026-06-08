@@ -1,13 +1,13 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
-import { SubmitAnswerUseCase } from './submit-answer.use-case';
-import { RoomStateCacheService } from 'src/juego/salas/cache/room-state-cache.service';
+import { SubmitAnswerWebsocket } from './submit-answer.websocket';
+import { RoomStateCacheService } from '../../salas/cache/room-state-cache.service';
 import { RecordAnswerUseCase } from '../../respuestas/use-cases/record-answer.use-case';
-import { ConsensusCacheService } from 'src/juego/websockets/cache/consensus-cache.service';
-import { EvaluateConsensusUseCase } from './evaluate-consensus.use-case';
+import { ConsensusCacheService } from '../cache/consensus-cache.service';
+import { EvaluateConsensusWebsocket } from './evaluate-consensus.websocket';
 
-describe('SubmitAnswerUseCase', () => {
-  let useCase: SubmitAnswerUseCase;
+describe('SubmitAnswerWebsocket', () => {
+  let websocket: SubmitAnswerWebsocket;
   let cacheService: typeof mockCacheService;
   let recordAnswerUseCase: typeof mockRecordAnswerUseCase;
   let consensusCache: typeof mockConsensusCacheService;
@@ -27,7 +27,7 @@ describe('SubmitAnswerUseCase', () => {
     clearConsensus: jest.fn(),
   };
 
-  const mockEvaluateConsensusUseCase = {
+  const mockEvaluateConsensusWebsocket = {
     execute: jest.fn(),
   };
 
@@ -55,18 +55,18 @@ describe('SubmitAnswerUseCase', () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
-        SubmitAnswerUseCase,
+        SubmitAnswerWebsocket,
         { provide: RoomStateCacheService, useValue: mockCacheService },
         { provide: RecordAnswerUseCase, useValue: mockRecordAnswerUseCase },
         { provide: ConsensusCacheService, useValue: mockConsensusCacheService },
         {
-          provide: EvaluateConsensusUseCase,
-          useValue: mockEvaluateConsensusUseCase,
+          provide: EvaluateConsensusWebsocket,
+          useValue: mockEvaluateConsensusWebsocket,
         },
       ],
     }).compile();
 
-    useCase = module.get<SubmitAnswerUseCase>(SubmitAnswerUseCase);
+    websocket = module.get<SubmitAnswerWebsocket>(SubmitAnswerWebsocket);
     cacheService = module.get(RoomStateCacheService);
     recordAnswerUseCase = module.get(RecordAnswerUseCase);
     consensusCache = module.get(ConsensusCacheService);
@@ -80,12 +80,12 @@ describe('SubmitAnswerUseCase', () => {
       mockCacheService.setQuestionStatus.mockResolvedValue(undefined);
       mockRecordAnswerUseCase.execute.mockResolvedValue(undefined);
       mockConsensusCacheService.recordVote.mockResolvedValue(undefined);
-      mockEvaluateConsensusUseCase.execute.mockResolvedValue({
+      mockEvaluateConsensusWebsocket.execute.mockResolvedValue({
         type: 'single',
         winningOpcionId: 10,
       });
 
-      const result = await useCase.execute({ ...basePayload, opcionId: 10 });
+      const result = await websocket.execute({ ...basePayload, opcionId: 10 });
 
       expect(result.status).toBe('single');
       if (result.status === 'single') {
@@ -104,12 +104,12 @@ describe('SubmitAnswerUseCase', () => {
       mockCacheService.setQuestionStatus.mockResolvedValue(undefined);
       mockRecordAnswerUseCase.execute.mockResolvedValue(undefined);
       mockConsensusCacheService.recordVote.mockResolvedValue(undefined);
-      mockEvaluateConsensusUseCase.execute.mockResolvedValue({
+      mockEvaluateConsensusWebsocket.execute.mockResolvedValue({
         type: 'single',
         winningOpcionId: 11,
       });
 
-      const result = await useCase.execute({ ...basePayload, opcionId: 11 });
+      const result = await websocket.execute({ ...basePayload, opcionId: 11 });
 
       expect(result.status).toBe('single');
       if (result.status === 'single') {
@@ -124,13 +124,13 @@ describe('SubmitAnswerUseCase', () => {
       mockCacheService.getActiveQuestion.mockResolvedValue(mockQuestion);
       mockCacheService.getQuestionStatus.mockResolvedValue('released');
       mockConsensusCacheService.recordVote.mockResolvedValue(undefined);
-      mockEvaluateConsensusUseCase.execute.mockResolvedValue({
+      mockEvaluateConsensusWebsocket.execute.mockResolvedValue({
         type: 'pending',
         votosRecibidos: 1,
         totalRequeridos: 3,
       });
 
-      const result = await useCase.execute(basePayload);
+      const result = await websocket.execute(basePayload);
 
       expect(result.status).toBe('pending');
       if (result.status === 'pending') {
@@ -148,13 +148,13 @@ describe('SubmitAnswerUseCase', () => {
       mockCacheService.getQuestionStatus.mockResolvedValue('released');
       mockConsensusCacheService.recordVote.mockResolvedValue(undefined);
       mockConsensusCacheService.clearConsensus.mockResolvedValue(undefined);
-      mockEvaluateConsensusUseCase.execute.mockResolvedValue({
+      mockEvaluateConsensusWebsocket.execute.mockResolvedValue({
         type: 'no-majority',
         votosRecibidos: 2,
         totalRequeridos: 2,
       });
 
-      const result = await useCase.execute(basePayload);
+      const result = await websocket.execute(basePayload);
 
       expect(result.status).toBe('no-majority');
       expect(consensusCache.clearConsensus).toHaveBeenCalledWith(
@@ -172,14 +172,14 @@ describe('SubmitAnswerUseCase', () => {
       mockCacheService.setQuestionStatus.mockResolvedValue(undefined);
       mockRecordAnswerUseCase.execute.mockResolvedValue(undefined);
       mockConsensusCacheService.recordVote.mockResolvedValue(undefined);
-      mockEvaluateConsensusUseCase.execute.mockResolvedValue({
+      mockEvaluateConsensusWebsocket.execute.mockResolvedValue({
         type: 'majority',
         winningOpcionId: 10,
         votosRecibidos: 3,
         totalRequeridos: 3,
       });
 
-      const result = await useCase.execute({ ...basePayload, opcionId: 10 });
+      const result = await websocket.execute({ ...basePayload, opcionId: 10 });
 
       expect(result.status).toBe('majority');
       if (result.status === 'majority') {
@@ -199,14 +199,14 @@ describe('SubmitAnswerUseCase', () => {
       mockCacheService.setQuestionStatus.mockResolvedValue(undefined);
       mockRecordAnswerUseCase.execute.mockResolvedValue(undefined);
       mockConsensusCacheService.recordVote.mockResolvedValue(undefined);
-      mockEvaluateConsensusUseCase.execute.mockResolvedValue({
+      mockEvaluateConsensusWebsocket.execute.mockResolvedValue({
         type: 'majority',
         winningOpcionId: 11,
         votosRecibidos: 2,
         totalRequeridos: 3,
       });
 
-      const result = await useCase.execute({ ...basePayload, opcionId: 11 });
+      const result = await websocket.execute({ ...basePayload, opcionId: 11 });
 
       expect(result.status).toBe('majority');
       if (result.status === 'majority') {
@@ -221,7 +221,7 @@ describe('SubmitAnswerUseCase', () => {
       mockCacheService.getActiveQuestion.mockResolvedValue(mockQuestion);
       mockCacheService.getQuestionStatus.mockResolvedValue('answered');
 
-      await expect(useCase.execute(basePayload)).rejects.toThrow(
+      await expect(websocket.execute(basePayload)).rejects.toThrow(
         BadRequestException,
       );
       expect(mockConsensusCacheService.recordVote).not.toHaveBeenCalled();
@@ -233,12 +233,12 @@ describe('SubmitAnswerUseCase', () => {
       mockCacheService.setQuestionStatus.mockResolvedValue(undefined);
       mockRecordAnswerUseCase.execute.mockResolvedValue(undefined);
       mockConsensusCacheService.recordVote.mockResolvedValue(undefined);
-      mockEvaluateConsensusUseCase.execute.mockResolvedValue({
+      mockEvaluateConsensusWebsocket.execute.mockResolvedValue({
         type: 'single',
         winningOpcionId: 10,
       });
 
-      const result = await useCase.execute(basePayload);
+      const result = await websocket.execute(basePayload);
 
       expect(result.status).toBe('single');
       expect(recordAnswerUseCase.execute).toHaveBeenCalled();
@@ -252,13 +252,13 @@ describe('SubmitAnswerUseCase', () => {
       mockCacheService.getActiveQuestion.mockResolvedValue(mockQuestion);
       mockCacheService.getQuestionStatus.mockResolvedValue('released');
       mockConsensusCacheService.recordVote.mockResolvedValue(undefined);
-      mockEvaluateConsensusUseCase.execute.mockResolvedValue({
+      mockEvaluateConsensusWebsocket.execute.mockResolvedValue({
         type: 'pending',
         votosRecibidos: 2,
         totalRequeridos: 3,
       });
 
-      const result = await useCase.execute(basePayload);
+      const result = await websocket.execute(basePayload);
 
       expect(result.status).toBe('pending');
       if (result.status === 'pending') {
@@ -274,13 +274,13 @@ describe('SubmitAnswerUseCase', () => {
       mockCacheService.getQuestionStatus.mockResolvedValue('released');
       mockConsensusCacheService.recordVote.mockResolvedValue(undefined);
       mockConsensusCacheService.clearConsensus.mockResolvedValue(undefined);
-      mockEvaluateConsensusUseCase.execute.mockResolvedValue({
+      mockEvaluateConsensusWebsocket.execute.mockResolvedValue({
         type: 'no-majority',
         votosRecibidos: 3,
         totalRequeridos: 3,
       });
 
-      const result = await useCase.execute(basePayload);
+      const result = await websocket.execute(basePayload);
 
       expect(result.status).toBe('no-majority');
       expect(consensusCache.clearConsensus).toHaveBeenCalledWith(
@@ -295,7 +295,7 @@ describe('SubmitAnswerUseCase', () => {
     it('sin pregunta activa → BadRequestException', async () => {
       mockCacheService.getActiveQuestion.mockResolvedValue(null);
 
-      await expect(useCase.execute(basePayload)).rejects.toThrow(
+      await expect(websocket.execute(basePayload)).rejects.toThrow(
         BadRequestException,
       );
       expect(recordAnswerUseCase.execute).not.toHaveBeenCalled();
@@ -307,7 +307,7 @@ describe('SubmitAnswerUseCase', () => {
         preguntaId: 999,
       });
 
-      await expect(useCase.execute(basePayload)).rejects.toThrow(
+      await expect(websocket.execute(basePayload)).rejects.toThrow(
         BadRequestException,
       );
       expect(recordAnswerUseCase.execute).not.toHaveBeenCalled();
@@ -317,7 +317,7 @@ describe('SubmitAnswerUseCase', () => {
       mockCacheService.getActiveQuestion.mockResolvedValue(mockQuestion);
       mockCacheService.getQuestionStatus.mockResolvedValue('answered');
 
-      await expect(useCase.execute(basePayload)).rejects.toThrow(
+      await expect(websocket.execute(basePayload)).rejects.toThrow(
         BadRequestException,
       );
       expect(recordAnswerUseCase.execute).not.toHaveBeenCalled();
@@ -328,7 +328,7 @@ describe('SubmitAnswerUseCase', () => {
       mockCacheService.getQuestionStatus.mockResolvedValue('released');
 
       await expect(
-        useCase.execute({ ...basePayload, opcionId: 999 }),
+        websocket.execute({ ...basePayload, opcionId: 999 }),
       ).rejects.toThrow(NotFoundException);
       expect(recordAnswerUseCase.execute).not.toHaveBeenCalled();
     });
@@ -339,12 +339,12 @@ describe('SubmitAnswerUseCase', () => {
       mockCacheService.setQuestionStatus.mockResolvedValue(undefined);
       mockRecordAnswerUseCase.execute.mockResolvedValue(undefined);
       mockConsensusCacheService.recordVote.mockResolvedValue(undefined);
-      mockEvaluateConsensusUseCase.execute.mockResolvedValue({
+      mockEvaluateConsensusWebsocket.execute.mockResolvedValue({
         type: 'single',
         winningOpcionId: 10,
       });
 
-      await useCase.execute({
+      await websocket.execute({
         ...basePayload,
         opcionId: 10,
         comodinUsado: '50/50',
@@ -361,12 +361,12 @@ describe('SubmitAnswerUseCase', () => {
       mockCacheService.setQuestionStatus.mockResolvedValue(undefined);
       mockRecordAnswerUseCase.execute.mockResolvedValue(undefined);
       mockConsensusCacheService.recordVote.mockResolvedValue(undefined);
-      mockEvaluateConsensusUseCase.execute.mockResolvedValue({
+      mockEvaluateConsensusWebsocket.execute.mockResolvedValue({
         type: 'single',
         winningOpcionId: 10,
       });
 
-      await useCase.execute({ ...basePayload, opcionId: 10 });
+      await websocket.execute({ ...basePayload, opcionId: 10 });
 
       expect(recordAnswerUseCase.execute).toHaveBeenCalledWith({
         rondaId: 1,

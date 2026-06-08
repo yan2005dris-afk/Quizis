@@ -1,10 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { BadRequestException } from '@nestjs/common';
-import { ReleaseQuestionUseCase } from './release-question.use-case';
-import { RoomStateCacheService } from 'src/juego/salas/cache/room-state-cache.service';
+import { ReleaseQuestionWebsocket } from './release-question.websocket';
+import { RoomStateCacheService } from '../../salas/cache/room-state-cache.service';
 
-describe('ReleaseQuestionUseCase', () => {
-  let useCase: ReleaseQuestionUseCase;
+describe('ReleaseQuestionWebsocket', () => {
+  let websocket: ReleaseQuestionWebsocket;
 
   const mockCacheService = {
     getQuestionStatus: jest.fn(),
@@ -21,12 +21,12 @@ describe('ReleaseQuestionUseCase', () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
-        ReleaseQuestionUseCase,
+        ReleaseQuestionWebsocket,
         { provide: RoomStateCacheService, useValue: mockCacheService },
       ],
     }).compile();
 
-    useCase = module.get<ReleaseQuestionUseCase>(ReleaseQuestionUseCase);
+    websocket = module.get<ReleaseQuestionWebsocket>(ReleaseQuestionWebsocket);
     jest.clearAllMocks();
     mockCacheService.setActiveQuestion.mockResolvedValue(undefined);
   });
@@ -34,7 +34,7 @@ describe('ReleaseQuestionUseCase', () => {
   it('sin pregunta activa (status null) → pregunta guardada exitosamente', async () => {
     mockCacheService.getQuestionStatus.mockResolvedValue(null);
 
-    const result = await useCase.execute('token-abc', mockPregunta);
+    const result = await websocket.execute('token-abc', mockPregunta);
 
     expect(result.success).toBe(true);
     expect(mockCacheService.setActiveQuestion).toHaveBeenCalledWith(
@@ -46,7 +46,7 @@ describe('ReleaseQuestionUseCase', () => {
   it('status answered → permite liberar nueva pregunta', async () => {
     mockCacheService.getQuestionStatus.mockResolvedValue('answered');
 
-    const result = await useCase.execute('token-abc', mockPregunta);
+    const result = await websocket.execute('token-abc', mockPregunta);
 
     expect(result.success).toBe(true);
     expect(mockCacheService.setActiveQuestion).toHaveBeenCalled();
@@ -55,7 +55,7 @@ describe('ReleaseQuestionUseCase', () => {
   it('status released → BadRequestException (pregunta anterior sin responder)', async () => {
     mockCacheService.getQuestionStatus.mockResolvedValue('released');
 
-    await expect(useCase.execute('token-abc', mockPregunta)).rejects.toThrow(
+    await expect(websocket.execute('token-abc', mockPregunta)).rejects.toThrow(
       BadRequestException,
     );
     expect(mockCacheService.setActiveQuestion).not.toHaveBeenCalled();
@@ -64,7 +64,7 @@ describe('ReleaseQuestionUseCase', () => {
   it('llama setActiveQuestion con el objeto de pregunta completo', async () => {
     mockCacheService.getQuestionStatus.mockResolvedValue(null);
 
-    await useCase.execute('token-abc', mockPregunta);
+    await websocket.execute('token-abc', mockPregunta);
 
     expect(mockCacheService.setActiveQuestion).toHaveBeenCalledWith(
       'token-abc',

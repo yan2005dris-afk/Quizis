@@ -1,4 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { randomUUID } from 'crypto';
 import { RedisService } from '../../../infrastructure/database/redis/redis.service';
 import { MemoryCacheStore } from '../../../infrastructure/cache/memory-cache.store';
 
@@ -34,10 +35,20 @@ export class VotesCacheService {
 
     if (client) {
       try {
+        const prevStr = await client.hget(vk, String(participanteId));
+        const prevOpcionId = prevStr !== null ? parseInt(prevStr, 10) : null;
+
         await client.hset(vk, String(participanteId), String(opcionId));
         await client.expire(vk, 3600);
-        await client.hincrby(dk, String(opcionId), 1);
-        await client.expire(dk, 3600);
+
+        if (prevOpcionId === null) {
+          await client.hincrby(dk, String(opcionId), 1);
+          await client.expire(dk, 3600);
+        } else if (prevOpcionId !== opcionId) {
+          await client.hincrby(dk, String(prevOpcionId), -1);
+          await client.hincrby(dk, String(opcionId), 1);
+          await client.expire(dk, 3600);
+        }
         return;
       } catch (e) {
         this.logger.warn(`[VOTES:CACHE] Fallo setVote Redis: ${e}`);
@@ -45,11 +56,17 @@ export class VotesCacheService {
     }
 
     const votes = this.votesMemory.get(vk) ?? new Map<number, number>();
+    const prevOpcion = votes.get(participanteId);
     votes.set(participanteId, opcionId);
     this.votesMemory.set(vk, votes, 3_600_000);
 
     const dist = this.distMemory.get(dk) ?? new Map<number, number>();
-    dist.set(opcionId, (dist.get(opcionId) ?? 0) + 1);
+    if (prevOpcion === undefined) {
+      dist.set(opcionId, (dist.get(opcionId) ?? 0) + 1);
+    } else if (prevOpcion !== opcionId) {
+      dist.set(prevOpcion, Math.max(0, (dist.get(prevOpcion) ?? 0) - 1));
+      dist.set(opcionId, (dist.get(opcionId) ?? 0) + 1);
+    }
     this.distMemory.set(dk, dist, 3_600_000);
   }
 
@@ -110,14 +127,13 @@ export class VotesCacheService {
     votes: { participanteId: number; opcionId: number }[];
   }> {
     const originalKey = this.voteKey(rondaId, preguntaId);
-    const uniqueProcKey = `${this.procPrefix(rondaId, preguntaId)}${Date.now()}_${Math.floor(100 + Math.random() * 900)}`;
+    const uniqueProcKey = `${this.procPrefix(rondaId, preguntaId)}${randomUUID()}`;
     const votesMap = new Map<number, number>();
 
     const procPrefix = this.procPrefix(rondaId, preguntaId);
-    // Collect from memory
-    for (const [key, entry] of this.votesMemory.entries()) {
+    for (const [key, voteMap] of this.votesMemory.entries()) {
       if (key.startsWith(procPrefix) || key === originalKey) {
-        for (const [pId, oId] of entry.data.entries()) {
+        for (const [pId, oId] of voteMap.entries()) {
           votesMap.set(pId, oId);
         }
         this.votesMemory.delete(key);

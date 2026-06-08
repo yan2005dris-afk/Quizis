@@ -2,6 +2,9 @@ import { Module } from '@nestjs/common';
 import { RondasService } from './rondas.service';
 import { RondasController } from './rondas.controller';
 import { CreateRondaUseCase } from './use-cases/create-ronda.use-case';
+import { ReleaseQuestionWebsocket } from './websockets/release-question.websocket';
+import { CacheModule } from '../../infrastructure/cache/cache.module';
+import { SalasModule } from '../salas/salas.module';
 
 /**
  * Módulo de Rondas de Juego.
@@ -11,7 +14,9 @@ import { CreateRondaUseCase } from './use-cases/create-ronda.use-case';
  * individual de un participante con preguntas aleatorias asignadas.
  */
 @Module({
+  imports: [CacheModule, SalasModule],
   controllers: [RondasController],
-  providers: [RondasService, CreateRondaUseCase],
+  providers: [RondasService, CreateRondaUseCase, ReleaseQuestionWebsocket],
+  exports: [RondasService, ReleaseQuestionWebsocket],
 })
 export class RondasModule {}

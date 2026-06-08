@@ -7,7 +7,7 @@ import {
 import { RoomStateCacheService } from '../../salas/cache/room-state-cache.service';
 import { RecordAnswerUseCase } from '../../respuestas/use-cases/record-answer.use-case';
 import { ConsensusCacheService } from '../cache/consensus-cache.service';
-import { EvaluateConsensusUseCase } from './evaluate-consensus.use-case';
+import { EvaluateConsensusWebsocket } from './evaluate-consensus.websocket';
 
 export interface AnswerPayload {
   tokenCompartido: string;
@@ -35,14 +35,14 @@ export type SubmitAnswerResult =
   | { status: 'no-majority' };
 
 @Injectable()
-export class SubmitAnswerUseCase {
-  private readonly logger = new Logger(SubmitAnswerUseCase.name);
+export class SubmitAnswerWebsocket {
+  private readonly logger = new Logger(SubmitAnswerWebsocket.name);
 
   constructor(
     private readonly cacheService: RoomStateCacheService,
     private readonly recordAnswerUseCase: RecordAnswerUseCase,
     private readonly consensusCache: ConsensusCacheService,
-    private readonly evaluateConsensus: EvaluateConsensusUseCase,
+    private readonly evaluateConsensus: EvaluateConsensusWebsocket,
   ) {}
 
   async execute(payload: AnswerPayload): Promise<SubmitAnswerResult> {

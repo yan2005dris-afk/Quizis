@@ -1,16 +1,18 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import {
-  ProcessAudienceVoteUseCase,
+  ProcessAudienceVoteWebsocket,
   VotePayload,
-} from './process-audience-vote.use-case';
-import { ValidateVoteUniquenessUseCase } from './validate-vote-uniqueness.use-case';
-import { VotosService } from '../../votos/votos.service';
+} from './process-audience-vote.websocket';
+import { ValidateVoteUniquenessWebsocket } from './validate-vote-uniqueness.websocket';
+import { VotosService } from '../votos.service';
 import { RoomStateCacheService } from '../../salas/cache/room-state-cache.service';
-import { VotesCacheService } from '../../votos/cache/votes-cache.service';
+import { VotesCacheService } from '../cache/votes-cache.service';
+import { PrismaService } from '../../../infrastructure/database/prisma/prisma.service';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 
-describe('ProcessAudienceVoteUseCase', () => {
-  let useCase: ProcessAudienceVoteUseCase;
-  let validateUniqueness: ValidateVoteUniquenessUseCase;
+describe('ProcessAudienceVoteWebsocket', () => {
+  let websocket: ProcessAudienceVoteWebsocket;
+  let validateUniqueness: ValidateVoteUniquenessWebsocket;
   let votosService: VotosService;
   let roomStateCache: RoomStateCacheService;
   let votesCache: VotesCacheService;
@@ -18,9 +20,9 @@ describe('ProcessAudienceVoteUseCase', () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
-        ProcessAudienceVoteUseCase,
+        ProcessAudienceVoteWebsocket,
         {
-          provide: ValidateVoteUniquenessUseCase,
+          provide: ValidateVoteUniquenessWebsocket,
           useValue: {
             execute: jest.fn(),
           },
@@ -44,14 +46,22 @@ describe('ProcessAudienceVoteUseCase', () => {
             getDistribution: jest.fn(),
           },
         },
+        {
+          provide: PrismaService,
+          useValue: {},
+        },
+        {
+          provide: EventEmitter2,
+          useValue: { emit: jest.fn() },
+        },
       ],
     }).compile();
 
-    useCase = module.get<ProcessAudienceVoteUseCase>(
-      ProcessAudienceVoteUseCase,
+    websocket = module.get<ProcessAudienceVoteWebsocket>(
+      ProcessAudienceVoteWebsocket,
     );
-    validateUniqueness = module.get<ValidateVoteUniquenessUseCase>(
-      ValidateVoteUniquenessUseCase,
+    validateUniqueness = module.get<ValidateVoteUniquenessWebsocket>(
+      ValidateVoteUniquenessWebsocket,
     );
     votosService = module.get<VotosService>(VotosService);
     roomStateCache = module.get<RoomStateCacheService>(RoomStateCacheService);
@@ -77,7 +87,7 @@ describe('ProcessAudienceVoteUseCase', () => {
       opciones: [{ opcionId: 5, letra: 'A' }],
     } as any);
 
-    const result = await useCase.execute(mockPayload);
+    const result = await websocket.execute(mockPayload);
 
     expect(result.success).toBe(true);
     expect(result.message).toBe('Voto registrado correctamente.');
@@ -87,7 +97,7 @@ describe('ProcessAudienceVoteUseCase', () => {
   it('debería rechazar el voto si es duplicado', async () => {
     jest.spyOn(validateUniqueness, 'execute').mockResolvedValue(false);
 
-    const result = await useCase.execute(mockPayload);
+    const result = await websocket.execute(mockPayload);
 
     expect(result.success).toBe(false);
     expect(result.message).toContain('Acción bloqueada');

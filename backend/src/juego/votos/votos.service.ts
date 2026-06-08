@@ -2,6 +2,9 @@ import { Injectable } from '@nestjs/common';
 import { RegisterVoteUseCase } from './use-cases/register-vote.use-case';
 import { GetVotesFromCacheUseCase } from './use-cases/get-votes-from-cache.use-case';
 import { PersistVotesUseCase } from './use-cases/persist-votes.use-case';
+import { ConsensusCacheService } from './cache/consensus-cache.service';
+import { ParticipantsCacheService } from '../salas/cache/participants-cache.service';
+import { SalasService } from '../salas/salas.service';
 
 @Injectable()
 export class VotosService {
@@ -9,6 +12,9 @@ export class VotosService {
     private readonly registerVoteUseCase: RegisterVoteUseCase,
     private readonly getVotesFromCacheUseCase: GetVotesFromCacheUseCase,
     private readonly persistVotesUseCase: PersistVotesUseCase,
+    private readonly consensusCache: ConsensusCacheService,
+    private readonly participantsCache: ParticipantsCacheService,
+    private readonly salasService: SalasService,
   ) {}
 
   async registrarVoto(
@@ -34,5 +40,21 @@ export class VotosService {
     preguntaId: number,
   ): Promise<{ count: number }> {
     return this.persistVotesUseCase.execute(rondaId, preguntaId);
+  }
+
+  async initConsensusRequired(
+    token: string,
+    preguntaId: number,
+  ): Promise<void> {
+    const nicknames = await this.participantsCache.getOnlineParticipants(token);
+    const participantesDb = await this.salasService.getParticipantsWithRoles(
+      token,
+      nicknames,
+    );
+    const students = participantesDb
+      .filter((p: any) => p.rol === 'estudiante')
+      .map((p: any) => p.nombre as string);
+
+    await this.consensusCache.initializeRequired(token, preguntaId, students);
   }
 }

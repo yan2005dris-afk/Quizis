@@ -3,8 +3,8 @@ import { ChatCacheService } from '../cache/chat-cache.service';
 import { ChatMessage } from '../types/chat.types';
 
 @Injectable()
-export class SendMessageUseCase {
-  private readonly logger = new Logger(SendMessageUseCase.name);
+export class SendMessageWebsocket {
+  private readonly logger = new Logger(SendMessageWebsocket.name);
 
   constructor(private readonly chatCache: ChatCacheService) {}
 

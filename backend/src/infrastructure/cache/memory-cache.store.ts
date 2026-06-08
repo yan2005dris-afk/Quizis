@@ -1,9 +1,4 @@
-import {
-  Injectable,
-  Logger,
-  OnModuleDestroy,
-  OnModuleInit,
-} from '@nestjs/common';
+import { Logger } from '@nestjs/common';
 
 /**
  * Almacenamiento en memoria con TTL y garbage collection automático.
@@ -13,10 +8,7 @@ import {
  *
  * @template T Tipo de dato almacenado en cada entrada.
  */
-@Injectable()
-export class MemoryCacheStore<T = unknown>
-  implements OnModuleInit, OnModuleDestroy
-{
+export class MemoryCacheStore<T = unknown> {
   protected readonly logger = new Logger(MemoryCacheStore.name);
   private store = new Map<string, { data: T; expiresAt: number }>();
   private gcInterval: NodeJS.Timeout | null = null;
@@ -24,14 +16,19 @@ export class MemoryCacheStore<T = unknown>
 
   constructor(gcIntervalMs = 300_000) {
     this.gcIntervalMs = gcIntervalMs;
-  }
-
-  onModuleInit(): void {
+    // Iniciamos el GC automáticamente ya que no es un provider gestionado por NestJS
     this.gcInterval = setInterval(() => this.runGC(), this.gcIntervalMs);
   }
 
-  onModuleDestroy(): void {
-    if (this.gcInterval) clearInterval(this.gcInterval);
+  /**
+   * Detiene el intervalo de recolección de basura.
+   * Útil para limpieza manual si el objeto que lo contiene se destruye.
+   */
+  destroy(): void {
+    if (this.gcInterval) {
+      clearInterval(this.gcInterval);
+      this.gcInterval = null;
+    }
   }
 
   private runGC(): void {
@@ -74,13 +71,21 @@ export class MemoryCacheStore<T = unknown>
     this.store.clear();
   }
 
-  /** Itera sobre todas las entradas no expiradas del store. */
-  entries(): IterableIterator<[string, { data: T; expiresAt: number }]> {
-    return this.store.entries();
+  entries(): Array<[string, T]> {
+    const now = Date.now();
+    const result: Array<[string, T]> = [];
+    for (const [key, entry] of this.store) {
+      if (entry.expiresAt >= now) result.push([key, entry.data]);
+    }
+    return result;
   }
 
-  /** Itera sobre todas las claves no expiradas del store. */
-  keys(): IterableIterator<string> {
-    return this.store.keys();
+  keys(): string[] {
+    const now = Date.now();
+    const result: string[] = [];
+    for (const [key, entry] of this.store) {
+      if (entry.expiresAt >= now) result.push(key);
+    }
+    return result;
   }
 }

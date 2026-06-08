@@ -1,9 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { ToggleRoomEnabledUseCase } from './toggle-room-enabled.use-case';
-import { RoomStateCacheService } from 'src/juego/salas/cache/room-state-cache.service';
+import { ToggleRoomEnabledWebsocket } from './toggle-room-enabled.websocket';
+import { RoomStateCacheService } from '../../salas/cache/room-state-cache.service';
 
-describe('ToggleRoomEnabledUseCase', () => {
-  let useCase: ToggleRoomEnabledUseCase;
+describe('ToggleRoomEnabledWebsocket', () => {
+  let websocket: ToggleRoomEnabledWebsocket;
 
   const mockCacheService = {
     setRoomEnabled: jest.fn(),
@@ -12,41 +12,41 @@ describe('ToggleRoomEnabledUseCase', () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
-        ToggleRoomEnabledUseCase,
+        ToggleRoomEnabledWebsocket,
         { provide: RoomStateCacheService, useValue: mockCacheService },
       ],
     }).compile();
 
-    useCase = module.get<ToggleRoomEnabledUseCase>(ToggleRoomEnabledUseCase);
+    websocket = module.get<ToggleRoomEnabledWebsocket>(ToggleRoomEnabledWebsocket);
     jest.clearAllMocks();
     mockCacheService.setRoomEnabled.mockResolvedValue(undefined);
   });
 
   it('toggle enabled true → setRoomEnabled(token, true)', async () => {
-    await useCase.execute('token-abc', true);
+    await websocket.execute('T1', true);
 
     expect(mockCacheService.setRoomEnabled).toHaveBeenCalledWith(
-      'token-abc',
+      'T1',
       true,
     );
   });
 
   it('toggle enabled false → setRoomEnabled(token, false)', async () => {
-    await useCase.execute('token-abc', false);
+    await websocket.execute('T1', false);
 
     expect(mockCacheService.setRoomEnabled).toHaveBeenCalledWith(
-      'token-abc',
+      'T1',
       false,
     );
   });
 
   it('retorna { success: true, enabled, message }', async () => {
-    const resultTrue = await useCase.execute('token-abc', true);
+    const resultTrue = await websocket.execute('T1', true);
     expect(resultTrue.success).toBe(true);
     expect(resultTrue.enabled).toBe(true);
     expect(typeof resultTrue.message).toBe('string');
 
-    const resultFalse = await useCase.execute('token-abc', false);
+    const resultFalse = await websocket.execute('T1', false);
     expect(resultFalse.success).toBe(true);
     expect(resultFalse.enabled).toBe(false);
   });

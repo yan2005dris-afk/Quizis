@@ -1,9 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { SendMessageUseCase } from './send-message.use-case';
-import { ChatCacheService } from 'src/juego/websockets/cache/chat-cache.service';
+import { SendMessageWebsocket } from './send-message.websocket';
+import { ChatCacheService } from '../cache/chat-cache.service';
 
-describe('SendMessageUseCase', () => {
-  let useCase: SendMessageUseCase;
+describe('SendMessageWebsocket', () => {
+  let websocket: SendMessageWebsocket;
 
   const mockChatCache = {
     addMessage: jest.fn(),
@@ -19,18 +19,18 @@ describe('SendMessageUseCase', () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
-        SendMessageUseCase,
+        SendMessageWebsocket,
         { provide: ChatCacheService, useValue: mockChatCache },
       ],
     }).compile();
 
-    useCase = module.get<SendMessageUseCase>(SendMessageUseCase);
+    websocket = module.get<SendMessageWebsocket>(SendMessageWebsocket);
     jest.clearAllMocks();
     mockChatCache.addMessage.mockResolvedValue([]);
   });
 
   it('mensaje tipo "mensaje" → llama addMessage con tipo correcto', async () => {
-    await useCase.execute({ ...basePayload, tipo: 'mensaje' });
+    await websocket.execute({ ...basePayload, tipo: 'mensaje' });
 
     expect(mockChatCache.addMessage).toHaveBeenCalledWith(
       'token-abc',
@@ -39,7 +39,7 @@ describe('SendMessageUseCase', () => {
   });
 
   it('mensaje tipo "sugerencia" → llama addMessage con tipo sugerencia', async () => {
-    await useCase.execute({ ...basePayload, tipo: 'sugerencia' });
+    await websocket.execute({ ...basePayload, tipo: 'sugerencia' });
 
     expect(mockChatCache.addMessage).toHaveBeenCalledWith(
       'token-abc',
@@ -49,7 +49,7 @@ describe('SendMessageUseCase', () => {
 
   it('mensaje incluye: usuario, texto, timestamp y tipo', async () => {
     const before = Date.now();
-    await useCase.execute(basePayload);
+    await websocket.execute(basePayload);
     const after = Date.now();
 
     const [[, message]] = mockChatCache.addMessage.mock.calls;
@@ -66,14 +66,14 @@ describe('SendMessageUseCase', () => {
     ];
     mockChatCache.addMessage.mockResolvedValue(msgs);
 
-    const result = await useCase.execute(basePayload);
+    const result = await websocket.execute(basePayload);
 
     expect(result).toEqual(msgs);
   });
 
   it('texto largo → almacenado completo (log trunca, storage no)', async () => {
     const largoTexto = 'X'.repeat(500);
-    await useCase.execute({ ...basePayload, texto: largoTexto });
+    await websocket.execute({ ...basePayload, texto: largoTexto });
 
     expect(mockChatCache.addMessage).toHaveBeenCalledWith(
       'token-abc',
@@ -82,7 +82,7 @@ describe('SendMessageUseCase', () => {
   });
 
   it('texto vacío → almacenado sin error', async () => {
-    await useCase.execute({ ...basePayload, texto: '' });
+    await websocket.execute({ ...basePayload, texto: '' });
 
     expect(mockChatCache.addMessage).toHaveBeenCalledWith(
       'token-abc',

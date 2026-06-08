@@ -6,6 +6,7 @@ import { SelectRandomConsultantUseCase } from './use-cases/select-random-consult
 import { GetPublicVoteResultsUseCase } from './use-cases/get-public-vote-results.use-case';
 import { EliminateOptions5050UseCase } from './use-cases/eliminate-options-5050.use-case';
 import { PrismaService } from '../../infrastructure/database/prisma/prisma.service';
+import { HelperCacheService } from './cache/helper-cache.service';
 
 describe('ComodinesService', () => {
   let service: ComodinesService;
@@ -21,6 +22,11 @@ describe('ComodinesService', () => {
   const mockEventEmitter = { emit: jest.fn() };
   const mockPrisma = {
     preguntas: { findUnique: jest.fn() },
+  };
+  const mockHelperCacheService = {
+    setActiveHelper: jest.fn(),
+    getActiveHelper: jest.fn(),
+    clearHelper: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -45,6 +51,7 @@ describe('ComodinesService', () => {
         },
         { provide: EventEmitter2, useValue: mockEventEmitter },
         { provide: PrismaService, useValue: mockPrisma },
+        { provide: HelperCacheService, useValue: mockHelperCacheService },
       ],
     }).compile();
 

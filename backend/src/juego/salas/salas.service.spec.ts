@@ -18,6 +18,8 @@ import { UpdateParticipantRoleUseCase } from './use-cases/update-participant-rol
 import { GetParticipantsWithRolesUseCase } from './use-cases/get-participants-with-roles.use-case';
 import { RestartRoundUseCase } from './use-cases/restart-round.use-case';
 import { ReactivateRoomUseCase } from './use-cases/reactivate-room.use-case';
+import { ParticipantsCacheService } from './cache/participants-cache.service';
+import { RoomStateCacheService } from './cache/room-state-cache.service';
 import { EstadoSala } from './dto/update-estado-sala.dto';
 
 describe('SalasService', () => {
@@ -92,6 +94,8 @@ describe('SalasService', () => {
   const mockReactivateRoomUseCase = {
     execute: jest.fn(),
   };
+  const mockParticipantsCacheService = {};
+  const mockRoomStateCacheService = {};
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -157,6 +161,14 @@ describe('SalasService', () => {
         {
           provide: ReactivateRoomUseCase,
           useValue: mockReactivateRoomUseCase,
+        },
+        {
+          provide: ParticipantsCacheService,
+          useValue: mockParticipantsCacheService,
+        },
+        {
+          provide: RoomStateCacheService,
+          useValue: mockRoomStateCacheService,
         },
       ],
     }).compile();

@@ -122,16 +122,18 @@ export class ParticipantsCacheService {
     const key = `online:${tokenCompartido}`;
     const participants = new Set<string>();
 
-    const memCounters = this.counterMemory.get(key);
-    if (memCounters) {
-      for (const [nickname, count] of memCounters) {
+    if (this.redisService.getClient()) {
+      const redisCounters = await this.redisReadCounters(key);
+      for (const [nickname, count] of redisCounters) {
         if (count > 0) participants.add(nickname);
       }
-    }
-
-    const redisCounters = await this.redisReadCounters(key);
-    for (const [nickname, count] of redisCounters) {
-      if (count > 0) participants.add(nickname);
+    } else {
+      const memCounters = this.counterMemory.get(key);
+      if (memCounters) {
+        for (const [nickname, count] of memCounters) {
+          if (count > 0) participants.add(nickname);
+        }
+      }
     }
 
     return Array.from(participants);

@@ -2,8 +2,8 @@ import { Injectable, Logger } from '@nestjs/common';
 import { RoomStateCacheService } from '../../salas/cache/room-state-cache.service';
 
 @Injectable()
-export class ToggleRoomEnabledUseCase {
-  private readonly logger = new Logger(ToggleRoomEnabledUseCase.name);
+export class ToggleRoomEnabledWebsocket {
+  private readonly logger = new Logger(ToggleRoomEnabledWebsocket.name);
 
   constructor(private readonly cacheService: RoomStateCacheService) {}
 

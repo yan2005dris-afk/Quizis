@@ -3,8 +3,8 @@ import { ConfigService } from '@nestjs/config';
 import { ParticipantsCacheService } from '../../salas/cache/participants-cache.service';
 
 @Injectable()
-export class ValidateVoteUniquenessUseCase {
-  private readonly logger = new Logger(ValidateVoteUniquenessUseCase.name);
+export class ValidateVoteUniquenessWebsocket {
+  private readonly logger = new Logger(ValidateVoteUniquenessWebsocket.name);
 
   constructor(
     private readonly cacheService: ParticipantsCacheService,

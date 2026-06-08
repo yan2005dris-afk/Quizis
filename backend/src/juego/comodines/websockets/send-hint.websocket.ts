@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../../../infrastructure/database/prisma/prisma.service';
-import { HelperCacheService } from '../../comodines/cache/helper-cache.service';
+import { HelperCacheService } from '../cache/helper-cache.service';
 
 export interface SendHintPayload {
   tokenCompartido: string;
@@ -9,8 +9,8 @@ export interface SendHintPayload {
 }
 
 @Injectable()
-export class SendHintUseCase {
-  private readonly logger = new Logger(SendHintUseCase.name);
+export class SendHintWebsocket {
+  private readonly logger = new Logger(SendHintWebsocket.name);
 
   constructor(
     private readonly prisma: PrismaService,

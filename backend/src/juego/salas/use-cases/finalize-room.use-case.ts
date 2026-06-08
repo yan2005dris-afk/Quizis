@@ -7,7 +7,7 @@ import {
 import { PrismaService } from '../../../infrastructure/database/prisma/prisma.service';
 import { ParticipantsCacheService } from '../cache/participants-cache.service';
 import { RoomStateCacheService } from '../cache/room-state-cache.service';
-import { ChatCacheService } from '../../websockets/cache/chat-cache.service';
+import { ChatCacheService } from '../../chat/cache/chat-cache.service';
 import { EstadoSala } from '../dto/update-estado-sala.dto';
 
 @Injectable()
