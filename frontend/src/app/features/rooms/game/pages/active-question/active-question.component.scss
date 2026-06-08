@@ -219,16 +219,14 @@ color: var(--color-podium-silver);
 
 /* Estados Dinámicos del Servidor */
 .option-item--selected {
-  border-color: var(--color-info);
-  background-color: var(--color-info-bg);
-
-  /*Animacion agregada*/
+  border-color: var(--color-success);
+  background-color: color-mix(in srgb, var(--color-success) 12%, white);
   transform: translateY(-1px);
   box-shadow: var(--shadow-md);
   animation: blinkSelect 0.8s infinite;
 
   .option-item__letter {
-    background-color: var(--color-info);
+    background-color: var(--color-success);
     color: var(--color-surface);
   }
 }
@@ -288,12 +286,12 @@ color: var(--color-podium-silver);
 
 /* Pre-seleccionado (antes de confirmar) */
 .option-item--pre-selected {
-  border-color: var(--color-info);
-  background-color: var(--color-info-bg);
-  box-shadow: 0 0 0 2px var(--color-info-bg);
+  border-color: var(--color-success);
+  background-color: color-mix(in srgb, var(--color-success) 8%, white);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-success) 12%, transparent);
 
   .option-item__letter {
-    background-color: var(--color-info);
+    background-color: var(--color-success);
     color: var(--color-surface);
   }
 }
