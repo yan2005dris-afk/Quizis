@@ -1,5 +1,5 @@
 import { Controller, Post, Get, Body, Param, UseGuards } from '@nestjs/common';
-import { JwtAuthGuard } from 'src/identity/auth/guards/jwt-auth.guard';
+import { JwtAuthGuard } from 'src/identity/auth/infrastructure/guards/jwt-auth.guard';
 import { ReportesService } from './reportes.service';
 import { GenerateReportDto } from './dtos/generate-report.dto';
 

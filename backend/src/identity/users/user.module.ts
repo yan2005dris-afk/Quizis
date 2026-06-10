@@ -1,13 +1,20 @@
 import { Module } from '@nestjs/common';
-import { UserService } from './user.service';
-import { UserController } from './user.controller';
-import { CreateUserUseCase } from './use-cases/create-user.use-case';
-import { GetEffectivePermissionsUseCase } from './use-cases/get-effective-permissions.use-case';
+import { UserService } from './application/user.service';
+import { UserController } from './interfaces/user.controller';
+import { CreateUserUseCase } from './application/use-cases/create-user.use-case';
+import { GetEffectivePermissionsUseCase } from './application/use-cases/get-effective-permissions.use-case';
+import { UserApplicationService } from './application/user-application.service';
+import { IdentityInfrastructureModule } from '../infrastructure/identity-infrastructure.module';
 
 @Module({
-  imports: [],
+  imports: [IdentityInfrastructureModule],
   controllers: [UserController],
-  providers: [UserService, CreateUserUseCase, GetEffectivePermissionsUseCase],
-  exports: [UserService, CreateUserUseCase, GetEffectivePermissionsUseCase],
+  providers: [
+    UserService,
+    UserApplicationService,
+    CreateUserUseCase,
+    GetEffectivePermissionsUseCase,
+  ],
+  exports: [UserService, UserApplicationService, CreateUserUseCase, GetEffectivePermissionsUseCase],
 })
 export class UserModule {}

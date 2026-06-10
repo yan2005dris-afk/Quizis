@@ -13,7 +13,6 @@ import { VotosModule } from './juego/votos/votos.module';
 import { SalasModule } from './juego/salas/salas.module';
 import { ReportesModule } from './juego/reportes/reportes.module';
 import { RondasModule } from './juego/rondas/rondas.module';
-import { ComodinPublicoModule } from './comodines/comodin-publico.module';
 
 @Module({
   imports: [
@@ -34,7 +33,6 @@ import { ComodinPublicoModule } from './comodines/comodin-publico.module';
     SalasModule,
     ReportesModule,
     RondasModule,
-    ComodinPublicoModule,
   ],
   controllers: [],
   providers: [],

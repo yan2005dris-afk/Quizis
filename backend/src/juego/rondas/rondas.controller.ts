@@ -1,7 +1,7 @@
 import { Controller, Post, Body, UseGuards } from '@nestjs/common';
 import { RondasService } from './rondas.service';
 import { CreateRondaDto } from './dto/create-ronda.dto';
-import { JwtAuthGuard } from '../../identity/auth/guards/jwt-auth.guard';
+import { JwtAuthGuard } from '../../identity/auth/infrastructure/guards/jwt-auth.guard';
 import { PermissionsGuard } from '../../infrastructure/common/guards/permissions.guard';
 import { RequiredPermission } from '../../infrastructure/common/decorators/require-permission.decorator';
 import {

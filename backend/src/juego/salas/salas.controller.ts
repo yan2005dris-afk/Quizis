@@ -12,7 +12,7 @@ import { SalasService } from './salas.service';
 import { CreateSalaDto } from './dto/create-sala.dto';
 import { UpdateEstadoSalaDto } from './dto/update-estado-sala.dto';
 import { UpdateConfiguracionSalaDto } from './dto/update-configuracion-sala.dto';
-import { JwtAuthGuard } from '../../identity/auth/guards/jwt-auth.guard';
+import { JwtAuthGuard } from '../../identity/auth/infrastructure/guards/jwt-auth.guard';
 import { PermissionsGuard } from '../../infrastructure/common/guards/permissions.guard';
 import { RequiredPermission } from '../../infrastructure/common/decorators/require-permission.decorator';
 import { AuthUserId } from '../../infrastructure/common/decorators/auth-user-id.decorator';

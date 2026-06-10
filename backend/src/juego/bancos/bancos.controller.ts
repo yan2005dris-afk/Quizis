@@ -20,7 +20,7 @@ import {
   ApiParam,
   ApiBody,
 } from '@nestjs/swagger';
-import { JwtAuthGuard } from '../../identity/auth/guards/jwt-auth.guard';
+import { JwtAuthGuard } from '../../identity/auth/infrastructure/guards/jwt-auth.guard';
 import { PermissionsGuard } from '../../infrastructure/common/guards/permissions.guard';
 import { RequiredPermission } from '../../infrastructure/common/decorators/require-permission.decorator';
 import { AuthUserId } from '../../infrastructure/common/decorators/auth-user-id.decorator';
