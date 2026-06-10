@@ -23,7 +23,7 @@ import {
   ComodinSala,
   SalaDetalle,
   EstadoSala,
-} from '../../../../../core/services/salas.service';
+} from '../../../services/salas.service';
 import { ToastService } from '../../../../../core/services/toast.service';
 import { ConfirmModalComponent } from '../../../../../shared/ui/confirm-modal/confirm-modal.component';
 import { ChatBoxComponent } from '../../shared/chat-box/chat-box.component';

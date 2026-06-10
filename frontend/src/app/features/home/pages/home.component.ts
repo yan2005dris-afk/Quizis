@@ -3,8 +3,8 @@ import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 
 import { AuthService } from '../../../core/services/auth.service';
-import { BancosService } from '../../../core/services/bancos.service';
-import { SalasService } from '../../../core/services/salas.service';
+import { BancosService } from '../../question-bank/services/bancos.service';
+import { SalasService } from '../../rooms/services/salas.service';
 
 @Component({
   selector: 'app-home',

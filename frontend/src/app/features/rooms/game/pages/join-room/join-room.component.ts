@@ -5,7 +5,7 @@ import { FormsModule } from '@angular/forms';
 
 import { LucideAngularModule, Users, Gamepad2 } from 'lucide-angular';
 import { AlertComponent, ButtonComponent, InputComponent } from '../../../../../shared/ui';
-import { SalasService } from '../../../../../core/services/salas.service';
+import { SalasService } from '../../../services/salas.service';
 import { ToastService } from '../../../../../core/services/toast.service';
 
 @Component({

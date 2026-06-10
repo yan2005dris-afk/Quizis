@@ -20,7 +20,7 @@ import {
   Filter,
   ArrowUpDown,
 } from 'lucide-angular';
-import { ReportDataDto, ReportesService } from '../../../../core/services/reportes.service';
+import { ReportDataDto, ReportesService } from '../../services/reportes.service';
 
 type SortField = 'nickname' | 'correctas' | 'incorrectas' | 'porcentaje' | 'comodines';
 type SortDir = 'asc' | 'desc';

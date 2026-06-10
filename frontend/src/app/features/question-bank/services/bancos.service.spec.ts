@@ -4,7 +4,7 @@ import { provideHttpClientTesting, HttpTestingController } from '@angular/common
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 
 import { BancosService } from './bancos.service';
-import { environment } from '../../../environments/environment';
+import { environment } from '../../../../environments/environment';
 
 describe('BancosService', () => {
   let service: BancosService;

@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
 import { CommonModule, TitleCasePipe } from '@angular/common';
 import { LucideAngularModule, Loader2 } from 'lucide-angular';
-import { ComodinSala } from '../../../core/services/salas.service';
+import { ComodinSala } from '../../../core/models/comodin.model';
 
 @Component({
   selector: 'app-wildcards-panel',

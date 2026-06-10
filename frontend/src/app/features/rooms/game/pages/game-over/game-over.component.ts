@@ -20,7 +20,7 @@ import {
   BarChart2,
   Play,
 } from 'lucide-angular';
-import { ReportesService } from '../../../../../core/services/reportes.service';
+import { ReportesService } from '../../../../reports/services/reportes.service';
 
 export interface GameOverParticipant {
   nickname: string;

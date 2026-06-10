@@ -1,10 +1,13 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { environment } from '../../../environments/environment';
-import type { EstadoSala } from '../constants/estados.constants';
-import { ESTADOS_SALA } from '../constants/estados.constants';
-import type { PreguntaHistorial } from './game-socket.service';
+import { environment } from '../../../../environments/environment';
+import type { EstadoSala } from '../../../core/constants/estados.constants';
+import { ESTADOS_SALA } from '../../../core/constants/estados.constants';
+import type { PreguntaHistorial } from '../../../core/services/game-socket.service';
+import { ComodinSala } from '../../../core/models/comodin.model';
+
+export type { ComodinSala };
 
 /** Tipo para el listado de salas (backend mapea los valores) */
 export type EstadoSalaListado = 'borrador' | 'esperando' | 'jugando' | 'terminado';
@@ -42,14 +45,6 @@ export interface SalaDetalle {
     preguntaActual?: PreguntaHistorial | null;
     historialPreguntas: PreguntaHistorial[];
   } | null;
-}
-
-export interface ComodinSala {
-  comodinId: number;
-  nombre: string;
-  descripcion: string;
-  icono: string;
-  activo: boolean;
 }
 
 export interface CreateSalaPayload {

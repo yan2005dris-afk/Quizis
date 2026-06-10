@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { LucideAngularModule, Plus, Database } from 'lucide-angular';
-import { BancosService } from '../../../../core/services/bancos.service';
+import { BancosService } from '../../services/bancos.service';
 import { ButtonComponent, AlertComponent } from '../../../../shared/ui';
 
 @Component({
