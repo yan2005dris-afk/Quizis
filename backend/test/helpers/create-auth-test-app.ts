@@ -3,11 +3,11 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { ConfigModule } from '@nestjs/config';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import cookieParser from 'cookie-parser';
-import { DatabaseModule } from 'src/infrastructure/database/prisma/prisma.module';
+import { DatabaseModule } from 'src/core/database/prisma/prisma.module';
 import { AuthModule } from 'src/identity/auth/auth.module';
-import { GlobalExceptionFilter } from 'src/infrastructure/common/filters/global-exception.filter';
-import { BigIntInterceptor } from 'src/infrastructure/common/interceptors/bigint.interceptor';
-import { DecimalToNumberInterceptor } from 'src/infrastructure/common/interceptors/decimal-to-number.interceptor';
+import { GlobalExceptionFilter } from 'src/core/common/filters/global-exception.filter';
+import { BigIntInterceptor } from 'src/core/common/interceptors/bigint.interceptor';
+import { DecimalToNumberInterceptor } from 'src/core/common/interceptors/decimal-to-number.interceptor';
 
 type CookieParserMiddleware = (
   req: unknown,

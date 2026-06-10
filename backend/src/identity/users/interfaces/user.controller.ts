@@ -15,9 +15,9 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UserService } from '../application/user.service';
 import { JwtAuthGuard } from 'src/identity/auth/infrastructure/guards/jwt-auth.guard';
-import { AuthUserId } from 'src/infrastructure/common/decorators/auth-user-id.decorator';
-import { PermissionsGuard } from 'src/infrastructure/common/guards/permissions.guard';
-import { RequiredPermission } from 'src/infrastructure/common/decorators/require-permission.decorator';
+import { AuthUserId } from 'src/core/common/decorators/auth-user-id.decorator';
+import { PermissionsGuard } from 'src/core/common/guards/permissions.guard';
+import { RequiredPermission } from 'src/core/common/decorators/require-permission.decorator';
 import {
   ApiBearerAuth,
   ApiTags,
@@ -33,9 +33,9 @@ import {
   AuthPermissionEntity,
   UserDetailEntity,
 } from '../domain/entities/user.entity';
-import { PaginationDto } from 'src/infrastructure/common/dtos/pagination.dto';
-import { ApiPaginatedResponse } from 'src/infrastructure/common/decorators/api-paginated-response.decorator';
-import { PaginatedResult } from 'src/infrastructure/common/types/paginated-result.type';
+import { PaginationDto } from 'src/core/common/dtos/pagination.dto';
+import { ApiPaginatedResponse } from 'src/core/common/decorators/api-paginated-response.decorator';
+import { PaginatedResult } from 'src/core/common/types/paginated-result.type';
 
 @ApiTags('users')
 @ApiBearerAuth()

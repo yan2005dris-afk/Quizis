@@ -5,10 +5,10 @@ import {
 } from '@nestjs/common';
 import { UserRepository } from '../domain/repositories/user.repository';
 import { RoleRepository } from '../../roles/domain/repositories/role.repository';
-import { ValidationUtil } from 'src/infrastructure/common/utils/validation.util';
-import { PhoneUtil } from 'src/infrastructure/common/utils/phone.util';
-import type { PaginatedResult } from 'src/infrastructure/common/types/paginated-result.type';
-import type { PaginationDto } from 'src/infrastructure/common/dtos/pagination.dto';
+import { ValidationUtil } from 'src/core/common/utils/validation.util';
+import { PhoneUtil } from 'src/core/common/utils/phone.util';
+import type { PaginatedResult } from 'src/core/common/types/paginated-result.type';
+import type { PaginationDto } from 'src/core/common/dtos/pagination.dto';
 import type {
   UserWithPermissionsResponse,
   UserWithRoleResponse,

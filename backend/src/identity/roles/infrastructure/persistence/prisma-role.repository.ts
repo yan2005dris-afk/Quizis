@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { PrismaService } from '../../../../infrastructure/database/prisma/prisma.service';
+import { PrismaService } from '../../../../core/database/prisma/prisma.service';
 import { RoleRepository } from '../../domain/repositories/role.repository';
 import type {
   RoleRecord,

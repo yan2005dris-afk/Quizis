@@ -1,4 +1,4 @@
-import { PrismaService } from 'src/infrastructure/database/prisma/prisma.service';
+import { PrismaService } from 'src/core/database/prisma/prisma.service';
 import * as bcrypt from 'bcryptjs';
 import { randomUUID } from 'crypto';
 

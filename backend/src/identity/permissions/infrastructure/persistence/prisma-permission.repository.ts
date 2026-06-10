@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from '../../../../infrastructure/database/prisma/prisma.service';
+import { PrismaService } from '../../../../core/database/prisma/prisma.service';
 import { PermissionRepository } from '../../domain/repositories/permission.repository';
 import type {
   PermissionRecord,

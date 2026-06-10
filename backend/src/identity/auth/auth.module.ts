@@ -8,7 +8,7 @@ import { JwtStrategy } from './infrastructure/strategies/jwt.strategy';
 import { JwtModule } from '@nestjs/jwt';
 import { RefreshTokenStrategy } from './infrastructure/strategies/refresh.strategy';
 import { JwtAuthGuard } from './infrastructure/guards/jwt-auth.guard';
-import { PermissionsGuard } from '../../infrastructure/common/guards/permissions.guard';
+import { PermissionsGuard } from '../../core/common/guards/permissions.guard';
 import { RegisterUseCase } from './application/use-cases/register.use-case';
 import { LogoutUseCase } from './application/use-cases/logout.use-case';
 import { LoginUseCase } from './application/use-cases/login.use-case';

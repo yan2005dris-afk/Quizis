@@ -5,8 +5,8 @@ import {
 } from '@nestjs/common';
 import * as bcrypt from 'bcryptjs';
 import { CreateUserDto } from '../../interfaces/dto/create-user.dto';
-import { ValidationUtil } from 'src/infrastructure/common/utils/validation.util';
-import { PhoneUtil } from 'src/infrastructure/common/utils/phone.util';
+import { ValidationUtil } from 'src/core/common/utils/validation.util';
+import { PhoneUtil } from 'src/core/common/utils/phone.util';
 import {
   UserRepository,
 } from '../../domain/repositories/user.repository';

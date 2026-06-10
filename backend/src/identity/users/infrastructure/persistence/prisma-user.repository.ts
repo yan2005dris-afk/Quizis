@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from '../../../../infrastructure/database/prisma/prisma.service';
+import { PrismaService } from '../../../../core/database/prisma/prisma.service';
 import { UserRepository } from '../../domain/repositories/user.repository';
 import type {
   UserRecord,
@@ -7,7 +7,7 @@ import type {
   UpdateUserData,
   PaginatedResult,
 } from '../../domain/repositories/user.repository';
-import { paginate } from '../../../../infrastructure/common/utils/pagination.util';
+import { paginate } from '../../../../core/common/utils/pagination.util';
 
 const USER_WITH_ROLE_SELECT = {
   usuarioId: true,

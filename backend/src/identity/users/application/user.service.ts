@@ -7,8 +7,8 @@ import { CreateUserUseCase } from './use-cases/create-user.use-case';
 import { GetEffectivePermissionsUseCase } from './use-cases/get-effective-permissions.use-case';
 import { CreateUserDto } from '../interfaces/dto/create-user.dto';
 import { UpdateUserDto } from '../interfaces/dto/update-user.dto';
-import type { PaginatedResult } from 'src/infrastructure/common/types/paginated-result.type';
-import type { PaginationDto } from 'src/infrastructure/common/dtos/pagination.dto';
+import type { PaginatedResult } from 'src/core/common/types/paginated-result.type';
+import type { PaginationDto } from 'src/core/common/dtos/pagination.dto';
 import type {
   UserWithPermissionsResponse,
   UserWithRoleResponse,

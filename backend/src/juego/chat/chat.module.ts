@@ -1,8 +1,8 @@
 import { Module } from '@nestjs/common';
-import { ChatService } from './chat.service';
-import { SendMessageWebsocket } from './websockets/send-message.websocket';
-import { ChatCacheService } from './cache/chat-cache.service';
-import { CacheModule } from '../../infrastructure/cache/cache.module';
+import { ChatService } from './application/chat.service';
+import { SendMessageWebsocket } from './infrastructure/websockets/send-message.websocket';
+import { ChatCacheService } from './infrastructure/cache/chat-cache.service';
+import { CacheModule } from '../../core/cache/cache.module';
 
 @Module({
   imports: [CacheModule],

@@ -12,8 +12,8 @@ import { RolesService } from '../application/roles.service';
 import { CreateRoleDto } from './dto/create-role.dto';
 import { UpdateRoleDto } from './dto/update-role.dto';
 import { JwtAuthGuard } from 'src/identity/auth/infrastructure/guards/jwt-auth.guard';
-import { PermissionsGuard } from 'src/infrastructure/common/guards/permissions.guard';
-import { RequiredPermission } from 'src/infrastructure/common/decorators/require-permission.decorator';
+import { PermissionsGuard } from 'src/core/common/guards/permissions.guard';
+import { RequiredPermission } from 'src/core/common/decorators/require-permission.decorator';
 import {
   ApiBearerAuth,
   ApiTags,

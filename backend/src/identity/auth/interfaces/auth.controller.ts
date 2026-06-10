@@ -4,8 +4,8 @@ import { LoginUserDto } from './dto/login-user.dto';
 import { RegisterDto } from './dto/register.dto';
 import { JwtRefreshGuard } from '../infrastructure/guards/jwt-refresh.guard';
 import { JwtAuthGuard } from '../infrastructure/guards/jwt-auth.guard';
-import { PermissionsGuard } from '../../../infrastructure/common/guards/permissions.guard';
-import { RequiredPermission } from '../../../infrastructure/common/decorators/require-permission.decorator';
+import { PermissionsGuard } from '../../../core/common/guards/permissions.guard';
+import { RequiredPermission } from '../../../core/common/decorators/require-permission.decorator';
 import {
   ApiTags,
   ApiBearerAuth,
@@ -19,9 +19,9 @@ import type {
   LoginRequest,
   RefreshRequest,
 } from './types/auth-controller.types';
-import { REFRESH_TOKEN_MAX_AGE_MS } from 'src/infrastructure/config/app.constants';
-import { CookieValue } from 'src/infrastructure/common/decorators/cookie-value.decorator';
-import { RequiredStringPipe } from 'src/infrastructure/common/pipes/required-string.pipe';
+import { REFRESH_TOKEN_MAX_AGE_MS } from 'src/core/config/app.constants';
+import { CookieValue } from 'src/core/common/decorators/cookie-value.decorator';
+import { RequiredStringPipe } from 'src/core/common/pipes/required-string.pipe';
 import { ThrottlerGuard } from '@nestjs/throttler';
 
 @ApiTags('auth')

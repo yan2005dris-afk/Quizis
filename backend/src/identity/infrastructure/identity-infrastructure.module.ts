@@ -1,5 +1,5 @@
 import { Module, Global } from '@nestjs/common';
-import { DatabaseModule } from '../../infrastructure/database/prisma/prisma.module';
+import { DatabaseModule } from '../../core/database/prisma/prisma.module';
 import { UserRepository } from '../users/domain/repositories/user.repository';
 import { SessionRepository } from '../sessions/domain/repositories/session.repository';
 import { RoleRepository } from '../roles/domain/repositories/role.repository';
