@@ -1,62 +1,76 @@
+# syntax=docker/dockerfile:1
+
 # =============================================================================
-# Backend Dockerfile — NestJS + Prisma (multi-stage)
-# Build context: project root (.) — pnpm workspace needs pnpm-workspace.yaml
+# Backend Dockerfile — NestJS + Prisma (Optimized with pnpm)
+# Build context: project root (.)
 # =============================================================================
 
-# Stage 1: Install all dependencies (deps)
+# Stage 1: Base image with pnpm setup
 # -------------------------------------------------------------------------
-FROM node:22-alpine AS deps
-RUN corepack enable && corepack prepare pnpm@latest --activate
+FROM node:22-alpine AS base
+
+ENV PNPM_HOME="/pnpm"
+ENV PATH="$PNPM_HOME:$PATH"
+RUN corepack enable
 
 WORKDIR /app
 
-# Copy workspace config files — needed for pnpm install --frozen-lockfile
-COPY pnpm-workspace.yaml package.json pnpm-lock.yaml .npmrc ./
+# Stage 2: Install dependencies
+# -------------------------------------------------------------------------
+FROM base AS deps
+
+# Copy workspace configuration
+COPY pnpm-lock.yaml pnpm-workspace.yaml package.json .npmrc ./
+# Copy backend package.json
 COPY backend/package.json ./backend/
 
-# Install ALL dependencies (dev + prod) for the backend workspace package
-RUN pnpm install --frozen-lockfile
+# Install dependencies using cache mount for pnpm store
+RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --frozen-lockfile
 
-# Stage 2: Build the application
+# Stage 3: Build the application
 # -------------------------------------------------------------------------
-FROM node:22-alpine AS build
-RUN corepack enable && corepack prepare pnpm@latest --activate
+FROM base AS build
 
-WORKDIR /app
-
-# Reuse installed node_modules from deps stage
+# Copy node_modules from deps stage
 COPY --from=deps /app/node_modules ./node_modules
 COPY --from=deps /app/backend/node_modules ./backend/node_modules
 
-# Copy workspace configs (needed for pnpm commands)
-COPY package.json pnpm-workspace.yaml ./
-
-# Copy backend source code, configs, and Prisma schema
+# Copy workspace configuration and backend source
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./
 COPY backend/ ./backend/
 
 # Generate Prisma client and compile NestJS
-RUN cd backend && pnpm exec prisma generate && pnpm --filter backend run build
+RUN pnpm --filter backend exec prisma generate && \
+    pnpm --filter backend run build
 
-# Stage 3: Production runtime
+# Stage 4: Production pruned dependencies
+# -------------------------------------------------------------------------
+FROM base AS deploy
+
+# Copy the entire workspace to allow pnpm to resolve internal links (if any)
+COPY --from=build /app ./
+
+# Use pnpm deploy to create a self-contained production-ready directory
+# This prunes devDependencies and handles workspace logic
+RUN pnpm --filter backend --prod --legacy deploy /pruned
+
+# Stage 5: Production runtime
 # -------------------------------------------------------------------------
 FROM node:22-alpine AS production
 
-RUN corepack enable && corepack prepare pnpm@latest --activate
+WORKDIR /app
 RUN apk add --no-cache curl
 
-WORKDIR /app
+# Copy the pruned workspace from deploy stage
+COPY --from=deploy /pruned ./
 
-# Copy production dependencies (installed with frozen lockfile)
-COPY pnpm-workspace.yaml package.json pnpm-lock.yaml .npmrc ./
-COPY backend/package.json ./backend/
-RUN pnpm install --frozen-lockfile
-
-# Copy built artifacts from build stage
-COPY --from=build /app/backend/dist ./backend/dist
-COPY --from=build /app/backend/prisma ./backend/prisma
-COPY --from=build /app/backend/prisma.config.ts ./backend/prisma.config.ts
+# Copy build artifacts (pnpm deploy doesn't copy the dist folder by default)
+COPY --from=build /app/backend/dist ./dist
+COPY --from=build /app/backend/prisma ./prisma
+COPY --from=build /app/backend/prisma.config.ts ./prisma.config.ts
 
 EXPOSE 3000
 
-# Start: apply pending migrations, then launch the NestJS server
-CMD cd backend && pnpm exec prisma migrate deploy && node dist/src/main.js
+# Start: generate client, apply pending migrations, seed database, then launch the NestJS server
+# Note: Ensure 'prisma' and 'tsx' are in dependencies (not devDependencies) if you run these here
+CMD ["sh", "-c", "npx prisma generate && npx prisma migrate deploy && npx prisma db seed && node dist/src/main.js"]

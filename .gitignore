@@ -56,3 +56,7 @@ skills-lock.json
 
 # Docker overrides locales (GPU, configs personales) — no compartir al repo
 docker-compose.override.yml
+# Local AI runtime state
+.atl/
+/.claude
+/.junie
