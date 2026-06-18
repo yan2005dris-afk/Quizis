@@ -89,6 +89,23 @@ services:
     networks:
       - quizis-network
 
+  # ---------------------------------------------------------------------------
+  # Cloudflare Tunnel — expose Nginx (:80) via Cloudflare Zero Trust
+  # 1. Create a tunnel in Cloudflare Zero Trust dashboard
+  # 2. Set TUNNEL_TOKEN in .env (or your preferred env source)
+  # 3. In the tunnel's Public Hostname config, point to quizis-frontend:80
+  # More: https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/
+  # ---------------------------------------------------------------------------
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: quizis-cloudflared
+    restart: unless-stopped
+    command: tunnel --no-autoupdate run
+    environment:
+      - TUNNEL_TOKEN=${TUNNEL_TOKEN}
+    networks:
+      - quizis-network
+
 # ---------------------------------------------------------------------------
 # Persistent storage for stateful services
 # ---------------------------------------------------------------------------
