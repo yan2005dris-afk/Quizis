@@ -11,7 +11,7 @@ FROM node:22-alpine AS base
 
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
-RUN corepack enable
+RUN corepack enable && corepack prepare pnpm@11.1.1 --activate
 
 WORKDIR /app
 
@@ -39,8 +39,9 @@ COPY --from=deps /app/frontend/node_modules ./frontend/node_modules
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./
 COPY frontend/ ./frontend/
 
-# Build Angular app (static output)
-RUN pnpm --filter frontend run build
+# Build Angular app — cache .angular dir so incremental compiler kicks in on rebuilds
+RUN --mount=type=cache,id=angular-build-cache,target=/app/frontend/.angular \
+    pnpm --filter frontend run build
 
 # Stage 4: Nginx production server
 # -------------------------------------------------------------------------
