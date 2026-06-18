@@ -24,8 +24,8 @@ COPY pnpm-lock.yaml pnpm-workspace.yaml package.json .npmrc ./
 # Copy frontend package.json
 COPY frontend/package.json ./frontend/
 
-# Install dependencies using cache mount for pnpm store
-RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --frozen-lockfile
+# Install dependencies
+RUN pnpm install --frozen-lockfile
 
 # Stage 3: Build the application
 # -------------------------------------------------------------------------
@@ -39,9 +39,8 @@ COPY --from=deps /app/frontend/node_modules ./frontend/node_modules
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./
 COPY frontend/ ./frontend/
 
-# Build Angular app — cache .angular dir so incremental compiler kicks in on rebuilds
-RUN --mount=type=cache,id=angular-build-cache,target=/app/frontend/.angular \
-    pnpm --filter frontend run build
+# Build Angular app
+RUN pnpm --filter frontend run build
 
 # Stage 4: Nginx production server
 # -------------------------------------------------------------------------
