@@ -53,6 +53,8 @@ jobs:
       - name: Rebuild and restart services
         env:
           COMPOSE: ${{ steps.compose-cmd.outputs.cmd }}
+          DOCKER_BUILDKIT: 1
+          COMPOSE_DOCKER_CLI_BUILD: 1
         run: |
           $COMPOSE up -d --build --remove-orphans
 
