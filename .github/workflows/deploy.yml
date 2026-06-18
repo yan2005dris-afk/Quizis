@@ -41,18 +41,31 @@ jobs:
             exit 1
           fi
 
-      - name: Rebuild and restart services
+      - name: Detect Docker Compose command
+        id: compose-cmd
         run: |
-          docker compose up -d --build --remove-orphans
+          if command -v docker-compose &>/dev/null; then
+            echo "cmd=docker-compose" >> "$GITHUB_OUTPUT"
+          else
+            echo "cmd=docker compose" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Rebuild and restart services
+        env:
+          COMPOSE: ${{ steps.compose-cmd.outputs.cmd }}
+        run: |
+          $COMPOSE up -d --build --remove-orphans
 
       - name: Health check
+        env:
+          COMPOSE: ${{ steps.compose-cmd.outputs.cmd }}
         run: |
           echo "⏳ Waiting for services to be ready..."
           sleep 10
 
           echo ""
           echo "=== Container Status ==="
-          docker compose ps --status running
+          $COMPOSE ps --status running
 
           echo ""
           echo "=== Health: Frontend (Nginx :80) ==="
