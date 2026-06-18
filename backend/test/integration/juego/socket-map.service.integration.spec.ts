@@ -47,6 +47,20 @@ class StubRedisService {
   }
 }
 
+// ─── Helpers ────────────────────────────────────────────────────────────────
+
+async function waitForRedis(client: Redis, retries = 5, delayMs = 300): Promise<void> {
+  for (let i = 0; i < retries; i++) {
+    try {
+      await client.ping();
+      return;
+    } catch {
+      if (i === retries - 1) throw new Error(`Redis not reachable after ${retries} attempts`);
+      await new Promise<void>((r) => setTimeout(r, delayMs));
+    }
+  }
+}
+
 // ─── Suite ──────────────────────────────────────────────────────────────────
 
 describe('SocketMapService @integration', () => {
@@ -59,8 +73,8 @@ describe('SocketMapService @integration', () => {
 
     client = new Redis({ host, port, connectTimeout: 5000, maxRetriesPerRequest: 0 });
 
-    // Fail fast if Redis is not reachable
-    await client.ping();
+    // Fail fast if Redis is not reachable (retries handle brief startup lag in CI)
+    await waitForRedis(client);
 
     const stub = new StubRedisService(client) as unknown as RedisService;
     service = new SocketMapService(stub);

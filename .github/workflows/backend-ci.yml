@@ -31,6 +31,16 @@ jobs:
           --health-timeout 5s
           --health-retries 5
 
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
+
     # ─── Variables de entorno para todo el job ────────────────────────────────
     env:
       DATABASE_URL: postgresql://admin:root123@localhost:5432/quizis_test
@@ -44,6 +54,8 @@ jobs:
       PORT: 3001
       CORS_ORIGIN: http://localhost:4200
       REDIS_URL: redis://localhost:6379
+      REDIS_HOST: localhost
+      REDIS_PORT: 6379
       OPENAI_API_KEY: test-key
 
     steps:
