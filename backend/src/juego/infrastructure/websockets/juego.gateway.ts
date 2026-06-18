@@ -4,6 +4,7 @@ import {
   SubscribeMessage,
   OnGatewayConnection,
   OnGatewayDisconnect,
+  OnGatewayInit,
   ConnectedSocket,
   MessageBody,
 } from '@nestjs/websockets';
@@ -35,6 +36,12 @@ import type { ConsensusEvaluatedEvent } from '../../../core/common/events/game-e
 import type { VotePayload } from '../../votos/infrastructure/websockets/process-audience-vote.websocket';
 import type { AnswerPayload } from '../../votos/infrastructure/websockets/submit-answer.websocket';
 
+// WebSocket Infrastructure
+import { RoomBroadcasterService } from './room-broadcaster.service';
+import { SocketMapService } from './socket-map.service';
+import { DistributedTimerService } from './distributed-timer.service';
+import { createSocketIoRedisAdapter } from './redis-io-adapter.util';
+
 type ParticipantInfo = { id: string; nombre: string; puntaje: number; rol: string };
 type VoteDistribution = { total: number; [letra: string]: number };
 type ConsensusInput = {
@@ -48,36 +55,27 @@ type ConsensusInput = {
 };
 
 @WebSocketGateway({ cors: { origin: '*' } })
-export class JuegoGateway implements OnGatewayConnection, OnGatewayDisconnect {
+export class JuegoGateway implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
   server!: Server;
 
   private readonly logger = new Logger(JuegoGateway.name);
 
   /**
-   * Mapeo socket.id -> { tokenCompartido, nickname }
-   */
-  private readonly socketMap = new Map<
-    string,
-    { tokenCompartido: string; nickname: string }
-  >();
-
-  /**
-   * Debounce de broadcast: acumula distribución y emite cada 500ms por sala
+   * Debounce de broadcast: acumula distribución y emite cada 500ms por sala.
+   * Intentionally kept in-memory per design decision (cosmetic tradeoff).
    */
   private readonly pendingBroadcasts = new Map<
     string,
     { distribucion: VoteDistribution; timer: NodeJS.Timeout }
   >();
 
-  private readonly timersActivos = new Map<string, NodeJS.Timeout>();
-
   private scheduleBroadcast(tokenCompartido: string, distribucion: VoteDistribution): void {
     const existing = this.pendingBroadcasts.get(tokenCompartido);
     if (existing) clearTimeout(existing.timer);
 
     const timer = setTimeout(() => {
-      this.server.to(tokenCompartido).emit('voto_recibido', distribucion);
+      this.roomBroadcaster.broadcastToRoom(tokenCompartido, 'voto_recibido', distribucion);
       this.pendingBroadcasts.delete(tokenCompartido);
     }, 500);
 
@@ -88,9 +86,7 @@ export class JuegoGateway implements OnGatewayConnection, OnGatewayDisconnect {
     const pending = this.pendingBroadcasts.get(tokenCompartido);
     if (pending) {
       clearTimeout(pending.timer);
-      this.server
-        .to(tokenCompartido)
-        .emit('voto_recibido', pending.distribucion);
+      this.roomBroadcaster.broadcastToRoom(tokenCompartido, 'voto_recibido', pending.distribucion);
       this.pendingBroadcasts.delete(tokenCompartido);
     }
   }
@@ -108,7 +104,55 @@ export class JuegoGateway implements OnGatewayConnection, OnGatewayDisconnect {
     private readonly releaseQuestionWebsocket: ReleaseQuestionWebsocket,
     private readonly activateCallJokerWebsocket: ActivateCallJokerWebsocket,
     private readonly sendHintWebsocket: SendHintWebsocket,
+    private readonly roomBroadcaster: RoomBroadcasterService,
+    private readonly socketMapService: SocketMapService,
+    private readonly distributedTimerService: DistributedTimerService,
   ) {}
+
+  // ─── Lifecycle ─────────────────────────────────────────────────────────────
+
+  afterInit(server: Server): void {
+    // Initialize broadcaster before any client connects
+    this.roomBroadcaster.setServer(server);
+
+    // Attach Redis adapter for cross-instance pub/sub (uses a dedicated client pair)
+    const adapter = createSocketIoRedisAdapter(process.env.REDIS_URL);
+    if (adapter) {
+      server.adapter(adapter);
+      this.logger.log('Redis adapter attached to Socket.IO server');
+    } else {
+      this.logger.log('Running in single-instance mode (no Redis adapter)');
+    }
+  }
+
+  handleConnection(client: Socket) {
+    this.logger.log(`Cliente conectado: ${client.id}`);
+  }
+
+  async handleDisconnect(client: Socket) {
+    const info = await this.socketMapService.get(client.id);
+    if (info) {
+      const result = await this.handleDisconnectWebsocket.execute({
+        ...info,
+        socketId: client.id,
+      });
+      await this.socketMapService.delete(client.id);
+
+      // Stop timer if the room is now empty
+      const remainingInRoom = await this.socketMapService.getRoomSize(info.tokenCompartido);
+      if (remainingInRoom === 0) {
+        await this.distributedTimerService.detenerTimer(info.tokenCompartido);
+      }
+
+      const participantesDb = await this.salasService.getParticipantsWithRoles(
+        info.tokenCompartido,
+        result.participants,
+      );
+      this.roomBroadcaster.broadcastToRoom(result.tokenCompartido, 'participantes', participantesDb);
+    } else {
+      this.logger.log(`Cliente desconectado sin registro previo: ${client.id}`);
+    }
+  }
 
   // ─── Events Listeners ──────────────────────────────────────────────────────
 
@@ -119,7 +163,7 @@ export class JuegoGateway implements OnGatewayConnection, OnGatewayDisconnect {
     explicacion: string;
     tokenCompartido: string;
   }) {
-    this.server.to(payload.tokenCompartido).emit('ia_sugerencia_recibida', {
+    this.roomBroadcaster.broadcastToRoom(payload.tokenCompartido, 'ia_sugerencia_recibida', {
       preguntaId: payload.preguntaId,
       literal: payload.literal,
       explicacion: payload.explicacion,
@@ -131,54 +175,19 @@ export class JuegoGateway implements OnGatewayConnection, OnGatewayDisconnect {
     tokenCompartido: string;
     resultado: any;
   }) {
-    this.server
-      .to(payload.tokenCompartido)
-      .emit('voto_recibido', payload.resultado);
+    this.roomBroadcaster.broadcastToRoom(payload.tokenCompartido, 'voto_recibido', payload.resultado);
   }
 
   @OnEvent(GameEvents.VOTOS.CONSENSO_EVALUADO)
   handleConsensusEvaluated(event: ConsensusEvaluatedEvent) {
-    this.emitConsensusResult(
+    void this.emitConsensusResult(
       event.tokenCompartido,
       event.preguntaId,
       event.result,
     );
   }
 
-  // ─── Lifecycle ─────────────────────────────────────────────────────────────
-
-  handleConnection(client: Socket) {
-    this.logger.log(`Cliente conectado: ${client.id}`);
-  }
-
-  async handleDisconnect(client: Socket) {
-    const info = this.socketMap.get(client.id);
-    if (info) {
-      const result = await this.handleDisconnectWebsocket.execute({
-        ...info,
-        socketId: client.id,
-      });
-      this.socketMap.delete(client.id);
-
-      // Detener timer si la sala quedó vacía
-      const remainingInRoom = [...this.socketMap.values()].filter(
-        (v) => v.tokenCompartido === info.tokenCompartido,
-      ).length;
-      if (remainingInRoom === 0) {
-        this.detenerTimer(info.tokenCompartido);
-      }
-
-      const participantesDb = await this.salasService.getParticipantsWithRoles(
-        info.tokenCompartido,
-        result.participants,
-      );
-      this.server
-        .to(result.tokenCompartido)
-        .emit('participantes', participantesDb);
-    } else {
-      this.logger.log(`Cliente desconectado sin registro previo: ${client.id}`);
-    }
-  }
+  // ─── Message Handlers ──────────────────────────────────────────────────────
 
   @SubscribeMessage('unirse_sala')
   async handleJoinRoomMessage(
@@ -191,7 +200,7 @@ export class JuegoGateway implements OnGatewayConnection, OnGatewayDisconnect {
     });
 
     void client.join(info.tokenCompartido);
-    this.socketMap.set(client.id, {
+    await this.socketMapService.set(client.id, {
       tokenCompartido: info.tokenCompartido,
       nickname: info.nickname,
     });
@@ -222,15 +231,13 @@ export class JuegoGateway implements OnGatewayConnection, OnGatewayDisconnect {
             info.tokenCompartido,
             onlineNicknames,
           );
-          this.server
-            .to(info.tokenCompartido)
-            .emit('participantes', updatedList);
+          this.roomBroadcaster.broadcastToRoom(info.tokenCompartido, 'participantes', updatedList);
           return;
         }
       }
     }
 
-    this.server.to(info.tokenCompartido).emit('participantes', participantesDb);
+    this.roomBroadcaster.broadcastToRoom(info.tokenCompartido, 'participantes', participantesDb);
 
     const bloqueados = await this.salasService.getBlockedComodines(
       info.tokenCompartido,
@@ -262,9 +269,7 @@ export class JuegoGateway implements OnGatewayConnection, OnGatewayDisconnect {
           payload.nuevoRol,
         );
 
-      this.server
-        .to(payload.tokenCompartido)
-        .emit('participantes', participantesDb);
+      this.roomBroadcaster.broadcastToRoom(payload.tokenCompartido, 'participantes', participantesDb);
 
       return { success: true };
     } catch (e: any) {
@@ -303,7 +308,7 @@ export class JuegoGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @MessageBody() payload: AnswerPayload,
   ) {
     try {
-      const socketInfo = this.socketMap.get(client.id);
+      const socketInfo = await this.socketMapService.get(client.id);
       const nickname = socketInfo?.nickname ?? payload.nickname ?? 'unknown';
 
       const result = await this.submitAnswerWebsocket.execute({
@@ -312,7 +317,7 @@ export class JuegoGateway implements OnGatewayConnection, OnGatewayDisconnect {
       });
 
       const consensusInput: ConsensusInput = { type: result.status, ...result };
-      this.emitConsensusResult(payload.tokenCompartido, payload.preguntaId, consensusInput);
+      void this.emitConsensusResult(payload.tokenCompartido, payload.preguntaId, consensusInput);
 
       if (result.status === 'no-majority') {
         try {
@@ -350,7 +355,7 @@ export class JuegoGateway implements OnGatewayConnection, OnGatewayDisconnect {
         payload.habilitada,
       );
 
-      this.server.to(payload.tokenCompartido).emit('sala_estado_cambiado', {
+      this.roomBroadcaster.broadcastToRoom(payload.tokenCompartido, 'sala_estado_cambiado', {
         habilitada: result.enabled,
       });
 
@@ -371,7 +376,7 @@ export class JuegoGateway implements OnGatewayConnection, OnGatewayDisconnect {
     try {
       const res = await this.salasService.regenerarToken(payload.salaId);
 
-      this.server.to(payload.tokenAnterior).emit('token_sala_actualizado', {
+      this.roomBroadcaster.broadcastToRoom(payload.tokenAnterior, 'token_sala_actualizado', {
         nuevoToken: res.tokenCompartido,
       });
 
@@ -389,7 +394,7 @@ export class JuegoGateway implements OnGatewayConnection, OnGatewayDisconnect {
       this.flushBroadcast(payload.tokenCompartido);
       const res = await this.salasService.finalizarSala(payload.salaId);
 
-      this.server.to(payload.tokenCompartido).emit('partida_finalizada', {
+      this.roomBroadcaster.broadcastToRoom(payload.tokenCompartido, 'partida_finalizada', {
         totalParticipantes: res.totalParticipantes,
       });
 
@@ -407,12 +412,12 @@ export class JuegoGateway implements OnGatewayConnection, OnGatewayDisconnect {
       `[WS:REINICIAR_RONDA] Recibido para token=${payload.tokenCompartido}`,
     );
     try {
-      this.detenerTimer(payload.tokenCompartido);
+      await this.distributedTimerService.detenerTimer(payload.tokenCompartido);
       const sala = await this.salasService.obtenerPorId(payload.tokenCompartido);
       if (!sala) throw new Error('Sala no encontrada');
       await this.salasService.reiniciarRonda(sala.salaId);
 
-      this.server.to(payload.tokenCompartido).emit('ronda_reiniciada', {
+      this.roomBroadcaster.broadcastToRoom(payload.tokenCompartido, 'ronda_reiniciada', {
         rondaActiva: payload.rondaActiva,
       });
 
@@ -428,7 +433,7 @@ export class JuegoGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @ConnectedSocket() client: Socket,
     @MessageBody() payload: { texto: string; tipo: 'mensaje' | 'sugerencia' },
   ) {
-    const info = this.socketMap.get(client.id);
+    const info = await this.socketMapService.get(client.id);
     if (!info) {
       return { success: false, message: 'No estás conectado a una sala.' };
     }
@@ -443,9 +448,7 @@ export class JuegoGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
       const nuevoMensaje = mensajes[mensajes.length - 1];
       if (nuevoMensaje) {
-        this.server
-          .to(info.tokenCompartido)
-          .emit('mensaje_chat', [nuevoMensaje]);
+        this.roomBroadcaster.broadcastToRoom(info.tokenCompartido, 'mensaje_chat', [nuevoMensaje]);
       }
 
       return { success: true };
@@ -459,7 +462,7 @@ export class JuegoGateway implements OnGatewayConnection, OnGatewayDisconnect {
   handleSalaCreada(
     @MessageBody() payload: { tokenCompartido: string; configuracion: any },
   ) {
-    this.server.to(payload.tokenCompartido).emit('sala_creada', payload);
+    this.roomBroadcaster.broadcastToRoom(payload.tokenCompartido, 'sala_creada', payload);
   }
 
   @SubscribeMessage('pregunta_liberada')
@@ -474,9 +477,7 @@ export class JuegoGateway implements OnGatewayConnection, OnGatewayDisconnect {
         payload.pregunta,
       );
 
-      this.server
-        .to(payload.tokenCompartido)
-        .emit('pregunta_liberada', payload.pregunta);
+      this.roomBroadcaster.broadcastToRoom(payload.tokenCompartido, 'pregunta_liberada', payload.pregunta);
 
       try {
         await this.votosService.initConsensusRequired(
@@ -492,12 +493,37 @@ export class JuegoGateway implements OnGatewayConnection, OnGatewayDisconnect {
         );
       }
 
-      // 4. Iniciar timer server-authoritative
+      // Start distributed server-authoritative timer
       try {
         const tiempoLimite = await this.salasService.getTiempoLimite(
           payload.tokenCompartido,
         );
-        await this.iniciarTimer(payload.tokenCompartido, tiempoLimite);
+        await this.distributedTimerService.iniciarTimer(
+          payload.tokenCompartido,
+          tiempoLimite,
+          (remaining) =>
+            this.roomBroadcaster.broadcastToRoom(
+              payload.tokenCompartido,
+              'temporizador_actualizado',
+              remaining,
+            ),
+          () => {
+            this.roomBroadcaster.broadcastToRoom(
+              payload.tokenCompartido,
+              'tiempo_agotado',
+              { tokenCompartido: payload.tokenCompartido },
+            );
+            setTimeout(
+              () =>
+                this.roomBroadcaster.broadcastToRoom(
+                  payload.tokenCompartido,
+                  'transicion_pregunta',
+                  { segundos: 3 },
+                ),
+              500,
+            );
+          },
+        );
       } catch (timerError) {
         this.logger.error(`[TIMER] Error iniciando timer: ${timerError}`);
       }
@@ -525,12 +551,12 @@ export class JuegoGateway implements OnGatewayConnection, OnGatewayDisconnect {
       payload.tokenCompartido,
       payload.tipoComodin,
     );
-    this.server.to(payload.tokenCompartido).emit('comodin_bloqueado', payload);
+    this.roomBroadcaster.broadcastToRoom(payload.tokenCompartido, 'comodin_bloqueado', payload);
 
     if (payload.tipoComodin === 'PUBLICO') {
-      this.server
-        .to(payload.tokenCompartido)
-        .emit('voto_recibido', { A: 0, B: 0, C: 0, D: 0, total: 0 });
+      this.roomBroadcaster.broadcastToRoom(payload.tokenCompartido, 'voto_recibido', {
+        A: 0, B: 0, C: 0, D: 0, total: 0,
+      });
     }
   }
 
@@ -554,7 +580,8 @@ export class JuegoGateway implements OnGatewayConnection, OnGatewayDisconnect {
        return;
     }
 
-    const consultorSocketId = this.findSocketId(
+    // T-08: await required — findSocketId is now async (Redis lookup)
+    const consultorSocketId = await this.findSocketId(
       consultorNickname,
       payload.tokenCompartido,
     );
@@ -566,12 +593,13 @@ export class JuegoGateway implements OnGatewayConnection, OnGatewayDisconnect {
       return;
     }
 
+    // Direct single-socket emit — stays as this.server.to() per spec
     this.server.to(consultorSocketId).emit('consultor_seleccionado', {
       tokenCompartido: payload.tokenCompartido,
       pregunta: payload.pregunta,
     });
 
-    this.server.to(payload.tokenCompartido).emit('comodin_llamada_iniciado', {
+    this.roomBroadcaster.broadcastToRoom(payload.tokenCompartido, 'comodin_llamada_iniciado', {
       nicknameConsultor: consultorNickname,
     });
   }
@@ -593,7 +621,8 @@ export class JuegoGateway implements OnGatewayConnection, OnGatewayDisconnect {
       return;
     }
 
-    const expectedSocketId = this.findSocketId(
+    // T-08: await required — findSocketId is now async (Redis lookup)
+    const expectedSocketId = await this.findSocketId(
       helperNickname,
       payload.tokenCompartido,
     );
@@ -612,25 +641,27 @@ export class JuegoGateway implements OnGatewayConnection, OnGatewayDisconnect {
       return;
     }
 
-    this.server.to(payload.tokenCompartido).emit('pista_consultor_recibida', {
+    this.roomBroadcaster.broadcastToRoom(payload.tokenCompartido, 'pista_consultor_recibida', {
       pista: result.pista,
       consultor: result.helperNickname,
     });
 
-    this.server.to(payload.tokenCompartido).emit('comodin_usado', {
+    this.roomBroadcaster.broadcastToRoom(payload.tokenCompartido, 'comodin_usado', {
       tipoComodin: 'LLAMADA',
     });
   }
 
-  private emitConsensusResult(
+  // ─── Private helpers ────────────────────────────────────────────────────────
+
+  private async emitConsensusResult(
     token: string,
     preguntaId: number,
     result: ConsensusInput,
-  ): void {
+  ): Promise<void> {
     const type = result.type ?? result.status;
     switch (type) {
       case 'pending':
-        this.server.to(token).emit('voto_confirmado', {
+        this.roomBroadcaster.broadcastToRoom(token, 'voto_confirmado', {
           preguntaId,
           votosRecibidos: result.votosRecibidos,
           totalRequeridos: result.totalRequeridos,
@@ -639,8 +670,8 @@ export class JuegoGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
       case 'majority':
       case 'single':
-        this.detenerTimer(token);
-        this.server.to(token).emit('pregunta_respondida', {
+        await this.distributedTimerService.detenerTimer(token);
+        this.roomBroadcaster.broadcastToRoom(token, 'pregunta_respondida', {
           preguntaId,
           opcionId: result.winningOpcionId,
           esCorrecta: result.esCorrecta ?? null,
@@ -649,7 +680,7 @@ export class JuegoGateway implements OnGatewayConnection, OnGatewayDisconnect {
         break;
 
       case 'no-majority':
-        this.server.to(token).emit('revoto_solicitado', {
+        this.roomBroadcaster.broadcastToRoom(token, 'revoto_solicitado', {
           preguntaId,
           motivo: 'sin_mayoria',
         });
@@ -657,63 +688,14 @@ export class JuegoGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
   }
 
-  private findSocketId(
+  /**
+   * O(1) async reverse lookup delegated to SocketMapService.
+   * MUST be awaited at every call site — returns Promise<string|undefined>.
+   */
+  private async findSocketId(
     nickname: string,
     tokenCompartido: string,
-  ): string | undefined {
-    for (const [socketId, info] of this.socketMap.entries()) {
-      if (
-        info.nickname === nickname &&
-        info.tokenCompartido === tokenCompartido
-      ) {
-        return socketId;
-      }
-    }
-    return undefined;
-  }
-
-  private async iniciarTimer(
-    tokenCompartido: string,
-    segundos: number,
-  ): Promise<void> {
-    this.detenerTimer(tokenCompartido);
-    if (segundos <= 0) return;
-
-    let remaining = segundos;
-    this.server.to(tokenCompartido).emit('temporizador_actualizado', remaining);
-
-    const tick = setInterval(() => {
-      remaining -= 1;
-      this.server
-        .to(tokenCompartido)
-        .emit('temporizador_actualizado', remaining);
-
-      if (remaining <= 0) {
-        this.detenerTimer(tokenCompartido);
-        this.server
-          .to(tokenCompartido)
-          .emit('tiempo_agotado', { tokenCompartido });
-        setTimeout(() => {
-          this.server
-            .to(tokenCompartido)
-            .emit('transicion_pregunta', { segundos: 3 });
-        }, 500);
-        this.logger.log(`[TIMER] Tiempo agotado para sala ${tokenCompartido}`);
-      }
-    }, 1000);
-
-    this.timersActivos.set(tokenCompartido, tick);
-    this.logger.log(
-      `[TIMER] Iniciado para sala ${tokenCompartido}: ${segundos}s`,
-    );
-  }
-
-  private detenerTimer(tokenCompartido: string): void {
-    const existing = this.timersActivos.get(tokenCompartido);
-    if (existing) {
-      clearInterval(existing);
-      this.timersActivos.delete(tokenCompartido);
-      this.logger.log(`[TIMER] Detenido para sala ${tokenCompartido}`);
-    }
+  ): Promise<string | undefined> {
+    return this.socketMapService.findSocketId(nickname, tokenCompartido);
   }
 }
