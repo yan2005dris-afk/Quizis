@@ -24,8 +24,8 @@ COPY pnpm-lock.yaml pnpm-workspace.yaml package.json .npmrc ./
 # Copy backend package.json
 COPY backend/package.json ./backend/
 
-# Install dependencies using cache mount for pnpm store
-RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --frozen-lockfile
+# Install dependencies
+RUN pnpm install --frozen-lockfile
 
 # Stage 3: Build the application
 # -------------------------------------------------------------------------
