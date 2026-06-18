@@ -1,18 +1,18 @@
 import type { INestApplication } from '@nestjs/common';
 import { ValidationPipe } from '@nestjs/common';
-import { GlobalExceptionFilter } from './infrastructure/common/filters/global-exception.filter';
+import { GlobalExceptionFilter } from './core/common/filters/global-exception.filter';
 import { NestFactory } from '@nestjs/core';
 import { ConfigService } from '@nestjs/config';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import cookieParser from 'cookie-parser';
 import { AppModule } from './app.module';
-import { ThrottlerExceptionFilter } from './infrastructure/common/filters/throttler-exception.filter';
-import { BigIntInterceptor } from './infrastructure/common/interceptors/bigint.interceptor';
-import { DecimalToNumberInterceptor } from './infrastructure/common/interceptors/decimal-to-number.interceptor';
+import { ThrottlerExceptionFilter } from './core/common/filters/throttler-exception.filter';
+import { BigIntInterceptor } from './core/common/interceptors/bigint.interceptor';
+import { DecimalToNumberInterceptor } from './core/common/interceptors/decimal-to-number.interceptor';
 import {
   TRUST_PROXY_HOPS,
   TRUST_PROXY_KEY,
-} from './infrastructure/config/app.constants';
+} from './core/config/app.constants';
 
 type ProxyAwareHttpApp = {
   set: (key: typeof TRUST_PROXY_KEY, value: number) => void;

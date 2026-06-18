@@ -17,7 +17,7 @@ import {
   QuestionProgressComponent,
   WildcardsPanelComponent,
 } from '../../../../../shared/ui';
-import { ComodinSala, SalasService } from '../../../../../core/services/salas.service';
+import { ComodinSala, SalasService } from '../../../services/salas.service';
 import {
   GameSocketService,
   PreguntaHistorial,

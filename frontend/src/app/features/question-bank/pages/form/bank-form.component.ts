@@ -6,7 +6,7 @@ import {
   BancosService,
   Opcion,
   BancoPreguntasDetalle,
-} from '../../../../core/services/bancos.service';
+} from '../../services/bancos.service';
 import { FileParserService, type ParseResult } from '../../../../core/services/file-parser.service';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { switchMap, catchError, tap, map, startWith } from 'rxjs/operators';

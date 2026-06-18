@@ -201,6 +201,39 @@ export class GameSocketService {
         });
       }
     });
+
+    this.socket.on(
+      'voto_confirmado',
+      (data: { preguntaId: number; votosRecibidos: number; totalRequeridos: number }) => {
+        this.votantesConfirmados.set(data.votosRecibidos);
+        this.totalVotantesRequeridos.set(data.totalRequeridos);
+        this.esperandoConsenso.set(true);
+      },
+    );
+
+    this.socket.on(
+      'pregunta_respondida',
+      (data: { preguntaId: number; opcionId: number; esCorrecta: boolean | null; feedback: string | null }) => {
+        this.ultimoResultado.set({
+          preguntaId: data.preguntaId,
+          opcionId: data.opcionId,
+          esCorrecta: data.esCorrecta ?? false,
+          feedback: data.feedback ?? '',
+        });
+        this.esperandoConsenso.set(false);
+        this.votantesConfirmados.set(0);
+        this.totalVotantesRequeridos.set(0);
+      },
+    );
+
+    this.socket.on(
+      'revoto_solicitado',
+      (_data: { preguntaId: number; motivo: string }) => {
+        this.revotoSolicitado.set(true);
+        this.esperandoConsenso.set(false);
+        this.votantesConfirmados.set(0);
+      },
+    );
   }
 
   // ─── Comodines (bloqueo, uso, estado inicial) ───

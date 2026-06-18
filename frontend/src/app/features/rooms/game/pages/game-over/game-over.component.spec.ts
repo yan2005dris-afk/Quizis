@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { describe, it, expect, beforeEach } from 'vitest';
 import { GameOverComponent, GameOverParticipant } from './game-over.component';
-import { ReportesService } from '../../../../../core/services/reportes.service';
+import { ReportesService } from '../../../../reports/services/reportes.service';
 import { of } from 'rxjs';
 
 const mockParticipants: GameOverParticipant[] = [

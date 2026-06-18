@@ -1,7 +1,7 @@
 import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { randomUUID } from 'crypto';
-import { PrismaService } from 'src/infrastructure/database/prisma/prisma.service';
+import { PrismaService } from 'src/core/database/prisma/prisma.service';
 import { createAuthTestApp } from '../../helpers/create-auth-test-app';
 import {
   seedAdminUser,

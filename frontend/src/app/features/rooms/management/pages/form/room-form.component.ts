@@ -9,7 +9,7 @@ import {
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { SalasService, SalaCreada } from '../../../../../core/services/salas.service';
+import { SalasService, SalaCreada } from '../../../services/salas.service';
 import {
   Bot,
   CheckCircle2,
@@ -25,7 +25,7 @@ import {
   BancosService,
   BancoPreguntas,
   BancoPreguntasDetalle,
-} from '../../../../../core/services/bancos.service';
+} from '../../../../question-bank/services/bancos.service';
 import { FileParserService, ParseError } from '../../../../../core/services/file-parser.service';
 import { finalize, forkJoin, of, switchMap } from 'rxjs';
 import { ESTADOS_SALA } from '../../../../../core/constants/estados.constants';

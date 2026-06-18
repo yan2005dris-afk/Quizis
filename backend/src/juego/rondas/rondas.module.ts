@@ -1,9 +1,9 @@
 import { Module } from '@nestjs/common';
-import { RondasService } from './rondas.service';
-import { RondasController } from './rondas.controller';
-import { CreateRondaUseCase } from './use-cases/create-ronda.use-case';
-import { ReleaseQuestionWebsocket } from './websockets/release-question.websocket';
-import { CacheModule } from '../../infrastructure/cache/cache.module';
+import { RondasService } from './application/rondas.service';
+import { RondasController } from './interfaces/rondas.controller';
+import { CreateRondaUseCase } from './application/use-cases/create-ronda.use-case';
+import { ReleaseQuestionWebsocket } from './infrastructure/websockets/release-question.websocket';
+import { CacheModule } from '../../core/cache/cache.module';
 import { SalasModule } from '../salas/salas.module';
 
 /**

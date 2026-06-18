@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, inject, OnInit, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { SalasService, SalaResumen } from '../../../../../core/services/salas.service';
+import { SalasService, SalaResumen } from '../../../services/salas.service';
 import { DatePipe } from '@angular/common';
 import { ButtonComponent, AlertComponent } from '../../../../../shared/ui';
 import { RoomFormComponent } from '../form/room-form.component';

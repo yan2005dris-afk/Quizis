@@ -1,42 +1,59 @@
+# syntax=docker/dockerfile:1
+
 # =============================================================================
-# Frontend Dockerfile — Angular (static) + Nginx (multi-stage)
-# Build context: project root (.) — pnpm workspace needs pnpm-workspace.yaml
+# Frontend Dockerfile — Angular + Nginx (Optimized with pnpm)
+# Build context: project root (.)
 # =============================================================================
 
-# Stage 1: Install dependencies and build Angular app
+# Stage 1: Base image with pnpm setup
 # -------------------------------------------------------------------------
-FROM node:22-alpine AS build
-RUN corepack enable && corepack prepare pnpm@latest --activate
+FROM node:22-alpine AS base
+
+ENV PNPM_HOME="/pnpm"
+ENV PATH="$PNPM_HOME:$PATH"
+RUN corepack enable
 
 WORKDIR /app
 
-# Copy workspace config files — needed for pnpm install --frozen-lockfile
-COPY pnpm-workspace.yaml package.json pnpm-lock.yaml .npmrc ./
+# Stage 2: Install dependencies
+# -------------------------------------------------------------------------
+FROM base AS deps
+
+# Copy workspace configuration
+COPY pnpm-lock.yaml pnpm-workspace.yaml package.json .npmrc ./
+# Copy frontend package.json
 COPY frontend/package.json ./frontend/
-COPY frontend/angular.json ./frontend/
-COPY frontend/tsconfig.json ./frontend/
-COPY frontend/tsconfig.app.json ./frontend/
 
-# Install ALL dependencies for the frontend workspace package
-RUN pnpm install --frozen-lockfile
+# Install dependencies using cache mount for pnpm store
+RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --frozen-lockfile
 
-# Copy the rest of the frontend source
+# Stage 3: Build the application
+# -------------------------------------------------------------------------
+FROM base AS build
+
+# Copy node_modules from deps stage
+COPY --from=deps /app/node_modules ./node_modules
+COPY --from=deps /app/frontend/node_modules ./frontend/node_modules
+
+# Copy workspace configuration and frontend source
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./
 COPY frontend/ ./frontend/
 
-# Build Angular app (static output mode — no SSR server)
+# Build Angular app (static output)
 RUN pnpm --filter frontend run build
 
-# Stage 2: Nginx production server
+# Stage 4: Nginx production server
 # -------------------------------------------------------------------------
-FROM nginx:alpine
+FROM nginx:alpine AS production
 
-# Copy custom Nginx config (already references quizis-backend:3000)
+# Copy custom Nginx config
 COPY frontend/nginx.conf /etc/nginx/conf.d/default.conf
 
-# Remove default nginx welcome page so Angular's index.csr.html takes over
+# Remove default nginx welcome page
 RUN rm -rf /usr/share/nginx/html/*
 
-# Copy the static browser build output
+# Copy the static browser build output from build stage
+# Note: Angular 17+ with SSR enabled puts browser files in dist/frontend/browser
 COPY --from=build /app/frontend/dist/frontend/browser /usr/share/nginx/html
 
 EXPOSE 80
