@@ -1,0 +1,66 @@
+# =============================================================================
+# Deploy Quizis — Producción
+# =============================================================================
+# Corre en el self-hosted runner del servidor.
+# Hace checkout del código, reconstruye los
+# contenedores y reinicia servicios.
+#
+# Requisitos:
+#   - Self-hosted runner configurado en el servidor
+#     (ver README o docs internas para la instalación)
+#   - Docker y Docker Compose instalados en el servidor
+#   - .env colocado en el workspace del runner
+#     (con clean: false se conserva entre runs)
+#   - Puerto 80 y 3000 libres (o los que uses en producción)
+# =============================================================================
+
+name: Deploy Quizis
+
+on:
+  push:
+    branches: [develop]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          clean: false
+
+      - name: Ensure .env exists
+        run: |
+          if [ ! -f .env ]; then
+            echo "❌ .env not found in runner workspace!"
+            echo "Create it manually first with:"
+            echo "  cp .env.example .env   # or copy your production env"
+            exit 1
+          fi
+
+      - name: Rebuild and restart services
+        run: |
+          docker compose up -d --build --remove-orphans
+
+      - name: Health check
+        run: |
+          echo "⏳ Waiting for services to be ready..."
+          sleep 10
+
+          echo ""
+          echo "=== Container Status ==="
+          docker compose ps --status running
+
+          echo ""
+          echo "=== Health: Frontend (Nginx :80) ==="
+          curl -s -o /dev/null -w "HTTP %{http_code}\n" http://localhost:80 || echo "⚠️  Frontend not responding yet"
+
+          echo ""
+          echo "=== Health: Backend (NestJS :3000) ==="
+          curl -s -o /dev/null -w "HTTP %{http_code}\n" http://localhost:3000/api/health 2>/dev/null || echo "⚠️  Backend health endpoint not available"
+
+      - name: Clean up old images
+        run: docker image prune -f
