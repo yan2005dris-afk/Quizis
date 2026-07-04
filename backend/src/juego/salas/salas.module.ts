@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { SalasController } from './interfaces/salas.controller';
+import { SalasByTokenController } from './interfaces/controllers/salas-by-token.controller';
 import { SalasService } from './application/salas.service';
 import { ListAllSalasUseCase } from './application/use-cases/list-all-salas.use-case';
 import { GetSalaLifelinesUseCase } from './application/use-cases/get-sala-lifelines.use-case';
@@ -25,10 +26,11 @@ import { RoomStateCacheService } from './infrastructure/cache/room-state-cache.s
 import { AuthModule } from '../../identity/auth/auth.module';
 import { CacheModule } from '../../core/cache/cache.module';
 import { ChatModule } from '../chat/chat.module';
+import { RondasModule } from '../rondas/rondas.module';
 
 @Module({
-  imports: [AuthModule, CacheModule, ChatModule],
-  controllers: [SalasController],
+  imports: [AuthModule, CacheModule, ChatModule, RondasModule],
+  controllers: [SalasController, SalasByTokenController],
   providers: [
     SalasService,
     ListAllSalasUseCase,
