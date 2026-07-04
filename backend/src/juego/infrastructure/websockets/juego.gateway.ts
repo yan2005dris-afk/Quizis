@@ -8,7 +8,7 @@ import {
   ConnectedSocket,
   MessageBody,
 } from '@nestjs/websockets';
-import { Logger } from '@nestjs/common';
+import { Logger, OnModuleDestroy } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
 import { Server, Socket } from 'socket.io';
 
@@ -59,7 +59,11 @@ type ConsensusInput = {
 
 @WebSocketGateway({ cors: { origin: '*' } })
 export class JuegoGateway
-  implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect
+  implements
+    OnGatewayInit,
+    OnGatewayConnection,
+    OnGatewayDisconnect,
+    OnModuleDestroy
 {
   @WebSocketServer()
   server!: Server;
@@ -104,6 +108,35 @@ export class JuegoGateway
         pending.distribucion,
       );
       this.pendingBroadcasts.delete(tokenCompartido);
+    }
+  }
+
+  /**
+   * Cancel a pending broadcast for a room without firing it.
+   * Used when the room is empty (no listeners) or on shutdown.
+   */
+  private clearPendingBroadcast(tokenCompartido: string): void {
+    const pending = this.pendingBroadcasts.get(tokenCompartido);
+    if (pending) {
+      clearTimeout(pending.timer);
+      this.pendingBroadcasts.delete(tokenCompartido);
+    }
+  }
+
+  /**
+   * Clean up all pending broadcast timers on module destroy.
+   * Prevents leaked setTimeout references when the app shuts down
+   * (hot reload, restart, or graceful shutdown).
+   */
+  onModuleDestroy(): void {
+    const count = this.pendingBroadcasts.size;
+    for (const [token] of this.pendingBroadcasts.entries()) {
+      this.clearPendingBroadcast(token);
+    }
+    if (count > 0) {
+      this.logger.log(
+        `[JuegoGateway] onModuleDestroy: cleared ${count} pending broadcast timers`,
+      );
     }
   }
 
@@ -160,6 +193,8 @@ export class JuegoGateway
       );
       if (remainingInRoom === 0) {
         await this.distributedTimerService.detenerTimer(info.tokenCompartido);
+        // Cancel any pending vote-distribution broadcast for this empty room.
+        this.clearPendingBroadcast(info.tokenCompartido);
       }
 
       const participantesDb = await this.salasService.getParticipantsWithRoles(
