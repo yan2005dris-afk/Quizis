@@ -458,3 +458,72 @@ describe('JuegoGateway — pregunta_liberada (iniciarTimer)', () => {
     );
   });
 });
+
+// ─── sdd/quizis-init-feedback: handleSalaIniciada broadcasts info_ronda ──
+describe('JuegoGateway — handleSalaIniciada (info_ronda broadcast)', () => {
+  let gateway: JuegoGateway;
+  let roomBroadcaster: jest.Mocked<
+    Pick<RoomBroadcasterService, 'broadcastToRoom' | 'setServer'>
+  >;
+
+  beforeEach(async () => {
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        JuegoGateway,
+        { provide: SalasService, useValue: {} },
+        { provide: VotosService, useValue: {} },
+        { provide: ChatService, useValue: {} },
+        { provide: ComodinesService, useValue: {} },
+        { provide: HandleJoinRoomWebsocket, useValue: {} },
+        { provide: HandleDisconnectWebsocket, useValue: {} },
+        { provide: ToggleRoomEnabledWebsocket, useValue: {} },
+        { provide: ProcessAudienceVoteWebsocket, useValue: {} },
+        { provide: SubmitAnswerWebsocket, useValue: {} },
+        { provide: ReleaseQuestionWebsocket, useValue: {} },
+        { provide: ActivateCallJokerWebsocket, useValue: {} },
+        { provide: SendHintWebsocket, useValue: {} },
+        {
+          provide: RoomBroadcasterService,
+          useValue: { broadcastToRoom: jest.fn(), setServer: jest.fn() },
+        },
+        {
+          provide: SocketMapService,
+          useValue: {
+            set: jest.fn(),
+            get: jest.fn(),
+            delete: jest.fn(),
+            findSocketId: jest.fn(),
+            getRoomSize: jest.fn(),
+          },
+        },
+        {
+          provide: DistributedTimerService,
+          useValue: { iniciarTimer: jest.fn(), detenerTimer: jest.fn() },
+        },
+        {
+          provide: HandleTimerExpirationUseCase,
+          useValue: { execute: jest.fn() },
+        },
+      ],
+    }).compile();
+
+    gateway = module.get<JuegoGateway>(JuegoGateway);
+    roomBroadcaster = module.get(RoomBroadcasterService) as any;
+
+    jest.clearAllMocks();
+  });
+
+  it('broadcasts info_ronda to the room when sala.iniciada fires', () => {
+    const infoRonda = { ronda: 1, totalRondas: 5, premio: '$1000' };
+    gateway.handleSalaIniciada({
+      tokenCompartido: 'T-INIT',
+      infoRonda,
+    });
+
+    expect(roomBroadcaster.broadcastToRoom).toHaveBeenCalledWith(
+      'T-INIT',
+      'info_ronda',
+      infoRonda,
+    );
+  });
+});
