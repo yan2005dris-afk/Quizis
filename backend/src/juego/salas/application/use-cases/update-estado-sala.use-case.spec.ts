@@ -1,6 +1,7 @@
 import type { TestingModule } from '@nestjs/testing';
 import { Test } from '@nestjs/testing';
 import { NotFoundException, BadRequestException } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { UpdateEstadoSalaUseCase } from './update-estado-sala.use-case';
 import { PrismaService } from 'src/core/database/prisma/prisma.service';
 import { RoomStateCacheService } from 'src/juego/salas/infrastructure/cache/room-state-cache.service';
@@ -33,6 +34,10 @@ describe('UpdateEstadoSalaUseCase', () => {
     getHistoricalParticipants: jest.fn().mockResolvedValue([]),
   };
 
+  const mockEventEmitter = {
+    emit: jest.fn(),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -40,6 +45,7 @@ describe('UpdateEstadoSalaUseCase', () => {
         { provide: PrismaService, useValue: mockPrisma },
         { provide: RoomStateCacheService, useValue: mockRoomStateCache },
         { provide: ParticipantsCacheService, useValue: mockParticipantsCache },
+        { provide: EventEmitter2, useValue: mockEventEmitter },
       ],
     }).compile();
 
@@ -89,7 +95,10 @@ describe('UpdateEstadoSalaUseCase', () => {
       { preguntaId: 2 },
       { preguntaId: 3 },
     ]);
-    mockPrisma.rondas.create.mockResolvedValue({ rondaId: 1 });
+    mockPrisma.rondas.create.mockResolvedValue({
+      rondaId: 1,
+      preguntaActualId: null,
+    });
 
     const result = await useCase.execute(1, { estado: EstadoSala.EN_VIVO });
 
@@ -102,6 +111,60 @@ describe('UpdateEstadoSalaUseCase', () => {
     expect(mockPrisma.rondas.findFirst).toHaveBeenCalled();
     expect(mockPrisma.preguntas.findMany).toHaveBeenCalled();
     expect(mockPrisma.rondas.create).toHaveBeenCalled();
+  });
+
+  it('debería emitir "sala.iniciada" al transicionar a EN_VIVO con infoRonda válido', async () => {
+    mockPrisma.salas.findUnique.mockResolvedValue({
+      salaId: 1,
+      tokenCompartido: 'T1',
+      bancoId: 10,
+      limitePreguntas: 5,
+      estado: EstadoSala.ESPERANDO_ALUMNOS,
+    });
+    mockPrisma.participantes.count.mockResolvedValue(2);
+    mockPrisma.rondas.findFirst.mockResolvedValue(null);
+    mockPrisma.participantes.findFirst.mockResolvedValue({
+      participanteId: 1,
+      nickname: 'TestStudent',
+    });
+    mockPrisma.preguntas.findMany.mockResolvedValue([
+      { preguntaId: 100 },
+      { preguntaId: 200 },
+      { preguntaId: 300 },
+    ]);
+    mockPrisma.rondas.create.mockResolvedValue({
+      rondaId: 7,
+      preguntaActualId: null,
+    });
+
+    await useCase.execute(1, { estado: EstadoSala.EN_VIVO });
+
+    expect(mockEventEmitter.emit).toHaveBeenCalledWith(
+      'sala.iniciada',
+      expect.objectContaining({
+        tokenCompartido: 'T1',
+        infoRonda: expect.objectContaining({
+          totalRondas: 3, // 3 preguntas asignadas
+          ronda: 1,
+          premio: '$0',
+        }),
+      }),
+    );
+  });
+
+  it('NO debería emitir "sala.iniciada" cuando se rechaza por falta de estudiantes', async () => {
+    mockPrisma.salas.findUnique.mockResolvedValue({
+      salaId: 1,
+      tokenCompartido: 'T1',
+      estado: EstadoSala.ESPERANDO_ALUMNOS,
+    });
+    mockPrisma.participantes.count.mockResolvedValue(0);
+
+    await expect(
+      useCase.execute(1, { estado: EstadoSala.EN_VIVO }),
+    ).rejects.toThrow(BadRequestException);
+
+    expect(mockEventEmitter.emit).not.toHaveBeenCalled();
   });
 
   it('debería rechazar EN_VIVO cuando no hay estudiantes (EN_VIVO guard)', async () => {
