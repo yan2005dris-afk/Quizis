@@ -254,6 +254,26 @@ export class JuegoGateway
     );
   }
 
+  /**
+   * Fired by UpdateEstadoSalaUseCase when a room transitions to EN_VIVO.
+   * Broadcasts `info_ronda` so the frontend updates the header ("Esperando
+   * información de la ronda..." goes away) and the active-question state.
+   */
+  @OnEvent('sala.iniciada')
+  handleSalaIniciada(payload: {
+    tokenCompartido: string;
+    infoRonda: { ronda: number; totalRondas: number; premio: string };
+  }) {
+    this.roomBroadcaster.broadcastToRoom(
+      payload.tokenCompartido,
+      'info_ronda',
+      payload.infoRonda,
+    );
+    this.logger.log(
+      `[SALA:INICIADA] Broadcast info_ronda for ${payload.tokenCompartido}`,
+    );
+  }
+
   // ─── Message Handlers ──────────────────────────────────────────────────────
 
   @SubscribeMessage('unirse_sala')
