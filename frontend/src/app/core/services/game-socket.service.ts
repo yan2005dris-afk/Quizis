@@ -185,6 +185,21 @@ export class GameSocketService {
       }
       this.tiempoRestante.set(0);
 
+      // Defensive fallback: if pregunta_respondida hasn't arrived yet for
+      // this question, populate ultimoResultado with esCorrecta=false so
+      // the feedback still renders. pregunta_respondida (which arrives
+      // BEFORE tiempo_agotado in normal flow) will overwrite this with
+      // the authoritative payload.
+      const existing = this.ultimoResultado();
+      if (!existing || existing.preguntaId !== data.preguntaId) {
+        this.ultimoResultado.set({
+          preguntaId: data.preguntaId,
+          opcionId: -1, // unknown — overwritten when pregunta_respondida arrives
+          esCorrecta: false,
+          feedback: '',
+        });
+      }
+
       // Schedule local transition overlay — gives the user time to see the
       // feedback before the next-question overlay shows up. Backend no
       // longer manages this timing (see juego.gateway.ts onExpire).
