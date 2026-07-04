@@ -25,6 +25,7 @@ import { ToggleRoomEnabledWebsocket } from '../../salas/infrastructure/websocket
 import { ProcessAudienceVoteWebsocket } from '../../votos/infrastructure/websockets/process-audience-vote.websocket';
 import { SubmitAnswerWebsocket } from '../../votos/infrastructure/websockets/submit-answer.websocket';
 import { ReleaseQuestionWebsocket } from '../../rondas/infrastructure/websockets/release-question.websocket';
+import { HandleTimerExpirationUseCase } from '../../rondas/application/use-cases/handle-timer-expiration.use-case';
 import { ActivateCallJokerWebsocket } from '../../comodines/infrastructure/websockets/activate-call-joker.websocket';
 import { SendHintWebsocket } from '../../comodines/infrastructure/websockets/send-hint.websocket';
 
@@ -156,6 +157,7 @@ export class JuegoGateway
     private readonly roomBroadcaster: RoomBroadcasterService,
     private readonly socketMapService: SocketMapService,
     private readonly distributedTimerService: DistributedTimerService,
+    private readonly handleTimerExpiration: HandleTimerExpirationUseCase,
   ) {}
 
   // ─── Lifecycle ─────────────────────────────────────────────────────────────
@@ -614,24 +616,79 @@ export class JuegoGateway
         const tiempoLimite = await this.salasService.getTiempoLimite(
           payload.tokenCompartido,
         );
+        const preguntaId = payload.pregunta.preguntaId;
+        const tokenCompartido = payload.tokenCompartido;
+
         await this.distributedTimerService.iniciarTimer(
-          payload.tokenCompartido,
+          tokenCompartido,
           tiempoLimite,
           (remaining) =>
             this.roomBroadcaster.broadcastToRoom(
-              payload.tokenCompartido,
+              tokenCompartido,
               'temporizador_actualizado',
               remaining,
             ),
-          () => {
+          async () => {
+            // Timer expired. Try to claim the 'answered' state and persist
+            // a wrong answer. If the student already answered, the use case
+            // returns { claimed: false } and we skip emitting.
+            let rondaId: number | undefined;
+            try {
+              const sala =
+                await this.salasService.obtenerPorId(tokenCompartido);
+              rondaId = (sala as any)?.rondas?.[0]?.rondaId;
+            } catch (lookupErr) {
+              this.logger.error(
+                `[TIMER] Failed to look up rondaId for token=${tokenCompartido}: ${lookupErr}`,
+              );
+            }
+
+            if (!rondaId) {
+              this.logger.error(
+                `[TIMER] No active ronda for token=${tokenCompartido} — cannot persist timeout. Aborting.`,
+              );
+              // Still emit tiempo_agotado so frontend stops the visual timer.
+              this.roomBroadcaster.broadcastToRoom(
+                tokenCompartido,
+                'tiempo_agotado',
+                { preguntaId, tokenCompartido },
+              );
+              return;
+            }
+
+            const result = await this.handleTimerExpiration.execute({
+              tokenCompartido,
+              rondaId,
+              preguntaId,
+            });
+
+            if (!result.claimed) {
+              // Race lost — student already answered. Nothing to broadcast;
+              // submit-answer.websocket.ts already emitted pregunta_respondida.
+              return;
+            }
+
+            // Emit pregunta_respondida FIRST so frontend renders feedback
+            // (active-question.component.ts depends on ultimoResultado).
             this.roomBroadcaster.broadcastToRoom(
-              payload.tokenCompartido,
-              'tiempo_agotado',
+              tokenCompartido,
+              'pregunta_respondida',
               {
-                preguntaId: payload.pregunta.preguntaId,
-                tokenCompartido: payload.tokenCompartido,
+                preguntaId,
+                opcionId: result.opcionId,
+                esCorrecta: false,
+                feedback: result.feedback ?? null,
               },
             );
+
+            // THEN emit tiempo_agotado (frontend listener sets timer=0 +
+            // schedules local transition overlay).
+            this.roomBroadcaster.broadcastToRoom(
+              tokenCompartido,
+              'tiempo_agotado',
+              { preguntaId, tokenCompartido },
+            );
+
             // transicion_pregunta is no longer emitted here. The frontend
             // schedules its own transition overlay upon receiving
             // tiempo_agotado (see game-socket.service.ts listener). This
