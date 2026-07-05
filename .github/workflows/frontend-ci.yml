@@ -52,7 +52,7 @@ jobs:
           ! grep -rn "socket.emit('cambiar_estado_sala'" frontend/src/
           ! grep -rn "socket.emit('pregunta_liberada'" frontend/src/
           ! grep -rn "socket.emit('cambiar_rol_participante'" frontend/src/
-          ! grep -rn "socket.emit('audience:vote'\|socket.emit('audience\\\\:vote'" frontend/src/
+          ! grep -rn "socket.emit('audience:vote'" frontend/src/
           ! grep -rn "socket.emit('regenerar_token'" frontend/src/
           ! grep -rn "socket.emit('finalizar_partida'" frontend/src/
           ! grep -rn "socket.emit('reiniciar_ronda'" frontend/src/

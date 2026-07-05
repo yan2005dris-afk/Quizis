@@ -1,6 +1,8 @@
 import { TestBed } from '@angular/core/testing';
+import { of } from 'rxjs';
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { GameSocketService } from './game-socket.service';
+import { GameApiService } from './game-api.service';
 import { ToastService } from './toast.service';
 import type {
   ChatMessage,
@@ -45,13 +47,38 @@ const mockToastService = {
 describe('GameSocketService (observer extension)', () => {
   let service: GameSocketService;
   let mockSocket: MockSocket;
+  let mockApi: Record<string, ReturnType<typeof vi.fn>>;
 
   beforeEach(() => {
     mockToasts.length = 0;
     mockSocket = createMockSocket();
+    mockApi = {
+      submitAnswer: vi
+        .fn()
+        .mockReturnValue(
+          of({ status: 'single' as const, winningOpcionId: 1, esCorrecta: true, feedback: 'ok' }),
+        ),
+      updateEstadoSala: vi.fn().mockReturnValue(of({ salaId: 1, estado: 'EN_VIVO' as const })),
+      liberarPregunta: vi
+        .fn()
+        .mockReturnValue(of({ preguntaId: 1, texto: '', opciones: [], nivel: 1 })),
+      regenerarToken: vi.fn().mockReturnValue(of({ tokenCompartido: 'new-tok' })),
+      finalizarPartida: vi.fn().mockReturnValue(of({ totalParticipantes: 1 })),
+      reiniciarRonda: vi.fn().mockReturnValue(of({})),
+      cambiarRolParticipante: vi.fn().mockReturnValue(of({})),
+      votar: vi.fn().mockReturnValue(of({})),
+      enviarMensaje: vi.fn().mockReturnValue(of({})),
+      bloquearComodin: vi.fn().mockReturnValue(of({})),
+      activarComodinLlamada: vi.fn().mockReturnValue(of({})),
+      enviarPistaConsultor: vi.fn().mockReturnValue(of({})),
+    };
 
     TestBed.configureTestingModule({
-      providers: [GameSocketService, { provide: ToastService, useValue: mockToastService }],
+      providers: [
+        GameSocketService,
+        { provide: ToastService, useValue: mockToastService },
+        { provide: GameApiService, useValue: mockApi },
+      ],
     });
     service = TestBed.inject(GameSocketService);
 
@@ -143,23 +170,23 @@ describe('GameSocketService (observer extension)', () => {
   });
 
   describe('enviarMensaje', () => {
-    it('should emit enviar_mensaje event with correct payload', () => {
+    it('should call GameApiService.enviarMensaje with correct payload', () => {
       service.conectar('http://test.local', 'fake-token');
 
-      service.enviarMensaje('Hola a todos', 'mensaje');
+      service.enviarMensaje('tok-123', 'Hola a todos', 'mensaje');
 
-      expect(mockSocket.emit).toHaveBeenCalledWith('enviar_mensaje', {
+      expect(mockApi['enviarMensaje']).toHaveBeenCalledWith('tok-123', {
         texto: 'Hola a todos',
         tipo: 'mensaje',
       });
     });
 
-    it('should emit enviar_mensaje event with sugerencia tipo', () => {
+    it('should handle sugerencia tipo', () => {
       service.conectar('http://test.local', 'fake-token');
 
-      service.enviarMensaje('La respuesta es A', 'sugerencia');
+      service.enviarMensaje('tok-123', 'La respuesta es A', 'sugerencia');
 
-      expect(mockSocket.emit).toHaveBeenCalledWith('enviar_mensaje', {
+      expect(mockApi['enviarMensaje']).toHaveBeenCalledWith('tok-123', {
         texto: 'La respuesta es A',
         tipo: 'sugerencia',
       });
@@ -201,25 +228,22 @@ describe('GameSocketService (observer extension)', () => {
       vi.restoreAllMocks();
     });
 
-    it('should emit activar_comodin_llamada event with correct payload', () => {
+    it('should call GameApiService.activarComodinLlamada with token', () => {
       service.conectar('http://test.local', 'fake-token');
       const pregunta = { preguntaId: 1, texto: 'Test', opciones: [], nivel: 1 };
+      void pregunta;
 
       service.activarComodinLlamada('fake-token', pregunta);
 
-      expect(mockSocket.emit).toHaveBeenCalledWith('activar_comodin_llamada', {
-        tokenCompartido: 'fake-token',
-        pregunta,
-      });
+      expect(mockApi['activarComodinLlamada']).toHaveBeenCalledWith('fake-token');
     });
 
-    it('should emit enviar_pista_consultor event with correct payload', () => {
+    it('should call GameApiService.enviarPistaConsultor with token + payload', () => {
       service.conectar('http://test.local', 'fake-token');
 
       service.enviarPistaConsultor('fake-token', 1, 'Mi pista');
 
-      expect(mockSocket.emit).toHaveBeenCalledWith('enviar_pista_consultor', {
-        tokenCompartido: 'fake-token',
+      expect(mockApi['enviarPistaConsultor']).toHaveBeenCalledWith('fake-token', {
         preguntaId: 1,
         pista: 'Mi pista',
       });

@@ -552,12 +552,11 @@ export class GameSessionComponent implements OnInit, OnDestroy {
       if (!this.gameSocket.votosPublico()) return;
 
       const participantInfo = JSON.parse(localStorage.getItem('participantInfo') ?? '{}');
+      void participantInfo;
       this.gameSocket.emitirVoto({
-        salaId: sala.salaId,
-        rondaId: sala.rondaActiva.rondaId,
         tokenCompartido: sala.tokenCompartido,
+        rondaId: sala.rondaActiva.rondaId,
         preguntaId: pregunta.preguntaId,
-        participanteId: participantInfo.id || 0,
         opcionId,
       });
     }
@@ -574,7 +573,9 @@ export class GameSessionComponent implements OnInit, OnDestroy {
   }
 
   public onEnviarMensaje(event: { texto: string; tipo: 'mensaje' | 'sugerencia' }): void {
-    this.gameSocket.enviarMensaje(event.texto, event.tipo);
+    const sala = this.salaDetalle();
+    if (!sala) return;
+    this.gameSocket.enviarMensaje(sala.tokenCompartido, event.texto, event.tipo);
   }
 
   public async onToggleRol(event: {
@@ -584,15 +585,15 @@ export class GameSessionComponent implements OnInit, OnDestroy {
     const sala = this.salaDetalle();
     if (!sala) return;
 
-    const res = await this.gameSocket.cambiarRolParticipante(
-      sala.tokenCompartido,
-      event.nickname,
-      event.nuevoRol,
-    );
-
-    if (!res.success) {
+    try {
+      await this.gameSocket.cambiarRolParticipante(
+        sala.tokenCompartido,
+        event.nickname,
+        event.nuevoRol,
+      );
+    } catch (err: any) {
       this.toastService.show(
-        res.message || 'No se pudo cambiar el rol del participante.',
+        err?.message || 'No se pudo cambiar el rol del participante.',
         'danger',
         'Error',
       );
