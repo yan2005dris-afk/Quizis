@@ -31,7 +31,9 @@ describe('HandleDisconnectWebsocket', () => {
       ],
     }).compile();
 
-    websocket = module.get<HandleDisconnectWebsocket>(HandleDisconnectWebsocket);
+    websocket = module.get<HandleDisconnectWebsocket>(
+      HandleDisconnectWebsocket,
+    );
     jest.clearAllMocks();
   });
 

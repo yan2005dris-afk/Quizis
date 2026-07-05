@@ -70,9 +70,6 @@ export class SalasByTokenController {
     @Param('salaId') tokenCompartido: string,
     @Body('pregunta') pregunta: Record<string, unknown>,
   ) {
-    return this.releaseQuestionWebsocket.execute(
-      tokenCompartido,
-      pregunta,
-    );
+    return this.releaseQuestionWebsocket.execute(tokenCompartido, pregunta);
   }
 }

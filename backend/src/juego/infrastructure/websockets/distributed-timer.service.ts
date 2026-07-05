@@ -54,16 +54,28 @@ export class DistributedTimerService {
 
     if (client) {
       // SET EX <ttl> NX — atomic acquire (ioredis v5 argument order)
-      const acquired = await client.set(lockKey, this.instanceId, 'EX', lockTtl, 'NX');
+      const acquired = await client.set(
+        lockKey,
+        this.instanceId,
+        'EX',
+        lockTtl,
+        'NX',
+      );
       if (acquired === null) {
         // Another instance owns the lock — do not start local interval
-        this.logger.log(`[DistributedTimer] Lock already held for room ${token}, skipping`);
+        this.logger.log(
+          `[DistributedTimer] Lock already held for room ${token}, skipping`,
+        );
         return;
       }
-      this.logger.log(`[DistributedTimer] Lock acquired for room ${token} (${segundos}s)`);
+      this.logger.log(
+        `[DistributedTimer] Lock acquired for room ${token} (${segundos}s)`,
+      );
     } else {
       // No Redis — behave as sole owner (single-instance dev mode)
-      this.logger.log(`[DistributedTimer] No Redis — running as sole owner for room ${token}`);
+      this.logger.log(
+        `[DistributedTimer] No Redis — running as sole owner for room ${token}`,
+      );
     }
 
     let remaining = segundos;
@@ -78,7 +90,9 @@ export class DistributedTimerService {
         const renewed = await client.expire(lockKey, lockTtl);
         if (renewed === 0) {
           // Lock lost (key gone) — stop interval
-          this.logger.warn(`[DistributedTimer] Lock lost for room ${token}, stopping interval`);
+          this.logger.warn(
+            `[DistributedTimer] Lock lost for room ${token}, stopping interval`,
+          );
           this._clearInterval(token);
           return;
         }

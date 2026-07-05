@@ -17,7 +17,9 @@ describe('ToggleRoomEnabledWebsocket', () => {
       ],
     }).compile();
 
-    websocket = module.get<ToggleRoomEnabledWebsocket>(ToggleRoomEnabledWebsocket);
+    websocket = module.get<ToggleRoomEnabledWebsocket>(
+      ToggleRoomEnabledWebsocket,
+    );
     jest.clearAllMocks();
     mockCacheService.setRoomEnabled.mockResolvedValue(undefined);
   });
@@ -25,19 +27,13 @@ describe('ToggleRoomEnabledWebsocket', () => {
   it('toggle enabled true → setRoomEnabled(token, true)', async () => {
     await websocket.execute('T1', true);
 
-    expect(mockCacheService.setRoomEnabled).toHaveBeenCalledWith(
-      'T1',
-      true,
-    );
+    expect(mockCacheService.setRoomEnabled).toHaveBeenCalledWith('T1', true);
   });
 
   it('toggle enabled false → setRoomEnabled(token, false)', async () => {
     await websocket.execute('T1', false);
 
-    expect(mockCacheService.setRoomEnabled).toHaveBeenCalledWith(
-      'T1',
-      false,
-    );
+    expect(mockCacheService.setRoomEnabled).toHaveBeenCalledWith('T1', false);
   });
 
   it('retorna { success: true, enabled, message }', async () => {

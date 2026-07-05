@@ -1,7 +1,4 @@
-import {
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { UserApplicationService } from './user-application.service';
 import { CreateUserUseCase } from './use-cases/create-user.use-case';
 import { GetEffectivePermissionsUseCase } from './use-cases/get-effective-permissions.use-case';
@@ -24,9 +21,10 @@ export class UserService {
     private readonly getEffectivePermissionsUseCase: GetEffectivePermissionsUseCase,
   ) {}
 
-  async user(
-    userWhereUniqueInput: { usuarioId?: number; email?: string },
-  ): Promise<UserWithPermissionsResponse | null> {
+  async user(userWhereUniqueInput: {
+    usuarioId?: number;
+    email?: string;
+  }): Promise<UserWithPermissionsResponse | null> {
     return this.userAppService.findByUniqueInput(userWhereUniqueInput);
   }
 

@@ -49,13 +49,18 @@ class StubRedisService {
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
-async function waitForRedis(client: Redis, retries = 5, delayMs = 300): Promise<void> {
+async function waitForRedis(
+  client: Redis,
+  retries = 5,
+  delayMs = 300,
+): Promise<void> {
   for (let i = 0; i < retries; i++) {
     try {
       await client.ping();
       return;
     } catch {
-      if (i === retries - 1) throw new Error(`Redis not reachable after ${retries} attempts`);
+      if (i === retries - 1)
+        throw new Error(`Redis not reachable after ${retries} attempts`);
       await new Promise<void>((r) => setTimeout(r, delayMs));
     }
   }
@@ -71,7 +76,12 @@ describe('SocketMapService @integration', () => {
     const host = process.env.REDIS_HOST ?? 'localhost';
     const port = Number(process.env.REDIS_PORT ?? 6379);
 
-    client = new Redis({ host, port, connectTimeout: 5000, maxRetriesPerRequest: 0 });
+    client = new Redis({
+      host,
+      port,
+      connectTimeout: 5000,
+      maxRetriesPerRequest: 0,
+    });
 
     // Fail fast if Redis is not reachable (retries handle brief startup lag in CI)
     await waitForRedis(client);
@@ -100,7 +110,10 @@ describe('SocketMapService @integration', () => {
 
   describe('set() then get()', () => {
     it('returns the stored data for an existing socketId', async () => {
-      await service.set(SOCKET_A, { tokenCompartido: TEST_TOKEN, nickname: NICK_A });
+      await service.set(SOCKET_A, {
+        tokenCompartido: TEST_TOKEN,
+        nickname: NICK_A,
+      });
 
       const result = await service.get(SOCKET_A);
 
@@ -117,7 +130,10 @@ describe('SocketMapService @integration', () => {
 
   describe('findSocketId()', () => {
     it('returns the correct socketId via the reverse HGET index', async () => {
-      await service.set(SOCKET_A, { tokenCompartido: TEST_TOKEN, nickname: NICK_A });
+      await service.set(SOCKET_A, {
+        tokenCompartido: TEST_TOKEN,
+        nickname: NICK_A,
+      });
 
       const found = await service.findSocketId(NICK_A, TEST_TOKEN);
 
@@ -134,8 +150,14 @@ describe('SocketMapService @integration', () => {
 
   describe('getRoomSize()', () => {
     it('returns 2 after two set() calls for the same room', async () => {
-      await service.set(SOCKET_A, { tokenCompartido: TEST_TOKEN, nickname: NICK_A });
-      await service.set(SOCKET_B, { tokenCompartido: TEST_TOKEN, nickname: NICK_B });
+      await service.set(SOCKET_A, {
+        tokenCompartido: TEST_TOKEN,
+        nickname: NICK_A,
+      });
+      await service.set(SOCKET_B, {
+        tokenCompartido: TEST_TOKEN,
+        nickname: NICK_B,
+      });
 
       const size = await service.getRoomSize(TEST_TOKEN);
 
@@ -152,7 +174,10 @@ describe('SocketMapService @integration', () => {
 
   describe('delete()', () => {
     it('removes socket hash, room:sockets SET entry, and room:nicknames HASH entry', async () => {
-      await service.set(SOCKET_A, { tokenCompartido: TEST_TOKEN, nickname: NICK_A });
+      await service.set(SOCKET_A, {
+        tokenCompartido: TEST_TOKEN,
+        nickname: NICK_A,
+      });
 
       await service.delete(SOCKET_A);
 
@@ -161,17 +186,29 @@ describe('SocketMapService @integration', () => {
       expect(Object.keys(socketHash)).toHaveLength(0);
 
       // SET must not contain the socketId
-      const inSet = await client.sismember(`room:${TEST_TOKEN}:sockets`, SOCKET_A);
+      const inSet = await client.sismember(
+        `room:${TEST_TOKEN}:sockets`,
+        SOCKET_A,
+      );
       expect(inSet).toBe(0);
 
       // nicknames hash must not contain the nickname
-      const nickEntry = await client.hget(`room:${TEST_TOKEN}:nicknames`, NICK_A);
+      const nickEntry = await client.hget(
+        `room:${TEST_TOKEN}:nicknames`,
+        NICK_A,
+      );
       expect(nickEntry).toBeNull();
     });
 
     it('does not throw and does not affect other sockets when deleting a second socket from the same room', async () => {
-      await service.set(SOCKET_A, { tokenCompartido: TEST_TOKEN, nickname: NICK_A });
-      await service.set(SOCKET_B, { tokenCompartido: TEST_TOKEN, nickname: NICK_B });
+      await service.set(SOCKET_A, {
+        tokenCompartido: TEST_TOKEN,
+        nickname: NICK_A,
+      });
+      await service.set(SOCKET_B, {
+        tokenCompartido: TEST_TOKEN,
+        nickname: NICK_B,
+      });
 
       await service.delete(SOCKET_A);
 
@@ -180,7 +217,10 @@ describe('SocketMapService @integration', () => {
       expect(remaining).toBe(1);
 
       const socketBHash = await service.get(SOCKET_B);
-      expect(socketBHash).toEqual({ tokenCompartido: TEST_TOKEN, nickname: NICK_B });
+      expect(socketBHash).toEqual({
+        tokenCompartido: TEST_TOKEN,
+        nickname: NICK_B,
+      });
     });
 
     it('logs and does not throw when deleting an unknown/expired socketId', async () => {

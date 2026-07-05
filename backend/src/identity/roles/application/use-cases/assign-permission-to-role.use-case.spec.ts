@@ -42,7 +42,11 @@ describe('AssignPermissionToRoleUseCase', () => {
   });
 
   it('should assign a permission to a role', async () => {
-    roleRepo.findById.mockResolvedValue({ rolId: 1, nombre: 'Admin', deletedAt: null } as any);
+    roleRepo.findById.mockResolvedValue({
+      rolId: 1,
+      nombre: 'Admin',
+      deletedAt: null,
+    } as any);
     permissionRepo.findById.mockResolvedValue({
       permisoId: 10,
       nombre: 'Read',
@@ -73,7 +77,11 @@ describe('AssignPermissionToRoleUseCase', () => {
   });
 
   it('should throw ConflictException if already assigned', async () => {
-    roleRepo.findById.mockResolvedValue({ rolId: 1, nombre: 'Admin', deletedAt: null } as any);
+    roleRepo.findById.mockResolvedValue({
+      rolId: 1,
+      nombre: 'Admin',
+      deletedAt: null,
+    } as any);
     permissionRepo.findById.mockResolvedValue({
       permisoId: 10,
       nombre: 'Read',
@@ -93,7 +101,11 @@ describe('AssignPermissionToRoleUseCase', () => {
   });
 
   it('should restore if previously deleted', async () => {
-    roleRepo.findById.mockResolvedValue({ rolId: 1, nombre: 'Admin', deletedAt: null } as any);
+    roleRepo.findById.mockResolvedValue({
+      rolId: 1,
+      nombre: 'Admin',
+      deletedAt: null,
+    } as any);
     permissionRepo.findById.mockResolvedValue({
       permisoId: 10,
       nombre: 'Read',

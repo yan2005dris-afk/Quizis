@@ -349,8 +349,6 @@ describe('JuegoGateway — handleJoinRoomMessage', () => {
   });
 });
 
-
-
 // ─── sdd/quizis-init-feedback: handleSalaIniciada broadcasts info_ronda ──
 describe('JuegoGateway — handleSalaIniciada (info_ronda broadcast)', () => {
   let gateway: JuegoGateway;

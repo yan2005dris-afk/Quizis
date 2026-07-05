@@ -20,7 +20,10 @@ describe('VotosService', () => {
   const mockPersistUseCase = {
     execute: jest.fn(),
   };
-  const mockConsensusCacheService = { recordVote: jest.fn(), clearConsensus: jest.fn() };
+  const mockConsensusCacheService = {
+    recordVote: jest.fn(),
+    clearConsensus: jest.fn(),
+  };
   const mockParticipantsCacheService = { getOnlineParticipants: jest.fn() };
   const mockSalasService = {};
 

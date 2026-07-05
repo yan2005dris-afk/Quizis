@@ -1,8 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { OnEvent, EventEmitter2 } from '@nestjs/event-emitter';
-import {
-  GameEvents,
-} from '../../../../core/common/events/game-events.types';
+import { GameEvents } from '../../../../core/common/events/game-events.types';
 import type {
   ParticipanteJoinedEvent,
   ParticipanteDisconnectedEvent,

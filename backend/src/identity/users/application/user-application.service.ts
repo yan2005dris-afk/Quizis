@@ -116,7 +116,9 @@ export class UserApplicationService {
       clave?: string;
     },
   ): Promise<UserWithPermissionsResponse | null> {
-    const existingUser = await this.userRepo.findByUniqueInput({ usuarioId: id });
+    const existingUser = await this.userRepo.findByUniqueInput({
+      usuarioId: id,
+    });
 
     if (!existingUser) {
       throw new NotFoundException('Usuario no encontrado');

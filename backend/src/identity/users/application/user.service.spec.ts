@@ -64,7 +64,9 @@ describe('UserService', () => {
       const result = await service.user({ usuarioId: 1 });
 
       expect(result).toEqual(mockResult);
-      expect(mockUserAppService.findByUniqueInput).toHaveBeenCalledWith({ usuarioId: 1 });
+      expect(mockUserAppService.findByUniqueInput).toHaveBeenCalledWith({
+        usuarioId: 1,
+      });
     });
 
     it('should return null if user not found', async () => {

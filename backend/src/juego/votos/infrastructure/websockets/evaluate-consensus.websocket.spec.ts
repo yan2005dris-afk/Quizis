@@ -18,7 +18,9 @@ describe('EvaluateConsensusWebsocket', () => {
       ],
     }).compile();
 
-    websocket = module.get<EvaluateConsensusWebsocket>(EvaluateConsensusWebsocket);
+    websocket = module.get<EvaluateConsensusWebsocket>(
+      EvaluateConsensusWebsocket,
+    );
     jest.clearAllMocks();
   });
 

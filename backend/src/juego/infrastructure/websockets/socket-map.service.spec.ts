@@ -38,16 +38,22 @@ describe('SocketMapService — Redis path', () => {
 
   describe('set()', () => {
     it('writes socket hash, reverse-index hash, and set', async () => {
-      await service.set('socket-1', { tokenCompartido: 'room-A', nickname: 'alice' });
+      await service.set('socket-1', {
+        tokenCompartido: 'room-A',
+        nickname: 'alice',
+      });
 
       expect(redisMock.hset).toHaveBeenCalledWith(
         'socket:socket-1',
-        'tokenCompartido', 'room-A',
-        'nickname', 'alice',
+        'tokenCompartido',
+        'room-A',
+        'nickname',
+        'alice',
       );
       expect(redisMock.hset).toHaveBeenCalledWith(
         'room:room-A:nicknames',
-        'alice', 'socket-1',
+        'alice',
+        'socket-1',
       );
       expect(redisMock.sadd).toHaveBeenCalledWith(
         'room:room-A:sockets',
@@ -56,7 +62,10 @@ describe('SocketMapService — Redis path', () => {
     });
 
     it('sets TTL on all three keys', async () => {
-      await service.set('socket-1', { tokenCompartido: 'room-A', nickname: 'alice' });
+      await service.set('socket-1', {
+        tokenCompartido: 'room-A',
+        nickname: 'alice',
+      });
 
       const expireCalls = (redisMock.expire as jest.Mock).mock.calls.map(
         (c) => c[0],
@@ -69,7 +78,10 @@ describe('SocketMapService — Redis path', () => {
 
   describe('get()', () => {
     it('returns parsed data when key exists', async () => {
-      redisMock.hgetall.mockResolvedValue({ tokenCompartido: 'room-A', nickname: 'alice' });
+      redisMock.hgetall.mockResolvedValue({
+        tokenCompartido: 'room-A',
+        nickname: 'alice',
+      });
 
       const result = await service.get('socket-1');
 
@@ -88,12 +100,21 @@ describe('SocketMapService — Redis path', () => {
 
   describe('delete()', () => {
     it('removes socket hash, sockets set entry, and nickname reverse index', async () => {
-      redisMock.hgetall.mockResolvedValue({ tokenCompartido: 'room-A', nickname: 'alice' });
+      redisMock.hgetall.mockResolvedValue({
+        tokenCompartido: 'room-A',
+        nickname: 'alice',
+      });
 
       await service.delete('socket-1');
 
-      expect(redisMock.srem).toHaveBeenCalledWith('room:room-A:sockets', 'socket-1');
-      expect(redisMock.hdel).toHaveBeenCalledWith('room:room-A:nicknames', 'alice');
+      expect(redisMock.srem).toHaveBeenCalledWith(
+        'room:room-A:sockets',
+        'socket-1',
+      );
+      expect(redisMock.hdel).toHaveBeenCalledWith(
+        'room:room-A:nicknames',
+        'alice',
+      );
       expect(redisMock.del).toHaveBeenCalledWith('socket:socket-1');
     });
 
@@ -112,7 +133,10 @@ describe('SocketMapService — Redis path', () => {
       const result = await service.findSocketId('alice', 'room-A');
 
       expect(result).toBe('socket-1');
-      expect(redisMock.hget).toHaveBeenCalledWith('room:room-A:nicknames', 'alice');
+      expect(redisMock.hget).toHaveBeenCalledWith(
+        'room:room-A:nicknames',
+        'alice',
+      );
     });
 
     it('returns undefined when nickname not found', async () => {

@@ -38,13 +38,18 @@ class StubRedisService {
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
-async function waitForRedis(client: Redis, retries = 5, delayMs = 300): Promise<void> {
+async function waitForRedis(
+  client: Redis,
+  retries = 5,
+  delayMs = 300,
+): Promise<void> {
   for (let i = 0; i < retries; i++) {
     try {
       await client.ping();
       return;
     } catch {
-      if (i === retries - 1) throw new Error(`Redis not reachable after ${retries} attempts`);
+      if (i === retries - 1)
+        throw new Error(`Redis not reachable after ${retries} attempts`);
       await new Promise<void>((r) => setTimeout(r, delayMs));
     }
   }
@@ -60,7 +65,12 @@ describe('DistributedTimerService @integration', () => {
     const host = process.env.REDIS_HOST ?? 'localhost';
     const port = Number(process.env.REDIS_PORT ?? 6379);
 
-    client = new Redis({ host, port, connectTimeout: 5000, maxRetriesPerRequest: 0 });
+    client = new Redis({
+      host,
+      port,
+      connectTimeout: 5000,
+      maxRetriesPerRequest: 0,
+    });
 
     await waitForRedis(client);
 
@@ -93,7 +103,12 @@ describe('DistributedTimerService @integration', () => {
 
   describe('iniciarTimer()', () => {
     it('writes timer:{token}:owner lock key to Redis after acquiring', async () => {
-      await service.iniciarTimer(TOKEN_LOCK, 3, () => {}, () => {});
+      await service.iniciarTimer(
+        TOKEN_LOCK,
+        3,
+        () => {},
+        () => {},
+      );
 
       const value = await client.get(lockKey(TOKEN_LOCK));
 
@@ -101,7 +116,12 @@ describe('DistributedTimerService @integration', () => {
     });
 
     it('lock key has a positive TTL (not persistent)', async () => {
-      await service.iniciarTimer(TOKEN_LOCK, 3, () => {}, () => {});
+      await service.iniciarTimer(
+        TOKEN_LOCK,
+        3,
+        () => {},
+        () => {},
+      );
 
       const ttl = await client.ttl(lockKey(TOKEN_LOCK));
 
@@ -135,7 +155,12 @@ describe('DistributedTimerService @integration', () => {
 
   describe('detenerTimer()', () => {
     it('deletes the lock key when this instance owns it', async () => {
-      await service.iniciarTimer(TOKEN_LOCK, 3, () => {}, () => {});
+      await service.iniciarTimer(
+        TOKEN_LOCK,
+        3,
+        () => {},
+        () => {},
+      );
 
       // Confirm lock is held before stopping
       const before = await client.get(lockKey(TOKEN_LOCK));
@@ -161,7 +186,9 @@ describe('DistributedTimerService @integration', () => {
 
     it('resolves without throwing when lock key does not exist', async () => {
       // Key never written — detenerTimer should be a no-op
-      await expect(service.detenerTimer('ghost-token-xyz')).resolves.not.toThrow();
+      await expect(
+        service.detenerTimer('ghost-token-xyz'),
+      ).resolves.not.toThrow();
     });
   });
 });
