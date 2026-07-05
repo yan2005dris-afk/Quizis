@@ -17,112 +17,6 @@ import { RoomBroadcasterService } from './room-broadcaster.service';
 import { SocketMapService } from './socket-map.service';
 import { DistributedTimerService } from './distributed-timer.service';
 
-describe('JuegoGateway — handleComodinBloqueado', () => {
-  let gateway: JuegoGateway;
-  let salasService: jest.Mocked<Pick<SalasService, 'addBlockedComodin'>>;
-  let roomBroadcaster: jest.Mocked<
-    Pick<RoomBroadcasterService, 'broadcastToRoom'>
-  >;
-
-  beforeEach(async () => {
-    const module: TestingModule = await Test.createTestingModule({
-      providers: [
-        JuegoGateway,
-        {
-          provide: SalasService,
-          useValue: { addBlockedComodin: jest.fn() },
-        },
-        {
-          provide: HandleTimerExpirationUseCase,
-          useValue: { execute: jest.fn() },
-        },
-        { provide: VotosService, useValue: {} },
-        { provide: ChatService, useValue: {} },
-        { provide: ComodinesService, useValue: {} },
-        { provide: HandleJoinRoomWebsocket, useValue: {} },
-        { provide: HandleDisconnectWebsocket, useValue: {} },
-        { provide: ToggleRoomEnabledWebsocket, useValue: {} },
-        { provide: ProcessAudienceVoteWebsocket, useValue: {} },
-        { provide: SubmitAnswerWebsocket, useValue: {} },
-        { provide: ReleaseQuestionWebsocket, useValue: {} },
-        { provide: ActivateCallJokerWebsocket, useValue: {} },
-        { provide: SendHintWebsocket, useValue: {} },
-        {
-          provide: RoomBroadcasterService,
-          useValue: { broadcastToRoom: jest.fn(), setServer: jest.fn() },
-        },
-        {
-          provide: SocketMapService,
-          useValue: {
-            set: jest.fn(),
-            get: jest.fn(),
-            delete: jest.fn(),
-            findSocketId: jest.fn(),
-            getRoomSize: jest.fn(),
-          },
-        },
-        {
-          provide: DistributedTimerService,
-          useValue: { iniciarTimer: jest.fn(), detenerTimer: jest.fn() },
-        },
-      ],
-    }).compile();
-
-    gateway = module.get<JuegoGateway>(JuegoGateway);
-    salasService = module.get(SalasService) as any;
-    roomBroadcaster = module.get(RoomBroadcasterService) as any;
-
-    jest.clearAllMocks();
-  });
-
-  it('comodín no-PUBLICO → solo emite comodin_bloqueado', async () => {
-    const payload = {
-      tokenCompartido: 'token-123',
-      userId: 'user-1',
-      tipoComodin: 'IA',
-    };
-
-    await gateway.handleComodinBloqueado(payload);
-
-    expect(salasService.addBlockedComodin).toHaveBeenCalledWith(
-      'token-123',
-      'IA',
-    );
-    expect(roomBroadcaster.broadcastToRoom).toHaveBeenCalledTimes(1);
-    expect(roomBroadcaster.broadcastToRoom).toHaveBeenCalledWith(
-      'token-123',
-      'comodin_bloqueado',
-      payload,
-    );
-  });
-
-  it('comodín PUBLICO → emite comodin_bloqueado y voto_recibido con zeros', async () => {
-    const payload = {
-      tokenCompartido: 'token-123',
-      userId: 'user-1',
-      tipoComodin: 'PUBLICO',
-    };
-
-    await gateway.handleComodinBloqueado(payload);
-
-    expect(salasService.addBlockedComodin).toHaveBeenCalledWith(
-      'token-123',
-      'PUBLICO',
-    );
-    expect(roomBroadcaster.broadcastToRoom).toHaveBeenCalledTimes(2);
-    expect(roomBroadcaster.broadcastToRoom).toHaveBeenCalledWith(
-      'token-123',
-      'comodin_bloqueado',
-      payload,
-    );
-    expect(roomBroadcaster.broadcastToRoom).toHaveBeenCalledWith(
-      'token-123',
-      'voto_recibido',
-      { A: 0, B: 0, C: 0, D: 0, total: 0 },
-    );
-  });
-});
-
 describe('JuegoGateway — handleDisconnect', () => {
   let gateway: JuegoGateway;
   let socketMapService: jest.Mocked<
@@ -250,6 +144,7 @@ describe('JuegoGateway — handleJoinRoomMessage', () => {
   >;
   let chatService: jest.Mocked<Pick<ChatService, 'getChatMessages'>>;
 
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -366,7 +261,6 @@ describe('JuegoGateway — handleSalaIniciada (info_ronda broadcast)', () => {
         { provide: ComodinesService, useValue: {} },
         { provide: HandleJoinRoomWebsocket, useValue: {} },
         { provide: HandleDisconnectWebsocket, useValue: {} },
-        { provide: ToggleRoomEnabledWebsocket, useValue: {} },
         { provide: ProcessAudienceVoteWebsocket, useValue: {} },
         { provide: SubmitAnswerWebsocket, useValue: {} },
         { provide: ReleaseQuestionWebsocket, useValue: {} },

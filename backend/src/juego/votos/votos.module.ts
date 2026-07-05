@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { VotosService } from './application/votos.service';
 import { VotosController } from './interfaces/votos.controller';
 import { RespuestasController } from './interfaces/controllers/respuestas.controller';
+import { VotosRestController } from './interfaces/controllers/votos-rest.controller';
 import { CacheModule } from '../../core/cache/cache.module';
 import { DatabaseModule } from '../../core/database/prisma/prisma.module';
 import { RegisterVoteUseCase } from './application/use-cases/register-vote.use-case';
@@ -19,7 +20,7 @@ import { RespuestasModule } from '../respuestas/respuestas.module';
 
 @Module({
   imports: [CacheModule, DatabaseModule, SalasModule, RespuestasModule],
-  controllers: [VotosController, RespuestasController],
+  controllers: [VotosController, RespuestasController, VotosRestController],
   providers: [
     VotosService,
     RegisterVoteUseCase,

@@ -380,11 +380,11 @@ export class GameSessionComponent implements OnInit, OnDestroy {
           const interval = setInterval(() => {
             if (this.gameSocket.conectado()) {
               let participantInfo: any = {};
-    try {
-      participantInfo = JSON.parse(localStorage.getItem('participantInfo') ?? '{}');
-    } catch {
-      participantInfo = {};
-    }
+              try {
+                participantInfo = JSON.parse(localStorage.getItem('participantInfo') ?? '{}');
+              } catch {
+                participantInfo = {};
+              }
               const nickname = this.isHost()
                 ? `Host-${this.auth.user()?.nombre || 'Admin'}`
                 : (participantInfo.nickname ?? `Estudiante-${Math.floor(Math.random() * 1000)}`);
@@ -553,7 +553,10 @@ export class GameSessionComponent implements OnInit, OnDestroy {
       (p) => !p.respuestaDada && p.preguntaId !== this.preguntaActiva()?.preguntaId,
     );
     if (proxima) {
-      this.gameSocket.liberarPregunta(tokenCompartido, proxima);
+      // SECURITY: send only preguntaId; the backend loads the question from
+      // the DB so we never leak `esCorrecta` via the pregunta_liberada
+      // broadcast.
+      this.gameSocket.liberarPregunta(tokenCompartido, proxima.preguntaId);
     }
   }
 
@@ -574,17 +577,15 @@ export class GameSessionComponent implements OnInit, OnDestroy {
       if (!this.gameSocket.votosPublico()) return;
 
       let participantInfo: any = {};
-    try {
-      participantInfo = JSON.parse(localStorage.getItem('participantInfo') ?? '{}');
-    } catch {
-      participantInfo = {};
-    }
+      try {
+        participantInfo = JSON.parse(localStorage.getItem('participantInfo') ?? '{}');
+      } catch {
+        participantInfo = {};
+      }
       this.gameSocket.emitirVoto({
-        salaId: sala.salaId,
-        rondaId: sala.rondaActiva.rondaId,
         tokenCompartido: sala.tokenCompartido,
+        rondaId: sala.rondaActiva.rondaId,
         preguntaId: pregunta.preguntaId,
-        participanteId: participantInfo.id || 0,
         opcionId,
       });
     }
@@ -601,7 +602,9 @@ export class GameSessionComponent implements OnInit, OnDestroy {
   }
 
   public onEnviarMensaje(event: { texto: string; tipo: 'mensaje' | 'sugerencia' }): void {
-    this.gameSocket.enviarMensaje(event.texto, event.tipo);
+    const sala = this.salaDetalle();
+    if (!sala) return;
+    this.gameSocket.enviarMensaje(sala.tokenCompartido, event.texto, event.tipo);
   }
 
   public async onToggleRol(event: {
@@ -611,15 +614,15 @@ export class GameSessionComponent implements OnInit, OnDestroy {
     const sala = this.salaDetalle();
     if (!sala) return;
 
-    const res = await this.gameSocket.cambiarRolParticipante(
-      sala.tokenCompartido,
-      event.nickname,
-      event.nuevoRol,
-    );
-
-    if (!res.success) {
+    try {
+      await this.gameSocket.cambiarRolParticipante(
+        sala.tokenCompartido,
+        event.nickname,
+        event.nuevoRol,
+      );
+    } catch (err: any) {
       this.toastService.show(
-        res.message || 'No se pudo cambiar el rol del participante.',
+        err?.message || 'No se pudo cambiar el rol del participante.',
         'danger',
         'Error',
       );

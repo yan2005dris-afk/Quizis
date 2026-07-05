@@ -1,12 +1,15 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { NotFoundException, BadRequestException } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { RestartRoundUseCase } from './restart-round.use-case';
 import { PrismaService } from 'src/core/database/prisma/prisma.service';
 import { RoomStateCacheService } from 'src/juego/shared/room-state/room-state-cache.service';
 import { ParticipantsCacheService } from 'src/juego/shared/room-state/participants-cache.service';
+import { GameEvents } from 'src/core/common/events/game-events.types';
 
 describe('RestartRoundUseCase', () => {
   let useCase: RestartRoundUseCase;
+  let eventEmitter: { emit: jest.Mock };
 
   const mockPrisma = {
     salas: { findUnique: jest.fn() },
@@ -22,6 +25,10 @@ describe('RestartRoundUseCase', () => {
 
   const mockParticipantsCache = {
     getHistoricalParticipants: jest.fn(),
+  };
+
+  const mockEventEmitter = {
+    emit: jest.fn(),
   };
 
   const mockSala = {
@@ -79,10 +86,12 @@ describe('RestartRoundUseCase', () => {
         { provide: PrismaService, useValue: mockPrisma },
         { provide: RoomStateCacheService, useValue: mockRoomStateCache },
         { provide: ParticipantsCacheService, useValue: mockParticipantsCache },
+        { provide: EventEmitter2, useValue: mockEventEmitter },
       ],
     }).compile();
 
     useCase = module.get<RestartRoundUseCase>(RestartRoundUseCase);
+    eventEmitter = module.get(EventEmitter2);
     jest.clearAllMocks();
 
     mockPrisma.salas.findUnique.mockResolvedValue(mockSala);
@@ -90,6 +99,7 @@ describe('RestartRoundUseCase', () => {
     mockPrisma.rondas.create.mockResolvedValue(mockNewRound);
     mockRoomStateCache.clearRoundState.mockResolvedValue(undefined);
     mockRoomStateCache.setRoomEstado.mockResolvedValue(undefined);
+    mockEventEmitter.emit.mockReturnValue(undefined);
   });
 
   it('sala no encontrada → NotFoundException', async () => {
@@ -263,5 +273,65 @@ describe('RestartRoundUseCase', () => {
 
     expect(result.rondaActiva.preguntaActualId).toBeNull();
     expect(result.rondaActiva.preguntaActual).toBeNull();
+  });
+
+  // ─── Broadcast event ─────────────────────────────────────────────
+
+  it('emite GameEvents.RONDAS.RONDA_REINICIADA con el tokenCompartido de la sala', async () => {
+    mockPrisma.rondas.findFirst.mockResolvedValue(null);
+    mockPrisma.participantes.findFirst.mockResolvedValue(mockParticipante);
+
+    await useCase.execute(1);
+
+    expect(mockEventEmitter.emit).toHaveBeenCalledWith(
+      GameEvents.RONDAS.RONDA_REINICIADA,
+      expect.objectContaining({
+        tokenCompartido: 'token-abc',
+        estado: 'ESPERANDO_ALUMNOS',
+      }),
+    );
+  });
+
+  it('CRÍTICO: el payload del evento NO incluye esCorrecta en historialPreguntas', async () => {
+    mockPrisma.rondas.findFirst.mockResolvedValue(null);
+    mockPrisma.participantes.findFirst.mockResolvedValue(mockParticipante);
+
+    await useCase.execute(1);
+
+    expect(mockEventEmitter.emit).toHaveBeenCalledTimes(1);
+    const [, payload] = mockEventEmitter.emit.mock.calls[0];
+
+    // The use-case's HTTP return keeps esCorrecta (legitimate admin caller),
+    // but the broadcast payload must strip it (security fix).
+    payload.rondaActiva.historialPreguntas.forEach((p: any) => {
+      p.opciones.forEach((o: any) => {
+        expect(o.esCorrecta).toBeUndefined();
+      });
+    });
+  });
+
+  it('NO emite evento si la sala no existe', async () => {
+    mockPrisma.salas.findUnique.mockResolvedValue(null);
+
+    await expect(useCase.execute(999)).rejects.toThrow(NotFoundException);
+    expect(mockEventEmitter.emit).not.toHaveBeenCalled();
+  });
+
+  it('NO emite evento si no hay participantes', async () => {
+    mockPrisma.rondas.findFirst.mockResolvedValue(null);
+    mockPrisma.participantes.findFirst.mockResolvedValue(null);
+    mockParticipantsCache.getHistoricalParticipants.mockResolvedValue([]);
+
+    await expect(useCase.execute(1)).rejects.toThrow(BadRequestException);
+    expect(mockEventEmitter.emit).not.toHaveBeenCalled();
+  });
+
+  it('NO emite evento si el banco no tiene preguntas', async () => {
+    mockPrisma.rondas.findFirst.mockResolvedValue(null);
+    mockPrisma.participantes.findFirst.mockResolvedValue(mockParticipante);
+    mockPrisma.preguntas.findMany.mockResolvedValue([]);
+
+    await expect(useCase.execute(1)).rejects.toThrow(BadRequestException);
+    expect(mockEventEmitter.emit).not.toHaveBeenCalled();
   });
 });

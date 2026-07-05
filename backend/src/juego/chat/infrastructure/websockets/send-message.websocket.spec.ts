@@ -1,12 +1,17 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { SendMessageWebsocket } from './send-message.websocket';
 import { ChatCacheService } from '../cache/chat-cache.service';
+import { RoomBroadcasterService } from '../../../infrastructure/websockets/room-broadcaster.service';
 
 describe('SendMessageWebsocket', () => {
   let websocket: SendMessageWebsocket;
 
   const mockChatCache = {
     addMessage: jest.fn(),
+  };
+
+  const mockRoomBroadcaster = {
+    broadcastToRoom: jest.fn(),
   };
 
   const basePayload = {
@@ -21,12 +26,14 @@ describe('SendMessageWebsocket', () => {
       providers: [
         SendMessageWebsocket,
         { provide: ChatCacheService, useValue: mockChatCache },
+        { provide: RoomBroadcasterService, useValue: mockRoomBroadcaster },
       ],
     }).compile();
 
     websocket = module.get<SendMessageWebsocket>(SendMessageWebsocket);
     jest.clearAllMocks();
     mockChatCache.addMessage.mockResolvedValue([]);
+    mockRoomBroadcaster.broadcastToRoom.mockReturnValue(undefined);
   });
 
   it('mensaje tipo "mensaje" → llama addMessage con tipo correcto', async () => {
@@ -87,6 +94,23 @@ describe('SendMessageWebsocket', () => {
     expect(mockChatCache.addMessage).toHaveBeenCalledWith(
       'token-abc',
       expect.objectContaining({ texto: '' }),
+    );
+  });
+
+  it('tras añadir al cache → broadcastea mensaje_chat a la sala con array actualizado', async () => {
+    const msgsActualizados = [
+      { usuario: 'Ana', texto: 'prev', timestamp: 1, tipo: 'mensaje' },
+      { usuario: 'Juan', texto: 'Hola mundo', timestamp: 2, tipo: 'mensaje' },
+    ];
+    mockChatCache.addMessage.mockResolvedValue(msgsActualizados);
+
+    await websocket.execute(basePayload);
+
+    expect(mockRoomBroadcaster.broadcastToRoom).toHaveBeenCalledTimes(1);
+    expect(mockRoomBroadcaster.broadcastToRoom).toHaveBeenCalledWith(
+      'token-abc',
+      'mensaje_chat',
+      msgsActualizados,
     );
   });
 });

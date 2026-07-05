@@ -27,7 +27,10 @@ import { SendHintWebsocket } from '../../comodines/infrastructure/websockets/sen
 
 // Infrastructure / Common
 import { GameEvents } from '../../../core/common/events/game-events.types';
-import type { ConsensusEvaluatedEvent } from '../../../core/common/events/game-events.types';
+import type {
+  ConsensusEvaluatedEvent,
+  RondaReiniciadaEvent,
+} from '../../../core/common/events/game-events.types';
 import type { VotePayload } from '../../votos/infrastructure/websockets/process-audience-vote.websocket';
 
 // WebSocket Infrastructure
@@ -50,6 +53,7 @@ type ConsensusInput = {
   totalRequeridos?: number;
   winningOpcionId?: number;
   esCorrecta?: boolean | null;
+  opcionCorrectaId?: number;
   feedback?: string | null;
 };
 
@@ -246,6 +250,37 @@ export class JuegoGateway
   }
 
   /**
+   * Fired by RestartRoundUseCase after a new round is created in the DB
+   * and the room state is reset to ESPERANDO_ALUMNOS. Broadcasts
+   * `sala_reiniciada` so connected participants see the new round
+   * without refreshing. The event payload already comes sanitized from
+   * the use-case (esCorrecta stripped from historialPreguntas), but we
+   * sanitize defensively here too in case a future caller emits
+   * without sanitizing.
+   */
+  @OnEvent(GameEvents.RONDAS.RONDA_REINICIADA)
+  handleRondaReiniciada(event: RondaReiniciadaEvent) {
+    const sanitized = {
+      ...event,
+      rondaActiva: {
+        ...event.rondaActiva,
+        historialPreguntas: event.rondaActiva.historialPreguntas.map((p) => ({
+          ...p,
+          opciones: p.opciones.map((o: any) => {
+            const { esCorrecta: _esCorrecta, ...rest } = o ?? {};
+            return rest;
+          }),
+        })),
+      },
+    };
+    this.roomBroadcaster.broadcastToRoom(
+      event.tokenCompartido,
+      'ronda_reiniciada',
+      sanitized,
+    );
+  }
+
+  /**
    * Fired by UpdateEstadoSalaUseCase when a room transitions to EN_VIVO.
    * Broadcasts `info_ronda` so the frontend updates the header ("Esperando
    * información de la ronda..." goes away) and the active-question state.
@@ -303,10 +338,40 @@ export class JuegoGateway
             remaining,
           );
         },
-        // onExpire — persist "no answer" and notify the room
+        // onExpire - persist "no answer" and notify the room.
+        // After persisting, emit BOTH `tiempo_agotado` (legacy timer
+        // overlay) and `pregunta_respondida` (with the correct option id
+        // so the UI can highlight it). The student never submitted, so
+        // this is the first time they learn which option was correct -
+        // equivalent to the submit path. Both events share the same
+        // race-safety: `claimed` indicates we won the persistence race.
         () => {
           void this.handleTimerExpiration
-            .execute({ tokenCompartido, rondaId, preguntaId: pregunta.preguntaId })
+            .execute({
+              tokenCompartido,
+              rondaId,
+              preguntaId: pregunta.preguntaId,
+            })
+            .then((result) => {
+              if (result.claimed) {
+                // Mirror the student-submit path: tell the room which
+                // option was correct (here it's the persisted one, since
+                // the timer "chose" it on the student's behalf). The UI
+                // uses `opcionCorrectaId` to mark the canonical correct
+                // option after a wrong answer or timeout.
+                this.roomBroadcaster.broadcastToRoom(
+                  tokenCompartido,
+                  'pregunta_respondida',
+                  {
+                    preguntaId: pregunta.preguntaId,
+                    opcionId: result.opcionId,
+                    esCorrecta: result.esCorrecta,
+                    opcionCorrectaId: result.opcionCorrectaId,
+                    feedback: result.feedback ?? null,
+                  },
+                );
+              }
+            })
             .catch((err) =>
               this.logger.error(
                 `[handlePreguntaLiberada] Timer expiry handler failed for ${tokenCompartido}: ${err}`,
@@ -330,13 +395,25 @@ export class JuegoGateway
     }
 
     // Only broadcast once the timer infrastructure is confirmed ready.
+    // SANITIZE: strip `esCorrecta` from every option so clients cannot
+    // inspect the correct answer before submitting. The DB-loaded flag
+    // stays in the cache (used by SubmitAnswerWebsocket to grade).
+    const preguntaSanitizada = {
+      ...pregunta,
+      opciones: Array.isArray(pregunta?.opciones)
+        ? pregunta.opciones.map((o: any) => {
+            const { esCorrecta: _esCorrecta, ...rest } = o ?? {};
+            return rest;
+          })
+        : [],
+    };
     this.roomBroadcaster.broadcastToRoom(
       tokenCompartido,
       'pregunta_liberada',
-      pregunta,
+      preguntaSanitizada,
     );
     this.logger.log(
-      `[RONDAS:PREGUNTA_LIBERADA] Broadcast pregunta ${pregunta.preguntaId} for ${tokenCompartido}`,
+      `[RONDAS:PREGUNTA_LIBERADA] Broadcast pregunta ${pregunta.preguntaId} for ${tokenCompartido} (sanitized)`,
     );
   }
 
@@ -416,325 +493,23 @@ export class JuegoGateway
     }
   }
 
-  @SubscribeMessage('cambiar_rol_participante')
-  async handleCambiarRolParticipante(
-    @MessageBody()
-    payload: {
-      tokenCompartido: string;
-      nickname: string;
-      nuevoRol: string;
-    },
-  ) {
-    try {
-      const participantesDb = await this.salasService.changeParticipantRole(
-        payload.tokenCompartido,
-        payload.nickname,
-        payload.nuevoRol,
-      );
-
-      this.roomBroadcaster.broadcastToRoom(
-        payload.tokenCompartido,
-        'participantes',
-        participantesDb,
-      );
-
-      return { success: true };
-    } catch (e: any) {
-      this.logger.error(`Error cambiando rol:`, e);
-      return { success: false, message: e.message || 'Error al cambiar rol' };
-    }
-  }
-
-  @SubscribeMessage('audience:vote')
-  async handleVote(
-    @ConnectedSocket() _client: Socket,
-    @MessageBody() payload: VotePayload,
-  ) {
-    try {
-      const result = await this.processAudienceVote.execute(payload);
-
-      if (!result.success) {
-        return result;
-      }
-
-      this.scheduleBroadcast(
-        result.data!.tokenCompartido,
-        result.distribucion as VoteDistribution,
-      );
-
-      return result;
-    } catch (error) {
-      this.logger.error(`Error en Gateway al procesar voto:`, error);
-      return {
-        success: false,
-        message: 'Error interno del servidor. Intenta nuevamente.',
-      };
-    }
-  }
+  // Removed in N1 PR1 (sdd/quizis-rest-n1-mutations AC-N1-26):
+  //   - handlePreguntaLiberada (pregunta_liberada) → REST POST /api/v1/salas/by-token/:salaId/preguntas/liberar
 
   // Removed in N1 PR1 (sdd/quizis-rest-n1-mutations AC-N1-26):
   //   - handleAnswer (responder_pregunta) → REST POST /api/v1/salas/:salaId/respuestas
   //   - handleToggleRoom (cambiar_estado_sala) → REST PATCH /api/v1/salas/by-token/:salaId/estado
 
-  @SubscribeMessage('regenerar_token')
-  async handleRegenerateToken(
-    @MessageBody() payload: { salaId: number; tokenAnterior: string },
-  ) {
-    try {
-      const res = await this.salasService.regenerarToken(payload.salaId);
-
-      this.roomBroadcaster.broadcastToRoom(
-        payload.tokenAnterior,
-        'token_sala_actualizado',
-        {
-          nuevoToken: res.tokenCompartido,
-        },
-      );
-
-      return res;
-    } catch {
-      return { success: false, message: 'No se pudo regenerar el token.' };
-    }
-  }
-
-  @SubscribeMessage('finalizar_partida')
-  async handleFinalizeGame(
-    @MessageBody() payload: { salaId: number; tokenCompartido: string },
-  ) {
-    try {
-      this.flushBroadcast(payload.tokenCompartido);
-      const res = await this.salasService.finalizarSala(payload.salaId);
-
-      this.roomBroadcaster.broadcastToRoom(
-        payload.tokenCompartido,
-        'partida_finalizada',
-        {
-          totalParticipantes: res.totalParticipantes,
-        },
-      );
-
-      return res;
-    } catch {
-      return { success: false, message: 'No se pudo finalizar la partida.' };
-    }
-  }
-
-  @SubscribeMessage('reiniciar_ronda')
-  async handleReiniciarRonda(
-    @MessageBody() payload: { tokenCompartido: string; rondaActiva: unknown },
-  ) {
-    this.logger.log(
-      `[WS:REINICIAR_RONDA] Recibido para token=${payload.tokenCompartido}`,
-    );
-    try {
-      await this.distributedTimerService.detenerTimer(payload.tokenCompartido);
-      const sala = await this.salasService.obtenerPorId(
-        payload.tokenCompartido,
-      );
-      if (!sala) throw new Error('Sala no encontrada');
-      await this.salasService.reiniciarRonda(sala.salaId);
-
-      this.roomBroadcaster.broadcastToRoom(
-        payload.tokenCompartido,
-        'ronda_reiniciada',
-        {
-          rondaActiva: payload.rondaActiva,
-        },
-      );
-
-      return { success: true };
-    } catch (error) {
-      this.logger.error(`[WS:REINICIAR_RONDA] Error:`, error);
-      return { success: false, message: 'No se pudo reiniciar la ronda.' };
-    }
-  }
-
-  @SubscribeMessage('enviar_mensaje')
-  async handleChatMessage(
-    @ConnectedSocket() client: Socket,
-    @MessageBody() payload: { texto: string; tipo: 'mensaje' | 'sugerencia' },
-  ) {
-    const info = await this.socketMapService.get(client.id);
-    if (!info) {
-      return { success: false, message: 'No estás conectado a una sala.' };
-    }
-
-    try {
-      const mensajes = await this.chatService.sendMessage({
-        tokenCompartido: info.tokenCompartido,
-        nickname: info.nickname,
-        texto: payload.texto,
-        tipo: payload.tipo,
-      });
-
-      const nuevoMensaje = mensajes[mensajes.length - 1];
-      if (nuevoMensaje) {
-        this.roomBroadcaster.broadcastToRoom(
-          info.tokenCompartido,
-          'mensaje_chat',
-          [nuevoMensaje],
-        );
-      }
-
-      return { success: true };
-    } catch (error) {
-      this.logger.error(`Error en Gateway al enviar mensaje:`, error);
-      return { success: false, message: 'Error al enviar mensaje.' };
-    }
-  }
-
-  @SubscribeMessage('sala_creada')
-  handleSalaCreada(
-    @MessageBody() payload: { tokenCompartido: string; configuracion: any },
-  ) {
-    this.roomBroadcaster.broadcastToRoom(
-      payload.tokenCompartido,
-      'sala_creada',
-      payload,
-    );
-  }
-
-  // Removed in N1 PR1 (sdd/quizis-rest-n1-mutations AC-N1-26):
-  //   - handlePreguntaLiberada (pregunta_liberada) → REST POST /api/v1/salas/by-token/:salaId/preguntas/liberar
-
-  @SubscribeMessage('comodin_bloqueado')
-  async handleComodinBloqueado(
-    @MessageBody()
-    payload: {
-      tokenCompartido: string;
-      userId: string;
-      tipoComodin: string;
-    },
-  ) {
-    await this.salasService.addBlockedComodin(
-      payload.tokenCompartido,
-      payload.tipoComodin,
-    );
-    this.roomBroadcaster.broadcastToRoom(
-      payload.tokenCompartido,
-      'comodin_bloqueado',
-      payload,
-    );
-
-    if (payload.tipoComodin === 'PUBLICO') {
-      this.roomBroadcaster.broadcastToRoom(
-        payload.tokenCompartido,
-        'voto_recibido',
-        {
-          A: 0,
-          B: 0,
-          C: 0,
-          D: 0,
-          total: 0,
-        },
-      );
-    }
-  }
-
-  @SubscribeMessage('activar_comodin_llamada')
-  async handleActivarComodinLlamada(
-    @ConnectedSocket() client: Socket,
-    @MessageBody() payload: { tokenCompartido: string; pregunta: any },
-  ) {
-    const result = await this.activateCallJokerWebsocket.execute(
-      payload.tokenCompartido,
-    );
-
-    if (!result.success) {
-      client.emit('comodin_llamada_error', { message: result.message });
-      return;
-    }
-
-    const consultorNickname = result.consultor?.nickname;
-    if (!consultorNickname) {
-      client.emit('comodin_llamada_error', {
-        message: 'No hay consultor disponible.',
-      });
-      return;
-    }
-
-    // T-08: await required — findSocketId is now async (Redis lookup)
-    const consultorSocketId = await this.findSocketId(
-      consultorNickname,
-      payload.tokenCompartido,
-    );
-
-    if (!consultorSocketId) {
-      client.emit('comodin_llamada_error', {
-        message: 'El compañero seleccionado se desconectó.',
-      });
-      return;
-    }
-
-    // Direct single-socket emit — stays as this.server.to() per spec
-    this.server.to(consultorSocketId).emit('consultor_seleccionado', {
-      tokenCompartido: payload.tokenCompartido,
-      pregunta: payload.pregunta,
-    });
-
-    this.roomBroadcaster.broadcastToRoom(
-      payload.tokenCompartido,
-      'comodin_llamada_iniciado',
-      {
-        nicknameConsultor: consultorNickname,
-      },
-    );
-  }
-
-  @SubscribeMessage('enviar_pista_consultor')
-  async handleEnviarPistaConsultor(
-    @ConnectedSocket() client: Socket,
-    @MessageBody()
-    payload: { tokenCompartido: string; preguntaId: number; pista: string },
-  ) {
-    const helperNickname = await this.comodinesService.getActiveHelper(
-      payload.tokenCompartido,
-    );
-
-    if (!helperNickname) {
-      client.emit('enviar_pista_error', {
-        message: 'No hay ninguna llamada activa en esta sala.',
-      });
-      return;
-    }
-
-    // T-08: await required — findSocketId is now async (Redis lookup)
-    const expectedSocketId = await this.findSocketId(
-      helperNickname,
-      payload.tokenCompartido,
-    );
-
-    if (client.id !== expectedSocketId) {
-      client.emit('enviar_pista_error', {
-        message: 'No eres el consultor asignado para esta llamada.',
-      });
-      return;
-    }
-
-    const result = await this.sendHintWebsocket.execute(payload);
-
-    if (!result.success) {
-      client.emit('enviar_pista_error', { message: result.message });
-      return;
-    }
-
-    this.roomBroadcaster.broadcastToRoom(
-      payload.tokenCompartido,
-      'pista_consultor_recibida',
-      {
-        pista: result.pista,
-        consultor: result.helperNickname,
-      },
-    );
-
-    this.roomBroadcaster.broadcastToRoom(
-      payload.tokenCompartido,
-      'comodin_usado',
-      {
-        tipoComodin: 'LLAMADA',
-      },
-    );
-  }
+  // N2 handlers removed in sdd/quizis-rest-n2-mutations — all migrated to REST:
+  //   handleCambiarRolParticipante → PATCH /salas/by-token/:salaId/participantes/:nickname/rol
+  //   handleVote                  → POST /salas/:salaId/votos
+  //   handleRegenerateToken       → POST /salas/by-token/:salaId/regenerar-token
+  //   handleFinalizeGame          → POST /salas/by-token/:salaId/finalizar
+  //   handleReiniciarRonda        → POST /salas/by-token/:salaId/reiniciar-ronda
+  //   handleChatMessage           → POST /salas/:salaId/mensajes
+  //   handleComodinBloqueado      → POST /salas/:salaId/comodines/:tipo/bloquear
+  //   handleActivarComodinLlamada → POST /salas/:salaId/comodines/llamada/activar
+  //   handleEnviarPistaConsultor  → POST /salas/:salaId/comodines/llamada/pista
 
   // ─── Private helpers ────────────────────────────────────────────────────────
 
@@ -760,6 +535,7 @@ export class JuegoGateway
           preguntaId,
           opcionId: result.winningOpcionId,
           esCorrecta: result.esCorrecta ?? null,
+          opcionCorrectaId: result.opcionCorrectaId ?? null,
           feedback: result.feedback ?? null,
         });
         break;

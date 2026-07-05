@@ -20,6 +20,7 @@ import { RestartRoundUseCase } from './use-cases/restart-round.use-case';
 import { ReactivateRoomUseCase } from './use-cases/reactivate-room.use-case';
 import { ParticipantsCacheService } from '../../shared/room-state/participants-cache.service';
 import { RoomStateCacheService } from '../../shared/room-state/room-state-cache.service';
+import { RoomBroadcasterService } from '../../infrastructure/websockets/room-broadcaster.service';
 import { EstadoSala } from '../interfaces/dto/update-estado-sala.dto';
 
 describe('SalasService', () => {
@@ -96,6 +97,9 @@ describe('SalasService', () => {
   };
   const mockParticipantsCacheService = {};
   const mockRoomStateCacheService = {};
+  const mockRoomBroadcasterService = {
+    broadcastToRoom: jest.fn().mockReturnValue(undefined),
+  };
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -169,6 +173,10 @@ describe('SalasService', () => {
         {
           provide: RoomStateCacheService,
           useValue: mockRoomStateCacheService,
+        },
+        {
+          provide: RoomBroadcasterService,
+          useValue: mockRoomBroadcasterService,
         },
       ],
     }).compile();

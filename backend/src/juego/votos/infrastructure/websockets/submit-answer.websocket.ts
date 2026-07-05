@@ -26,12 +26,14 @@ export type SubmitAnswerResult =
       status: 'majority';
       winningOpcionId: number;
       esCorrecta: boolean;
+      opcionCorrectaId: number;
       feedback: string;
     }
   | {
       status: 'single';
       winningOpcionId: number;
       esCorrecta: boolean;
+      opcionCorrectaId: number;
       feedback: string;
     }
   | { status: 'no-majority' }
@@ -125,6 +127,10 @@ export class SubmitAnswerWebsocket {
           (o: any) => o.opcionId === winningOpcionId,
         );
         const esCorrecta = winningOpcion?.esCorrecta ?? false;
+        const opcionCorrecta =
+          activeQuestion.opciones.find((o: any) => o.esCorrecta === true) ??
+          null;
+        const opcionCorrectaId = opcionCorrecta?.opcionId ?? winningOpcionId;
         const feedback = esCorrecta
           ? activeQuestion.feedbackCorrecto
           : activeQuestion.feedbackIncorrecto;
@@ -171,6 +177,7 @@ export class SubmitAnswerWebsocket {
           status: result.type,
           winningOpcionId,
           esCorrecta,
+          opcionCorrectaId,
           feedback,
         };
       }

@@ -55,9 +55,14 @@ export interface UpdateEstadoSalaResponse {
 
 /**
  * Body for POST /api/v1/salas/by-token/:salaId/preguntas/liberar.
+ *
+ * Security fix: the backend now loads the question + options (including
+ * `esCorrecta`) from the DB by `preguntaId` — the client must NOT send the
+ * full question, otherwise a student could read the answer from the broadcast
+ * or a malicious client could mark any option as correct.
  */
 export interface LiberarPreguntaBody {
-  pregunta: Pregunta;
+  preguntaId: number;
 }
 
 /**
@@ -96,13 +101,123 @@ export class GameApiService {
 
   /**
    * POST /api/v1/salas/by-token/:salaId/preguntas/liberar — release a question.
+   * Returns the preguntaId that was released (the backend loads the full
+   * question from the DB and broadcasts it sanitized).
    */
-  liberarPregunta(salaId: string, payload: LiberarPreguntaBody): Observable<Pregunta> {
+  liberarPregunta(
+    salaId: string,
+    preguntaId: number,
+  ): Observable<{ success: boolean; preguntaId: number }> {
     return this.http
-      .post<Pregunta>(`${this.apiUrl}/salas/by-token/${salaId}/preguntas/liberar`, payload)
+      .post<{
+        success: boolean;
+        preguntaId: number;
+      }>(`${this.apiUrl}/salas/by-token/${salaId}/preguntas/liberar`, { preguntaId })
       .pipe(catchError((err: unknown) => this.toObservableError(err)));
   }
 
+  // ──────────────────────────────────────────────────────────────────────
+  // N2 endpoints (9 mutations)
+  // ──────────────────────────────────────────────────────────────────────
+
+  /**
+   * POST /api/v1/salas/by-token/:salaId/regenerar-token — admin action.
+   */
+  regenerarToken(salaId: string): Observable<{ tokenCompartido: string }> {
+    return this.http
+      .post<{
+        tokenCompartido: string;
+      }>(`${this.apiUrl}/salas/by-token/${salaId}/regenerar-token`, {})
+      .pipe(catchError((err: unknown) => this.toObservableError(err)));
+  }
+
+  /**
+   * POST /api/v1/salas/by-token/:salaId/finalizar — admin finalizes the game.
+   */
+  finalizarPartida(salaId: string): Observable<{ totalParticipantes: number }> {
+    return this.http
+      .post<{ totalParticipantes: number }>(`${this.apiUrl}/salas/by-token/${salaId}/finalizar`, {})
+      .pipe(catchError((err: unknown) => this.toObservableError(err)));
+  }
+
+  /**
+   * POST /api/v1/salas/by-token/:salaId/reiniciar-ronda — admin restarts the round.
+   */
+  reiniciarRonda(salaId: string): Observable<unknown> {
+    return this.http
+      .post<unknown>(`${this.apiUrl}/salas/by-token/${salaId}/reiniciar-ronda`, {})
+      .pipe(catchError((err: unknown) => this.toObservableError(err)));
+  }
+
+  /**
+   * PATCH /api/v1/salas/by-token/:salaId/participantes/:nickname/rol
+   */
+  cambiarRolParticipante(
+    salaId: string,
+    nickname: string,
+    rol: 'estudiante' | 'observador',
+  ): Observable<unknown> {
+    return this.http
+      .patch<unknown>(`${this.apiUrl}/salas/by-token/${salaId}/participantes/${nickname}/rol`, {
+        rol,
+      })
+      .pipe(catchError((err: unknown) => this.toObservableError(err)));
+  }
+
+  /**
+   * POST /api/v1/salas/:salaId/votos — audience vote.
+   */
+  votar(
+    salaId: string,
+    payload: { rondaId: number; preguntaId: number; opcionId: number },
+  ): Observable<unknown> {
+    return this.http
+      .post<unknown>(`${this.apiUrl}/salas/${salaId}/votos`, payload)
+      .pipe(catchError((err: unknown) => this.toObservableError(err)));
+  }
+
+  /**
+   * POST /api/v1/salas/:salaId/mensajes — send chat message.
+   * Backend throttles to 1/sec/user.
+   */
+  enviarMensaje(
+    salaId: string,
+    payload: { texto: string; tipo: 'mensaje' | 'sugerencia' },
+  ): Observable<unknown> {
+    return this.http
+      .post<unknown>(`${this.apiUrl}/salas/${salaId}/mensajes`, payload)
+      .pipe(catchError((err: unknown) => this.toObservableError(err)));
+  }
+
+  /**
+   * POST /api/v1/salas/:salaId/comodines/:tipo/bloquear
+   */
+  bloquearComodin(salaId: string, tipo: string): Observable<unknown> {
+    return this.http
+      .post<unknown>(`${this.apiUrl}/salas/${salaId}/comodines/${tipo}/bloquear`, {})
+      .pipe(catchError((err: unknown) => this.toObservableError(err)));
+  }
+
+  /**
+   * POST /api/v1/salas/:salaId/comodines/llamada/activar
+   */
+  activarComodinLlamada(salaId: string): Observable<unknown> {
+    return this.http
+      .post<unknown>(`${this.apiUrl}/salas/${salaId}/comodines/llamada/activar`, {})
+      .pipe(catchError((err: unknown) => this.toObservableError(err)));
+  }
+
+  /**
+   * POST /api/v1/salas/:salaId/comodines/llamada/pista
+   */
+  enviarPistaConsultor(
+    salaId: string,
+    payload: { preguntaId: number; pista: string },
+  ): Observable<unknown> {
+    return this.http
+      .post<unknown>(`${this.apiUrl}/salas/${salaId}/comodines/llamada/pista`, payload)
+      .pipe(catchError((err: unknown) => this.toObservableError(err)));
+  }
   /**
    * Normalize HttpClient errors into a typed shape so consumers (components,
    * toasts) can extract `err.error.message` reliably.

@@ -84,7 +84,7 @@ export class AuthController {
     description: 'Login exitoso',
     schema: {
       example: {
-        accessToken: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
+        accessToken: '<jwt-access-token>',
         sid: 'session-id-123',
         sub: 1,
         email: 'admin@jasrapo.com',
@@ -150,7 +150,7 @@ export class AuthController {
     schema: {
       example: {
         message: 'Token refrescado correctamente',
-        accessToken: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
+        accessToken: '<jwt-access-token>',
       },
     },
   })

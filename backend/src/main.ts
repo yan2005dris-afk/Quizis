@@ -175,6 +175,13 @@ estado efímero: participantes conectados, pregunta actual, votos del público.
     .addTag('salas', 'Gestión de salas de quiz')
     .addTag('respuestas', 'Envío de respuestas a preguntas activas (REST)')
     .addTag('rooms-by-token', 'Endpoints REST por token de sala (N1)')
+    .addTag(
+      'votos',
+      'Votación del público (comodín "Pregunta al público", REST)',
+    )
+    .addTag('chat', 'Mensajería de chat (REST)')
+    .addTag('comodines', 'Bloqueo y activación de comodines (REST)')
+    .addTag('participantes', 'Gestión de roles de participantes (REST)')
     .addTag('bancos', 'Banco de preguntas')
     .addTag(
       'audience-votes',

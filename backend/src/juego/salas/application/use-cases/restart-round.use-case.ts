@@ -4,9 +4,14 @@ import {
   NotFoundException,
   BadRequestException,
 } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { PrismaService } from '../../../../core/database/prisma/prisma.service';
 import { RoomStateCacheService } from '../../../shared/room-state/room-state-cache.service';
 import { ParticipantsCacheService } from '../../../shared/room-state/participants-cache.service';
+import {
+  GameEvents,
+  RondaReiniciadaEvent,
+} from '../../../../core/common/events/game-events.types';
 
 @Injectable()
 export class RestartRoundUseCase {
@@ -16,6 +21,7 @@ export class RestartRoundUseCase {
     private readonly prisma: PrismaService,
     private readonly roomStateCache: RoomStateCacheService,
     private readonly participantsCache: ParticipantsCacheService,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   async execute(salaId: number) {
@@ -158,17 +164,46 @@ export class RestartRoundUseCase {
       `[RESTART] Reinicio completo. Retornando nueva rondaActiva rondaId=${newRound.rondaId}`,
     );
 
+    const rondaActiva = {
+      rondaId: newRound.rondaId,
+      numeroRonda: newRound.numeroRonda,
+      estado: newRound.estado,
+      fechaInicio: newRound.fechaInicio?.toISOString() ?? null,
+      preguntaActualId: null,
+      preguntaActual: null,
+      historialPreguntas,
+    };
+
+    // Emit the WS broadcast so connected participants see the new round
+    // without refreshing. The admin's HTTP response keeps the full
+    // historialPreguntas (with esCorrecta — the admin is a legitimate
+    // caller), but the broadcast payload is SANITIZED: every option's
+    // esCorrecta is stripped before going out the socket, mirroring the
+    // pregunta_liberada security fix. The gateway's @OnEvent handler
+    // will also re-sanitize defensively, but we sanitize here too in
+    // case a future consumer reads the event without going through the
+    // gateway.
+    const historialPreguntasSanitizado = historialPreguntas.map((p) => ({
+      ...p,
+      opciones: p.opciones.map(({ esCorrecta: _esCorrecta, ...rest }) => rest),
+    })) as typeof historialPreguntas;
+
+    const broadcastPayload: RondaReiniciadaEvent = {
+      tokenCompartido: sala.tokenCompartido,
+      estado: 'ESPERANDO_ALUMNOS',
+      rondaActiva: {
+        ...rondaActiva,
+        historialPreguntas: historialPreguntasSanitizado,
+      },
+    };
+    this.eventEmitter.emit(
+      GameEvents.RONDAS.RONDA_REINICIADA,
+      broadcastPayload,
+    );
+
     return {
       estado: 'ESPERANDO_ALUMNOS' as const,
-      rondaActiva: {
-        rondaId: newRound.rondaId,
-        numeroRonda: newRound.numeroRonda,
-        estado: newRound.estado,
-        fechaInicio: newRound.fechaInicio?.toISOString() ?? null,
-        preguntaActualId: null,
-        preguntaActual: null,
-        historialPreguntas,
-      },
+      rondaActiva,
     };
   }
 }
