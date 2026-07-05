@@ -304,6 +304,7 @@ export class JuegoGateway
     }
   }
 
+  /** @deprecated Moved to REST PATCH /salas/by-token/:salaId/participantes/:nickname/rol. Will be removed in PR1. */
   @SubscribeMessage('cambiar_rol_participante')
   async handleCambiarRolParticipante(
     @MessageBody()
@@ -333,6 +334,7 @@ export class JuegoGateway
     }
   }
 
+  /** @deprecated Moved to REST POST /salas/:salaId/votos. Will be removed in PR1. */
   @SubscribeMessage('audience:vote')
   async handleVote(
     @ConnectedSocket() client: Socket,
@@ -364,6 +366,7 @@ export class JuegoGateway
   //   - handleAnswer (responder_pregunta) → REST POST /api/v1/salas/:salaId/respuestas
   //   - handleToggleRoom (cambiar_estado_sala) → REST PATCH /api/v1/salas/by-token/:salaId/estado
 
+  /** @deprecated Moved to REST POST /salas/by-token/:salaId/regenerar-token. Will be removed in PR1. */
   @SubscribeMessage('regenerar_token')
   async handleRegenerateToken(
     @MessageBody() payload: { salaId: number; tokenAnterior: string },
@@ -385,6 +388,7 @@ export class JuegoGateway
     }
   }
 
+  /** @deprecated Moved to REST POST /salas/by-token/:salaId/finalizar. Will be removed in PR1. */
   @SubscribeMessage('finalizar_partida')
   async handleFinalizeGame(
     @MessageBody() payload: { salaId: number; tokenCompartido: string },
@@ -407,6 +411,7 @@ export class JuegoGateway
     }
   }
 
+  /** @deprecated Moved to REST POST /salas/by-token/:salaId/reiniciar-ronda. Will be removed in PR1. */
   @SubscribeMessage('reiniciar_ronda')
   async handleReiniciarRonda(
     @MessageBody() payload: { tokenCompartido: string; rondaActiva: unknown },
@@ -437,6 +442,7 @@ export class JuegoGateway
     }
   }
 
+  /** @deprecated Moved to REST POST /salas/:salaId/mensajes. Will be removed in PR1. */
   @SubscribeMessage('enviar_mensaje')
   async handleChatMessage(
     @ConnectedSocket() client: Socket,
@@ -485,6 +491,7 @@ export class JuegoGateway
   // Removed in N1 PR1 (sdd/quizis-rest-n1-mutations AC-N1-26):
   //   - handlePreguntaLiberada (pregunta_liberada) → REST POST /api/v1/salas/by-token/:salaId/preguntas/liberar
 
+  /** @deprecated Moved to REST POST /salas/:salaId/comodines/:tipo/bloquear. Will be removed in PR1. */
   @SubscribeMessage('comodin_bloqueado')
   async handleComodinBloqueado(
     @MessageBody()
@@ -519,6 +526,7 @@ export class JuegoGateway
     }
   }
 
+  /** @deprecated Moved to REST POST /salas/:salaId/comodines/llamada/activar. Will be removed in PR1. */
   @SubscribeMessage('activar_comodin_llamada')
   async handleActivarComodinLlamada(
     @ConnectedSocket() client: Socket,
@@ -569,6 +577,7 @@ export class JuegoGateway
     );
   }
 
+  /** @deprecated Moved to REST POST /salas/:salaId/comodines/llamada/pista. Will be removed in PR1. */
   @SubscribeMessage('enviar_pista_consultor')
   async handleEnviarPistaConsultor(
     @ConnectedSocket() client: Socket,

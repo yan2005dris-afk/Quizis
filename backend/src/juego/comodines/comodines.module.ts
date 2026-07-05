@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ComodinesController } from './interfaces/comodines.controller';
+import { ComodinesRestController } from './interfaces/controllers/comodines-rest.controller';
 import { ComodinesService } from './application/comodines.service';
 import { GetIaSuggestionUseCase } from './application/use-cases/get-ia-suggestion.use-case';
 import { SelectRandomConsultantUseCase } from './application/use-cases/select-random-consultant.use-case';
@@ -15,7 +16,7 @@ import { SalasModule } from '../salas/salas.module';
 
 @Module({
   imports: [CacheModule, DatabaseModule, VotosModule, SalasModule],
-  controllers: [ComodinesController],
+  controllers: [ComodinesController, ComodinesRestController],
   providers: [
     ComodinesService,
     GetIaSuggestionUseCase,
