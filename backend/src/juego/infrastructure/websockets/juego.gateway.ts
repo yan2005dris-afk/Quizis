@@ -16,6 +16,7 @@ import { Server, Socket } from 'socket.io';
 import { SalasService } from '../../salas/application/salas.service';
 import { ChatService } from '../../chat/application/chat.service';
 import { ComodinesService } from '../../comodines/application/comodines.service';
+import { VotosService } from '../../votos/application/votos.service';
 
 // WebSocket Use Cases
 import { HandleJoinRoomWebsocket } from '../../salas/infrastructure/websockets/handle-join-room.websocket';
@@ -154,6 +155,7 @@ export class JuegoGateway
     private readonly socketMapService: SocketMapService,
     private readonly distributedTimerService: DistributedTimerService,
     private readonly handleTimerExpiration: HandleTimerExpirationUseCase,
+    private readonly votosService: VotosService,
   ) {}
 
   // ─── Lifecycle ─────────────────────────────────────────────────────────────
@@ -350,6 +352,23 @@ export class JuegoGateway
         `[handlePreguntaLiberada] Payload missing preguntaId for room ${tokenCompartido}`,
       );
       return;
+    }
+
+    try {
+      // Initialize consensus required set
+      if (typeof this.votosService?.initConsensusRequired === 'function') {
+        await this.votosService.initConsensusRequired(
+          tokenCompartido,
+          pregunta.preguntaId,
+        );
+        this.logger.log(
+          `[CONSENSUS] Inicializado para pregunta ${pregunta.preguntaId} en sala ${tokenCompartido}`,
+        );
+      }
+    } catch (consensusError) {
+      this.logger.error(
+        `[handlePreguntaLiberada] Failed to initialize consensus required: ${consensusError}`,
+      );
     }
 
     try {
