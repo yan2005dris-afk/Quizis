@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { JuegoGateway } from './juego.gateway';
 import { SalasService } from '../../salas/application/salas.service';
 import { VotosService } from '../../votos/application/votos.service';
+import { HandleTimerExpirationUseCase } from '../../rondas/application/use-cases/handle-timer-expiration.use-case';
 import { ChatService } from '../../chat/application/chat.service';
 import { ComodinesService } from '../../comodines/application/comodines.service';
 import { HandleJoinRoomWebsocket } from '../../salas/infrastructure/websockets/handle-join-room.websocket';
@@ -19,7 +20,9 @@ import { DistributedTimerService } from './distributed-timer.service';
 describe('JuegoGateway — handleComodinBloqueado', () => {
   let gateway: JuegoGateway;
   let salasService: jest.Mocked<Pick<SalasService, 'addBlockedComodin'>>;
-  let roomBroadcaster: jest.Mocked<Pick<RoomBroadcasterService, 'broadcastToRoom'>>;
+  let roomBroadcaster: jest.Mocked<
+    Pick<RoomBroadcasterService, 'broadcastToRoom'>
+  >;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -46,7 +49,13 @@ describe('JuegoGateway — handleComodinBloqueado', () => {
         },
         {
           provide: SocketMapService,
-          useValue: { set: jest.fn(), get: jest.fn(), delete: jest.fn(), findSocketId: jest.fn(), getRoomSize: jest.fn() },
+          useValue: {
+            set: jest.fn(),
+            get: jest.fn(),
+            delete: jest.fn(),
+            findSocketId: jest.fn(),
+            getRoomSize: jest.fn(),
+          },
         },
         {
           provide: DistributedTimerService,
@@ -71,7 +80,10 @@ describe('JuegoGateway — handleComodinBloqueado', () => {
 
     await gateway.handleComodinBloqueado(payload);
 
-    expect(salasService.addBlockedComodin).toHaveBeenCalledWith('token-123', 'IA');
+    expect(salasService.addBlockedComodin).toHaveBeenCalledWith(
+      'token-123',
+      'IA',
+    );
     expect(roomBroadcaster.broadcastToRoom).toHaveBeenCalledTimes(1);
     expect(roomBroadcaster.broadcastToRoom).toHaveBeenCalledWith(
       'token-123',
@@ -89,7 +101,10 @@ describe('JuegoGateway — handleComodinBloqueado', () => {
 
     await gateway.handleComodinBloqueado(payload);
 
-    expect(salasService.addBlockedComodin).toHaveBeenCalledWith('token-123', 'PUBLICO');
+    expect(salasService.addBlockedComodin).toHaveBeenCalledWith(
+      'token-123',
+      'PUBLICO',
+    );
     expect(roomBroadcaster.broadcastToRoom).toHaveBeenCalledTimes(2);
     expect(roomBroadcaster.broadcastToRoom).toHaveBeenCalledWith(
       'token-123',
@@ -106,10 +121,21 @@ describe('JuegoGateway — handleComodinBloqueado', () => {
 
 describe('JuegoGateway — handleDisconnect', () => {
   let gateway: JuegoGateway;
-  let socketMapService: jest.Mocked<Pick<SocketMapService, 'get' | 'delete' | 'getRoomSize' | 'set' | 'findSocketId'>>;
-  let roomBroadcaster: jest.Mocked<Pick<RoomBroadcasterService, 'broadcastToRoom' | 'setServer'>>;
-  let handleDisconnectWebsocket: jest.Mocked<Pick<HandleDisconnectWebsocket, 'execute'>>;
-  let salasService: jest.Mocked<Pick<SalasService, 'getParticipantsWithRoles' | 'addBlockedComodin'>>;
+  let socketMapService: jest.Mocked<
+    Pick<
+      SocketMapService,
+      'get' | 'delete' | 'getRoomSize' | 'set' | 'findSocketId'
+    >
+  >;
+  let roomBroadcaster: jest.Mocked<
+    Pick<RoomBroadcasterService, 'broadcastToRoom' | 'setServer'>
+  >;
+  let handleDisconnectWebsocket: jest.Mocked<
+    Pick<HandleDisconnectWebsocket, 'execute'>
+  >;
+  let salasService: jest.Mocked<
+    Pick<SalasService, 'getParticipantsWithRoles' | 'addBlockedComodin'>
+  >;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -117,7 +143,10 @@ describe('JuegoGateway — handleDisconnect', () => {
         JuegoGateway,
         {
           provide: SalasService,
-          useValue: { getParticipantsWithRoles: jest.fn(), addBlockedComodin: jest.fn() },
+          useValue: {
+            getParticipantsWithRoles: jest.fn(),
+            addBlockedComodin: jest.fn(),
+          },
         },
         { provide: VotosService, useValue: {} },
         { provide: ChatService, useValue: {} },
@@ -139,7 +168,13 @@ describe('JuegoGateway — handleDisconnect', () => {
         },
         {
           provide: SocketMapService,
-          useValue: { set: jest.fn(), get: jest.fn(), delete: jest.fn(), findSocketId: jest.fn(), getRoomSize: jest.fn() },
+          useValue: {
+            set: jest.fn(),
+            get: jest.fn(),
+            delete: jest.fn(),
+            findSocketId: jest.fn(),
+            getRoomSize: jest.fn(),
+          },
         },
         {
           provide: DistributedTimerService,
@@ -160,7 +195,9 @@ describe('JuegoGateway — handleDisconnect', () => {
   it('calls socketMapService.delete and broadcastToRoom with participantes when info exists', async () => {
     const socketInfo = { tokenCompartido: 'token-abc', nickname: 'Alice' };
     const participants = ['Alice'];
-    const participantesDb = [{ id: '1', nombre: 'Alice', puntaje: 0, rol: 'estudiante' }];
+    const participantesDb = [
+      { id: '1', nombre: 'Alice', puntaje: 0, rol: 'estudiante' },
+    ];
 
     (socketMapService.get as jest.Mock).mockResolvedValue(socketInfo);
     (handleDisconnectWebsocket.execute as jest.Mock).mockResolvedValue({
@@ -168,23 +205,45 @@ describe('JuegoGateway — handleDisconnect', () => {
       participants,
     });
     (socketMapService.getRoomSize as jest.Mock).mockResolvedValue(1);
-    (salasService.getParticipantsWithRoles as jest.Mock).mockResolvedValue(participantesDb);
+    (salasService.getParticipantsWithRoles as jest.Mock).mockResolvedValue(
+      participantesDb,
+    );
 
     const fakeClient = { id: 'socket-1' } as any;
     await gateway.handleDisconnect(fakeClient);
 
     expect(socketMapService.delete).toHaveBeenCalledWith('socket-1');
-    expect(roomBroadcaster.broadcastToRoom).toHaveBeenCalledWith('token-abc', 'participantes', participantesDb);
+    expect(roomBroadcaster.broadcastToRoom).toHaveBeenCalledWith(
+      'token-abc',
+      'participantes',
+      participantesDb,
+    );
   });
 });
 
 describe('JuegoGateway — handleJoinRoomMessage', () => {
   let gateway: JuegoGateway;
-  let socketMapService: jest.Mocked<Pick<SocketMapService, 'get' | 'delete' | 'getRoomSize' | 'set' | 'findSocketId'>>;
+  let socketMapService: jest.Mocked<
+    Pick<
+      SocketMapService,
+      'get' | 'delete' | 'getRoomSize' | 'set' | 'findSocketId'
+    >
+  >;
   let handleJoinRoom: jest.Mocked<Pick<HandleJoinRoomWebsocket, 'execute'>>;
-  let salasService: jest.Mocked<Pick<SalasService, 'getParticipantsWithRoles' | 'addBlockedComodin' | 'obtenerPorId' | 'updateParticipantRole' | 'getBlockedComodines'>>;
+  let salasService: jest.Mocked<
+    Pick<
+      SalasService,
+      | 'getParticipantsWithRoles'
+      | 'addBlockedComodin'
+      | 'obtenerPorId'
+      | 'updateParticipantRole'
+      | 'getBlockedComodines'
+    >
+  >;
   let chatService: jest.Mocked<Pick<ChatService, 'getChatMessages'>>;
-  let roomBroadcaster: jest.Mocked<Pick<RoomBroadcasterService, 'broadcastToRoom' | 'setServer'>>;
+  let roomBroadcaster: jest.Mocked<
+    Pick<RoomBroadcasterService, 'broadcastToRoom' | 'setServer'>
+  >;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -223,7 +282,13 @@ describe('JuegoGateway — handleJoinRoomMessage', () => {
         },
         {
           provide: SocketMapService,
-          useValue: { set: jest.fn(), get: jest.fn(), delete: jest.fn(), findSocketId: jest.fn(), getRoomSize: jest.fn() },
+          useValue: {
+            set: jest.fn(),
+            get: jest.fn(),
+            delete: jest.fn(),
+            findSocketId: jest.fn(),
+            getRoomSize: jest.fn(),
+          },
         },
         {
           provide: DistributedTimerService,
@@ -248,15 +313,26 @@ describe('JuegoGateway — handleJoinRoomMessage', () => {
       nickname: 'Bob',
       participants: ['Bob'],
     };
-    const participantesDb = [{ id: '2', nombre: 'Bob', puntaje: 0, rol: 'profesor' }];
+    const participantesDb = [
+      { id: '2', nombre: 'Bob', puntaje: 0, rol: 'profesor' },
+    ];
 
     (handleJoinRoom.execute as jest.Mock).mockResolvedValue(joinResult);
-    (salasService.getParticipantsWithRoles as jest.Mock).mockResolvedValue(participantesDb);
+    (salasService.getParticipantsWithRoles as jest.Mock).mockResolvedValue(
+      participantesDb,
+    );
     (salasService.getBlockedComodines as jest.Mock).mockResolvedValue([]);
     (chatService.getChatMessages as jest.Mock).mockResolvedValue([]);
 
-    const fakeClient = { id: 'socket-2', join: jest.fn(), emit: jest.fn() } as any;
-    await gateway.handleJoinRoomMessage(fakeClient, { tokenCompartido: 'token-xyz', nombre: 'Bob' });
+    const fakeClient = {
+      id: 'socket-2',
+      join: jest.fn(),
+      emit: jest.fn(),
+    } as any;
+    await gateway.handleJoinRoomMessage(fakeClient, {
+      tokenCompartido: 'token-xyz',
+      nombre: 'Bob',
+    });
 
     expect(socketMapService.set).toHaveBeenCalledWith('socket-2', {
       tokenCompartido: 'token-xyz',
@@ -265,37 +341,25 @@ describe('JuegoGateway — handleJoinRoomMessage', () => {
   });
 });
 
-describe('JuegoGateway — pregunta_liberada (iniciarTimer)', () => {
+// ─── sdd/quizis-init-feedback: handleSalaIniciada broadcasts info_ronda ──
+// (Kept after N1 refactor — still relevant; info_ronda still fires on
+//  EN_VIVO transition via the same @OnEvent listener.)
+describe('JuegoGateway — handleSalaIniciada (info_ronda broadcast)', () => {
   let gateway: JuegoGateway;
-  let distributedTimerService: jest.Mocked<Pick<DistributedTimerService, 'iniciarTimer' | 'detenerTimer'>>;
-  let releaseQuestionWebsocket: jest.Mocked<Pick<ReleaseQuestionWebsocket, 'execute'>>;
-  let votosService: jest.Mocked<Pick<VotosService, 'initConsensusRequired'>>;
-  let salasService: jest.Mocked<Pick<SalasService, 'getTiempoLimite' | 'addBlockedComodin'>>;
-  let roomBroadcaster: jest.Mocked<Pick<RoomBroadcasterService, 'broadcastToRoom' | 'setServer'>>;
+  let roomBroadcaster: jest.Mocked<
+    Pick<RoomBroadcasterService, 'broadcastToRoom' | 'setServer'>
+  >;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         JuegoGateway,
-        {
-          provide: SalasService,
-          useValue: { getTiempoLimite: jest.fn(), addBlockedComodin: jest.fn() },
-        },
-        {
-          provide: VotosService,
-          useValue: { initConsensusRequired: jest.fn() },
-        },
+        { provide: SalasService, useValue: {} },
         { provide: ChatService, useValue: {} },
         { provide: ComodinesService, useValue: {} },
         { provide: HandleJoinRoomWebsocket, useValue: {} },
         { provide: HandleDisconnectWebsocket, useValue: {} },
-        { provide: ToggleRoomEnabledWebsocket, useValue: {} },
         { provide: ProcessAudienceVoteWebsocket, useValue: {} },
-        { provide: SubmitAnswerWebsocket, useValue: {} },
-        {
-          provide: ReleaseQuestionWebsocket,
-          useValue: { execute: jest.fn() },
-        },
         { provide: ActivateCallJokerWebsocket, useValue: {} },
         { provide: SendHintWebsocket, useValue: {} },
         {
@@ -304,39 +368,42 @@ describe('JuegoGateway — pregunta_liberada (iniciarTimer)', () => {
         },
         {
           provide: SocketMapService,
-          useValue: { set: jest.fn(), get: jest.fn(), delete: jest.fn(), findSocketId: jest.fn(), getRoomSize: jest.fn() },
+          useValue: {
+            set: jest.fn(),
+            get: jest.fn(),
+            delete: jest.fn(),
+            findSocketId: jest.fn(),
+            getRoomSize: jest.fn(),
+          },
         },
         {
           provide: DistributedTimerService,
           useValue: { iniciarTimer: jest.fn(), detenerTimer: jest.fn() },
         },
+        {
+          provide: HandleTimerExpirationUseCase,
+          useValue: { execute: jest.fn() },
+        },
       ],
     }).compile();
 
     gateway = module.get<JuegoGateway>(JuegoGateway);
-    distributedTimerService = module.get(DistributedTimerService) as any;
-    releaseQuestionWebsocket = module.get(ReleaseQuestionWebsocket) as any;
-    votosService = module.get(VotosService) as any;
-    salasService = module.get(SalasService) as any;
     roomBroadcaster = module.get(RoomBroadcasterService) as any;
 
     jest.clearAllMocks();
   });
 
-  it('calls distributedTimerService.iniciarTimer when pregunta_liberada is handled', async () => {
-    (releaseQuestionWebsocket.execute as jest.Mock).mockResolvedValue(undefined);
-    (votosService.initConsensusRequired as jest.Mock).mockResolvedValue(undefined);
-    (salasService.getTiempoLimite as jest.Mock).mockResolvedValue(30);
-    (distributedTimerService.iniciarTimer as jest.Mock).mockResolvedValue(undefined);
+  it('broadcasts info_ronda to the room when sala.iniciada fires', () => {
+    const infoRonda = { ronda: 1, totalRondas: 5, premio: '$1000' };
+    gateway.handleSalaIniciada({
+      tokenCompartido: 'T-INIT',
+      infoRonda,
+    });
 
-    const payload = { tokenCompartido: 'token-timer', pregunta: { preguntaId: 5 } };
-    await gateway.handlePreguntaLiberada(payload);
-
-    expect(distributedTimerService.iniciarTimer).toHaveBeenCalledWith(
-      'token-timer',
-      30,
-      expect.any(Function),
-      expect.any(Function),
+    expect(roomBroadcaster.broadcastToRoom).toHaveBeenCalledWith(
+      'T-INIT',
+      'info_ronda',
+      infoRonda,
     );
   });
 });

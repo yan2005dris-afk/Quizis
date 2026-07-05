@@ -14,17 +14,13 @@ import { Server, Socket } from 'socket.io';
 
 // Domain Services
 import { SalasService } from '../../salas/application/salas.service';
-import { VotosService } from '../../votos/application/votos.service';
 import { ChatService } from '../../chat/application/chat.service';
 import { ComodinesService } from '../../comodines/application/comodines.service';
 
 // WebSocket Use Cases
 import { HandleJoinRoomWebsocket } from '../../salas/infrastructure/websockets/handle-join-room.websocket';
 import { HandleDisconnectWebsocket } from '../../salas/infrastructure/websockets/handle-disconnect.websocket';
-import { ToggleRoomEnabledWebsocket } from '../../salas/infrastructure/websockets/toggle-room-enabled.websocket';
 import { ProcessAudienceVoteWebsocket } from '../../votos/infrastructure/websockets/process-audience-vote.websocket';
-import { SubmitAnswerWebsocket } from '../../votos/infrastructure/websockets/submit-answer.websocket';
-import { ReleaseQuestionWebsocket } from '../../rondas/infrastructure/websockets/release-question.websocket';
 import { ActivateCallJokerWebsocket } from '../../comodines/infrastructure/websockets/activate-call-joker.websocket';
 import { SendHintWebsocket } from '../../comodines/infrastructure/websockets/send-hint.websocket';
 
@@ -32,7 +28,6 @@ import { SendHintWebsocket } from '../../comodines/infrastructure/websockets/sen
 import { GameEvents } from '../../../core/common/events/game-events.types';
 import type { ConsensusEvaluatedEvent } from '../../../core/common/events/game-events.types';
 import type { VotePayload } from '../../votos/infrastructure/websockets/process-audience-vote.websocket';
-import type { AnswerPayload } from '../../votos/infrastructure/websockets/submit-answer.websocket';
 
 // WebSocket Infrastructure
 import { RoomBroadcasterService } from './room-broadcaster.service';
@@ -109,15 +104,11 @@ export class JuegoGateway
 
   constructor(
     private readonly salasService: SalasService,
-    private readonly votosService: VotosService,
     private readonly chatService: ChatService,
     private readonly comodinesService: ComodinesService,
     private readonly handleJoinRoom: HandleJoinRoomWebsocket,
     private readonly handleDisconnectWebsocket: HandleDisconnectWebsocket,
-    private readonly toggleRoomEnabledWebsocket: ToggleRoomEnabledWebsocket,
     private readonly processAudienceVote: ProcessAudienceVoteWebsocket,
-    private readonly submitAnswerWebsocket: SubmitAnswerWebsocket,
-    private readonly releaseQuestionWebsocket: ReleaseQuestionWebsocket,
     private readonly activateCallJokerWebsocket: ActivateCallJokerWebsocket,
     private readonly sendHintWebsocket: SendHintWebsocket,
     private readonly roomBroadcaster: RoomBroadcasterService,
@@ -214,6 +205,26 @@ export class JuegoGateway
       event.tokenCompartido,
       event.preguntaId,
       event.result,
+    );
+  }
+
+  /**
+   * Fired by UpdateEstadoSalaUseCase when a room transitions to EN_VIVO.
+   * Broadcasts `info_ronda` so the frontend updates the header ("Esperando
+   * información de la ronda..." goes away) and the active-question state.
+   */
+  @OnEvent('sala.iniciada')
+  handleSalaIniciada(payload: {
+    tokenCompartido: string;
+    infoRonda: { ronda: number; totalRondas: number; premio: string };
+  }) {
+    this.roomBroadcaster.broadcastToRoom(
+      payload.tokenCompartido,
+      'info_ronda',
+      payload.infoRonda,
+    );
+    this.logger.log(
+      `[SALA:INICIADA] Broadcast info_ronda for ${payload.tokenCompartido}`,
     );
   }
 
@@ -349,89 +360,9 @@ export class JuegoGateway
     }
   }
 
-  /**
-   * @deprecated Use REST `POST /api/v1/salas/:salaId/respuestas` instead.
-   * Will be removed after PR1 (frontend migration) ships.
-   * Tracked in: sdd/quizis-rest-n1-mutations AC-N1-26.
-   */
-  @SubscribeMessage('responder_pregunta')
-  async handleAnswer(
-    @ConnectedSocket() client: Socket,
-    @MessageBody() payload: AnswerPayload,
-  ) {
-    try {
-      const socketInfo = await this.socketMapService.get(client.id);
-      const nickname = socketInfo?.nickname ?? payload.nickname ?? 'unknown';
-
-      const result = await this.submitAnswerWebsocket.execute({
-        ...payload,
-        nickname,
-      });
-
-      const consensusInput: ConsensusInput = { type: result.status, ...result };
-      void this.emitConsensusResult(
-        payload.tokenCompartido,
-        payload.preguntaId,
-        consensusInput,
-      );
-
-      if (result.status === 'no-majority') {
-        try {
-          await this.votosService.initConsensusRequired(
-            payload.tokenCompartido,
-            payload.preguntaId,
-          );
-          this.logger.log(
-            `[CONSENSUS:REVOTO] Required SET reinicializado para pregunta ${payload.preguntaId}`,
-          );
-        } catch (reinitError) {
-          this.logger.error(
-            `[CONSENSUS:REVOTO] Error reinicializando required SET: ${reinitError}`,
-          );
-        }
-      }
-
-      return result;
-    } catch (error: any) {
-      this.logger.error(`Error en Gateway al responder pregunta:`, error);
-      return {
-        success: false,
-        message: error.message || 'Error interno al procesar respuesta.',
-      };
-    }
-  }
-
-  /**
-   * @deprecated Use REST `PATCH /api/v1/salas/by-token/:salaId/estado` instead.
-   * Will be removed after PR1 ships. Tracked in: sdd/quizis-rest-n1-mutations AC-N1-26.
-   */
-  @SubscribeMessage('cambiar_estado_sala')
-  async handleToggleRoom(
-    @MessageBody() payload: { tokenCompartido: string; habilitada: boolean },
-  ) {
-    try {
-      const result = await this.toggleRoomEnabledWebsocket.execute(
-        payload.tokenCompartido,
-        payload.habilitada,
-      );
-
-      this.roomBroadcaster.broadcastToRoom(
-        payload.tokenCompartido,
-        'sala_estado_cambiado',
-        {
-          habilitada: result.enabled,
-        },
-      );
-
-      return result;
-    } catch (error: any) {
-      this.logger.error(`Error en Gateway al cambiar estado de sala:`, error);
-      return {
-        success: false,
-        message: 'Error al cambiar el estado de la sala.',
-      };
-    }
-  }
+  // Removed in N1 PR1 (sdd/quizis-rest-n1-mutations AC-N1-26):
+  //   - handleAnswer (responder_pregunta) → REST POST /api/v1/salas/:salaId/respuestas
+  //   - handleToggleRoom (cambiar_estado_sala) → REST PATCH /api/v1/salas/by-token/:salaId/estado
 
   @SubscribeMessage('regenerar_token')
   async handleRegenerateToken(
@@ -551,86 +482,8 @@ export class JuegoGateway
     );
   }
 
-  /**
-   * @deprecated Use REST `POST /api/v1/salas/by-token/:salaId/preguntas/liberar` instead.
-   * Will be removed after PR1 ships. Tracked in: sdd/quizis-rest-n1-mutations AC-N1-26.
-   */
-  @SubscribeMessage('pregunta_liberada')
-  async handlePreguntaLiberada(
-    @MessageBody() payload: { tokenCompartido: string; pregunta: any },
-  ) {
-    try {
-      this.flushBroadcast(payload.tokenCompartido);
-
-      await this.releaseQuestionWebsocket.execute(
-        payload.tokenCompartido,
-        payload.pregunta,
-      );
-
-      this.roomBroadcaster.broadcastToRoom(
-        payload.tokenCompartido,
-        'pregunta_liberada',
-        payload.pregunta,
-      );
-
-      try {
-        await this.votosService.initConsensusRequired(
-          payload.tokenCompartido,
-          payload.pregunta.preguntaId,
-        );
-        this.logger.log(
-          `[CONSENSUS] Inicializado para pregunta ${payload.pregunta.preguntaId}`,
-        );
-      } catch (consensusError) {
-        this.logger.error(
-          `[CONSENSUS] Error inicializando required SET: ${consensusError}`,
-        );
-      }
-
-      // Start distributed server-authoritative timer
-      try {
-        const tiempoLimite = await this.salasService.getTiempoLimite(
-          payload.tokenCompartido,
-        );
-        await this.distributedTimerService.iniciarTimer(
-          payload.tokenCompartido,
-          tiempoLimite,
-          (remaining) =>
-            this.roomBroadcaster.broadcastToRoom(
-              payload.tokenCompartido,
-              'temporizador_actualizado',
-              remaining,
-            ),
-          () => {
-            this.roomBroadcaster.broadcastToRoom(
-              payload.tokenCompartido,
-              'tiempo_agotado',
-              { tokenCompartido: payload.tokenCompartido },
-            );
-            setTimeout(
-              () =>
-                this.roomBroadcaster.broadcastToRoom(
-                  payload.tokenCompartido,
-                  'transicion_pregunta',
-                  { segundos: 3 },
-                ),
-              500,
-            );
-          },
-        );
-      } catch (timerError) {
-        this.logger.error(`[TIMER] Error iniciando timer: ${timerError}`);
-      }
-
-      return { success: true };
-    } catch (error: any) {
-      this.logger.warn(`Bloqueo de liberación: ${error.message}`);
-      return {
-        success: false,
-        message: error.message,
-      };
-    }
-  }
+  // Removed in N1 PR1 (sdd/quizis-rest-n1-mutations AC-N1-26):
+  //   - handlePreguntaLiberada (pregunta_liberada) → REST POST /api/v1/salas/by-token/:salaId/preguntas/liberar
 
   @SubscribeMessage('comodin_bloqueado')
   async handleComodinBloqueado(

@@ -32,7 +32,8 @@ export type SubmitAnswerResult =
       esCorrecta: boolean;
       feedback: string;
     }
-  | { status: 'no-majority' };
+  | { status: 'no-majority' }
+  | { status: 'race-lost' };
 
 @Injectable()
 export class SubmitAnswerWebsocket {
@@ -117,7 +118,20 @@ export class SubmitAnswerWebsocket {
           ? activeQuestion.feedbackCorrecto
           : activeQuestion.feedbackIncorrecto;
 
-        // Persistir en Base de Datos
+        // Atomic claim: if the timer already won the race, bail out.
+        // NX guard prevents double-persistence.
+        const claimed = await this.cacheService.setQuestionStatusNX(
+          payload.tokenCompartido,
+          'answered',
+        );
+        if (!claimed) {
+          this.logger.log(
+            `[SUBMIT] Question already in answered state — likely won by timer. Aborting.`,
+          );
+          return { status: 'race-lost' };
+        }
+
+        // Persistir en Base de Datos (only if we won the race)
         await this.recordAnswerUseCase.execute({
           rondaId: payload.rondaId,
           preguntaId: payload.preguntaId,
@@ -125,12 +139,6 @@ export class SubmitAnswerWebsocket {
           esCorrecta,
           comodinUsado: payload.comodinUsado ?? null,
         });
-
-        // Actualizar estado en Redis a 'answered'
-        await this.cacheService.setQuestionStatus(
-          payload.tokenCompartido,
-          'answered',
-        );
 
         this.logger.log(
           `Consenso resuelto (${result.type}): opcionId=${winningOpcionId}, esCorrecta=${esCorrecta}`,
