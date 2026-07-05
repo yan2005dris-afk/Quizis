@@ -423,6 +423,18 @@ export class GameSessionComponent implements OnInit, OnDestroy {
       error: (err) => {
         console.error('Error actualizando estado:', err);
         this.cambiandoEstado.set(false);
+
+        // Extract backend error message (NestJS HttpException body shape).
+        // Falls back to a generic connection-error toast if shape is unexpected.
+        const backendMessage = err?.error?.message ?? err?.message ?? null;
+        const isStudentsRequired =
+          typeof backendMessage === 'string' && backendMessage.toLowerCase().includes('estudiante');
+
+        const title = isStudentsRequired ? 'No se puede iniciar' : 'Error al cambiar estado';
+        const message =
+          backendMessage ?? 'No se pudo cambiar el estado de la sala. Intenta nuevamente.';
+
+        this.toastService.show(message, 'danger', title);
       },
     });
   }

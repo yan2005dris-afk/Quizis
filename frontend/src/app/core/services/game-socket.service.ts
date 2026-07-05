@@ -172,11 +172,48 @@ export class GameSocketService {
       this.tiempoRestante.set(data);
     });
 
-    this.socket.on('tiempo_agotado', () => {
+    this.socket.on('tiempo_agotado', (data: { preguntaId: number; tokenCompartido: string }) => {
+      // Validate preguntaId matches active question (prevents out-of-order overwrite
+      // when timeout from old question overlaps with new pregunta_liberada).
+      const activeId = this.preguntaActiva()?.preguntaId;
+      if (data.preguntaId !== activeId) {
+        console.warn('[GameSocketService] tiempo_agotado preguntaId mismatch — ignoring', {
+          received: data.preguntaId,
+          active: activeId,
+        });
+        return;
+      }
       this.tiempoRestante.set(0);
+
+      // Defensive fallback: if pregunta_respondida hasn't arrived yet for
+      // this question, populate ultimoResultado with esCorrecta=false so
+      // the feedback still renders. pregunta_respondida (which arrives
+      // BEFORE tiempo_agotado in normal flow) will overwrite this with
+      // the authoritative payload.
+      const existing = this.ultimoResultado();
+      if (!existing || existing.preguntaId !== data.preguntaId) {
+        this.ultimoResultado.set({
+          preguntaId: data.preguntaId,
+          opcionId: -1, // unknown — overwritten when pregunta_respondida arrives
+          esCorrecta: false,
+          feedback: '',
+        });
+      }
+
+      // Schedule local transition overlay — gives the user time to see the
+      // feedback before the next-question overlay shows up. Backend no
+      // longer manages this timing (see juego.gateway.ts onExpire).
+      this.enTransicion.set(true);
+      this.transicionSegundos.set(3);
+      setTimeout(() => {
+        this.enTransicion.set(false);
+        this.transicionSegundos.set(null);
+      }, 4_000);
     });
 
     this.socket.on('transicion_pregunta', (data: { segundos: number }) => {
+      // Kept for backwards compatibility — backend no longer emits this,
+      // but if a future server does emit it, honor it.
       this.enTransicion.set(true);
       this.transicionSegundos.set(data.segundos);
       setTimeout(
@@ -213,7 +250,12 @@ export class GameSocketService {
 
     this.socket.on(
       'pregunta_respondida',
-      (data: { preguntaId: number; opcionId: number; esCorrecta: boolean | null; feedback: string | null }) => {
+      (data: {
+        preguntaId: number;
+        opcionId: number;
+        esCorrecta: boolean | null;
+        feedback: string | null;
+      }) => {
         this.ultimoResultado.set({
           preguntaId: data.preguntaId,
           opcionId: data.opcionId,
@@ -226,14 +268,11 @@ export class GameSocketService {
       },
     );
 
-    this.socket.on(
-      'revoto_solicitado',
-      (_data: { preguntaId: number; motivo: string }) => {
-        this.revotoSolicitado.set(true);
-        this.esperandoConsenso.set(false);
-        this.votantesConfirmados.set(0);
-      },
-    );
+    this.socket.on('revoto_solicitado', (_data: { preguntaId: number; motivo: string }) => {
+      this.revotoSolicitado.set(true);
+      this.esperandoConsenso.set(false);
+      this.votantesConfirmados.set(0);
+    });
   }
 
   // ─── Comodines (bloqueo, uso, estado inicial) ───

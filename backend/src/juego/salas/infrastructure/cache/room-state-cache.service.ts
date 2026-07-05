@@ -92,6 +92,44 @@ export class RoomStateCacheService {
     this.memory.set(sk, status, 3_600_000);
   }
 
+  /**
+   * Atomically set the question status to 'answered' only if not already set.
+   * Returns true if this caller won the race (key was set), false if another
+   * caller already set it.
+   *
+   * Used to prevent double-persistence when student answer and timer
+   * expiration fire near-simultaneously. First writer wins.
+   *
+   * Single-instance mode (no Redis): falls back to non-atomic set + returns
+   * true. Logs a warning because the race is not actually prevented in that
+   * mode (acceptable in dev, not for production).
+   */
+  async setQuestionStatusNX(
+    token: string,
+    status: 'answered',
+  ): Promise<boolean> {
+    const sk = this.key(token, 'status');
+    const client = this.redisService.getClient();
+    if (client) {
+      try {
+        const result = await client.set(sk, status, 'EX', 3600, 'NX');
+        // ioredis returns 'OK' on success, null on NX failure
+        return result === 'OK';
+      } catch (err) {
+        // Redis failed — fall through to memory fallback (non-atomic)
+        this.logger.warn(
+          `[RoomStateCache] Redis SET NX failed, falling back to memory: ${err}`,
+        );
+      }
+    } else {
+      this.logger.warn(
+        '[RoomStateCache] Running in single-instance mode without Redis NX guard — last writer wins',
+      );
+    }
+    this.memory.set(sk, status, 3_600_000);
+    return true;
+  }
+
   async getQuestionStatus(token: string): Promise<string | null> {
     const sk = this.key(token, 'status');
     const client = this.redisService.getClient();
