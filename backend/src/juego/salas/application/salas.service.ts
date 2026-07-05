@@ -20,6 +20,7 @@ import { RestartRoundUseCase } from './use-cases/restart-round.use-case';
 import { ReactivateRoomUseCase } from './use-cases/reactivate-room.use-case';
 import { ParticipantsCacheService } from '../../shared/room-state/participants-cache.service';
 import { RoomStateCacheService } from '../../shared/room-state/room-state-cache.service';
+import { RoomBroadcasterService } from '../../infrastructure/websockets/room-broadcaster.service';
 
 /**
  * Servicio fachada para el módulo de Salas.
@@ -47,6 +48,7 @@ export class SalasService {
     private readonly reactivateRoomUseCase: ReactivateRoomUseCase,
     private readonly participantsCache: ParticipantsCacheService,
     private readonly roomStateCache: RoomStateCacheService,
+    private readonly roomBroadcaster: RoomBroadcasterService,
   ) {}
 
   /**
@@ -176,7 +178,13 @@ export class SalasService {
   ) {
     const nicknames = await this.participantsCache.getOnlineParticipants(token);
     await this.updateParticipantRole(token, nickname, nuevoRol, nicknames);
-    return this.getParticipantsWithRoles(token, nicknames);
+    const list = await this.getParticipantsWithRoles(token, nicknames);
+    // WS-equivalent of the WS `cambiar_rol_participante` handler: notify
+    // every connected client in the room that the participants list changed.
+    // The REST path used to return silently and clients only saw the change
+    // on the next refetch (or via the WS path that already did this broadcast).
+    this.roomBroadcaster.broadcastToRoom(token, 'participantes', list);
+    return list;
   }
 
   async addBlockedComodin(tokenCompartido: string, tipoComodin: string) {

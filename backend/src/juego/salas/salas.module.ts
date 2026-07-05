@@ -26,9 +26,17 @@ import { CacheModule } from '../../core/cache/cache.module';
 import { ChatModule } from '../chat/chat.module';
 import { RondasModule } from '../rondas/rondas.module';
 import { RoomStateModule } from '../shared/room-state/room-state.module';
+import { RoomBroadcastModule } from '../infrastructure/websockets/room-broadcast.module';
 
 @Module({
-  imports: [AuthModule, CacheModule, ChatModule, RondasModule, RoomStateModule],
+  imports: [
+    AuthModule,
+    CacheModule,
+    ChatModule,
+    RondasModule,
+    RoomStateModule,
+    RoomBroadcastModule,
+  ],
   controllers: [SalasController, SalasByTokenController],
   providers: [
     SalasService,
