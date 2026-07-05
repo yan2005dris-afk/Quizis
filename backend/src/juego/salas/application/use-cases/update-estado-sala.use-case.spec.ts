@@ -3,6 +3,7 @@ import { Test } from '@nestjs/testing';
 import { NotFoundException, BadRequestException } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { UpdateEstadoSalaUseCase } from './update-estado-sala.use-case';
+import { GameEvents } from 'src/core/common/events/game-events.types';
 import { PrismaService } from 'src/core/database/prisma/prisma.service';
 import { RoomStateCacheService } from 'src/juego/shared/room-state/room-state-cache.service';
 import { ParticipantsCacheService } from 'src/juego/shared/room-state/participants-cache.service';
@@ -140,7 +141,7 @@ describe('UpdateEstadoSalaUseCase', () => {
     await useCase.execute(1, { estado: EstadoSala.EN_VIVO });
 
     expect(mockEventEmitter.emit).toHaveBeenCalledWith(
-      'sala.iniciada',
+      GameEvents.SALA.INICIADA,
       expect.objectContaining({
         tokenCompartido: 'T1',
         infoRonda: expect.objectContaining({

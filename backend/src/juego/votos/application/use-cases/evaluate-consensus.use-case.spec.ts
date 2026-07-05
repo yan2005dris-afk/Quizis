@@ -1,9 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { EvaluateConsensusWebsocket } from './evaluate-consensus.websocket';
-import { ConsensusCacheService } from '../cache/consensus-cache.service';
+import { EvaluateConsensusUseCase } from './evaluate-consensus.use-case';
+import { ConsensusCacheService } from '../../infrastructure/cache/consensus-cache.service';
 
-describe('EvaluateConsensusWebsocket', () => {
-  let websocket: EvaluateConsensusWebsocket;
+describe('EvaluateConsensusUseCase', () => {
+  let useCase: EvaluateConsensusUseCase;
 
   const mockConsensusCache = {
     getVotes: jest.fn(),
@@ -13,13 +13,13 @@ describe('EvaluateConsensusWebsocket', () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
-        EvaluateConsensusWebsocket,
+        EvaluateConsensusUseCase,
         { provide: ConsensusCacheService, useValue: mockConsensusCache },
       ],
     }).compile();
 
-    websocket = module.get<EvaluateConsensusWebsocket>(
-      EvaluateConsensusWebsocket,
+    useCase = module.get<EvaluateConsensusUseCase>(
+      EvaluateConsensusUseCase,
     );
     jest.clearAllMocks();
   });
@@ -31,7 +31,7 @@ describe('EvaluateConsensusWebsocket', () => {
       mockConsensusCache.getRequired.mockResolvedValue(new Set(['alice']));
       mockConsensusCache.getVotes.mockResolvedValue(new Map([['alice', 10]]));
 
-      const result = await websocket.execute('token-abc', 1);
+      const result = await useCase.execute('token-abc', 1);
 
       expect(result.type).toBe('single');
       if (result.type === 'single') {
@@ -43,7 +43,7 @@ describe('EvaluateConsensusWebsocket', () => {
       mockConsensusCache.getRequired.mockResolvedValue(new Set(['bob']));
       mockConsensusCache.getVotes.mockResolvedValue(new Map([['bob', 42]]));
 
-      const result = await websocket.execute('token-abc', 2);
+      const result = await useCase.execute('token-abc', 2);
 
       expect(result.type).toBe('single');
       if (result.type === 'single') {
@@ -61,7 +61,7 @@ describe('EvaluateConsensusWebsocket', () => {
       );
       mockConsensusCache.getVotes.mockResolvedValue(new Map([['alice', 10]]));
 
-      const result = await websocket.execute('token-abc', 1);
+      const result = await useCase.execute('token-abc', 1);
 
       expect(result.type).toBe('pending');
       if (result.type === 'pending') {
@@ -81,7 +81,7 @@ describe('EvaluateConsensusWebsocket', () => {
         ]),
       );
 
-      const result = await websocket.execute('token-abc', 1);
+      const result = await useCase.execute('token-abc', 1);
 
       expect(result.type).toBe('pending');
       if (result.type === 'pending') {
@@ -106,7 +106,7 @@ describe('EvaluateConsensusWebsocket', () => {
         ]),
       );
 
-      const result = await websocket.execute('token-abc', 1);
+      const result = await useCase.execute('token-abc', 1);
 
       expect(result.type).toBe('majority');
       if (result.type === 'majority') {
@@ -127,7 +127,7 @@ describe('EvaluateConsensusWebsocket', () => {
         ]),
       );
 
-      const result = await websocket.execute('token-abc', 1);
+      const result = await useCase.execute('token-abc', 1);
 
       expect(result.type).toBe('majority');
       if (result.type === 'majority') {
@@ -151,7 +151,7 @@ describe('EvaluateConsensusWebsocket', () => {
         ]),
       );
 
-      const result = await websocket.execute('token-abc', 1);
+      const result = await useCase.execute('token-abc', 1);
 
       expect(result.type).toBe('no-majority');
       if (result.type === 'no-majority') {
@@ -174,7 +174,7 @@ describe('EvaluateConsensusWebsocket', () => {
         ]),
       );
 
-      const result = await websocket.execute('token-abc', 1);
+      const result = await useCase.execute('token-abc', 1);
 
       expect(result.type).toBe('no-majority');
     });
@@ -192,7 +192,7 @@ describe('EvaluateConsensusWebsocket', () => {
         ]),
       );
 
-      const result = await websocket.execute('token-abc', 1);
+      const result = await useCase.execute('token-abc', 1);
 
       // 2/4 = 50%, which is NOT > 50%
       expect(result.type).toBe('no-majority');

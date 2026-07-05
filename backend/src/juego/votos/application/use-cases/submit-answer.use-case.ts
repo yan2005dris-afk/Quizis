@@ -7,8 +7,8 @@ import {
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { RoomStateCacheService } from '../../../shared/room-state/room-state-cache.service';
 import { RecordAnswerUseCase } from '../../../respuestas/application/use-cases/record-answer.use-case';
-import { ConsensusCacheService } from '../cache/consensus-cache.service';
-import { EvaluateConsensusWebsocket } from './evaluate-consensus.websocket';
+import { ConsensusCacheService } from '../../infrastructure/cache/consensus-cache.service';
+import { EvaluateConsensusUseCase } from './evaluate-consensus.use-case';
 import { GameEvents } from '../../../../core/common/events/game-events.types';
 
 export interface AnswerPayload {
@@ -40,14 +40,14 @@ export type SubmitAnswerResult =
   | { status: 'race-lost' };
 
 @Injectable()
-export class SubmitAnswerWebsocket {
-  private readonly logger = new Logger(SubmitAnswerWebsocket.name);
+export class SubmitAnswerUseCase {
+  private readonly logger = new Logger(SubmitAnswerUseCase.name);
 
   constructor(
     private readonly cacheService: RoomStateCacheService,
     private readonly recordAnswerUseCase: RecordAnswerUseCase,
     private readonly consensusCache: ConsensusCacheService,
-    private readonly evaluateConsensus: EvaluateConsensusWebsocket,
+    private readonly evaluateConsensus: EvaluateConsensusUseCase,
     private readonly eventEmitter: EventEmitter2,
   ) {}
 

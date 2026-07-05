@@ -3,7 +3,7 @@ import { RondasService } from './application/rondas.service';
 import { RondasController } from './interfaces/rondas.controller';
 import { CreateRondaUseCase } from './application/use-cases/create-ronda.use-case';
 import { HandleTimerExpirationUseCase } from './application/use-cases/handle-timer-expiration.use-case';
-import { ReleaseQuestionWebsocket } from './infrastructure/websockets/release-question.websocket';
+import { ReleaseQuestionUseCase } from './application/use-cases/release-question.use-case';
 import { CacheModule } from '../../core/cache/cache.module';
 import { RespuestasModule } from '../respuestas/respuestas.module';
 import { RoomStateModule } from '../shared/room-state/room-state.module';
@@ -22,11 +22,11 @@ import { RoomStateModule } from '../shared/room-state/room-state.module';
     RondasService,
     CreateRondaUseCase,
     HandleTimerExpirationUseCase,
-    ReleaseQuestionWebsocket,
+    ReleaseQuestionUseCase,
   ],
   exports: [
     RondasService,
-    ReleaseQuestionWebsocket,
+    ReleaseQuestionUseCase,
     HandleTimerExpirationUseCase,
   ],
 })

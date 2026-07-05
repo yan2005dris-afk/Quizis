@@ -1,10 +1,10 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { SelectRandomConsultantUseCase } from '../../application/use-cases/select-random-consultant.use-case';
-import { HelperCacheService } from '../cache/helper-cache.service';
+import { SelectRandomConsultantUseCase } from './select-random-consultant.use-case';
+import { HelperCacheService } from '../../infrastructure/cache/helper-cache.service';
 
 @Injectable()
-export class ActivateCallJokerWebsocket {
-  private readonly logger = new Logger(ActivateCallJokerWebsocket.name);
+export class ActivateCallJokerUseCase {
+  private readonly logger = new Logger(ActivateCallJokerUseCase.name);
 
   constructor(
     private readonly selectRandomConsultant: SelectRandomConsultantUseCase,

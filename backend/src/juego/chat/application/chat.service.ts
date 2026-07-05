@@ -1,11 +1,11 @@
 import { Injectable } from '@nestjs/common';
-import { SendMessageWebsocket } from '../infrastructure/websockets/send-message.websocket';
+import { SendMessageUseCase } from './use-cases/send-message.use-case';
 import { ChatCacheService } from '../infrastructure/cache/chat-cache.service';
 
 @Injectable()
 export class ChatService {
   constructor(
-    private readonly sendMessageWebsocket: SendMessageWebsocket,
+    private readonly sendMessageUseCase: SendMessageUseCase,
     private readonly chatCache: ChatCacheService,
   ) {}
 
@@ -15,7 +15,7 @@ export class ChatService {
     texto: string;
     tipo: 'mensaje' | 'sugerencia';
   }) {
-    return this.sendMessageWebsocket.execute(payload);
+    return this.sendMessageUseCase.execute(payload);
   }
 
   async getChatMessages(tokenCompartido: string) {

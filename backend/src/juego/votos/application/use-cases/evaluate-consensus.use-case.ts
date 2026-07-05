@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { ConsensusCacheService } from '../cache/consensus-cache.service';
+import { ConsensusCacheService } from '../../infrastructure/cache/consensus-cache.service';
 
 export type ConsensusResult =
   | { type: 'pending'; votosRecibidos: number; totalRequeridos: number }
@@ -13,8 +13,8 @@ export type ConsensusResult =
   | { type: 'single'; winningOpcionId: number };
 
 @Injectable()
-export class EvaluateConsensusWebsocket {
-  private readonly logger = new Logger(EvaluateConsensusWebsocket.name);
+export class EvaluateConsensusUseCase {
+  private readonly logger = new Logger(EvaluateConsensusUseCase.name);
 
   constructor(private readonly consensusCache: ConsensusCacheService) {}
 

@@ -20,7 +20,7 @@ import { RestartRoundUseCase } from './use-cases/restart-round.use-case';
 import { ReactivateRoomUseCase } from './use-cases/reactivate-room.use-case';
 import { ParticipantsCacheService } from '../../shared/room-state/participants-cache.service';
 import { RoomStateCacheService } from '../../shared/room-state/room-state-cache.service';
-import { RoomBroadcasterService } from '../../infrastructure/websockets/room-broadcaster.service';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { EstadoSala } from '../interfaces/dto/update-estado-sala.dto';
 
 describe('SalasService', () => {
@@ -97,8 +97,8 @@ describe('SalasService', () => {
   };
   const mockParticipantsCacheService = {};
   const mockRoomStateCacheService = {};
-  const mockRoomBroadcasterService = {
-    broadcastToRoom: jest.fn().mockReturnValue(undefined),
+  const mockEventEmitter = {
+    emit: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -175,8 +175,8 @@ describe('SalasService', () => {
           useValue: mockRoomStateCacheService,
         },
         {
-          provide: RoomBroadcasterService,
-          useValue: mockRoomBroadcasterService,
+          provide: EventEmitter2,
+          useValue: mockEventEmitter,
         },
       ],
     }).compile();

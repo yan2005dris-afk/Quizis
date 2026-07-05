@@ -30,8 +30,8 @@ export interface ActiveQuestionAuthoritative {
 }
 
 @Injectable()
-export class ReleaseQuestionWebsocket {
-  private readonly logger = new Logger(ReleaseQuestionWebsocket.name);
+export class ReleaseQuestionUseCase {
+  private readonly logger = new Logger(ReleaseQuestionUseCase.name);
 
   constructor(
     private readonly cacheService: RoomStateCacheService,

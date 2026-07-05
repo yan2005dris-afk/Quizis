@@ -1,12 +1,12 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { ReleaseQuestionWebsocket } from './release-question.websocket';
+import { ReleaseQuestionUseCase } from './release-question.use-case';
 import { RoomStateCacheService } from '../../../shared/room-state/room-state-cache.service';
 import { PrismaService } from '../../../../core/database/prisma/prisma.service';
 
-describe('ReleaseQuestionWebsocket', () => {
-  let websocket: ReleaseQuestionWebsocket;
+describe('ReleaseQuestionUseCase', () => {
+  let useCase: ReleaseQuestionUseCase;
 
   const mockCacheService = {
     getQuestionStatus: jest.fn(),
@@ -60,14 +60,14 @@ describe('ReleaseQuestionWebsocket', () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
-        ReleaseQuestionWebsocket,
+        ReleaseQuestionUseCase,
         { provide: RoomStateCacheService, useValue: mockCacheService },
         { provide: EventEmitter2, useValue: mockEventEmitter },
         { provide: PrismaService, useValue: mockPrisma },
       ],
     }).compile();
 
-    websocket = module.get<ReleaseQuestionWebsocket>(ReleaseQuestionWebsocket);
+    useCase = module.get<ReleaseQuestionUseCase>(ReleaseQuestionUseCase);
     jest.clearAllMocks();
     mockCacheService.setActiveQuestion.mockResolvedValue(undefined);
     mockPrisma.preguntas.findFirst.mockResolvedValue(mockPreguntaDb);
@@ -76,7 +76,7 @@ describe('ReleaseQuestionWebsocket', () => {
   it('carga la pregunta desde la DB (no del body del cliente)', async () => {
     mockCacheService.getQuestionStatus.mockResolvedValue(null);
 
-    await websocket.execute('token-abc', 1);
+    await useCase.execute('token-abc', 1);
 
     expect(mockPrisma.preguntas.findFirst).toHaveBeenCalledWith({
       where: { preguntaId: 1, deletedAt: null },
@@ -93,7 +93,7 @@ describe('ReleaseQuestionWebsocket', () => {
     mockCacheService.getQuestionStatus.mockResolvedValue(null);
     mockPrisma.preguntas.findFirst.mockResolvedValue(null);
 
-    await expect(websocket.execute('token-abc', 999)).rejects.toThrow(
+    await expect(useCase.execute('token-abc', 999)).rejects.toThrow(
       NotFoundException,
     );
     expect(mockCacheService.setActiveQuestion).not.toHaveBeenCalled();
@@ -107,7 +107,7 @@ describe('ReleaseQuestionWebsocket', () => {
       opciones: [],
     });
 
-    await expect(websocket.execute('token-abc', 1)).rejects.toThrow(
+    await expect(useCase.execute('token-abc', 1)).rejects.toThrow(
       BadRequestException,
     );
   });
@@ -115,7 +115,7 @@ describe('ReleaseQuestionWebsocket', () => {
   it('pregunta cargada → cachea versión autoritativa CON esCorrecta (para que submit pueda calificar)', async () => {
     mockCacheService.getQuestionStatus.mockResolvedValue(null);
 
-    await websocket.execute('token-abc', 1);
+    await useCase.execute('token-abc', 1);
 
     expect(mockCacheService.setActiveQuestion).toHaveBeenCalledWith(
       'token-abc',
@@ -126,7 +126,7 @@ describe('ReleaseQuestionWebsocket', () => {
   it('emite evento con la versión autoritativa (el gateway sanitiza antes del broadcast)', async () => {
     mockCacheService.getQuestionStatus.mockResolvedValue(null);
 
-    await websocket.execute('token-abc', 1);
+    await useCase.execute('token-abc', 1);
 
     expect(mockEventEmitter.emit).toHaveBeenCalledWith(
       'rondas.pregunta_liberada',
@@ -137,7 +137,7 @@ describe('ReleaseQuestionWebsocket', () => {
   it('status released → BadRequestException (pregunta anterior sin responder)', async () => {
     mockCacheService.getQuestionStatus.mockResolvedValue('released');
 
-    await expect(websocket.execute('token-abc', 1)).rejects.toThrow(
+    await expect(useCase.execute('token-abc', 1)).rejects.toThrow(
       BadRequestException,
     );
     expect(mockPrisma.preguntas.findFirst).not.toHaveBeenCalled();
@@ -148,7 +148,7 @@ describe('ReleaseQuestionWebsocket', () => {
   it('status answered → permite liberar nueva pregunta', async () => {
     mockCacheService.getQuestionStatus.mockResolvedValue('answered');
 
-    const result = await websocket.execute('token-abc', 1);
+    const result = await useCase.execute('token-abc', 1);
 
     expect(result.success).toBe(true);
     expect(result.preguntaId).toBe(1);
@@ -161,7 +161,7 @@ describe('ReleaseQuestionWebsocket', () => {
     // The DB returns the correct flag for opcion 2 = true
     mockPrisma.preguntas.findFirst.mockResolvedValue(mockPreguntaDb);
 
-    await websocket.execute('token-abc', 1);
+    await useCase.execute('token-abc', 1);
 
     const cachedQuestion = mockCacheService.setActiveQuestion.mock.calls[0][1];
     // Sanity: opcion 2 is true (loaded from DB)

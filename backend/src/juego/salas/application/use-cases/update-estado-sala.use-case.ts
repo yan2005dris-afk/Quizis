@@ -4,6 +4,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
+import { GameEvents } from '../../../../core/common/events/game-events.types';
 import { PrismaService } from '../../../../core/database/prisma/prisma.service';
 import { RoomStateCacheService } from '../../../shared/room-state/room-state-cache.service';
 import { ParticipantsCacheService } from '../../../shared/room-state/participants-cache.service';
@@ -98,7 +99,7 @@ export class UpdateEstadoSalaUseCase {
             ),
           )
         : 0;
-      this.eventEmitter.emit('sala.iniciada', {
+      this.eventEmitter.emit(GameEvents.SALA.INICIADA, {
         tokenCompartido: sala.tokenCompartido,
         infoRonda: {
           ronda: currentIndex >= 0 ? currentIndex + 1 : 1,

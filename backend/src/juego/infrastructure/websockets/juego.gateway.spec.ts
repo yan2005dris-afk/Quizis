@@ -7,12 +7,12 @@ import { ChatService } from '../../chat/application/chat.service';
 import { ComodinesService } from '../../comodines/application/comodines.service';
 import { HandleJoinRoomWebsocket } from '../../salas/infrastructure/websockets/handle-join-room.websocket';
 import { HandleDisconnectWebsocket } from '../../salas/infrastructure/websockets/handle-disconnect.websocket';
-import { ToggleRoomEnabledWebsocket } from '../../salas/infrastructure/websockets/toggle-room-enabled.websocket';
-import { ProcessAudienceVoteWebsocket } from '../../votos/infrastructure/websockets/process-audience-vote.websocket';
-import { SubmitAnswerWebsocket } from '../../votos/infrastructure/websockets/submit-answer.websocket';
-import { ReleaseQuestionWebsocket } from '../../rondas/infrastructure/websockets/release-question.websocket';
-import { ActivateCallJokerWebsocket } from '../../comodines/infrastructure/websockets/activate-call-joker.websocket';
-import { SendHintWebsocket } from '../../comodines/infrastructure/websockets/send-hint.websocket';
+import { ToggleRoomEnabledUseCase } from '../../salas/application/use-cases/toggle-room-enabled.use-case';
+import { ProcessAudienceVoteUseCase } from '../../votos/application/use-cases/process-audience-vote.use-case';
+import { SubmitAnswerUseCase } from '../../votos/application/use-cases/submit-answer.use-case';
+import { ReleaseQuestionUseCase } from '../../rondas/application/use-cases/release-question.use-case';
+import { ActivateCallJokerUseCase } from '../../comodines/application/use-cases/activate-call-joker.use-case';
+import { SendHintUseCase } from '../../comodines/application/use-cases/send-hint.use-case';
 import { RoomBroadcasterService } from './room-broadcaster.service';
 import { SocketMapService } from './socket-map.service';
 import { DistributedTimerService } from './distributed-timer.service';
@@ -58,12 +58,12 @@ describe('JuegoGateway — handleDisconnect', () => {
           provide: HandleDisconnectWebsocket,
           useValue: { execute: jest.fn() },
         },
-        { provide: ToggleRoomEnabledWebsocket, useValue: {} },
-        { provide: ProcessAudienceVoteWebsocket, useValue: {} },
-        { provide: SubmitAnswerWebsocket, useValue: {} },
-        { provide: ReleaseQuestionWebsocket, useValue: {} },
-        { provide: ActivateCallJokerWebsocket, useValue: {} },
-        { provide: SendHintWebsocket, useValue: {} },
+        { provide: ToggleRoomEnabledUseCase, useValue: {} },
+        { provide: ProcessAudienceVoteUseCase, useValue: {} },
+        { provide: SubmitAnswerUseCase, useValue: {} },
+        { provide: ReleaseQuestionUseCase, useValue: {} },
+        { provide: ActivateCallJokerUseCase, useValue: {} },
+        { provide: SendHintUseCase, useValue: {} },
         {
           provide: RoomBroadcasterService,
           useValue: { broadcastToRoom: jest.fn(), setServer: jest.fn() },
@@ -174,12 +174,12 @@ describe('JuegoGateway — handleJoinRoomMessage', () => {
           useValue: { execute: jest.fn() },
         },
         { provide: HandleDisconnectWebsocket, useValue: {} },
-        { provide: ToggleRoomEnabledWebsocket, useValue: {} },
-        { provide: ProcessAudienceVoteWebsocket, useValue: {} },
-        { provide: SubmitAnswerWebsocket, useValue: {} },
-        { provide: ReleaseQuestionWebsocket, useValue: {} },
-        { provide: ActivateCallJokerWebsocket, useValue: {} },
-        { provide: SendHintWebsocket, useValue: {} },
+        { provide: ToggleRoomEnabledUseCase, useValue: {} },
+        { provide: ProcessAudienceVoteUseCase, useValue: {} },
+        { provide: SubmitAnswerUseCase, useValue: {} },
+        { provide: ReleaseQuestionUseCase, useValue: {} },
+        { provide: ActivateCallJokerUseCase, useValue: {} },
+        { provide: SendHintUseCase, useValue: {} },
         {
           provide: RoomBroadcasterService,
           useValue: { broadcastToRoom: jest.fn(), setServer: jest.fn() },
@@ -261,11 +261,11 @@ describe('JuegoGateway — handleSalaIniciada (info_ronda broadcast)', () => {
         { provide: ComodinesService, useValue: {} },
         { provide: HandleJoinRoomWebsocket, useValue: {} },
         { provide: HandleDisconnectWebsocket, useValue: {} },
-        { provide: ProcessAudienceVoteWebsocket, useValue: {} },
-        { provide: SubmitAnswerWebsocket, useValue: {} },
-        { provide: ReleaseQuestionWebsocket, useValue: {} },
-        { provide: ActivateCallJokerWebsocket, useValue: {} },
-        { provide: SendHintWebsocket, useValue: {} },
+        { provide: ProcessAudienceVoteUseCase, useValue: {} },
+        { provide: SubmitAnswerUseCase, useValue: {} },
+        { provide: ReleaseQuestionUseCase, useValue: {} },
+        { provide: ActivateCallJokerUseCase, useValue: {} },
+        { provide: SendHintUseCase, useValue: {} },
         {
           provide: RoomBroadcasterService,
           useValue: { broadcastToRoom: jest.fn(), setServer: jest.fn() },

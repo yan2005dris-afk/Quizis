@@ -15,7 +15,7 @@ import { SalaAdminGuard } from '../../../../core/common/guards/sala-admin.guard'
 import { UpdateEstadoSalaUseCase } from '../../application/use-cases/update-estado-sala.use-case';
 import { UpdateEstadoSalaDto } from '../dto/update-estado-sala.dto';
 import { PrismaService } from '../../../../core/database/prisma/prisma.service';
-import { ReleaseQuestionWebsocket } from '../../../rondas/infrastructure/websockets/release-question.websocket';
+import { ReleaseQuestionUseCase } from '../../../rondas/application/use-cases/release-question.use-case';
 import { RegenerateRoomTokenUseCase } from '../../application/use-cases/regenerate-room-token.use-case';
 import { FinalizeRoomUseCase } from '../../application/use-cases/finalize-room.use-case';
 import { RestartRoundUseCase } from '../../application/use-cases/restart-round.use-case';
@@ -44,7 +44,7 @@ import { SalasService } from '../../application/salas.service';
 export class SalasByTokenController {
   constructor(
     private readonly updateEstadoSalaUseCase: UpdateEstadoSalaUseCase,
-    private readonly releaseQuestionWebsocket: ReleaseQuestionWebsocket,
+    private readonly releaseQuestionUseCase: ReleaseQuestionUseCase,
     private readonly regenerateRoomToken: RegenerateRoomTokenUseCase,
     private readonly finalizeRoom: FinalizeRoomUseCase,
     private readonly restartRound: RestartRoundUseCase,
@@ -105,7 +105,7 @@ export class SalasByTokenController {
     ) {
       throw new BadRequestException('preguntaId requerido');
     }
-    return this.releaseQuestionWebsocket.execute(
+    return this.releaseQuestionUseCase.execute(
       tokenCompartido,
       Number(body.preguntaId),
     );
