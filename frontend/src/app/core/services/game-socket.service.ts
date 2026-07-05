@@ -438,8 +438,13 @@ export class GameSocketService {
   }
 
   // Envía un mensaje o sugerencia
-  enviarMensaje(texto: string, tipo: 'mensaje' | 'sugerencia'): void {
-    this.socket?.emit('enviar_mensaje', { texto, tipo });
+  // N2: now uses REST (GameApiService). Returns a Promise.
+  enviarMensaje(
+    tokenCompartido: string,
+    texto: string,
+    tipo: 'mensaje' | 'sugerencia',
+  ): Promise<unknown> {
+    return firstValueFrom(this.api.enviarMensaje(tokenCompartido, { texto, tipo }));
   }
 
   // ——— Gameplay Actions ———
@@ -474,15 +479,21 @@ export class GameSocketService {
   }
 
   // Emitir voto del público (Solo Observador)
+  // N2: now uses REST. Note that REST derives participanteId from the JWT
+  // user, so we no longer need the caller to pass it.
   emitirVoto(payload: {
-    salaId: number;
-    rondaId: number;
     tokenCompartido: string;
+    rondaId: number;
     preguntaId: number;
-    participanteId: number;
     opcionId: number;
-  }): void {
-    this.socket?.emit('audience:vote', payload);
+  }): Promise<unknown> {
+    return firstValueFrom(
+      this.api.votar(payload.tokenCompartido, {
+        rondaId: payload.rondaId,
+        preguntaId: payload.preguntaId,
+        opcionId: payload.opcionId,
+      }),
+    );
   }
 
   // Cambiar estado sala (Solo Admin)
@@ -501,50 +512,41 @@ export class GameSocketService {
   }
 
   // Cambiar rol participante (Solo Admin)
-  // Retorna una promesa que resuelve con la respuesta del server (éxito o error)
+  // N2: now uses REST (GameApiService). Returns a Promise.
   cambiarRolParticipante(
     tokenCompartido: string,
     nickname: string,
     nuevoRol: 'estudiante' | 'observador',
-  ): Promise<{ success: boolean; message?: string }> {
-    return new Promise((resolve) => {
-      if (!this.socket) {
-        resolve({ success: false, message: 'Socket no conectado' });
-        return;
-      }
-      this.socket.emit(
-        'cambiar_rol_participante',
-        { tokenCompartido, nickname, nuevoRol },
-        (res: any) => {
-          resolve(res);
-        },
-      );
-    });
+  ): Promise<unknown> {
+    return firstValueFrom(this.api.cambiarRolParticipante(tokenCompartido, nickname, nuevoRol));
   }
 
   // Notificar uso de comodín para bloquearlo (Broadcast)
+  // N2: now uses REST. opcionesEliminadas / preguntaId are no longer sent
+  // to the server (the server uses its own state for 50_50 logic).
   bloquearComodin(
     tokenCompartido: string,
     tipoComodin: string,
-    opcionesEliminadas?: number[],
-    preguntaId?: number,
-  ): void {
-    this.socket?.emit('comodin_bloqueado', {
-      tokenCompartido,
-      tipoComodin,
-      opcionesEliminadas,
-      preguntaId,
-    });
+    _opcionesEliminadas?: number[],
+    _preguntaId?: number,
+  ): Promise<unknown> {
+    return firstValueFrom(this.api.bloquearComodin(tokenCompartido, tipoComodin));
   }
 
   // Activar comodín llamada (Solo Estudiante)
-  activarComodinLlamada(tokenCompartido: string, pregunta: Pregunta): void {
-    this.socket?.emit('activar_comodin_llamada', { tokenCompartido, pregunta });
+  // N2: now uses REST. The pregunta is fetched server-side.
+  activarComodinLlamada(tokenCompartido: string, _pregunta: Pregunta): Promise<unknown> {
+    return firstValueFrom(this.api.activarComodinLlamada(tokenCompartido));
   }
 
   // Enviar pista consultor (Solo Consultor)
-  enviarPistaConsultor(tokenCompartido: string, preguntaId: number, pista: string): void {
-    this.socket?.emit('enviar_pista_consultor', { tokenCompartido, preguntaId, pista });
+  // N2: now uses REST.
+  enviarPistaConsultor(
+    tokenCompartido: string,
+    preguntaId: number,
+    pista: string,
+  ): Promise<unknown> {
+    return firstValueFrom(this.api.enviarPistaConsultor(tokenCompartido, { preguntaId, pista }));
   }
 
   // Resetear manualmente la bandera de re-voto (llamado por el componente después de procesar revoto_solicitado)
@@ -553,9 +555,9 @@ export class GameSocketService {
   }
 
   // Reiniciar ronda (Solo Host/Admin)
-  reiniciarRonda(tokenCompartido: string, rondaActiva: any): void {
-    console.log('[WS:emit:reiniciar_ronda] Emitiendo a token=', tokenCompartido);
-    this.socket?.emit('reiniciar_ronda', { tokenCompartido, rondaActiva });
+  // N2: now uses REST. rondaActiva is no longer needed (server has it).
+  reiniciarRonda(tokenCompartido: string, _rondaActiva: any): Promise<unknown> {
+    return firstValueFrom(this.api.reiniciarRonda(tokenCompartido));
   }
 
   // Cierra la conexión limpiamente
