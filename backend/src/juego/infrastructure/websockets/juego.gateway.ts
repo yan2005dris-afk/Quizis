@@ -447,7 +447,7 @@ export class JuegoGateway
 
   @SubscribeMessage('audience:vote')
   async handleVote(
-    @ConnectedSocket() client: Socket,
+    @ConnectedSocket() _client: Socket,
     @MessageBody() payload: VotePayload,
   ) {
     try {
