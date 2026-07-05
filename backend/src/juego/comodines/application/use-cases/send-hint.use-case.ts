@@ -1,6 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { PrismaService } from '../../../../core/database/prisma/prisma.service';
 import { HelperCacheService } from '../../infrastructure/cache/helper-cache.service';
+import { GameEvents } from '../../../../core/common/events/game-events.types';
 
 export interface SendHintPayload {
   tokenCompartido: string;
@@ -15,6 +17,7 @@ export class SendHintUseCase {
   constructor(
     private readonly prisma: PrismaService,
     private readonly helperCache: HelperCacheService,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   async execute(
@@ -74,6 +77,13 @@ export class SendHintUseCase {
     this.logger.log(
       `Pista transmitida y comodín LLAMADA registrado en sala: ${tokenCompartido}`,
     );
+
+    this.eventEmitter.emit(GameEvents.COMODINES.PISTA_ENVIADA, {
+      tokenCompartido,
+      preguntaId,
+      pista,
+      helperNickname,
+    });
 
     return { success: true, helperNickname, pista };
   }
