@@ -13,9 +13,16 @@ import { CacheModule } from '../../core/cache/cache.module';
 import { DatabaseModule } from '../../core/database/prisma/prisma.module';
 import { VotosModule } from '../votos/votos.module';
 import { SalasModule } from '../salas/salas.module';
+import { RoomBroadcastModule } from '../infrastructure/websockets/room-broadcast.module';
 
 @Module({
-  imports: [CacheModule, DatabaseModule, VotosModule, SalasModule],
+  imports: [
+    CacheModule,
+    DatabaseModule,
+    VotosModule,
+    SalasModule,
+    RoomBroadcastModule,
+  ],
   controllers: [ComodinesController, ComodinesRestController],
   providers: [
     ComodinesService,
