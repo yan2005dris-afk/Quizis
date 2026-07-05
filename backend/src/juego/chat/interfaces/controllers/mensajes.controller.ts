@@ -2,32 +2,33 @@ import {
   BadRequestException,
   Body,
   Controller,
+  ForbiddenException,
   NotFoundException,
   Param,
   Post,
-  Req,
-  UseGuards,
 } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
-import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
-import type { Request } from 'express';
-import { JwtAuthGuard } from '../../../../identity/auth/infrastructure/guards/jwt-auth.guard';
+import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { PrismaService } from '../../../../core/database/prisma/prisma.service';
 import { ChatService } from '../../application/chat.service';
 
 /**
  * REST endpoint for chat messages.
  *
+ * Auth is per-sala (no JWT): the caller is identified by the
+ * `nickname` in the body, and the controller validates that a participant
+ * with that nickname exists in the targeted sala (deletedAt=null). This
+ * matches the pattern used by `respuestas.controller.ts` — students and
+ * observers join rooms via shareable links, not via login.
+ *
  * Equivalent to the WS `enviar_mensaje` handler. Delegates to
  * `ChatService.sendMessage()` — WS broadcast `mensaje_chat` fires
- * identically to the old WS path.
+ * identically to the old WS path (fixed in the N2 chat-broadcast bug).
  *
  * Rate limited to 1 msg/sec per user via @Throttle override (N2: AC-N2-10).
  */
 @ApiTags('chat')
-@ApiBearerAuth()
-@Controller('api/v1/salas/:salaId/mensajes')
-@UseGuards(JwtAuthGuard)
+@Controller('salas/:salaId/mensajes')
 export class MensajesController {
   constructor(
     private readonly chatService: ChatService,
@@ -39,9 +40,16 @@ export class MensajesController {
   @ApiOperation({ summary: 'Send a chat message in the sala' })
   async send(
     @Param('salaId') tokenCompartido: string,
-    @Body() body: { texto: string; tipo: 'mensaje' | 'sugerencia' },
-    @Req() req: Request,
+    @Body()
+    body: {
+      nickname: string;
+      texto: string;
+      tipo: 'mensaje' | 'sugerencia';
+    },
   ) {
+    if (!body.nickname || body.nickname.trim().length === 0) {
+      throw new BadRequestException('nickname no puede estar vacío');
+    }
     if (!body.texto || body.texto.trim().length === 0) {
       throw new BadRequestException('texto no puede estar vacío');
     }
@@ -51,8 +59,7 @@ export class MensajesController {
       );
     }
 
-    const user = (req as any).user;
-    const nickname = user?.nombre ?? user?.email ?? 'unknown';
+    const nickname = body.nickname.trim();
 
     const participante = await this.prisma.participantes.findFirst({
       where: {
@@ -60,12 +67,24 @@ export class MensajesController {
         nickname,
         deletedAt: null,
       },
-      select: { participanteId: true },
+      select: { rol: true },
     });
 
     if (!participante) {
       throw new NotFoundException(
         'No eres participante de esta sala con ese nickname',
+      );
+    }
+
+    // Chat is open to any active participant (estudiante or observador).
+    // The historical "user" from req was the JWT-authenticated admin — that
+    // never applied to participants joining via shareable links.
+    if (
+      participante.rol !== 'estudiante' &&
+      participante.rol !== 'observador'
+    ) {
+      throw new ForbiddenException(
+        `Tu rol actual (${participante.rol}) no permite enviar mensajes`,
       );
     }
 

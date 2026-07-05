@@ -2,14 +2,11 @@ import {
   BadRequestException,
   Body,
   Controller,
+  NotFoundException,
   Param,
   Post,
-  Req,
-  UseGuards,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
-import type { Request } from 'express';
-import { JwtAuthGuard } from '../../../../identity/auth/infrastructure/guards/jwt-auth.guard';
+import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { SalasService } from '../../../salas/application/salas.service';
 import { ActivateCallJokerWebsocket } from '../../infrastructure/websockets/activate-call-joker.websocket';
 import { SendHintWebsocket } from '../../infrastructure/websockets/send-hint.websocket';
@@ -18,6 +15,12 @@ import { PrismaService } from '../../../../core/database/prisma/prisma.service';
 
 /**
  * REST endpoints for comodín mutations.
+ *
+ * Auth is per-sala (no JWT): caller identified by `nickname` in body, validated
+ * against the participant record (token+nickname). Same pattern as
+ * `respuestas.controller.ts`. Role-specific rules (e.g. only estudiante activates
+ * "Llamada") are enforced inside the use-cases, not here — this controller
+ * only guards that the caller is an active participant of the sala.
  *
  * N2 equivalents of:
  *   - WS `comodin_bloqueado` → POST /:tipo/bloquear
@@ -28,9 +31,7 @@ import { PrismaService } from '../../../../core/database/prisma/prisma.service';
  * `pista_consultor_recibida`) fire identically via the delegated use-cases.
  */
 @ApiTags('comodines')
-@ApiBearerAuth()
-@Controller('api/v1/salas/:salaId/comodines')
-@UseGuards(JwtAuthGuard)
+@Controller('salas/:salaId/comodines')
 export class ComodinesRestController {
   constructor(
     private readonly salasService: SalasService,
@@ -43,6 +44,36 @@ export class ComodinesRestController {
   private readonly VALID_TIPOS = ['IA', 'PUBLICO', '50_50', 'LLAMADA'];
 
   /**
+   * Resolves a nickname (provided in the body) against the participant record
+   * of the targeted sala. Throws NotFoundException if no active participant
+   * matches. Returns the participant row for the caller to use.
+   */
+  private async resolveParticipante(
+    tokenCompartido: string,
+    nickname: string,
+  ): Promise<{ participanteId: number; rol: string }> {
+    if (!nickname || nickname.trim().length === 0) {
+      throw new NotFoundException(
+        'nickname requerido para operar en esta sala',
+      );
+    }
+    const participante = await this.prisma.participantes.findFirst({
+      where: {
+        sala: { tokenCompartido },
+        nickname: nickname.trim(),
+        deletedAt: null,
+      },
+      select: { participanteId: true, rol: true },
+    });
+    if (!participante) {
+      throw new NotFoundException(
+        'No eres participante de esta sala con ese nickname',
+      );
+    }
+    return participante;
+  }
+
+  /**
    * Lock a comodín (admin or participant). Equivalent to WS `comodin_bloqueado`.
    */
   @Post(':tipo/bloquear')
@@ -50,8 +81,7 @@ export class ComodinesRestController {
   async bloquear(
     @Param('salaId') tokenCompartido: string,
     @Param('tipo') tipo: string,
-    @Body() _body: { preguntaId?: number },
-    @Req() req: Request,
+    @Body() body: { nickname: string; preguntaId?: number },
   ) {
     if (!this.VALID_TIPOS.includes(tipo)) {
       throw new BadRequestException(
@@ -59,20 +89,10 @@ export class ComodinesRestController {
       );
     }
 
-    const user = (req as any).user;
-    const nickname = user?.nombre ?? user?.email ?? 'unknown';
-
-    const participante = await this.prisma.participantes.findFirst({
-      where: {
-        sala: { tokenCompartido },
-        nickname,
-        deletedAt: null,
-      },
-      select: { participanteId: true },
-    });
-    if (!participante) {
-      throw new BadRequestException('No eres participante de esta sala');
-    }
+    const participante = await this.resolveParticipante(
+      tokenCompartido,
+      body.nickname,
+    );
 
     await this.salasService.addBlockedComodin(tokenCompartido, tipo);
 
@@ -104,8 +124,9 @@ export class ComodinesRestController {
   @ApiOperation({ summary: 'Student activates "Llamada" comodín' })
   async activarLlamada(
     @Param('salaId') tokenCompartido: string,
-    @Body() _body: { pregunta: any },
+    @Body() body: { nickname: string },
   ) {
+    await this.resolveParticipante(tokenCompartido, body.nickname);
     return this.activateCallJoker.execute(tokenCompartido);
   }
 
@@ -117,8 +138,14 @@ export class ComodinesRestController {
   @ApiOperation({ summary: 'Consultant sends hint' })
   async enviarPista(
     @Param('salaId') tokenCompartido: string,
-    @Body() body: { preguntaId: number; pista: string },
+    @Body()
+    body: {
+      nickname: string;
+      preguntaId: number;
+      pista: string;
+    },
   ) {
+    await this.resolveParticipante(tokenCompartido, body.nickname);
     return this.sendHint.execute({
       tokenCompartido,
       preguntaId: body.preguntaId,
