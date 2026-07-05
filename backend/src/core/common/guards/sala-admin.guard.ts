@@ -54,7 +54,7 @@ export class SalaAdminGuard implements CanActivate {
 
     if (sala.adminId !== user.usersId) {
       this.logger.warn(
-        `Acceso denegado: usuario ${user.email} intentó operar sala ${sala.salaId} (admin=${sala.adminId})`,
+        `Acceso denegado: usuario ${user.usersId} intentó operar sala ${sala.salaId} (admin=${sala.adminId})`,
       );
       throw new ForbiddenException(
         'Solo el admin de esta sala puede ejecutar esta acción',

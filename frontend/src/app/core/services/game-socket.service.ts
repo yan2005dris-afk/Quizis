@@ -61,7 +61,7 @@ export class GameSocketService {
   private readonly api = inject(GameApiService);
 
   // Local nickname for REST calls (mirrors what `unirseASala` sends via WS).
-  // Set by the consumer via setLocalNickname() when joining a room.
+  // Set by `unirseASala()` when joining a room.
   private localNickname: string | null = null;
 
   // Instancia de la conexión WebSocket; null hasta que se llame a conectar()
@@ -499,12 +499,18 @@ export class GameSocketService {
     opcionId: number;
     comodinUsado?: string;
   }): Promise<SubmitAnswerResult> {
+    const nickname = this.localNickname;
+    if (!nickname) {
+      return Promise.reject(
+        new Error('No hay nickname local — debes unirte a una sala primero'),
+      );
+    }
     return firstValueFrom(
       this.api.submitAnswer(payload.tokenCompartido, {
         rondaId: payload.rondaId,
         preguntaId: payload.preguntaId,
         opcionId: payload.opcionId,
-        nickname: this.localNickname ?? 'unknown',
+        nickname,
         comodinUsado: payload.comodinUsado,
       }),
     );

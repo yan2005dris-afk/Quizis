@@ -16,7 +16,6 @@ import { SendHintWebsocket } from '../../comodines/infrastructure/websockets/sen
 import { RoomBroadcasterService } from './room-broadcaster.service';
 import { SocketMapService } from './socket-map.service';
 import { DistributedTimerService } from './distributed-timer.service';
-import { HandleTimerExpirationUseCase } from '../../rondas/application/use-cases/handle-timer-expiration.use-case';
 
 describe('JuegoGateway — handleComodinBloqueado', () => {
   let gateway: JuegoGateway;
@@ -250,9 +249,6 @@ describe('JuegoGateway — handleJoinRoomMessage', () => {
     >
   >;
   let chatService: jest.Mocked<Pick<ChatService, 'getChatMessages'>>;
-  let roomBroadcaster: jest.Mocked<
-    Pick<RoomBroadcasterService, 'broadcastToRoom' | 'setServer'>
-  >;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -315,7 +311,6 @@ describe('JuegoGateway — handleJoinRoomMessage', () => {
     handleJoinRoom = module.get(HandleJoinRoomWebsocket) as any;
     salasService = module.get(SalasService) as any;
     chatService = module.get(ChatService) as any;
-    roomBroadcaster = module.get(RoomBroadcasterService) as any;
 
     jest.clearAllMocks();
   });

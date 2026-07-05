@@ -123,8 +123,14 @@ export class RoomStateCacheService {
       }
     } else {
       this.logger.warn(
-        '[RoomStateCache] Running in single-instance mode without Redis NX guard — last writer wins',
+        '[RoomStateCache] Running in single-instance mode — using in-memory check-then-set',
       );
+    }
+    // In-memory check-then-set: synchronous so Node single-threaded guarantees
+    // first-writer-wins within the same process.
+    const existing = this.memory.get(sk);
+    if (existing !== undefined && existing !== null) {
+      return false;
     }
     this.memory.set(sk, status, 3_600_000);
     return true;

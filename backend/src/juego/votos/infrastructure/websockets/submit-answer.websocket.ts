@@ -132,13 +132,25 @@ export class SubmitAnswerWebsocket {
         }
 
         // Persistir en Base de Datos (only if we won the race)
-        await this.recordAnswerUseCase.execute({
-          rondaId: payload.rondaId,
-          preguntaId: payload.preguntaId,
-          opcionId: winningOpcionId,
-          esCorrecta,
-          comodinUsado: payload.comodinUsado ?? null,
-        });
+        try {
+          await this.recordAnswerUseCase.execute({
+            rondaId: payload.rondaId,
+            preguntaId: payload.preguntaId,
+            opcionId: winningOpcionId,
+            esCorrecta,
+            comodinUsado: payload.comodinUsado ?? null,
+          });
+        } catch (persistError) {
+          // Rollback the NX claim so future submissions are not blocked
+          await this.cacheService.setQuestionStatus(
+            payload.tokenCompartido,
+            'released',
+          );
+          this.logger.error(
+            `[SUBMIT] Persistence failed after NX claim — rolled back status: ${persistError}`,
+          );
+          throw persistError;
+        }
 
         this.logger.log(
           `Consenso resuelto (${result.type}): opcionId=${winningOpcionId}, esCorrecta=${esCorrecta}`,

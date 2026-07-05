@@ -47,7 +47,12 @@ jobs:
       # These were moved to REST in sdd/quizis-rest-n1-mutations.
       - name: Verify no deprecated WS mutations
         run: |
-          ! grep -rn "socket.emit('responder_pregunta'" frontend/src/
-          ! grep -rn "socket.emit('cambiar_estado_sala'" frontend/src/
-          ! grep -rn "socket.emit('pregunta_liberada'" frontend/src/
+          failed=0
+          grep -rn "socket.emit('responder_pregunta'" frontend/src/ && failed=1 || true
+          grep -rn "socket.emit('cambiar_estado_sala'" frontend/src/ && failed=1 || true
+          grep -rn "socket.emit('pregunta_liberada'" frontend/src/ && failed=1 || true
+          if [ "$failed" -eq 1 ]; then
+            echo "❌ Found deprecated WS mutation calls"
+            exit 1
+          fi
           echo "✓ No deprecated WS mutation calls found"

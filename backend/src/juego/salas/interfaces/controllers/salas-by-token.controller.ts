@@ -4,6 +4,7 @@ import {
   Param,
   Patch,
   Post,
+  Req,
   UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
@@ -11,7 +12,6 @@ import { JwtAuthGuard } from '../../../../identity/auth/infrastructure/guards/jw
 import { SalaAdminGuard } from '../../../../core/common/guards/sala-admin.guard';
 import { UpdateEstadoSalaUseCase } from '../../application/use-cases/update-estado-sala.use-case';
 import { UpdateEstadoSalaDto } from '../dto/update-estado-sala.dto';
-import { PrismaService } from '../../../../core/database/prisma/prisma.service';
 import { ReleaseQuestionWebsocket } from '../../../rondas/infrastructure/websockets/release-question.websocket';
 
 /**
@@ -35,7 +35,6 @@ export class SalasByTokenController {
   constructor(
     private readonly updateEstadoSalaUseCase: UpdateEstadoSalaUseCase,
     private readonly releaseQuestionWebsocket: ReleaseQuestionWebsocket,
-    private readonly prisma: PrismaService,
   ) {}
 
   /**
@@ -50,17 +49,11 @@ export class SalasByTokenController {
       'Update room state (BORRADOR → ESPERANDO_ALUMNOS → EN_VIVO → FINALIZADO)',
   })
   async updateEstado(
-    @Param('salaId') tokenCompartido: string,
+    @Param('salaId') _tokenCompartido: string,
     @Body() dto: UpdateEstadoSalaDto,
+    @Req() req: { sala: { salaId: number } },
   ) {
-    const sala = await this.prisma.salas.findUnique({
-      where: { tokenCompartido },
-      select: { salaId: true },
-    });
-    if (!sala) {
-      throw new Error('Sala no encontrada');
-    }
-    return this.updateEstadoSalaUseCase.execute(sala.salaId, dto);
+    return this.updateEstadoSalaUseCase.execute(req.sala.salaId, dto);
   }
 
   /**
@@ -75,11 +68,11 @@ export class SalasByTokenController {
   @ApiOperation({ summary: 'Release a question for the room' })
   async liberar(
     @Param('salaId') tokenCompartido: string,
-    @Body() body: { pregunta: any },
+    @Body('pregunta') pregunta: Record<string, unknown>,
   ) {
     return this.releaseQuestionWebsocket.execute(
       tokenCompartido,
-      body.pregunta,
+      pregunta,
     );
   }
 }
