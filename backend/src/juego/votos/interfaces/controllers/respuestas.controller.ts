@@ -1,42 +1,37 @@
 import {
   Body,
   Controller,
-  ForbiddenException,
   HttpCode,
-  NotFoundException,
   Param,
   Post,
+  UseGuards,
 } from '@nestjs/common';
-import {
-  ApiOperation,
-  ApiResponse,
-  ApiTags,
-} from '@nestjs/swagger';
-import { PrismaService } from '../../../../core/database/prisma/prisma.service';
+import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { SubmitAnswerUseCase } from '../../application/use-cases/submit-answer.use-case';
 import type { SubmitAnswerResult } from '../../application/use-cases/submit-answer.use-case';
 import { SubmitAnswerDto } from '../../../respuestas/interfaces/dto/submit-answer.dto';
+import { ParticipantRoleGuard } from '../../../shared/auth/participant-role.guard';
+import { ParticipantRoles } from '../../../shared/auth/participant-roles.decorator';
 
 /**
  * REST endpoint for submitting an answer to the active question.
  *
- * Auth is per-sala: the endpoint validates the caller is a participant of
- * that sala with rol=estudiante via the `tokenCompartido + nickname` pair.
- * No JWT required — students join rooms via shareable links, not auth login.
+ * Auth is hybrid (JWT-admin | tokenless-nickname) per `ParticipantRoleGuard`.
+ * Open to: estudiante ONLY. observador is denied (403). Admin JWT resolves
+ * role=admin → role check denies (admin NOT in [estudiante]).
  *
  * Equivalent to the WS `responder_pregunta` handler — both delegate to
- * `SubmitAnswerWebsocket.execute()` for the actual business logic.
+ * `SubmitAnswerUseCase.execute()` for the actual business logic.
  */
 @ApiTags('respuestas')
 @Controller('salas/:salaId/respuestas')
+@UseGuards(ParticipantRoleGuard)
 export class RespuestasController {
-  constructor(
-    private readonly submitAnswerUseCase: SubmitAnswerUseCase,
-    private readonly prisma: PrismaService,
-  ) {}
+  constructor(private readonly submitAnswerUseCase: SubmitAnswerUseCase) {}
 
   @Post()
   @HttpCode(200)
+  @ParticipantRoles('estudiante')
   @ApiOperation({ summary: 'Submit an answer for the active question' })
   @ApiResponse({
     status: 200,
@@ -52,27 +47,6 @@ export class RespuestasController {
     @Param('salaId') salaId: string,
     @Body() dto: SubmitAnswerDto,
   ): Promise<SubmitAnswerResult> {
-    // Validate that the requester is a participant of this sala with rol=estudiante.
-    const participante = await this.prisma.participantes.findFirst({
-      where: {
-        sala: { tokenCompartido: salaId },
-        nickname: dto.nickname,
-        deletedAt: null,
-      },
-      select: { rol: true },
-    });
-
-    if (!participante) {
-      throw new NotFoundException(
-        'No eres participante de esta sala con ese nickname',
-      );
-    }
-    if (participante.rol !== 'estudiante') {
-      throw new ForbiddenException(
-        `Tu rol actual (${participante.rol}) no permite responder preguntas`,
-      );
-    }
-
     return this.submitAnswerUseCase.execute({
       tokenCompartido: salaId,
       rondaId: dto.rondaId,

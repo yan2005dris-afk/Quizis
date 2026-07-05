@@ -1,29 +1,34 @@
 import {
   Body,
   Controller,
-  ForbiddenException,
   NotFoundException,
   Param,
   Post,
+  Req,
+  UseGuards,
 } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
-import { PrismaService } from '../../../../core/database/prisma/prisma.service';
 import { ProcessAudienceVoteUseCase } from '../../application/use-cases/process-audience-vote.use-case';
 import type { VotePayload } from '../../application/use-cases/process-audience-vote.use-case';
+import { ParticipantRoleGuard } from '../../../shared/auth/participant-role.guard';
+import { ParticipantRoles } from '../../../shared/auth/participant-roles.decorator';
+import type { ParticipantRequest } from '../../../../core/common/types/auth-request.types';
+import { PrismaService } from '../../../../core/database/prisma/prisma.service';
 
 /**
  * REST endpoint for the audience vote mutation (comodín "Pregunta al público").
  *
- * Auth is per-sala (no JWT): caller identified by `nickname` in body, validated
- * against the participant record (token+nickname+rol=observador). Same pattern
- * as `respuestas.controller.ts` — only observers vote in "Pregunta al público".
+ * Auth is hybrid (JWT-admin | tokenless-nickname) per `ParticipantRoleGuard`.
+ * Open to: observador ONLY. estudiante is denied (403). Admin JWT for own sala
+ * would resolve role=admin → role check denies (admin NOT in [observador]).
  *
  * Equivalent to the WS `audience:vote` handler. Delegates to
- * `ProcessAudienceVoteWebsocket.execute()` — same NX-guards, same
+ * `ProcessAudienceVoteUseCase.execute()` — same NX-guards, same
  * WS broadcasts (`voto_recibido`).
  */
 @ApiTags('votos')
 @Controller('salas/:salaId/votos')
+@UseGuards(ParticipantRoleGuard)
 export class VotosRestController {
   constructor(
     private readonly processAudienceVote: ProcessAudienceVoteUseCase,
@@ -31,6 +36,7 @@ export class VotosRestController {
   ) {}
 
   @Post()
+  @ParticipantRoles('observador')
   @ApiOperation({
     summary: 'Audience vote (comodín "Pregunta al público")',
   })
@@ -38,43 +44,27 @@ export class VotosRestController {
     @Param('salaId') tokenCompartido: string,
     @Body()
     body: {
-      nickname: string;
       rondaId: number;
       preguntaId: number;
       opcionId: number;
     },
+    @Req() req: ParticipantRequest,
   ) {
-    if (!body.nickname || body.nickname.trim().length === 0) {
-      throw new NotFoundException('nickname requerido para votar en esta sala');
-    }
-
-    const nickname = body.nickname.trim();
-
-    const participante = await this.prisma.participantes.findFirst({
-      where: {
-        sala: { tokenCompartido },
-        nickname,
-        deletedAt: null,
-      },
-      select: { participanteId: true, rol: true },
-    });
-
-    if (!participante) {
+    const participante = req.participante;
+    if (!participante?.participanteId) {
       throw new NotFoundException(
-        'No eres participante de esta sala con ese nickname',
+        'No se pudo identificar al participante (rol: observador requerido)',
       );
     }
 
-    // Audience vote is open to observers only — the student plays, the
-    // audience votes. Admin (Host-*) does not vote either.
-    if (participante.rol !== 'observador') {
-      throw new ForbiddenException(
-        `Tu rol actual (${participante.rol}) no permite votar`,
-      );
-    }
+    const sala = await this.prisma.salas.findUnique({
+      where: { tokenCompartido },
+      select: { salaId: true },
+    });
+    if (!sala) throw new NotFoundException('Sala no encontrada');
 
     const payload: VotePayload = {
-      salaId: participante.participanteId,
+      salaId: sala.salaId,
       rondaId: body.rondaId,
       tokenCompartido,
       preguntaId: body.preguntaId,
