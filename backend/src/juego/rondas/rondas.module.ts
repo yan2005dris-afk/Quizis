@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { RondasService } from './application/rondas.service';
 import { RondasController } from './interfaces/rondas.controller';
 import { CreateRondaUseCase } from './application/use-cases/create-ronda.use-case';
@@ -16,7 +16,7 @@ import { RespuestasModule } from '../respuestas/respuestas.module';
  * individual de un participante con preguntas aleatorias asignadas.
  */
 @Module({
-  imports: [CacheModule, SalasModule, RespuestasModule],
+  imports: [CacheModule, forwardRef(() => SalasModule), RespuestasModule],
   controllers: [RondasController],
   providers: [
     RondasService,

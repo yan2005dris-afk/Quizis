@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { SalasController } from './interfaces/salas.controller';
 import { SalasByTokenController } from './interfaces/controllers/salas-by-token.controller';
 import { SalasService } from './application/salas.service';
@@ -29,7 +29,7 @@ import { ChatModule } from '../chat/chat.module';
 import { RondasModule } from '../rondas/rondas.module';
 
 @Module({
-  imports: [AuthModule, CacheModule, ChatModule, RondasModule],
+  imports: [AuthModule, CacheModule, ChatModule, forwardRef(() => RondasModule)],
   controllers: [SalasController, SalasByTokenController],
   providers: [
     SalasService,
