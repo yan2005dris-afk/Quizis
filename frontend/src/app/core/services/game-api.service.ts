@@ -3,7 +3,7 @@ import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
-import { Pregunta } from './game-socket.service';
+import type { Pregunta } from './game-socket.service';
 
 /**
  * Body for POST /api/v1/salas/:salaId/respuestas.
@@ -205,7 +205,6 @@ export class GameApiService {
       .post<unknown>(`${this.apiUrl}/salas/${salaId}/comodines/llamada/pista`, payload)
       .pipe(catchError((err: unknown) => this.toObservableError(err)));
   }
-
   /**
    * Normalize HttpClient errors into a typed shape so consumers (components,
    * toasts) can extract `err.error.message` reliably.

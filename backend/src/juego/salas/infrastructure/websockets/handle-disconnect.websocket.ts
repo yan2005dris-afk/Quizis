@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { ParticipantsCacheService } from '../cache/participants-cache.service';
+import { ParticipantsCacheService } from '../../../shared/room-state/participants-cache.service';
 import { GameEvents } from '../../../../core/common/events/game-events.types';
 
 @Injectable()

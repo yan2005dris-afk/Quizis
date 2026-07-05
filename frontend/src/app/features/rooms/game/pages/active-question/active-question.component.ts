@@ -213,8 +213,14 @@ export class ActiveQuestionComponent {
           !respuestaDada && !this.respuestaConfirmada() && this.localSelectedId() === o.opcionId,
         estaPendiente:
           !respuestaDada && this.respuestaConfirmada() && this.localSelectedId() === o.opcionId,
+        // Highlight the correct option whenever the question is answered
+        // (correct answer → the chosen option; incorrect answer → the
+        // canonical correct option from p.opciones). Without this fix,
+        // an incorrect or timed-out answer left NO option highlighted.
         esCorrecta: respuestaDada
-          ? respuestaDada.esCorrecta && respuestaDada.opcionId === o.opcionId
+          ? respuestaDada.esCorrecta
+            ? respuestaDada.opcionId === o.opcionId
+            : o.esCorrecta === true
           : undefined,
       };
     });

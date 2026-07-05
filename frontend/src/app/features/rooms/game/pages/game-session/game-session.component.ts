@@ -158,7 +158,12 @@ export class GameSessionComponent implements OnInit, OnDestroy {
 
   protected readonly miNickname = computed(() => {
     if (this.isHost()) return this.auth.user()?.nombre || 'Admin';
-    const participantInfo = JSON.parse(localStorage.getItem('participantInfo') ?? '{}');
+    let participantInfo: any = {};
+    try {
+      participantInfo = JSON.parse(localStorage.getItem('participantInfo') ?? '{}');
+    } catch {
+      participantInfo = {};
+    }
     return participantInfo.nickname;
   });
 
@@ -374,7 +379,12 @@ export class GameSessionComponent implements OnInit, OnDestroy {
 
           const interval = setInterval(() => {
             if (this.gameSocket.conectado()) {
-              const participantInfo = JSON.parse(localStorage.getItem('participantInfo') ?? '{}');
+              let participantInfo: any = {};
+    try {
+      participantInfo = JSON.parse(localStorage.getItem('participantInfo') ?? '{}');
+    } catch {
+      participantInfo = {};
+    }
               const nickname = this.isHost()
                 ? `Host-${this.auth.user()?.nombre || 'Admin'}`
                 : (participantInfo.nickname ?? `Estudiante-${Math.floor(Math.random() * 1000)}`);
@@ -423,6 +433,18 @@ export class GameSessionComponent implements OnInit, OnDestroy {
       error: (err) => {
         console.error('Error actualizando estado:', err);
         this.cambiandoEstado.set(false);
+
+        // Extract backend error message (NestJS HttpException body shape).
+        // Falls back to a generic connection-error toast if shape is unexpected.
+        const backendMessage = err?.error?.message ?? err?.message ?? null;
+        const isStudentsRequired =
+          typeof backendMessage === 'string' && backendMessage.toLowerCase().includes('estudiante');
+
+        const title = isStudentsRequired ? 'No se puede iniciar' : 'Error al cambiar estado';
+        const message =
+          backendMessage ?? 'No se pudo cambiar el estado de la sala. Intenta nuevamente.';
+
+        this.toastService.show(message, 'danger', title);
       },
     });
   }
@@ -551,8 +573,12 @@ export class GameSessionComponent implements OnInit, OnDestroy {
       // Validar que el comodín PÚBLICO esté activo antes de permitir el voto
       if (!this.gameSocket.votosPublico()) return;
 
-      const participantInfo = JSON.parse(localStorage.getItem('participantInfo') ?? '{}');
-      void participantInfo;
+      let participantInfo: any = {};
+      try {
+        participantInfo = JSON.parse(localStorage.getItem('participantInfo') ?? '{}');
+      } catch {
+        participantInfo = {};
+      }
       this.gameSocket.emitirVoto({
         tokenCompartido: sala.tokenCompartido,
         rondaId: sala.rondaActiva.rondaId,

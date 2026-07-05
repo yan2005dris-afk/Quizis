@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { HandleDisconnectWebsocket } from './handle-disconnect.websocket';
-import { ParticipantsCacheService } from '../cache/participants-cache.service';
+import { ParticipantsCacheService } from '../../../shared/room-state/participants-cache.service';
 import { GameEvents } from '../../../../core/common/events/game-events.types';
 
 describe('HandleDisconnectWebsocket', () => {
@@ -31,7 +31,9 @@ describe('HandleDisconnectWebsocket', () => {
       ],
     }).compile();
 
-    websocket = module.get<HandleDisconnectWebsocket>(HandleDisconnectWebsocket);
+    websocket = module.get<HandleDisconnectWebsocket>(
+      HandleDisconnectWebsocket,
+    );
     jest.clearAllMocks();
   });
 

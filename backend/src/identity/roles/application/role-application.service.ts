@@ -1,7 +1,4 @@
-import {
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { RoleRepository } from '../domain/repositories/role.repository';
 import { AssignPermissionToRoleUseCase } from './use-cases/assign-permission-to-role.use-case';
 import { RemovePermissionFromRoleUseCase } from './use-cases/remove-permission-from-role.use-case';
@@ -60,7 +57,10 @@ export class RoleApplicationService {
       await this.roleRepo.update(id, { nombre: updateRoleDto.nombre });
     }
 
-    if (updateRoleDto.permisosAsignar && updateRoleDto.permisosAsignar.length > 0) {
+    if (
+      updateRoleDto.permisosAsignar &&
+      updateRoleDto.permisosAsignar.length > 0
+    ) {
       for (const permisoId of updateRoleDto.permisosAsignar) {
         try {
           await this.assignPermissionUseCase.execute(id, permisoId);
@@ -70,7 +70,10 @@ export class RoleApplicationService {
       }
     }
 
-    if (updateRoleDto.permisosRevocar && updateRoleDto.permisosRevocar.length > 0) {
+    if (
+      updateRoleDto.permisosRevocar &&
+      updateRoleDto.permisosRevocar.length > 0
+    ) {
       for (const permisoId of updateRoleDto.permisosRevocar) {
         try {
           await this.removePermissionUseCase.execute(id, permisoId);

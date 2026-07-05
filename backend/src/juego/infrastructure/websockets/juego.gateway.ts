@@ -8,7 +8,7 @@ import {
   ConnectedSocket,
   MessageBody,
 } from '@nestjs/websockets';
-import { Logger } from '@nestjs/common';
+import { Logger, OnModuleDestroy } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
 import { Server, Socket } from 'socket.io';
 
@@ -21,6 +21,7 @@ import { ComodinesService } from '../../comodines/application/comodines.service'
 import { HandleJoinRoomWebsocket } from '../../salas/infrastructure/websockets/handle-join-room.websocket';
 import { HandleDisconnectWebsocket } from '../../salas/infrastructure/websockets/handle-disconnect.websocket';
 import { ProcessAudienceVoteWebsocket } from '../../votos/infrastructure/websockets/process-audience-vote.websocket';
+import { HandleTimerExpirationUseCase } from '../../rondas/application/use-cases/handle-timer-expiration.use-case';
 import { ActivateCallJokerWebsocket } from '../../comodines/infrastructure/websockets/activate-call-joker.websocket';
 import { SendHintWebsocket } from '../../comodines/infrastructure/websockets/send-hint.websocket';
 
@@ -54,7 +55,11 @@ type ConsensusInput = {
 
 @WebSocketGateway({ cors: { origin: '*' } })
 export class JuegoGateway
-  implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect
+  implements
+    OnGatewayInit,
+    OnGatewayConnection,
+    OnGatewayDisconnect,
+    OnModuleDestroy
 {
   @WebSocketServer()
   server!: Server;
@@ -102,6 +107,35 @@ export class JuegoGateway
     }
   }
 
+  /**
+   * Cancel a pending broadcast for a room without firing it.
+   * Used when the room is empty (no listeners) or on shutdown.
+   */
+  private clearPendingBroadcast(tokenCompartido: string): void {
+    const pending = this.pendingBroadcasts.get(tokenCompartido);
+    if (pending) {
+      clearTimeout(pending.timer);
+      this.pendingBroadcasts.delete(tokenCompartido);
+    }
+  }
+
+  /**
+   * Clean up all pending broadcast timers on module destroy.
+   * Prevents leaked setTimeout references when the app shuts down
+   * (hot reload, restart, or graceful shutdown).
+   */
+  onModuleDestroy(): void {
+    const count = this.pendingBroadcasts.size;
+    for (const [token] of this.pendingBroadcasts.entries()) {
+      this.clearPendingBroadcast(token);
+    }
+    if (count > 0) {
+      this.logger.log(
+        `[JuegoGateway] onModuleDestroy: cleared ${count} pending broadcast timers`,
+      );
+    }
+  }
+
   constructor(
     private readonly salasService: SalasService,
     private readonly chatService: ChatService,
@@ -114,6 +148,7 @@ export class JuegoGateway
     private readonly roomBroadcaster: RoomBroadcasterService,
     private readonly socketMapService: SocketMapService,
     private readonly distributedTimerService: DistributedTimerService,
+    private readonly handleTimerExpiration: HandleTimerExpirationUseCase,
   ) {}
 
   // ─── Lifecycle ─────────────────────────────────────────────────────────────
@@ -151,6 +186,8 @@ export class JuegoGateway
       );
       if (remainingInRoom === 0) {
         await this.distributedTimerService.detenerTimer(info.tokenCompartido);
+        // Cancel any pending vote-distribution broadcast for this empty room.
+        this.clearPendingBroadcast(info.tokenCompartido);
       }
 
       const participantesDb = await this.salasService.getParticipantsWithRoles(
@@ -225,6 +262,81 @@ export class JuegoGateway
     );
     this.logger.log(
       `[SALA:INICIADA] Broadcast info_ronda for ${payload.tokenCompartido}`,
+    );
+  }
+
+  /**
+   * Fired by ReleaseQuestionWebsocket after a question is released via REST.
+   * Broadcasts `pregunta_liberada` so the frontend shows the active question,
+   * and starts the sala-level countdown timer.
+   */
+  @OnEvent(GameEvents.RONDAS.PREGUNTA_LIBERADA)
+  async handlePreguntaLiberada(payload: {
+    tokenCompartido: string;
+    pregunta: any;
+  }) {
+    const { tokenCompartido, pregunta } = payload;
+
+    // Validate required fields before broadcasting.
+    if (!pregunta?.preguntaId) {
+      this.logger.error(
+        `[handlePreguntaLiberada] Payload missing preguntaId for room ${tokenCompartido}`,
+      );
+      return;
+    }
+
+    try {
+      // Start timer BEFORE broadcasting so a timer failure prevents
+      // broadcasting a question with no countdown.
+      const { segundos, rondaId } =
+        await this.salasService.getTiempoLimite(tokenCompartido);
+
+      await this.distributedTimerService.iniciarTimer(
+        tokenCompartido,
+        segundos,
+        // onTick — broadcast remaining seconds to the room (plain number,
+        // matching the frontend's expected contract: tiempoRestante.set(data))
+        (remaining: number) => {
+          this.roomBroadcaster.broadcastToRoom(
+            tokenCompartido,
+            'temporizador_actualizado',
+            remaining,
+          );
+        },
+        // onExpire — persist "no answer" and notify the room
+        () => {
+          void this.handleTimerExpiration
+            .execute({ tokenCompartido, rondaId, preguntaId: pregunta.preguntaId })
+            .catch((err) =>
+              this.logger.error(
+                `[handlePreguntaLiberada] Timer expiry handler failed for ${tokenCompartido}: ${err}`,
+              ),
+            );
+
+          this.roomBroadcaster.broadcastToRoom(
+            tokenCompartido,
+            'tiempo_agotado',
+            { preguntaId: pregunta.preguntaId, tokenCompartido },
+          );
+        },
+      );
+    } catch (err) {
+      this.logger.error(
+        `[handlePreguntaLiberada] Timer setup failed for sala=${tokenCompartido} pregunta=${pregunta.preguntaId}: ${err}`,
+      );
+      // Do NOT broadcast pregunta_liberada — the timer is essential for
+      // game flow. Without it, the question hangs permanently.
+      return;
+    }
+
+    // Only broadcast once the timer infrastructure is confirmed ready.
+    this.roomBroadcaster.broadcastToRoom(
+      tokenCompartido,
+      'pregunta_liberada',
+      pregunta,
+    );
+    this.logger.log(
+      `[RONDAS:PREGUNTA_LIBERADA] Broadcast pregunta ${pregunta.preguntaId} for ${tokenCompartido}`,
     );
   }
 
@@ -304,18 +416,30 @@ export class JuegoGateway
     }
   }
 
-  
 
-  
 
   // Removed in N1 PR1 (sdd/quizis-rest-n1-mutations AC-N1-26):
   //   - handlePreguntaLiberada (pregunta_liberada) → REST POST /api/v1/salas/by-token/:salaId/preguntas/liberar
 
-  
+
 
   
 
-  
+
+  // Removed in N1 PR1 (sdd/quizis-rest-n1-mutations AC-N1-26):
+  //   - handleAnswer (responder_pregunta) → REST POST /api/v1/salas/:salaId/respuestas
+  //   - handleToggleRoom (cambiar_estado_sala) → REST PATCH /api/v1/salas/by-token/:salaId/estado
+
+  // N2 handlers removed in sdd/quizis-rest-n2-mutations — all migrated to REST:
+  //   handleCambiarRolParticipante → PATCH /salas/by-token/:salaId/participantes/:nickname/rol
+  //   handleVote                  → POST /salas/:salaId/votos
+  //   handleRegenerateToken       → POST /salas/by-token/:salaId/regenerar-token
+  //   handleFinalizeGame          → POST /salas/by-token/:salaId/finalizar
+  //   handleReiniciarRonda        → POST /salas/by-token/:salaId/reiniciar-ronda
+  //   handleChatMessage           → POST /salas/:salaId/mensajes
+  //   handleComodinBloqueado      → POST /salas/:salaId/comodines/:tipo/bloquear
+  //   handleActivarComodinLlamada → POST /salas/:salaId/comodines/llamada/activar
+  //   handleEnviarPistaConsultor  → POST /salas/:salaId/comodines/llamada/pista
 
   // ─── Private helpers ────────────────────────────────────────────────────────
 

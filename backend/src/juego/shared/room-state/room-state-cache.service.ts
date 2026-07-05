@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { RedisService } from '../../../../core/database/redis/redis.service';
-import { MemoryCacheStore } from '../../../../core/cache/memory-cache.store';
+import { RedisService } from '../../../core/database/redis/redis.service';
+import { MemoryCacheStore } from '../../../core/cache/memory-cache.store';
 
 @Injectable()
 export class RoomStateCacheService {
@@ -112,19 +112,32 @@ export class RoomStateCacheService {
     const client = this.redisService.getClient();
     if (client) {
       try {
-        const result = await client.set(sk, status, 'EX', 3600, 'NX');
-        // ioredis returns 'OK' on success, null on NX failure
-        return result === 'OK';
+        // Lua EVAL: compare current value to 'released', if match set to new value.
+        // KEYS[1] = status key, ARGV[1] = new value, ARGV[2] = TTL seconds
+        const lua = `
+          if redis.call('GET', KEYS[1]) == 'released' then
+            redis.call('SET', KEYS[1], ARGV[1], 'EX', ARGV[2])
+            return 1
+          end
+          return 0
+        `;
+        const result = await client.eval(lua, 1, sk, status, '3600');
+        return result === 1;
       } catch (err) {
         // Redis failed — fall through to memory fallback (non-atomic)
         this.logger.warn(
-          `[RoomStateCache] Redis SET NX failed, falling back to memory: ${err}`,
+          `[RoomStateCache] Redis EVAL failed, falling back to memory: ${err}`,
         );
       }
     } else {
       this.logger.warn(
-        '[RoomStateCache] Running in single-instance mode without Redis NX guard — last writer wins',
+        '[RoomStateCache] Running in single-instance mode — using in-memory check-then-set',
       );
+    }
+    // In-memory check-then-set: only succeed if status is still 'released'.
+    const existing = this.memory.get(sk);
+    if (existing === 'answered') {
+      return false;
     }
     this.memory.set(sk, status, 3_600_000);
     return true;

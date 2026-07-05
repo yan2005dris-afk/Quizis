@@ -2,8 +2,8 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { NotFoundException } from '@nestjs/common';
 import { GetSalaDetailsUseCase } from './get-sala-details.use-case';
 import { PrismaService } from 'src/core/database/prisma/prisma.service';
-import { ParticipantsCacheService } from 'src/juego/salas/infrastructure/cache/participants-cache.service';
-import { RoomStateCacheService } from 'src/juego/salas/infrastructure/cache/room-state-cache.service';
+import { ParticipantsCacheService } from 'src/juego/shared/room-state/participants-cache.service';
+import { RoomStateCacheService } from 'src/juego/shared/room-state/room-state-cache.service';
 
 describe('GetSalaDetailsUseCase', () => {
   let useCase: GetSalaDetailsUseCase;

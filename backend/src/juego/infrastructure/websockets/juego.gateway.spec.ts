@@ -46,6 +46,10 @@ describe('JuegoGateway — handleDisconnect', () => {
             addBlockedComodin: jest.fn(),
           },
         },
+        {
+          provide: HandleTimerExpirationUseCase,
+          useValue: { execute: jest.fn() },
+        },
         { provide: VotosService, useValue: {} },
         { provide: ChatService, useValue: {} },
         { provide: ComodinesService, useValue: {} },
@@ -139,9 +143,7 @@ describe('JuegoGateway — handleJoinRoomMessage', () => {
     >
   >;
   let chatService: jest.Mocked<Pick<ChatService, 'getChatMessages'>>;
-  let roomBroadcaster: jest.Mocked<
-    Pick<RoomBroadcasterService, 'broadcastToRoom' | 'setServer'>
-  >;
+
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -156,6 +158,10 @@ describe('JuegoGateway — handleJoinRoomMessage', () => {
             updateParticipantRole: jest.fn(),
             getBlockedComodines: jest.fn(),
           },
+        },
+        {
+          provide: HandleTimerExpirationUseCase,
+          useValue: { execute: jest.fn() },
         },
         { provide: VotosService, useValue: {} },
         {
@@ -200,7 +206,6 @@ describe('JuegoGateway — handleJoinRoomMessage', () => {
     handleJoinRoom = module.get(HandleJoinRoomWebsocket) as any;
     salasService = module.get(SalasService) as any;
     chatService = module.get(ChatService) as any;
-    roomBroadcaster = module.get(RoomBroadcasterService) as any;
 
     jest.clearAllMocks();
   });
@@ -240,8 +245,6 @@ describe('JuegoGateway — handleJoinRoomMessage', () => {
 });
 
 // ─── sdd/quizis-init-feedback: handleSalaIniciada broadcasts info_ronda ──
-// (Kept after N1 refactor — still relevant; info_ronda still fires on
-//  EN_VIVO transition via the same @OnEvent listener.)
 describe('JuegoGateway — handleSalaIniciada (info_ronda broadcast)', () => {
   let gateway: JuegoGateway;
   let roomBroadcaster: jest.Mocked<
@@ -253,11 +256,14 @@ describe('JuegoGateway — handleSalaIniciada (info_ronda broadcast)', () => {
       providers: [
         JuegoGateway,
         { provide: SalasService, useValue: {} },
+        { provide: VotosService, useValue: {} },
         { provide: ChatService, useValue: {} },
         { provide: ComodinesService, useValue: {} },
         { provide: HandleJoinRoomWebsocket, useValue: {} },
         { provide: HandleDisconnectWebsocket, useValue: {} },
         { provide: ProcessAudienceVoteWebsocket, useValue: {} },
+        { provide: SubmitAnswerWebsocket, useValue: {} },
+        { provide: ReleaseQuestionWebsocket, useValue: {} },
         { provide: ActivateCallJokerWebsocket, useValue: {} },
         { provide: SendHintWebsocket, useValue: {} },
         {

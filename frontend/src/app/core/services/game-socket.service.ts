@@ -61,7 +61,7 @@ export class GameSocketService {
   private readonly api = inject(GameApiService);
 
   // Local nickname for REST calls (mirrors what `unirseASala` sends via WS).
-  // Set by the consumer via setLocalNickname() when joining a room.
+  // Set by `unirseASala()` when joining a room.
   private localNickname: string | null = null;
 
   // Instancia de la conexión WebSocket; null hasta que se llame a conectar()
@@ -181,11 +181,48 @@ export class GameSocketService {
       this.tiempoRestante.set(data);
     });
 
-    this.socket.on('tiempo_agotado', () => {
+    this.socket.on('tiempo_agotado', (data: { preguntaId: number; tokenCompartido: string }) => {
+      // Validate preguntaId matches active question (prevents out-of-order overwrite
+      // when timeout from old question overlaps with new pregunta_liberada).
+      const activeId = this.preguntaActiva()?.preguntaId;
+      if (data.preguntaId !== activeId) {
+        console.warn('[GameSocketService] tiempo_agotado preguntaId mismatch — ignoring', {
+          received: data.preguntaId,
+          active: activeId,
+        });
+        return;
+      }
       this.tiempoRestante.set(0);
+
+      // Defensive fallback: if pregunta_respondida hasn't arrived yet for
+      // this question, populate ultimoResultado with esCorrecta=false so
+      // the feedback still renders. pregunta_respondida (which arrives
+      // BEFORE tiempo_agotado in normal flow) will overwrite this with
+      // the authoritative payload.
+      const existing = this.ultimoResultado();
+      if (!existing || existing.preguntaId !== data.preguntaId) {
+        this.ultimoResultado.set({
+          preguntaId: data.preguntaId,
+          opcionId: -1, // unknown — overwritten when pregunta_respondida arrives
+          esCorrecta: false,
+          feedback: '',
+        });
+      }
+
+      // Schedule local transition overlay — gives the user time to see the
+      // feedback before the next-question overlay shows up. Backend no
+      // longer manages this timing (see juego.gateway.ts onExpire).
+      this.enTransicion.set(true);
+      this.transicionSegundos.set(3);
+      setTimeout(() => {
+        this.enTransicion.set(false);
+        this.transicionSegundos.set(null);
+      }, 4_000);
     });
 
     this.socket.on('transicion_pregunta', (data: { segundos: number }) => {
+      // Kept for backwards compatibility — backend no longer emits this,
+      // but if a future server does emit it, honor it.
       this.enTransicion.set(true);
       this.transicionSegundos.set(data.segundos);
       setTimeout(
@@ -467,12 +504,18 @@ export class GameSocketService {
     opcionId: number;
     comodinUsado?: string;
   }): Promise<SubmitAnswerResult> {
+    const nickname = this.localNickname;
+    if (!nickname) {
+      return Promise.reject(
+        new Error('No hay nickname local — debes unirte a una sala primero'),
+      );
+    }
     return firstValueFrom(
       this.api.submitAnswer(payload.tokenCompartido, {
         rondaId: payload.rondaId,
         preguntaId: payload.preguntaId,
         opcionId: payload.opcionId,
-        nickname: this.localNickname ?? 'unknown',
+        nickname,
         comodinUsado: payload.comodinUsado,
       }),
     );

@@ -6,6 +6,7 @@ import {
   Param,
   Patch,
   Post,
+  Req,
   UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
@@ -26,7 +27,7 @@ import { UpdateParticipantRoleUseCase } from '../../application/use-cases/update
  * Consolidates N1 + N2 admin/host actions. All endpoints require the caller
  * to be the admin of the targeted sala (enforced by SalaAdminGuard).
  *
- * N1 endpoints (existing):
+ * N1 endpoints:
  * - PATCH /api/v1/salas/by-token/:salaId/estado
  * - POST  /api/v1/salas/by-token/:salaId/preguntas/liberar
  *
@@ -72,11 +73,11 @@ export class SalasByTokenController {
       'Update room state (BORRADOR → ESPERANDO_ALUMNOS → EN_VIVO → FINALIZADO)',
   })
   async updateEstado(
-    @Param('salaId') tokenCompartido: string,
+    @Param('salaId') _tokenCompartido: string,
     @Body() dto: UpdateEstadoSalaDto,
+    @Req() req: { sala: { salaId: number } },
   ) {
-    const salaId = await this.resolveSalaId(tokenCompartido);
-    return this.updateEstadoSalaUseCase.execute(salaId, dto);
+    return this.updateEstadoSalaUseCase.execute(req.sala.salaId, dto);
   }
 
   /**
@@ -119,8 +120,6 @@ export class SalasByTokenController {
   async finalizarPartida(@Param('salaId') tokenCompartido: string) {
     const salaId = await this.resolveSalaId(tokenCompartido);
     const result = await this.finalizeRoom.execute(salaId);
-    // Trigger the same WS broadcast as the WS handler did
-    // (the use-case already updates state; broadcasts are emitted via events)
     return result;
   }
 

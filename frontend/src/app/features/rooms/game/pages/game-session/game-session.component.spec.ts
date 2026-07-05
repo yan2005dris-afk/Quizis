@@ -1,9 +1,12 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { GameSessionComponent } from './game-session.component';
 import { GameSocketService } from '../../../../../core/services/game-socket.service';
+import { SalasService } from '../../../services/salas.service';
+import { ToastService } from '../../../../../core/services/toast.service';
 import { ActivatedRoute } from '@angular/router';
 import { provideHttpClient } from '@angular/common/http';
+import { throwError } from 'rxjs';
 import type { RondaInfo, Participante } from '../../play.types';
 
 describe('GameSessionComponent', () => {
@@ -127,5 +130,86 @@ describe('GameSessionComponent', () => {
 
     const el = fixture.nativeElement as HTMLElement;
     expect(el.textContent).toContain('Estás participando en la sala');
+  });
+});
+
+// ─── sdd/quizis-init-feedback: toast on cambiarEstado error ────────────
+describe('GameSessionComponent — cambiarEstado error toast (B1)', () => {
+  let mockSalasService: {
+    updateEstado: ReturnType<typeof vi.fn>;
+    obtenerPorId: ReturnType<typeof vi.fn>;
+  };
+  let mockToast: { show: ReturnType<typeof vi.fn> };
+  let component: GameSessionComponent;
+  let localFixture: ComponentFixture<GameSessionComponent>;
+
+  beforeEach(async () => {
+    mockSalasService = {
+      updateEstado: vi.fn(),
+      obtenerPorId: vi.fn(),
+    };
+    mockToast = { show: vi.fn() };
+
+    await TestBed.configureTestingModule({
+      imports: [GameSessionComponent],
+      providers: [
+        provideHttpClient(),
+        {
+          provide: ActivatedRoute,
+          useValue: {
+            snapshot: { paramMap: { get: () => '1' } },
+          },
+        },
+        { provide: SalasService, useValue: mockSalasService },
+        { provide: ToastService, useValue: mockToast },
+      ],
+    }).compileComponents();
+
+    localFixture = TestBed.createComponent(GameSessionComponent);
+    component = localFixture.componentInstance;
+  });
+
+  it('should show danger toast with backend message when cambiarEstado fails with "estudiante" error', () => {
+    mockSalasService.updateEstado.mockReturnValue(
+      throwError(() => ({
+        error: {
+          message:
+            'No se puede iniciar la sala en vivo sin estudiantes. Debe haber al menos 1 estudiante.',
+        },
+      })),
+    );
+    // Set salaDetalle so cambiarEstado proceeds
+    (component as any).salaDetalle.set({
+      salaId: 1,
+      tokenCompartido: 'T1',
+      estado: 'ESPERANDO_ALUMNOS',
+    });
+
+    (component as any).onIniciarJuego();
+
+    expect(mockToast.show).toHaveBeenCalledWith(
+      expect.stringContaining('estudiantes'),
+      'danger',
+      'No se puede iniciar',
+    );
+  });
+
+  it('should show generic danger toast when cambiarEstado fails with non-estudiante error', () => {
+    mockSalasService.updateEstado.mockReturnValue(
+      throwError(() => ({ error: { message: 'Internal server error' } })),
+    );
+    (component as any).salaDetalle.set({
+      salaId: 1,
+      tokenCompartido: 'T1',
+      estado: 'ESPERANDO_ALUMNOS',
+    });
+
+    (component as any).onIniciarJuego();
+
+    expect(mockToast.show).toHaveBeenCalledWith(
+      'Internal server error',
+      'danger',
+      'Error al cambiar estado',
+    );
   });
 });
