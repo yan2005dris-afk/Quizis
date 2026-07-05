@@ -1,11 +1,13 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { NotFoundException, BadRequestException } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { FinalizeRoomUseCase } from './finalize-room.use-case';
 import { PrismaService } from 'src/core/database/prisma/prisma.service';
 import { ParticipantsCacheService } from 'src/juego/shared/room-state/participants-cache.service';
 import { RoomStateCacheService } from 'src/juego/shared/room-state/room-state-cache.service';
 import { ChatCacheService } from 'src/juego/chat/infrastructure/cache/chat-cache.service';
 import { EstadoSala } from '../../interfaces/dto/update-estado-sala.dto';
+import { GameEvents } from 'src/core/common/events/game-events.types';
 
 describe('FinalizeRoomUseCase', () => {
   let useCase: FinalizeRoomUseCase;
@@ -35,6 +37,10 @@ describe('FinalizeRoomUseCase', () => {
     clearMessages: jest.fn(),
   };
 
+  const mockEventEmitter = {
+    emit: jest.fn(),
+  };
+
   const mockSala = { salaId: 1, tokenCompartido: 'token-abc' };
 
   beforeEach(async () => {
@@ -45,6 +51,7 @@ describe('FinalizeRoomUseCase', () => {
         { provide: ParticipantsCacheService, useValue: mockParticipantsCache },
         { provide: RoomStateCacheService, useValue: mockRoomStateCache },
         { provide: ChatCacheService, useValue: mockChatCache },
+        { provide: EventEmitter2, useValue: mockEventEmitter },
       ],
     }).compile();
 
@@ -61,6 +68,7 @@ describe('FinalizeRoomUseCase', () => {
     ]);
     mockRoomStateCache.setRoomEnabled.mockResolvedValue(undefined);
     mockChatCache.clearMessages.mockResolvedValue(undefined);
+    mockEventEmitter.emit.mockReturnValue(undefined);
   });
 
   it('sala no encontrada → NotFoundException', async () => {
@@ -139,5 +147,35 @@ describe('FinalizeRoomUseCase', () => {
 
     await expect(useCase.execute(1)).rejects.toThrow(BadRequestException);
     expect(mockPrisma.$transaction).not.toHaveBeenCalled();
+  });
+
+  // ─── Broadcast event ─────────────────────────────────────────────
+
+  it('emite GameEvents.SALA.ESTADO_CAMBIADO con estado FINALIZADO', async () => {
+    mockRoomStateCache.getRoomEstado.mockResolvedValue(EstadoSala.EN_VIVO);
+
+    await useCase.execute(1);
+
+    expect(mockEventEmitter.emit).toHaveBeenCalledWith(
+      GameEvents.SALA.ESTADO_CAMBIADO,
+      expect.objectContaining({
+        tokenCompartido: 'token-abc',
+        estado: EstadoSala.FINALIZADO,
+      }),
+    );
+  });
+
+  it('NO emite evento si la sala ya estaba finalizada', async () => {
+    mockRoomStateCache.getRoomEstado.mockResolvedValue(EstadoSala.FINALIZADO);
+
+    await expect(useCase.execute(1)).rejects.toThrow(BadRequestException);
+    expect(mockEventEmitter.emit).not.toHaveBeenCalled();
+  });
+
+  it('NO emite evento si la sala no existe', async () => {
+    mockPrisma.salas.findUnique.mockResolvedValue(null);
+
+    await expect(useCase.execute(1)).rejects.toThrow(NotFoundException);
+    expect(mockEventEmitter.emit).not.toHaveBeenCalled();
   });
 });

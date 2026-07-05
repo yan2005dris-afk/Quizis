@@ -93,6 +93,7 @@ export class GameSocketService {
   readonly votosPublico = signal<VotosPublico | null>(null);
   readonly comodinBloqueado = signal<string[]>([]);
   readonly salaHabilitada = signal<boolean>(true);
+  readonly salaFinalizadaWs = signal<boolean>(false);
   readonly conectado = signal<boolean>(false);
 
   // Estado para Comodín Llamada
@@ -410,6 +411,18 @@ export class GameSocketService {
 
     this.socket.on('info_ronda', (data: RondaInfo) => {
       this.infoRonda.set(data);
+    });
+
+    // Fired by FinalizeRoomUseCase → JuegoGateway when the admin
+    // finalizes the sala. The game-session component observes
+    // `salaFinalizadaWs` and navigates to the results screen on
+    // transition to FINALIZADO. Without this event, students had to
+    // refresh manually after the admin pressed "finalizar".
+    this.socket.on('estado_sala_cambiado', (data: { tokenCompartido: string; estado: string }) => {
+      if (data.estado === 'FINALIZADO') {
+        this.salaHabilitada.set(false);
+        this.salaFinalizadaWs.set(true);
+      }
     });
   }
 

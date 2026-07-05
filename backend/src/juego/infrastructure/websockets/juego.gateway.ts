@@ -258,6 +258,22 @@ export class JuegoGateway
    * sanitize defensively here too in case a future caller emits
    * without sanitizing.
    */
+  /**
+   * Fired by FinalizeRoomUseCase (and potentially other use-cases that
+   * change the sala state in the future — e.g. a refactor that makes
+   * UpdateEstadoSalaUseCase emit ESTADO_CAMBIADO too instead of the
+   * ad-hoc 'sala.iniciada' string). Broadcasts `estado_sala_cambiado`
+   * to the room.
+   */
+  @OnEvent(GameEvents.SALA.ESTADO_CAMBIADO)
+  handleEstadoCambiado(payload: { tokenCompartido: string; estado: string }) {
+    this.roomBroadcaster.broadcastToRoom(
+      payload.tokenCompartido,
+      'estado_sala_cambiado',
+      payload,
+    );
+  }
+
   @OnEvent(GameEvents.RONDAS.RONDA_REINICIADA)
   handleRondaReiniciada(event: RondaReiniciadaEvent) {
     const sanitized = {

@@ -4,11 +4,13 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { PrismaService } from '../../../../core/database/prisma/prisma.service';
 import { ParticipantsCacheService } from '../../../shared/room-state/participants-cache.service';
 import { RoomStateCacheService } from '../../../shared/room-state/room-state-cache.service';
 import { ChatCacheService } from '../../../chat/infrastructure/cache/chat-cache.service';
 import { EstadoSala } from '../../interfaces/dto/update-estado-sala.dto';
+import { GameEvents } from '../../../../core/common/events/game-events.types';
 
 @Injectable()
 export class FinalizeRoomUseCase {
@@ -19,6 +21,7 @@ export class FinalizeRoomUseCase {
     private readonly participantsCache: ParticipantsCacheService,
     private readonly roomStateCache: RoomStateCacheService,
     private readonly chatCache: ChatCacheService,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   async execute(salaId: number) {
@@ -88,6 +91,16 @@ export class FinalizeRoomUseCase {
     this.logger.log(
       `Sala ${salaId} finalizada. ${result.length} participantes persistidos.`,
     );
+
+    // Broadcast the state change so connected participants see the
+    // game-end screen WITHOUT refreshing. Same canonical pattern as
+    // RestartRoundUseCase: emit a domain event, gateway forwards via
+    // roomBroadcaster. Frontend listens for `estado_sala_cambiado` and
+    // navigates to the results screen when estado === FINALIZADO.
+    this.eventEmitter.emit(GameEvents.SALA.ESTADO_CAMBIADO, {
+      tokenCompartido: sala.tokenCompartido,
+      estado: EstadoSala.FINALIZADO,
+    });
 
     return {
       success: true,

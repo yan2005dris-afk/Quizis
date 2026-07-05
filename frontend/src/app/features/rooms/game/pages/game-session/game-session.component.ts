@@ -209,6 +209,25 @@ export class GameSessionComponent implements OnInit, OnDestroy {
     this.syncContadoresRonda();
     this.limpiarEstadoAlReiniciarRonda();
     this.contarMensajesNoLeidos();
+    this.navigateOnFinalizacion();
+  }
+
+  /**
+   * Fires when the admin finalizes the sala via REST and the
+   * `estado_sala_cambiado` WS broadcast reaches us. Navigates all
+   * connected clients (admin and participants) to the analytics screen
+   * — mirrors what happens when the admin finalizes locally, but
+   * live for everyone else.
+   */
+  private navigateOnFinalizacion(): void {
+    effect(() => {
+      if (!this.gameSocket.salaFinalizadaWs()) return;
+      const sala = this.salaDetalle();
+      if (!sala) return;
+      // Guard against re-navigation: only fire once per finalization.
+      if (this.router.url.includes('/analiticas')) return;
+      this.router.navigate(['/salas', sala.salaId, 'analiticas']);
+    });
   }
 
   private listenRondaReiniciada(): void {
