@@ -13,6 +13,7 @@ import { JwtAuthGuard } from '../../../../identity/auth/infrastructure/guards/jw
 import { SalasService } from '../../../salas/application/salas.service';
 import { ActivateCallJokerWebsocket } from '../../infrastructure/websockets/activate-call-joker.websocket';
 import { SendHintWebsocket } from '../../infrastructure/websockets/send-hint.websocket';
+import { RoomBroadcasterService } from '../../../infrastructure/websockets/room-broadcaster.service';
 import { PrismaService } from '../../../../core/database/prisma/prisma.service';
 
 /**
@@ -35,6 +36,7 @@ export class ComodinesRestController {
     private readonly salasService: SalasService,
     private readonly activateCallJoker: ActivateCallJokerWebsocket,
     private readonly sendHint: SendHintWebsocket,
+    private readonly roomBroadcaster: RoomBroadcasterService,
     private readonly prisma: PrismaService,
   ) {}
 
@@ -73,6 +75,23 @@ export class ComodinesRestController {
     }
 
     await this.salasService.addBlockedComodin(tokenCompartido, tipo);
+
+    // Mirror the WS handler's broadcast behavior (AC-N2-12)
+    this.roomBroadcaster.broadcastToRoom(tokenCompartido, 'comodin_bloqueado', {
+      tokenCompartido,
+      userId: participante.participanteId,
+      tipoComodin: tipo,
+    });
+
+    if (tipo === 'PUBLICO') {
+      this.roomBroadcaster.broadcastToRoom(tokenCompartido, 'voto_recibido', {
+        A: 0,
+        B: 0,
+        C: 0,
+        D: 0,
+        total: 0,
+      });
+    }
 
     return { ok: true, tipo, tokenCompartido };
   }
