@@ -17,12 +17,37 @@ export interface SeededBanco {
   bancoId: number;
 }
 
+export interface SeededSala {
+  salaId: number;
+  tokenCompartido: string;
+  adminId: number;
+  bancoId: number;
+  estado: string;
+}
+
+export interface SeededParticipante {
+  participanteId: number;
+  salaId: number;
+  nickname: string;
+  rol: 'estudiante' | 'observador';
+}
+
+export interface SeedComodinesOpts {
+  /** Defaults to all 4 comodines (IA, PUBLICO, 50_50, LLAMADA) */
+  nombres?: ('IA' | 'PUBLICO' | '50_50' | 'LLAMADA')[];
+}
+
+export interface SeedPreguntaOpts {
+  texto?: string;
+}
+
 export interface CleanSeedOptions {
   userIds?: number[];
   roleIds?: number[];
   bancoIds?: number[];
   salaIds?: number[];
   permissionIds?: number[];
+  participanteIds?: number[];
 }
 
 /**
@@ -127,6 +152,115 @@ export async function seedBanco(
 }
 
 /**
+ * Crea una Sala en el estado indicado (default: 'BORRADOR') para el admin
+ * indicado. Genera un `tokenCompartido` explícito (UUID) para que los tests
+ * puedan referenciarlo determinísticamente.
+ */
+export async function seedSala(
+  prisma: PrismaService,
+  adminId: number,
+  bancoId: number,
+  opts: { estado?: string; nombre?: string } = {},
+): Promise<SeededSala> {
+  const tokenCompartido = randomUUID();
+  const sala = await prisma.salas.create({
+    data: {
+      adminId,
+      bancoId,
+      nombre: opts.nombre ?? `Sala Test ${tokenCompartido.slice(0, 8)}`,
+      tokenCompartido,
+      estado: opts.estado ?? 'BORRADOR',
+    },
+  });
+  return {
+    salaId: sala.salaId,
+    tokenCompartido: sala.tokenCompartido,
+    adminId: sala.adminId,
+    bancoId: sala.bancoId,
+    estado: sala.estado,
+  };
+}
+
+/**
+ * Crea un participante (rol=estudiante|observador) en la sala indicada.
+ * NO crea fila para el admin (admin nunca está en `participantes`).
+ */
+export async function seedParticipante(
+  prisma: PrismaService,
+  salaId: number,
+  nickname: string,
+  rol: 'estudiante' | 'observador',
+  opts: { deletedAt?: Date } = {},
+): Promise<SeededParticipante> {
+  const p = await prisma.participantes.create({
+    data: {
+      salaId,
+      nickname,
+      rol,
+      ...(opts.deletedAt ? { deletedAt: opts.deletedAt } : {}),
+    },
+  });
+  return {
+    participanteId: p.participanteId,
+    salaId: p.salaId,
+    nickname: p.nickname,
+    rol: rol,
+  };
+}
+
+/**
+ * Crea filas en `SalaComodines` para que los endpoints /comodines/* no fallen
+ * por FK faltante. Por defecto crea las 4 filas (todas `activo=true`).
+ */
+export async function seedComodinesForSala(
+  prisma: PrismaService,
+  salaId: number,
+  opts: SeedComodinesOpts = {},
+): Promise<void> {
+  const nombres =
+    opts.nombres ?? (['IA', 'PUBLICO', '50_50', 'LLAMADA'] as const);
+  const catalog = await prisma.comodines.findMany({
+    where: { nombre: { in: [...nombres] }, deletedAt: null },
+    select: { comodinId: true },
+  });
+  for (const c of catalog) {
+    await prisma.salaComodines.create({
+      data: { salaId, comodinId: c.comodinId, activo: true },
+    });
+  }
+}
+
+/**
+ * Helper opcional para tests que necesitan una pregunta + opciones
+ * (votos, respuestas). Usa el banco ya creado por seedBanco.
+ */
+export async function seedPreguntaForSala(
+  prisma: PrismaService,
+  bancoId: number,
+  options: SeedPreguntaOpts = {},
+): Promise<{ preguntaId: number; opcionIds: number[] }> {
+  const pregunta = await prisma.preguntas.create({
+    data: {
+      bancoId,
+      texto: options.texto ?? `Pregunta Test ${randomUUID().slice(0, 8)}`,
+      nivel: 1,
+    },
+  });
+  const opcionIds: number[] = [];
+  for (let j = 0; j < 4; j++) {
+    const op = await prisma.opcionesPregunta.create({
+      data: {
+        preguntaId: pregunta.preguntaId,
+        texto: `Opción ${j + 1}`,
+        esCorrecta: j === 0,
+      },
+    });
+    opcionIds.push(op.opcionId);
+  }
+  return { preguntaId: pregunta.preguntaId, opcionIds };
+}
+
+/**
  * Limpia exactamente los registros creados durante los tests.
  * Opera siempre por IDs — nunca por email/nombre.
  */
@@ -140,17 +274,27 @@ export async function cleanSeedData(
     bancoIds = [],
     salaIds = [],
     permissionIds = [],
+    participanteIds = [],
   } = opts;
+
+  // Participantes por ID (antes que la limpieza por salaId para no perder refs)
+  if (participanteIds.length > 0) {
+    await prisma.participantes.deleteMany({
+      where: { participanteId: { in: participanteIds } },
+    });
+  }
 
   // Salas: dependencias antes del registro principal
   if (salaIds.length > 0) {
     await prisma.salaComodines.deleteMany({
       where: { salaId: { in: salaIds } },
     });
+    // Delete rondas FIRST (they reference participantes + salas).
+    // Then participantes (they reference salas). Then salas.
+    await prisma.rondas.deleteMany({ where: { salaId: { in: salaIds } } });
     await prisma.participantes.deleteMany({
       where: { salaId: { in: salaIds } },
     });
-    await prisma.rondas.deleteMany({ where: { salaId: { in: salaIds } } });
     await prisma.salas.deleteMany({ where: { salaId: { in: salaIds } } });
   }
 
