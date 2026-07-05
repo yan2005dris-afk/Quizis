@@ -8,7 +8,7 @@ import {
   ConnectedSocket,
   MessageBody,
 } from '@nestjs/websockets';
-import { Logger } from '@nestjs/common';
+import { Logger, OnModuleDestroy } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
 import { Server, Socket } from 'socket.io';
 
@@ -21,6 +21,7 @@ import { ComodinesService } from '../../comodines/application/comodines.service'
 import { HandleJoinRoomWebsocket } from '../../salas/infrastructure/websockets/handle-join-room.websocket';
 import { HandleDisconnectWebsocket } from '../../salas/infrastructure/websockets/handle-disconnect.websocket';
 import { ProcessAudienceVoteWebsocket } from '../../votos/infrastructure/websockets/process-audience-vote.websocket';
+import { HandleTimerExpirationUseCase } from '../../rondas/application/use-cases/handle-timer-expiration.use-case';
 import { ActivateCallJokerWebsocket } from '../../comodines/infrastructure/websockets/activate-call-joker.websocket';
 import { SendHintWebsocket } from '../../comodines/infrastructure/websockets/send-hint.websocket';
 
@@ -54,7 +55,11 @@ type ConsensusInput = {
 
 @WebSocketGateway({ cors: { origin: '*' } })
 export class JuegoGateway
-  implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect
+  implements
+    OnGatewayInit,
+    OnGatewayConnection,
+    OnGatewayDisconnect,
+    OnModuleDestroy
 {
   @WebSocketServer()
   server!: Server;
@@ -102,6 +107,35 @@ export class JuegoGateway
     }
   }
 
+  /**
+   * Cancel a pending broadcast for a room without firing it.
+   * Used when the room is empty (no listeners) or on shutdown.
+   */
+  private clearPendingBroadcast(tokenCompartido: string): void {
+    const pending = this.pendingBroadcasts.get(tokenCompartido);
+    if (pending) {
+      clearTimeout(pending.timer);
+      this.pendingBroadcasts.delete(tokenCompartido);
+    }
+  }
+
+  /**
+   * Clean up all pending broadcast timers on module destroy.
+   * Prevents leaked setTimeout references when the app shuts down
+   * (hot reload, restart, or graceful shutdown).
+   */
+  onModuleDestroy(): void {
+    const count = this.pendingBroadcasts.size;
+    for (const [token] of this.pendingBroadcasts.entries()) {
+      this.clearPendingBroadcast(token);
+    }
+    if (count > 0) {
+      this.logger.log(
+        `[JuegoGateway] onModuleDestroy: cleared ${count} pending broadcast timers`,
+      );
+    }
+  }
+
   constructor(
     private readonly salasService: SalasService,
     private readonly chatService: ChatService,
@@ -114,6 +148,7 @@ export class JuegoGateway
     private readonly roomBroadcaster: RoomBroadcasterService,
     private readonly socketMapService: SocketMapService,
     private readonly distributedTimerService: DistributedTimerService,
+    private readonly handleTimerExpiration: HandleTimerExpirationUseCase,
   ) {}
 
   // ─── Lifecycle ─────────────────────────────────────────────────────────────
@@ -151,6 +186,8 @@ export class JuegoGateway
       );
       if (remainingInRoom === 0) {
         await this.distributedTimerService.detenerTimer(info.tokenCompartido);
+        // Cancel any pending vote-distribution broadcast for this empty room.
+        this.clearPendingBroadcast(info.tokenCompartido);
       }
 
       const participantesDb = await this.salasService.getParticipantsWithRoles(

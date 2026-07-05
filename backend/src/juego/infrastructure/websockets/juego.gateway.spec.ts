@@ -16,6 +16,7 @@ import { SendHintWebsocket } from '../../comodines/infrastructure/websockets/sen
 import { RoomBroadcasterService } from './room-broadcaster.service';
 import { SocketMapService } from './socket-map.service';
 import { DistributedTimerService } from './distributed-timer.service';
+import { HandleTimerExpirationUseCase } from '../../rondas/application/use-cases/handle-timer-expiration.use-case';
 
 describe('JuegoGateway — handleComodinBloqueado', () => {
   let gateway: JuegoGateway;
@@ -31,6 +32,10 @@ describe('JuegoGateway — handleComodinBloqueado', () => {
         {
           provide: SalasService,
           useValue: { addBlockedComodin: jest.fn() },
+        },
+        {
+          provide: HandleTimerExpirationUseCase,
+          useValue: { execute: jest.fn() },
         },
         { provide: VotosService, useValue: {} },
         { provide: ChatService, useValue: {} },
@@ -148,6 +153,10 @@ describe('JuegoGateway — handleDisconnect', () => {
             addBlockedComodin: jest.fn(),
           },
         },
+        {
+          provide: HandleTimerExpirationUseCase,
+          useValue: { execute: jest.fn() },
+        },
         { provide: VotosService, useValue: {} },
         { provide: ChatService, useValue: {} },
         { provide: ComodinesService, useValue: {} },
@@ -259,6 +268,10 @@ describe('JuegoGateway — handleJoinRoomMessage', () => {
             getBlockedComodines: jest.fn(),
           },
         },
+        {
+          provide: HandleTimerExpirationUseCase,
+          useValue: { execute: jest.fn() },
+        },
         { provide: VotosService, useValue: {} },
         {
           provide: ChatService,
@@ -341,9 +354,9 @@ describe('JuegoGateway — handleJoinRoomMessage', () => {
   });
 });
 
+
+
 // ─── sdd/quizis-init-feedback: handleSalaIniciada broadcasts info_ronda ──
-// (Kept after N1 refactor — still relevant; info_ronda still fires on
-//  EN_VIVO transition via the same @OnEvent listener.)
 describe('JuegoGateway — handleSalaIniciada (info_ronda broadcast)', () => {
   let gateway: JuegoGateway;
   let roomBroadcaster: jest.Mocked<
@@ -355,11 +368,15 @@ describe('JuegoGateway — handleSalaIniciada (info_ronda broadcast)', () => {
       providers: [
         JuegoGateway,
         { provide: SalasService, useValue: {} },
+        { provide: VotosService, useValue: {} },
         { provide: ChatService, useValue: {} },
         { provide: ComodinesService, useValue: {} },
         { provide: HandleJoinRoomWebsocket, useValue: {} },
         { provide: HandleDisconnectWebsocket, useValue: {} },
+        { provide: ToggleRoomEnabledWebsocket, useValue: {} },
         { provide: ProcessAudienceVoteWebsocket, useValue: {} },
+        { provide: SubmitAnswerWebsocket, useValue: {} },
+        { provide: ReleaseQuestionWebsocket, useValue: {} },
         { provide: ActivateCallJokerWebsocket, useValue: {} },
         { provide: SendHintWebsocket, useValue: {} },
         {

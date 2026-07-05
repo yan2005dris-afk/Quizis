@@ -138,6 +138,71 @@ describe('ActiveQuestionComponent', () => {
     expect(pcts[3].textContent).toContain('5%');
   });
 
+  // ─── sdd/quizis-timer-hardening AC-P1-02 ───────────────────────────────
+  // When the timer expires, the backend emits pregunta_respondida with
+  // esCorrecta: false and the frontend must show the "wrong" feedback card
+  // and highlight the correct option. This test verifies the computed
+  // signals (feedbackData, showFeedback) produce the right shape.
+
+  describe('AC-P1-02 — feedback on timer-induced wrong answer', () => {
+    const preguntaConFeedback = [
+      {
+        preguntaId: 42,
+        texto: 'Pregunta con feedback',
+        opciones: [
+          { opcionId: 1, texto: 'A', letra: 'A', esCorrecta: false },
+          { opcionId: 2, texto: 'B', letra: 'B', esCorrecta: true }, // correct
+          { opcionId: 3, texto: 'C', letra: 'C', esCorrecta: false },
+          { opcionId: 4, texto: 'D', letra: 'D', esCorrecta: false },
+        ],
+        nivel: 1,
+        feedbackCorrecto: '¡Excelente!',
+        feedbackIncorrecto: 'Intenta de nuevo',
+        respuestaDada: null,
+      },
+    ];
+
+    it('should set feedbackData with esCorrecta=false when ultimoResultado.esCorrecta is false', () => {
+      fixture.componentRef.setInput('preguntas', preguntaConFeedback);
+      fixture.componentRef.setInput('preguntaActivaId', 42);
+      fixture.componentRef.setInput('interactive', true);
+      fixture.detectChanges();
+
+      // Backend emits pregunta_respondida after timer expires
+      mockUltimoResultado.set({
+        preguntaId: 42,
+        opcionId: 2, // correct option
+        esCorrecta: false,
+        feedback: '',
+      });
+      fixture.detectChanges();
+
+      expect(component.showFeedback()).toBe(true);
+      expect(component.feedbackData()).toEqual({
+        esCorrecta: false,
+        feedback: 'Intenta de nuevo',
+      });
+    });
+
+    it('should highlight the correct option as esCorrecta=true in opciones computed', () => {
+      fixture.componentRef.setInput('preguntas', preguntaConFeedback);
+      fixture.componentRef.setInput('preguntaActivaId', 42);
+      fixture.detectChanges();
+
+      mockUltimoResultado.set({
+        preguntaId: 42,
+        opcionId: 2,
+        esCorrecta: false,
+        feedback: '',
+      });
+      fixture.detectChanges();
+
+      const opciones = component.opciones();
+      const correctOption = opciones.find((o) => o.id === 2);
+      expect(correctOption?.esCorrecta).toBe(true);
+    });
+  });
+
   it('should mark publico wildcard as active when votosPublico is set and viewing active question', () => {
     const comodinesMock = [{ nombre: 'PUBLICO', descripcion: 'test', icono: '👥', activo: true }];
     fixture.componentRef.setInput('preguntas', preguntasMock);
