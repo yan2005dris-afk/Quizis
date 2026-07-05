@@ -1,9 +1,60 @@
+# =============================================================================
+# Root .dockerignore — Docker ONLY reads the .dockerignore at the context root.
+# Both backend and frontend builds use context: . so this file governs both.
+# =============================================================================
+
+# ---- VCS & editor cruft ---------------------------------------------------
+.git
+.gitignore
+.gitattributes
+.github
+.gitkeep
+.vscode
+.idea
+.claude
+.junie
+.agents
+.atl
+.pi
+
+# ---- Lockfiles / docs / project metadata that Docker does NOT need --------
+# (Dockerfiles COPY exactly what they need via explicit paths.)
+MEJORAS.md
+TAREAS.md
+TESTING.md
+architectura.md
+credenciales-admin.md
+readme.md
+README.md
+docs
+skills-lock.json
+angular.json
+tsconfig.json
+tsconfig.app.json
+tsconfig.spec.json
+eslint.config.mjs
+.eslintrc*
+.prettierrc
+.editorconfig
+public
+setup.sh
+
+# ---- Env files — never bake secrets into images ---------------------------
+.env
+.env.*
+!.env.example
+.envrc
+
+# ---- Runtime artifacts & caches ------------------------------------------
 **/node_modules
 **/.pnpm-store
-**/.git
-**/.env
-**/.env.*
-!**/.env.example
+**/.angular
 **/dist
 **/coverage
-**/.angular
+**/*.log
+**/.DS_Store
+**/Thumbs.db
+
+# ---- Generated Prisma client (regenerated at build time) -----------------
+**/prisma/generated
+**/prisma.config.ts.bak
