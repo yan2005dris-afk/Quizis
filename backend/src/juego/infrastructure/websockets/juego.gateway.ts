@@ -37,8 +37,11 @@ import type {
   ComodinBloqueadoEvent,
   ParticipantesActualizadosEvent,
   ChatMensajeEnviadoEvent,
+  ConsultorSeleccionadoEvent,
+  PistaEnviadaEvent,
 } from '../../../core/common/events/game-events.types';
 import type { VotePayload } from '../../votos/application/use-cases/process-audience-vote.use-case';
+import { RoomStateCacheService } from '../../shared/room-state/room-state-cache.service';
 
 // WebSocket Infrastructure
 import { RoomBroadcasterService } from './room-broadcaster.service';
@@ -161,6 +164,7 @@ export class JuegoGateway
     private readonly distributedTimerService: DistributedTimerService,
     private readonly handleTimerExpiration: HandleTimerExpirationUseCase,
     private readonly votosService: VotosService,
+    private readonly roomStateCache: RoomStateCacheService,
   ) {}
 
   // ─── Lifecycle ─────────────────────────────────────────────────────────────
@@ -248,6 +252,52 @@ export class JuegoGateway
         total: 0,
       });
     }
+  }
+
+  @OnEvent(GameEvents.COMODINES.CONSULTOR_SELECCIONADO)
+  async handleConsultorSeleccionado(event: ConsultorSeleccionadoEvent) {
+    const { tokenCompartido, nicknameConsultor } = event;
+    const socketId = await this.socketMapService.findSocketId(
+      nicknameConsultor,
+      tokenCompartido,
+    );
+
+    if (socketId) {
+      const activeQuestion = await this.roomStateCache.getActiveQuestion(tokenCompartido);
+      if (activeQuestion) {
+        const preguntaSanitizada = {
+          ...activeQuestion,
+          opciones: Array.isArray(activeQuestion?.opciones)
+            ? activeQuestion.opciones.map((o: any) => {
+                const { esCorrecta: _esCorrecta, ...rest } = o ?? {};
+                return rest;
+              })
+            : [],
+        };
+        this.roomBroadcaster.broadcastToSocket(socketId, 'consultor_seleccionado', {
+          tokenCompartido,
+          pregunta: preguntaSanitizada,
+        });
+      }
+    }
+
+    this.roomBroadcaster.broadcastToRoom(tokenCompartido, 'comodin_llamada_iniciado', {
+      consultorNombre: nicknameConsultor,
+      consultorId: nicknameConsultor,
+    });
+  }
+
+  @OnEvent(GameEvents.COMODINES.PISTA_ENVIADA)
+  handlePistaEnviada(event: PistaEnviadaEvent) {
+    const { tokenCompartido, pista, helperNickname } = event;
+    this.roomBroadcaster.broadcastToRoom(tokenCompartido, 'pista_consultor_recibida', {
+      pista,
+      consultor: helperNickname,
+    });
+
+    this.roomBroadcaster.broadcastToRoom(tokenCompartido, 'comodin_usado', {
+      tipoComodin: 'LLAMADA',
+    });
   }
 
   @OnEvent(GameEvents.VOTOS.VOTO_PUBLICO_RECIBIDO)

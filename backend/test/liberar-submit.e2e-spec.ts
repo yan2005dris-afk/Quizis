@@ -11,6 +11,8 @@ import { RoomBroadcasterService } from '../src/juego/infrastructure/websockets/r
 import { JuegoGateway } from '../src/juego/infrastructure/websockets/juego.gateway';
 import { DistributedTimerService } from '../src/juego/infrastructure/websockets/distributed-timer.service';
 import { ParticipantsCacheService } from '../src/juego/shared/room-state/participants-cache.service';
+import { SelectRandomConsultantUseCase } from '../src/juego/comodines/application/use-cases/select-random-consultant.use-case';
+import { HelperCacheService } from '../src/juego/comodines/infrastructure/cache/helper-cache.service';
 
 /**
  * Security E2E: validates the full flow that protects `esCorrecta` from
@@ -394,6 +396,87 @@ describe('Security E2E: liberar + submit + esCorrecta', () => {
           nickname: 'desconocido',
         })
         .expect(404);
+    });
+
+    it('comodín llamada: activar emite eventos consultor_seleccionado y comodin_llamada_iniciado', async () => {
+      const selectUseCase = app.get(SelectRandomConsultantUseCase);
+      const helperCache = app.get(HelperCacheService);
+      const broadcaster = app.get(RoomBroadcasterService);
+
+      jest.spyOn(selectUseCase, 'execute').mockResolvedValue({ nickname: 'ConsultorObservador' } as any);
+      jest.spyOn(helperCache, 'saveActiveHelper').mockResolvedValue(undefined);
+      
+      const spyRoom = jest.spyOn(broadcaster, 'broadcastToRoom');
+      const spySocket = jest.spyOn(broadcaster, 'broadcastToSocket').mockImplementation(() => {});
+
+      mockPrisma.participantes.findFirst.mockResolvedValue(DB_PARTICIPANTE);
+
+      const res = await request(app.getHttpServer())
+        .post('/api/v1/salas/test-token/comodines/llamada/activar')
+        .send({ nickname: 'JuanEstudiante' })
+        .expect(201);
+
+      expect(res.body.success).toBe(true);
+      expect(res.body.consultor.nickname).toBe('ConsultorObservador');
+
+      // Verify comodin_llamada_iniciado room broadcast
+      expect(spyRoom).toHaveBeenCalledWith(
+        'test-token',
+        'comodin_llamada_iniciado',
+        {
+          consultorNombre: 'ConsultorObservador',
+          consultorId: 'ConsultorObservador',
+        },
+      );
+
+      spyRoom.mockRestore();
+      spySocket.mockRestore();
+    });
+
+    it('comodín llamada: enviar pista emite eventos pista_consultor_recibida y comodin_usado', async () => {
+      const helperCache = app.get(HelperCacheService);
+      const broadcaster = app.get(RoomBroadcasterService);
+
+      jest.spyOn(helperCache, 'getActiveHelper').mockResolvedValue('ConsultorObservador');
+      jest.spyOn(helperCache, 'removeActiveHelper').mockResolvedValue(undefined);
+
+      const spyRoom = jest.spyOn(broadcaster, 'broadcastToRoom');
+
+      mockPrisma.participantes.findFirst.mockResolvedValue({ nickname: 'ConsultorObservador', rol: 'observador' });
+      mockPrisma.rondas.findFirst.mockResolvedValue({ rondaId: 1, salaId: 1, estado: 'jugando' });
+      mockPrisma.respuestasRonda.findFirst.mockResolvedValue(null);
+      mockPrisma.respuestasRonda.create.mockResolvedValue({});
+
+      const res = await request(app.getHttpServer())
+        .post('/api/v1/salas/test-token/comodines/llamada/pista')
+        .send({
+          nickname: 'ConsultorObservador',
+          preguntaId: 1,
+          pista: 'Usa la B',
+        })
+        .expect(201);
+
+      expect(res.body.success).toBe(true);
+
+      // Verify broadcasts
+      expect(spyRoom).toHaveBeenCalledWith(
+        'test-token',
+        'pista_consultor_recibida',
+        {
+          pista: 'Usa la B',
+          consultor: 'ConsultorObservador',
+        },
+      );
+
+      expect(spyRoom).toHaveBeenCalledWith(
+        'test-token',
+        'comodin_usado',
+        {
+          tipoComodin: 'LLAMADA',
+        },
+      );
+
+      spyRoom.mockRestore();
     });
 
     it('CRÍTICO: el broadcast de pregunta_liberada no expone esCorrecta', async () => {

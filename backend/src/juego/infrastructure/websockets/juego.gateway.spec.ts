@@ -16,6 +16,7 @@ import { SendHintUseCase } from '../../comodines/application/use-cases/send-hint
 import { RoomBroadcasterService } from './room-broadcaster.service';
 import { SocketMapService } from './socket-map.service';
 import { DistributedTimerService } from './distributed-timer.service';
+import { RoomStateCacheService } from '../../shared/room-state/room-state-cache.service';
 
 describe('JuegoGateway — handleDisconnect', () => {
   let gateway: JuegoGateway;
@@ -64,6 +65,7 @@ describe('JuegoGateway — handleDisconnect', () => {
         { provide: ReleaseQuestionUseCase, useValue: {} },
         { provide: ActivateCallJokerUseCase, useValue: {} },
         { provide: SendHintUseCase, useValue: {} },
+        { provide: RoomStateCacheService, useValue: { getActiveQuestion: jest.fn() } },
         {
           provide: RoomBroadcasterService,
           useValue: { broadcastToRoom: jest.fn(), setServer: jest.fn() },
@@ -180,6 +182,7 @@ describe('JuegoGateway — handleJoinRoomMessage', () => {
         { provide: ReleaseQuestionUseCase, useValue: {} },
         { provide: ActivateCallJokerUseCase, useValue: {} },
         { provide: SendHintUseCase, useValue: {} },
+        { provide: RoomStateCacheService, useValue: { getActiveQuestion: jest.fn() } },
         {
           provide: RoomBroadcasterService,
           useValue: { broadcastToRoom: jest.fn(), setServer: jest.fn() },
@@ -266,6 +269,7 @@ describe('JuegoGateway — handleSalaIniciada (info_ronda broadcast)', () => {
         { provide: ReleaseQuestionUseCase, useValue: {} },
         { provide: ActivateCallJokerUseCase, useValue: {} },
         { provide: SendHintUseCase, useValue: {} },
+        { provide: RoomStateCacheService, useValue: { getActiveQuestion: jest.fn() } },
         {
           provide: RoomBroadcasterService,
           useValue: { broadcastToRoom: jest.fn(), setServer: jest.fn() },

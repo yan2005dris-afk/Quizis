@@ -25,4 +25,15 @@ export class RoomBroadcasterService {
     }
     this.server.to(tokenCompartido).emit(event, data);
   }
+
+  /**
+   * Emit an event directly to a specific socket.
+   */
+  broadcastToSocket(socketId: string, event: string, data: any): void {
+    if (!this.server) {
+      this.logger.warn('Server not initialized yet, skipping broadcast');
+      return;
+    }
+    this.server.to(socketId).emit(event, data);
+  }
 }

@@ -1,6 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { SelectRandomConsultantUseCase } from './select-random-consultant.use-case';
 import { HelperCacheService } from '../../infrastructure/cache/helper-cache.service';
+import { GameEvents } from '../../../../core/common/events/game-events.types';
 
 @Injectable()
 export class ActivateCallJokerUseCase {
@@ -9,6 +11,7 @@ export class ActivateCallJokerUseCase {
   constructor(
     private readonly selectRandomConsultant: SelectRandomConsultantUseCase,
     private readonly helperCache: HelperCacheService,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   async execute(tokenCompartido: string) {
@@ -30,6 +33,11 @@ export class ActivateCallJokerUseCase {
     this.logger.log(
       `Consultor seleccionado: ${consultor.nickname} en sala: ${tokenCompartido}`,
     );
+
+    this.eventEmitter.emit(GameEvents.COMODINES.CONSULTOR_SELECCIONADO, {
+      tokenCompartido,
+      nicknameConsultor: consultor.nickname,
+    });
 
     return { success: true, consultor: { nickname: consultor.nickname } };
   }

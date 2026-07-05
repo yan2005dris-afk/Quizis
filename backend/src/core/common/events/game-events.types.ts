@@ -18,6 +18,8 @@ export const GameEvents = {
   COMODINES: {
     IA_SUGGESTION: 'comodin.ia.suggestion',
     BLOQUEADO: 'comodines.bloqueado',
+    CONSULTOR_SELECCIONADO: 'comodines.consultor_seleccionado',
+    PISTA_ENVIADA: 'comodines.pista_enviada',
   },
   CHAT: {
     MENSAJE_ENVIADO: 'chat.mensaje_enviado',
@@ -112,4 +114,16 @@ export interface ParticipantesActualizadosEvent {
 export interface ChatMensajeEnviadoEvent {
   tokenCompartido: string;
   mensajes: any[];
+}
+
+export interface ConsultorSeleccionadoEvent {
+  tokenCompartido: string;
+  nicknameConsultor: string;
+}
+
+export interface PistaEnviadaEvent {
+  tokenCompartido: string;
+  preguntaId: number;
+  pista: string;
+  helperNickname: string;
 }
