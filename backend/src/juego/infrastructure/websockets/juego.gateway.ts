@@ -27,7 +27,10 @@ import { SendHintWebsocket } from '../../comodines/infrastructure/websockets/sen
 
 // Infrastructure / Common
 import { GameEvents } from '../../../core/common/events/game-events.types';
-import type { ConsensusEvaluatedEvent } from '../../../core/common/events/game-events.types';
+import type {
+  ConsensusEvaluatedEvent,
+  RondaReiniciadaEvent,
+} from '../../../core/common/events/game-events.types';
 import type { VotePayload } from '../../votos/infrastructure/websockets/process-audience-vote.websocket';
 
 // WebSocket Infrastructure
@@ -50,6 +53,7 @@ type ConsensusInput = {
   totalRequeridos?: number;
   winningOpcionId?: number;
   esCorrecta?: boolean | null;
+  opcionCorrectaId?: number;
   feedback?: string | null;
 };
 
@@ -246,6 +250,37 @@ export class JuegoGateway
   }
 
   /**
+   * Fired by RestartRoundUseCase after a new round is created in the DB
+   * and the room state is reset to ESPERANDO_ALUMNOS. Broadcasts
+   * `sala_reiniciada` so connected participants see the new round
+   * without refreshing. The event payload already comes sanitized from
+   * the use-case (esCorrecta stripped from historialPreguntas), but we
+   * sanitize defensively here too in case a future caller emits
+   * without sanitizing.
+   */
+  @OnEvent(GameEvents.RONDAS.RONDA_REINICIADA)
+  handleRondaReiniciada(event: RondaReiniciadaEvent) {
+    const sanitized = {
+      ...event,
+      rondaActiva: {
+        ...event.rondaActiva,
+        historialPreguntas: event.rondaActiva.historialPreguntas.map((p) => ({
+          ...p,
+          opciones: p.opciones.map((o: any) => {
+            const { esCorrecta: _esCorrecta, ...rest } = o ?? {};
+            return rest;
+          }),
+        })),
+      },
+    };
+    this.roomBroadcaster.broadcastToRoom(
+      event.tokenCompartido,
+      'ronda_reiniciada',
+      sanitized,
+    );
+  }
+
+  /**
    * Fired by UpdateEstadoSalaUseCase when a room transitions to EN_VIVO.
    * Broadcasts `info_ronda` so the frontend updates the header ("Esperando
    * información de la ronda..." goes away) and the active-question state.
@@ -303,10 +338,40 @@ export class JuegoGateway
             remaining,
           );
         },
-        // onExpire — persist "no answer" and notify the room
+        // onExpire - persist "no answer" and notify the room.
+        // After persisting, emit BOTH `tiempo_agotado` (legacy timer
+        // overlay) and `pregunta_respondida` (with the correct option id
+        // so the UI can highlight it). The student never submitted, so
+        // this is the first time they learn which option was correct -
+        // equivalent to the submit path. Both events share the same
+        // race-safety: `claimed` indicates we won the persistence race.
         () => {
           void this.handleTimerExpiration
-            .execute({ tokenCompartido, rondaId, preguntaId: pregunta.preguntaId })
+            .execute({
+              tokenCompartido,
+              rondaId,
+              preguntaId: pregunta.preguntaId,
+            })
+            .then((result) => {
+              if (result.claimed) {
+                // Mirror the student-submit path: tell the room which
+                // option was correct (here it's the persisted one, since
+                // the timer "chose" it on the student's behalf). The UI
+                // uses `opcionCorrectaId` to mark the canonical correct
+                // option after a wrong answer or timeout.
+                this.roomBroadcaster.broadcastToRoom(
+                  tokenCompartido,
+                  'pregunta_respondida',
+                  {
+                    preguntaId: pregunta.preguntaId,
+                    opcionId: result.opcionId,
+                    esCorrecta: result.esCorrecta,
+                    opcionCorrectaId: result.opcionCorrectaId,
+                    feedback: result.feedback ?? null,
+                  },
+                );
+              }
+            })
             .catch((err) =>
               this.logger.error(
                 `[handlePreguntaLiberada] Timer expiry handler failed for ${tokenCompartido}: ${err}`,
@@ -330,13 +395,25 @@ export class JuegoGateway
     }
 
     // Only broadcast once the timer infrastructure is confirmed ready.
+    // SANITIZE: strip `esCorrecta` from every option so clients cannot
+    // inspect the correct answer before submitting. The DB-loaded flag
+    // stays in the cache (used by SubmitAnswerWebsocket to grade).
+    const preguntaSanitizada = {
+      ...pregunta,
+      opciones: Array.isArray(pregunta?.opciones)
+        ? pregunta.opciones.map((o: any) => {
+            const { esCorrecta: _esCorrecta, ...rest } = o ?? {};
+            return rest;
+          })
+        : [],
+    };
     this.roomBroadcaster.broadcastToRoom(
       tokenCompartido,
       'pregunta_liberada',
-      pregunta,
+      preguntaSanitizada,
     );
     this.logger.log(
-      `[RONDAS:PREGUNTA_LIBERADA] Broadcast pregunta ${pregunta.preguntaId} for ${tokenCompartido}`,
+      `[RONDAS:PREGUNTA_LIBERADA] Broadcast pregunta ${pregunta.preguntaId} for ${tokenCompartido} (sanitized)`,
     );
   }
 
@@ -416,15 +493,8 @@ export class JuegoGateway
     }
   }
 
-
-
   // Removed in N1 PR1 (sdd/quizis-rest-n1-mutations AC-N1-26):
   //   - handlePreguntaLiberada (pregunta_liberada) → REST POST /api/v1/salas/by-token/:salaId/preguntas/liberar
-
-
-
-  
-
 
   // Removed in N1 PR1 (sdd/quizis-rest-n1-mutations AC-N1-26):
   //   - handleAnswer (responder_pregunta) → REST POST /api/v1/salas/:salaId/respuestas
@@ -465,6 +535,7 @@ export class JuegoGateway
           preguntaId,
           opcionId: result.winningOpcionId,
           esCorrecta: result.esCorrecta ?? null,
+          opcionCorrectaId: result.opcionCorrectaId ?? null,
           feedback: result.feedback ?? null,
         });
         break;

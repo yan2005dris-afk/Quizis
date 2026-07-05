@@ -19,7 +19,7 @@ import { ReleaseQuestionWebsocket } from '../../../rondas/infrastructure/websock
 import { RegenerateRoomTokenUseCase } from '../../application/use-cases/regenerate-room-token.use-case';
 import { FinalizeRoomUseCase } from '../../application/use-cases/finalize-room.use-case';
 import { RestartRoundUseCase } from '../../application/use-cases/restart-round.use-case';
-import { UpdateParticipantRoleUseCase } from '../../application/use-cases/update-participant-role.use-case';
+import { SalasService } from '../../application/salas.service';
 
 /**
  * REST endpoints keyed by `tokenCompartido` (the public ID clients know).
@@ -48,7 +48,7 @@ export class SalasByTokenController {
     private readonly regenerateRoomToken: RegenerateRoomTokenUseCase,
     private readonly finalizeRoom: FinalizeRoomUseCase,
     private readonly restartRound: RestartRoundUseCase,
-    private readonly updateParticipantRole: UpdateParticipantRoleUseCase,
+    private readonly salasService: SalasService,
     private readonly prisma: PrismaService,
   ) {}
 
@@ -81,8 +81,12 @@ export class SalasByTokenController {
   }
 
   /**
-   * Release a question for the room. The frontend sends the full `Pregunta`
-   * (same contract as the WS `pregunta_liberada` handler today).
+   * Release a question for the room. The frontend sends only `preguntaId`;
+   * the backend loads the authoritative question + options (including
+   * `esCorrecta`) from the DB. This is the security fix for the
+   * "esCorrecta-from-client" bug: the client must never see or send the
+   * correct flag. The WS broadcast `pregunta_liberada` is sanitized
+   * before reaching students.
    *
    * Delegates to `ReleaseQuestionWebsocket.execute()` so the timer start,
    * consensus initialization, and WS broadcasts (`pregunta_liberada`,
@@ -92,11 +96,18 @@ export class SalasByTokenController {
   @ApiOperation({ summary: 'Release a question for the room' })
   async liberar(
     @Param('salaId') tokenCompartido: string,
-    @Body() body: { pregunta: any },
+    @Body() body: { preguntaId: number },
   ) {
+    if (
+      body.preguntaId === undefined ||
+      body.preguntaId === null ||
+      Number.isNaN(Number(body.preguntaId))
+    ) {
+      throw new BadRequestException('preguntaId requerido');
+    }
     return this.releaseQuestionWebsocket.execute(
       tokenCompartido,
-      body.pregunta,
+      Number(body.preguntaId),
     );
   }
 
@@ -152,7 +163,7 @@ export class SalasByTokenController {
         `Rol inválido: "${body.rol}". Debe ser 'estudiante' u 'observador'.`,
       );
     }
-    return this.updateParticipantRole.execute(
+    return this.salasService.changeParticipantRole(
       tokenCompartido,
       nickname,
       body.rol,
