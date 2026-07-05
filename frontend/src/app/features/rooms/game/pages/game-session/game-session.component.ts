@@ -210,6 +210,7 @@ export class GameSessionComponent implements OnInit, OnDestroy {
     this.limpiarEstadoAlReiniciarRonda();
     this.contarMensajesNoLeidos();
     this.navigateOnFinalizacion();
+    this.listenTokenRegenerado();
   }
 
   /**
@@ -227,6 +228,22 @@ export class GameSessionComponent implements OnInit, OnDestroy {
       // Guard against re-navigation: only fire once per finalization.
       if (this.router.url.includes('/analiticas')) return;
       this.router.navigate(['/salas', sala.salaId, 'analiticas']);
+    });
+  }
+
+  /**
+   * Reactively listens to token regeneration events from the socket service,
+   * updating both the tokenInvitacion signal and the tokenCompartido of the
+   * salaDetalle signal.
+   */
+  private listenTokenRegenerado(): void {
+    effect(() => {
+      const data = this.gameSocket.tokenInvitacionRegenerado();
+      if (!data) return;
+      this.salaDetalle.update((actual) =>
+        actual ? { ...actual, tokenCompartido: data.tokenCompartidoNuevo } : actual,
+      );
+      this.tokenInvitacion.set(data.tokenInvitacion);
     });
   }
 

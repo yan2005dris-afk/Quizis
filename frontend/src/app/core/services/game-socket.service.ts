@@ -76,6 +76,7 @@ export class GameSocketService {
   // Local nickname for REST calls (mirrors what `unirseASala` sends via WS).
   // Set by `unirseASala()` when joining a room.
   private localNickname: string | null = null;
+  currentTokenCompartido: string | null = null;
 
   // Instancia de la conexión WebSocket; null hasta que se llame a conectar()
   private socket: Socket | null = null;
@@ -155,7 +156,15 @@ export class GameSocketService {
 
   private setupConnectionListeners(): void {
     if (!this.socket) return;
-    this.socket.on('connect', () => this.conectado.set(true));
+    this.socket.on('connect', () => {
+      this.conectado.set(true);
+      if (this.currentTokenCompartido && this.localNickname) {
+        this.socket?.emit('unirse_sala', {
+          tokenCompartido: this.currentTokenCompartido,
+          nombre: this.localNickname,
+        });
+      }
+    });
     this.socket.on('disconnect', () => this.conectado.set(false));
   }
 
@@ -442,6 +451,9 @@ export class GameSocketService {
         tokenCompartidoNuevo: string;
         tokenInvitacion: string;
       }) => {
+        if (this.currentTokenCompartido === data.tokenCompartidoViejo) {
+          this.currentTokenCompartido = data.tokenCompartidoNuevo;
+        }
         this.tokenInvitacionRegenerado.set({
           tokenCompartidoNuevo: data.tokenCompartidoNuevo,
           tokenInvitacion: data.tokenInvitacion,
@@ -523,6 +535,7 @@ export class GameSocketService {
   // Se unte a una sala específica
   unirseASala(tokenCompartido: string, nombre: string): void {
     this.localNickname = nombre;
+    this.currentTokenCompartido = tokenCompartido;
     this.socket?.emit('unirse_sala', { tokenCompartido, nombre });
   }
 
@@ -671,5 +684,7 @@ export class GameSocketService {
     this.socket = null;
     this.conectado.set(false);
     this.rondaReiniciada.set(null);
+    this.localNickname = null;
+    this.currentTokenCompartido = null;
   }
 }
