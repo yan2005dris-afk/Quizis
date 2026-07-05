@@ -99,17 +99,15 @@ export class SubmitAnswerWebsocket {
       payload.preguntaId,
     );
 
-    // 5b. Emitir evento de consenso evaluado para que el gateway
-    //     frene el timer y notifique a TODOS los clientes vía WS.
-    this.eventEmitter.emit(GameEvents.VOTOS.CONSENSO_EVALUADO, {
-      tokenCompartido: payload.tokenCompartido,
-      preguntaId: payload.preguntaId,
-      result,
-    });
-
     // 6. Actuar según el resultado del consenso
     switch (result.type) {
       case 'pending': {
+        this.eventEmitter.emit(GameEvents.VOTOS.CONSENSO_EVALUADO, {
+          tokenCompartido: payload.tokenCompartido,
+          preguntaId: payload.preguntaId,
+          result,
+        });
+
         this.logger.log(
           `Voto registrado, pendiente consenso: ${result.votosRecibidos}/${result.totalRequeridos}`,
         );
@@ -169,6 +167,18 @@ export class SubmitAnswerWebsocket {
           throw persistError;
         }
 
+        // Emitir evento de consenso evaluado enriquecido con esCorrecta, opcionCorrectaId y feedback
+        this.eventEmitter.emit(GameEvents.VOTOS.CONSENSO_EVALUADO, {
+          tokenCompartido: payload.tokenCompartido,
+          preguntaId: payload.preguntaId,
+          result: {
+            ...result,
+            esCorrecta,
+            opcionCorrectaId,
+            feedback,
+          },
+        });
+
         this.logger.log(
           `Consenso resuelto (${result.type}): opcionId=${winningOpcionId}, esCorrecta=${esCorrecta}`,
         );
@@ -188,6 +198,12 @@ export class SubmitAnswerWebsocket {
           payload.tokenCompartido,
           payload.preguntaId,
         );
+
+        this.eventEmitter.emit(GameEvents.VOTOS.CONSENSO_EVALUADO, {
+          tokenCompartido: payload.tokenCompartido,
+          preguntaId: payload.preguntaId,
+          result,
+        });
 
         this.logger.log(
           `Sin mayoría para pregunta ${payload.preguntaId} en sala ${payload.tokenCompartido}, se solicita revoto`,

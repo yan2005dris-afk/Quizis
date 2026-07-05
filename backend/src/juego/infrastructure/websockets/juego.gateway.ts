@@ -16,6 +16,7 @@ import { Server, Socket } from 'socket.io';
 import { SalasService } from '../../salas/application/salas.service';
 import { ChatService } from '../../chat/application/chat.service';
 import { ComodinesService } from '../../comodines/application/comodines.service';
+import { VotosService } from '../../votos/application/votos.service';
 
 // WebSocket Use Cases
 import { HandleJoinRoomWebsocket } from '../../salas/infrastructure/websockets/handle-join-room.websocket';
@@ -30,6 +31,7 @@ import { GameEvents } from '../../../core/common/events/game-events.types';
 import type {
   ConsensusEvaluatedEvent,
   RondaReiniciadaEvent,
+  TokenRegeneradoEvent,
 } from '../../../core/common/events/game-events.types';
 import type { VotePayload } from '../../votos/infrastructure/websockets/process-audience-vote.websocket';
 
@@ -153,6 +155,7 @@ export class JuegoGateway
     private readonly socketMapService: SocketMapService,
     private readonly distributedTimerService: DistributedTimerService,
     private readonly handleTimerExpiration: HandleTimerExpirationUseCase,
+    private readonly votosService: VotosService,
   ) {}
 
   // ─── Lifecycle ─────────────────────────────────────────────────────────────
@@ -258,6 +261,37 @@ export class JuegoGateway
    * sanitize defensively here too in case a future caller emits
    * without sanitizing.
    */
+  /**
+   * Fired by FinalizeRoomUseCase (and potentially other use-cases that
+   * change the sala state in the future — e.g. a refactor that makes
+   * UpdateEstadoSalaUseCase emit ESTADO_CAMBIADO too instead of the
+   * ad-hoc 'sala.iniciada' string). Broadcasts `estado_sala_cambiado`
+   * to the room.
+   */
+  @OnEvent(GameEvents.SALA.ESTADO_CAMBIADO)
+  handleEstadoCambiado(payload: { tokenCompartido: string; estado: string }) {
+    this.roomBroadcaster.broadcastToRoom(
+      payload.tokenCompartido,
+      'estado_sala_cambiado',
+      payload,
+    );
+  }
+
+  /**
+   * Fired by RegenerateRoomTokenUseCase. Broadcasts `token_regenerado`
+   * to the OLD room (sockets are still joined under the old token).
+   * Per design: notify only, do not kick. The frontend updates the
+   * shareable link live; no participants are disconnected.
+   */
+  @OnEvent(GameEvents.SALA.TOKEN_REGENERADO)
+  handleTokenRegenerado(event: TokenRegeneradoEvent) {
+    this.roomBroadcaster.broadcastToRoom(
+      event.tokenCompartidoViejo,
+      'token_regenerado',
+      event,
+    );
+  }
+
   @OnEvent(GameEvents.RONDAS.RONDA_REINICIADA)
   handleRondaReiniciada(event: RondaReiniciadaEvent) {
     const sanitized = {
@@ -318,6 +352,23 @@ export class JuegoGateway
         `[handlePreguntaLiberada] Payload missing preguntaId for room ${tokenCompartido}`,
       );
       return;
+    }
+
+    try {
+      // Initialize consensus required set
+      if (typeof this.votosService?.initConsensusRequired === 'function') {
+        await this.votosService.initConsensusRequired(
+          tokenCompartido,
+          pregunta.preguntaId,
+        );
+        this.logger.log(
+          `[CONSENSUS] Inicializado para pregunta ${pregunta.preguntaId} en sala ${tokenCompartido}`,
+        );
+      }
+    } catch (consensusError) {
+      this.logger.error(
+        `[handlePreguntaLiberada] Failed to initialize consensus required: ${consensusError}`,
+      );
     }
 
     try {

@@ -7,6 +7,10 @@ import { SalaAdminGuard } from '../src/core/common/guards/sala-admin.guard';
 import { PrismaService } from '../src/core/database/prisma/prisma.service';
 import { RedisService } from '../src/core/database/redis/redis.service';
 import { AppModule } from '../src/app.module';
+import { RoomBroadcasterService } from '../src/juego/infrastructure/websockets/room-broadcaster.service';
+import { JuegoGateway } from '../src/juego/infrastructure/websockets/juego.gateway';
+import { DistributedTimerService } from '../src/juego/infrastructure/websockets/distributed-timer.service';
+import { ParticipantsCacheService } from '../src/juego/shared/room-state/participants-cache.service';
 
 /**
  * Security E2E: validates the full flow that protects `esCorrecta` from
@@ -60,7 +64,7 @@ const mockPrisma: any = {
   },
   participantes: {
     findFirst: jest.fn(),
-    findMany: jest.fn().mockResolvedValue([]),
+    findMany: jest.fn().mockResolvedValue([DB_PARTICIPANTE]),
     update: jest.fn(),
   },
   rondas: {
@@ -144,11 +148,17 @@ describe('Security E2E: liberar + submit + esCorrecta', () => {
       salaId: 1,
       estado: 'jugando',
     });
-    mockPrisma.salas.findUnique.mockResolvedValue({
-      salaId: 1,
-      tokenCompartido: 'test-token',
-      adminId: 1,
-      estado: 'EN_VIVO',
+    mockPrisma.salas.findUnique.mockImplementation(({ where }) => {
+      const token = where.tokenCompartido || 'test-token';
+      return Promise.resolve({
+        salaId: 1,
+        tokenCompartido: token,
+        adminId: 1,
+        estado: 'EN_VIVO',
+        participantes: [],
+        comodines: [],
+        rondas: [],
+      });
     });
     mockPrisma.$transaction.mockImplementation((arg: any) => {
       if (typeof arg === 'function') return arg(mockPrisma);
@@ -203,6 +213,14 @@ describe('Security E2E: liberar + submit + esCorrecta', () => {
 
   describe('POST /api/v1/salas/:salaId/respuestas', () => {
     it('submit con opción INCORRECTA retorna esCorrecta=false y opcionCorrectaId=DB-correcto', async () => {
+      const participantsCache = app.get(ParticipantsCacheService);
+      await participantsCache.addParticipantOnline('test-tok-4', 'JuanEstudiante');
+
+      await request(app.getHttpServer())
+        .post('/api/v1/salas/by-token/test-tok-4/preguntas/liberar')
+        .send({ preguntaId: 1 })
+        .expect(201);
+
       const res = await request(app.getHttpServer())
         .post('/api/v1/salas/test-tok-4/respuestas')
         .send({
@@ -222,6 +240,14 @@ describe('Security E2E: liberar + submit + esCorrecta', () => {
     });
 
     it('CRÍTICO: cliente no puede manipular esCorrecta con campos extra en body', async () => {
+      const participantsCache = app.get(ParticipantsCacheService);
+      await participantsCache.addParticipantOnline('test-tok-5', 'JuanEstudiante');
+
+      await request(app.getHttpServer())
+        .post('/api/v1/salas/by-token/test-tok-5/preguntas/liberar')
+        .send({ preguntaId: 1 })
+        .expect(201);
+
       // The DTO accepts only nickname, rondaId, preguntaId, opcionId,
       // comodinUsado. Extra fields are silently ignored by class-validator
       // (the default behavior) — the result MUST be computed from the
@@ -265,6 +291,142 @@ describe('Security E2E: liberar + submit + esCorrecta', () => {
           opcionId: 10,
         })
         .expect(400);
+    });
+  });
+
+  describe('Tokenless Participant Auth & Socket Sanitization', () => {
+    it('permite enviar un mensaje de chat si el participante existe, y retorna 404 si no existe', async () => {
+      // 1. Participant exists
+      mockPrisma.participantes.findFirst.mockResolvedValue(DB_PARTICIPANTE);
+
+      const resOk = await request(app.getHttpServer())
+        .post('/api/v1/salas/test-token/mensajes')
+        .send({
+          nickname: 'JuanEstudiante',
+          texto: 'Hola a todos',
+          tipo: 'mensaje',
+        })
+        .expect(201);
+
+      expect(resOk.body).toBeDefined();
+
+      // 2. Participant does not exist
+      mockPrisma.participantes.findFirst.mockResolvedValue(null);
+
+      await request(app.getHttpServer())
+        .post('/api/v1/salas/test-token/mensajes')
+        .send({
+          nickname: 'desconocido',
+          texto: 'Hola a todos',
+          tipo: 'mensaje',
+        })
+        .expect(404);
+    });
+
+    it('permite votar si el participante es observador, retorna 403 si es estudiante, y retorna 404 si no existe', async () => {
+      // 1. Participant exists as observer
+      mockPrisma.participantes.findFirst.mockResolvedValue({
+        ...DB_PARTICIPANTE,
+        rol: 'observador',
+      });
+
+      const resOk = await request(app.getHttpServer())
+        .post('/api/v1/salas/test-token/votos')
+        .send({
+          nickname: 'JuanEstudiante',
+          rondaId: 1,
+          preguntaId: 1,
+          opcionId: 10,
+        })
+        .expect(201);
+
+      expect(resOk.body.success).toBe(true);
+
+      // 2. Participant exists as estudiante (forbidden to vote)
+      mockPrisma.participantes.findFirst.mockResolvedValue({
+        ...DB_PARTICIPANTE,
+        rol: 'estudiante',
+      });
+
+      await request(app.getHttpServer())
+        .post('/api/v1/salas/test-token/votos')
+        .send({
+          nickname: 'JuanEstudiante',
+          rondaId: 1,
+          preguntaId: 1,
+          opcionId: 10,
+        })
+        .expect(403);
+
+      // 3. Participant does not exist
+      mockPrisma.participantes.findFirst.mockResolvedValue(null);
+
+      await request(app.getHttpServer())
+        .post('/api/v1/salas/test-token/votos')
+        .send({
+          nickname: 'desconocido',
+          rondaId: 1,
+          preguntaId: 1,
+          opcionId: 10,
+        })
+        .expect(404);
+    });
+
+    it('permite bloquear un comodín si el participante existe, y retorna 404 si no existe', async () => {
+      // 1. Participant exists
+      mockPrisma.participantes.findFirst.mockResolvedValue(DB_PARTICIPANTE);
+
+      const resOk = await request(app.getHttpServer())
+        .post('/api/v1/salas/test-token/comodines/IA/bloquear')
+        .send({
+          nickname: 'JuanEstudiante',
+        })
+        .expect(201);
+
+      expect(resOk.body.ok).toBe(true);
+
+      // 2. Participant does not exist
+      mockPrisma.participantes.findFirst.mockResolvedValue(null);
+
+      await request(app.getHttpServer())
+        .post('/api/v1/salas/test-token/comodines/IA/bloquear')
+        .send({
+          nickname: 'desconocido',
+        })
+        .expect(404);
+    });
+
+    it('CRÍTICO: el broadcast de pregunta_liberada no expone esCorrecta', async () => {
+      const gateway = app.get(JuegoGateway);
+      const broadcaster = app.get(RoomBroadcasterService);
+      const timerService = app.get(DistributedTimerService);
+      const spy = jest.spyOn(broadcaster, 'broadcastToRoom');
+
+      await gateway.handlePreguntaLiberada({
+        tokenCompartido: 'test-tok-sanitize',
+        pregunta: DB_PREGUNTA,
+      });
+
+      expect(spy).toHaveBeenCalledWith(
+        'test-tok-sanitize',
+        'pregunta_liberada',
+        expect.any(Object)
+      );
+
+      const preguntaLiberadaCall = spy.mock.calls.find(
+        (call) => call[1] === 'pregunta_liberada',
+      );
+      expect(preguntaLiberadaCall).toBeDefined();
+
+      const broadcastedPregunta = preguntaLiberadaCall![2];
+      expect(broadcastedPregunta.preguntaId).toBe(1);
+      broadcastedPregunta.opciones.forEach((opcion: any) => {
+        expect(opcion.esCorrecta).toBeUndefined();
+      });
+
+      // Clean up open timer handles to avoid Jest open handle warning
+      await timerService.detenerTimer('test-tok-sanitize');
+      spy.mockRestore();
     });
   });
 });

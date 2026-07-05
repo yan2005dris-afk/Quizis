@@ -76,6 +76,7 @@ export class GameSocketService {
   // Local nickname for REST calls (mirrors what `unirseASala` sends via WS).
   // Set by `unirseASala()` when joining a room.
   private localNickname: string | null = null;
+  currentTokenCompartido: string | null = null;
 
   // Instancia de la conexión WebSocket; null hasta que se llame a conectar()
   private socket: Socket | null = null;
@@ -93,6 +94,11 @@ export class GameSocketService {
   readonly votosPublico = signal<VotosPublico | null>(null);
   readonly comodinBloqueado = signal<string[]>([]);
   readonly salaHabilitada = signal<boolean>(true);
+  readonly salaFinalizadaWs = signal<boolean>(false);
+  readonly tokenInvitacionRegenerado = signal<{
+    tokenCompartidoNuevo: string;
+    tokenInvitacion: string;
+  } | null>(null);
   readonly conectado = signal<boolean>(false);
 
   // Estado para Comodín Llamada
@@ -150,7 +156,15 @@ export class GameSocketService {
 
   private setupConnectionListeners(): void {
     if (!this.socket) return;
-    this.socket.on('connect', () => this.conectado.set(true));
+    this.socket.on('connect', () => {
+      this.conectado.set(true);
+      if (this.currentTokenCompartido && this.localNickname) {
+        this.socket?.emit('unirse_sala', {
+          tokenCompartido: this.currentTokenCompartido,
+          nombre: this.localNickname,
+        });
+      }
+    });
     this.socket.on('disconnect', () => this.conectado.set(false));
   }
 
@@ -411,6 +425,41 @@ export class GameSocketService {
     this.socket.on('info_ronda', (data: RondaInfo) => {
       this.infoRonda.set(data);
     });
+
+    // Fired by FinalizeRoomUseCase → JuegoGateway when the admin
+    // finalizes the sala. The game-session component observes
+    // `salaFinalizadaWs` and navigates to the results screen on
+    // transition to FINALIZADO. Without this event, students had to
+    // refresh manually after the admin pressed "finalizar".
+    this.socket.on('estado_sala_cambiado', (data: { tokenCompartido: string; estado: string }) => {
+      if (data.estado === 'FINALIZADO') {
+        this.salaHabilitada.set(false);
+        this.salaFinalizadaWs.set(true);
+      }
+    });
+
+    // Fired by RegenerateRoomTokenUseCase → JuegoGateway when the admin
+    // regenerates the shareable token. Per design ("notify, don't
+    // kick"), connected sockets stay joined under the OLD token —
+    // this signal gives every connected client (including secondary
+    // admin views, spectator displays) a chance to update the
+    // shareable link they show without a manual refresh.
+    this.socket.on(
+      'token_regenerado',
+      (data: {
+        tokenCompartidoViejo: string;
+        tokenCompartidoNuevo: string;
+        tokenInvitacion: string;
+      }) => {
+        if (this.currentTokenCompartido === data.tokenCompartidoViejo) {
+          this.currentTokenCompartido = data.tokenCompartidoNuevo;
+        }
+        this.tokenInvitacionRegenerado.set({
+          tokenCompartidoNuevo: data.tokenCompartidoNuevo,
+          tokenInvitacion: data.tokenInvitacion,
+        });
+      },
+    );
   }
 
   // ─── Ronda (reinicio completo) ───
@@ -486,6 +535,7 @@ export class GameSocketService {
   // Se unte a una sala específica
   unirseASala(tokenCompartido: string, nombre: string): void {
     this.localNickname = nombre;
+    this.currentTokenCompartido = tokenCompartido;
     this.socket?.emit('unirse_sala', { tokenCompartido, nombre });
   }
 
@@ -634,5 +684,7 @@ export class GameSocketService {
     this.socket = null;
     this.conectado.set(false);
     this.rondaReiniciada.set(null);
+    this.localNickname = null;
+    this.currentTokenCompartido = null;
   }
 }
