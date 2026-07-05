@@ -265,6 +265,25 @@ export class JuegoGateway
     );
   }
 
+  /**
+   * Fired by ReleaseQuestionWebsocket after a question is released via REST.
+   * Broadcasts `pregunta_liberada` so the frontend shows the active question.
+   */
+  @OnEvent(GameEvents.RONDAS.PREGUNTA_LIBERADA)
+  handlePreguntaLiberada(payload: {
+    tokenCompartido: string;
+    pregunta: any;
+  }) {
+    this.roomBroadcaster.broadcastToRoom(
+      payload.tokenCompartido,
+      'pregunta_liberada',
+      payload.pregunta,
+    );
+    this.logger.log(
+      `[RONDAS:PREGUNTA_LIBERADA] Broadcast pregunta ${payload.pregunta.preguntaId} for ${payload.tokenCompartido}`,
+    );
+  }
+
   // ─── Message Handlers ──────────────────────────────────────────────────────
 
   @SubscribeMessage('unirse_sala')
