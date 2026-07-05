@@ -193,6 +193,10 @@ describe('ActiveQuestionComponent', () => {
         preguntaId: 42,
         opcionId: 2,
         esCorrecta: false,
+        // Backend includes opcionCorrectaId in pregunta_respondida after the
+        // answer is processed. The UI uses it to mark the canonical correct
+        // option when the student got it wrong.
+        opcionCorrectaId: 2,
         feedback: '',
       });
       fixture.detectChanges();

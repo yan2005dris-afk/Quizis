@@ -145,13 +145,32 @@ export class ActiveQuestionComponent {
 
       if (result && activeId === result.preguntaId) {
         // Actualizar la pregunta en el historial local para que las opciones reflejen la respuesta
+
         const list = [...this.preguntas()];
         const index = list.findIndex((p) => p.preguntaId === result.preguntaId);
 
-        if (index !== -1 && !list[index].respuestaDada) {
+        // Always overwrite the cached respuestaDada with the latest
+        // result. Without this, a stale (incomplete) respuestaDada from
+        // a previous question persists and the UI can't show the correct
+        // option when the student got it wrong. The shallow-spread copy
+        // `[...this.preguntas()]` mutates the original element by
+        // reference, so this assignment changes
+        // `this.preguntas()[index].respuestaDada` in place. Including
+        // `opcionCorrectaId` here is critical for the security fix: the
+        // broadcast `pregunta_liberada` no longer carries it (sanitized),
+        // so this is the ONLY way the UI learns which option was correct
+        // after the answer is resolved.
+        if (index !== -1) {
+          // IMPORTANT: this object replaces the cached respuestaDada. The
+          // computed `opciones` reads from this field, so we MUST include
+          // `opcionCorrectaId` for the UI to mark the correct option when
+          // the student got it wrong. The shallow-spread copy `[...this.preguntas()]`
+          // mutates the original element by reference, so this assignment
+          // changes `this.preguntas()[index].respuestaDada` in place.
           list[index].respuestaDada = {
             opcionId: this.localSelectedId() || result.opcionId || -1, // Intentar matchear con lo que eligió localmente
             esCorrecta: result.esCorrecta,
+            opcionCorrectaId: result.opcionCorrectaId,
             feedback: result.feedback,
           };
           // Nota: Como 'preguntas' es un input, no podemos mutar la lista original de forma reactiva simple.
@@ -213,14 +232,18 @@ export class ActiveQuestionComponent {
           !respuestaDada && !this.respuestaConfirmada() && this.localSelectedId() === o.opcionId,
         estaPendiente:
           !respuestaDada && this.respuestaConfirmada() && this.localSelectedId() === o.opcionId,
-        // Highlight the correct option whenever the question is answered
-        // (correct answer → the chosen option; incorrect answer → the
-        // canonical correct option from p.opciones). Without this fix,
-        // an incorrect or timed-out answer left NO option highlighted.
+        // Highlight the correct option whenever the question is answered.
+        // Correct answer → the chosen option. Incorrect answer → the
+        // canonical correct option, taken from `respuestaDada.opcionCorrectaId`
+        // (sent by the backend in the pregunta_respondida broadcast AFTER
+        // the answer is processed). We DO NOT read `o.esCorrecta` from the
+        // cached pregunta: the backend sanitizes that flag from the
+        // pregunta_liberada broadcast for security, so it would always be
+        // undefined here.
         esCorrecta: respuestaDada
           ? respuestaDada.esCorrecta
             ? respuestaDada.opcionId === o.opcionId
-            : o.esCorrecta === true
+            : respuestaDada.opcionCorrectaId === o.opcionId
           : undefined,
       };
     });

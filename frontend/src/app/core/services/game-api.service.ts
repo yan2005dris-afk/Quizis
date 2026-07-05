@@ -55,9 +55,14 @@ export interface UpdateEstadoSalaResponse {
 
 /**
  * Body for POST /api/v1/salas/by-token/:salaId/preguntas/liberar.
+ *
+ * Security fix: the backend now loads the question + options (including
+ * `esCorrecta`) from the DB by `preguntaId` — the client must NOT send the
+ * full question, otherwise a student could read the answer from the broadcast
+ * or a malicious client could mark any option as correct.
  */
 export interface LiberarPreguntaBody {
-  pregunta: Pregunta;
+  preguntaId: number;
 }
 
 /**
@@ -96,10 +101,18 @@ export class GameApiService {
 
   /**
    * POST /api/v1/salas/by-token/:salaId/preguntas/liberar — release a question.
+   * Returns the preguntaId that was released (the backend loads the full
+   * question from the DB and broadcasts it sanitized).
    */
-  liberarPregunta(salaId: string, payload: LiberarPreguntaBody): Observable<Pregunta> {
+  liberarPregunta(
+    salaId: string,
+    preguntaId: number,
+  ): Observable<{ success: boolean; preguntaId: number }> {
     return this.http
-      .post<Pregunta>(`${this.apiUrl}/salas/by-token/${salaId}/preguntas/liberar`, payload)
+      .post<{
+        success: boolean;
+        preguntaId: number;
+      }>(`${this.apiUrl}/salas/by-token/${salaId}/preguntas/liberar`, { preguntaId })
       .pipe(catchError((err: unknown) => this.toObservableError(err)));
   }
 

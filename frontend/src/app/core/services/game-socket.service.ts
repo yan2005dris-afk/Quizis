@@ -32,6 +32,12 @@ export interface Pregunta {
 export interface RespuestaDada {
   opcionId: number;
   esCorrecta: boolean;
+  /**
+   * ID of the correct option (only present after the backend resolves the
+   * answer). Used by the UI to highlight the correct option when the user
+   * got it wrong.
+   */
+  opcionCorrectaId?: number;
   feedback: string;
 }
 
@@ -51,6 +57,13 @@ export interface ResultRespuesta {
   preguntaId: number;
   opcionId: number;
   esCorrecta: boolean;
+  /**
+   * ID of the correct option, included by the backend ONLY after a question
+   * is answered. Used by the UI to highlight which option WAS correct when
+   * the student got it wrong. Never sent during the active question
+   * (`pregunta_liberada`) — that's why esCorrecta no longer leaks.
+   */
+  opcionCorrectaId?: number;
   feedback: string;
 }
 
@@ -263,12 +276,14 @@ export class GameSocketService {
         preguntaId: number;
         opcionId: number;
         esCorrecta: boolean | null;
+        opcionCorrectaId?: number | null;
         feedback: string | null;
       }) => {
         this.ultimoResultado.set({
           preguntaId: data.preguntaId,
           opcionId: data.opcionId,
           esCorrecta: data.esCorrecta ?? false,
+          opcionCorrectaId: data.opcionCorrectaId ?? undefined,
           feedback: data.feedback ?? '',
         });
         this.esperandoConsenso.set(false);
@@ -490,8 +505,14 @@ export class GameSocketService {
   // N1: now uses REST (GameApiService). Returns a Promise for parity with
   // the new REST contract. The WS 'pregunta_liberada' event was deprecated
   // and removed in backend.
-  liberarPregunta(tokenCompartido: string, pregunta: Pregunta): Promise<Pregunta> {
-    return firstValueFrom(this.api.liberarPregunta(tokenCompartido, { pregunta }));
+  // SECURITY: only sends `preguntaId`. The backend loads the question + options
+  // (with `esCorrecta`) from the DB; the WS broadcast is sanitized so the
+  // correct flag never reaches clients.
+  liberarPregunta(
+    tokenCompartido: string,
+    preguntaId: number,
+  ): Promise<{ success: boolean; preguntaId: number }> {
+    return firstValueFrom(this.api.liberarPregunta(tokenCompartido, preguntaId));
   }
 
   // Responder pregunta (Solo Estudiante)
@@ -506,9 +527,7 @@ export class GameSocketService {
   }): Promise<SubmitAnswerResult> {
     const nickname = this.localNickname;
     if (!nickname) {
-      return Promise.reject(
-        new Error('No hay nickname local — debes unirte a una sala primero'),
-      );
+      return Promise.reject(new Error('No hay nickname local — debes unirte a una sala primero'));
     }
     return firstValueFrom(
       this.api.submitAnswer(payload.tokenCompartido, {

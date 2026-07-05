@@ -380,11 +380,11 @@ export class GameSessionComponent implements OnInit, OnDestroy {
           const interval = setInterval(() => {
             if (this.gameSocket.conectado()) {
               let participantInfo: any = {};
-    try {
-      participantInfo = JSON.parse(localStorage.getItem('participantInfo') ?? '{}');
-    } catch {
-      participantInfo = {};
-    }
+              try {
+                participantInfo = JSON.parse(localStorage.getItem('participantInfo') ?? '{}');
+              } catch {
+                participantInfo = {};
+              }
               const nickname = this.isHost()
                 ? `Host-${this.auth.user()?.nombre || 'Admin'}`
                 : (participantInfo.nickname ?? `Estudiante-${Math.floor(Math.random() * 1000)}`);
@@ -553,7 +553,10 @@ export class GameSessionComponent implements OnInit, OnDestroy {
       (p) => !p.respuestaDada && p.preguntaId !== this.preguntaActiva()?.preguntaId,
     );
     if (proxima) {
-      this.gameSocket.liberarPregunta(tokenCompartido, proxima);
+      // SECURITY: send only preguntaId; the backend loads the question from
+      // the DB so we never leak `esCorrecta` via the pregunta_liberada
+      // broadcast.
+      this.gameSocket.liberarPregunta(tokenCompartido, proxima.preguntaId);
     }
   }
 
