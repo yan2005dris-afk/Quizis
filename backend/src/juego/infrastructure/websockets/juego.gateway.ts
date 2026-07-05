@@ -280,7 +280,7 @@ export class JuegoGateway implements OnGatewayInit, OnGatewayConnection, OnGatew
 
   @SubscribeMessage('audience:vote')
   async handleVote(
-    @ConnectedSocket() client: Socket,
+    @ConnectedSocket() _client: Socket,
     @MessageBody() payload: VotePayload,
   ) {
     try {
