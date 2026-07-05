@@ -8,9 +8,9 @@ import {
 } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { SalasService } from '../../../salas/application/salas.service';
-import { ActivateCallJokerWebsocket } from '../../infrastructure/websockets/activate-call-joker.websocket';
-import { SendHintWebsocket } from '../../infrastructure/websockets/send-hint.websocket';
-import { RoomBroadcasterService } from '../../../infrastructure/websockets/room-broadcaster.service';
+import { ActivateCallJokerUseCase } from '../../application/use-cases/activate-call-joker.use-case';
+import { SendHintUseCase } from '../../application/use-cases/send-hint.use-case';
+import { BlockComodinUseCase } from '../../application/use-cases/block-comodin.use-case';
 import { PrismaService } from '../../../../core/database/prisma/prisma.service';
 
 /**
@@ -35,9 +35,9 @@ import { PrismaService } from '../../../../core/database/prisma/prisma.service';
 export class ComodinesRestController {
   constructor(
     private readonly salasService: SalasService,
-    private readonly activateCallJoker: ActivateCallJokerWebsocket,
-    private readonly sendHint: SendHintWebsocket,
-    private readonly roomBroadcaster: RoomBroadcasterService,
+    private readonly activateCallJoker: ActivateCallJokerUseCase,
+    private readonly sendHint: SendHintUseCase,
+    private readonly blockComodinUseCase: BlockComodinUseCase,
     private readonly prisma: PrismaService,
   ) {}
 
@@ -94,24 +94,11 @@ export class ComodinesRestController {
       body.nickname,
     );
 
-    await this.salasService.addBlockedComodin(tokenCompartido, tipo);
-
-    // Mirror the WS handler's broadcast behavior (AC-N2-12)
-    this.roomBroadcaster.broadcastToRoom(tokenCompartido, 'comodin_bloqueado', {
+    await this.blockComodinUseCase.execute({
       tokenCompartido,
+      tipo,
       userId: participante.participanteId,
-      tipoComodin: tipo,
     });
-
-    if (tipo === 'PUBLICO') {
-      this.roomBroadcaster.broadcastToRoom(tokenCompartido, 'voto_recibido', {
-        A: 0,
-        B: 0,
-        C: 0,
-        D: 0,
-        total: 0,
-      });
-    }
 
     return { ok: true, tipo, tokenCompartido };
   }

@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ChatService } from './application/chat.service';
-import { SendMessageWebsocket } from './infrastructure/websockets/send-message.websocket';
+import { SendMessageUseCase } from './application/use-cases/send-message.use-case';
 import { ChatCacheService } from './infrastructure/cache/chat-cache.service';
 import { CacheModule } from '../../core/cache/cache.module';
 import { RoomBroadcastModule } from '../infrastructure/websockets/room-broadcast.module';
@@ -9,7 +9,7 @@ import { MensajesController } from './interfaces/controllers/mensajes.controller
 @Module({
   imports: [CacheModule, RoomBroadcastModule],
   controllers: [MensajesController],
-  providers: [ChatService, SendMessageWebsocket, ChatCacheService],
-  exports: [ChatService, ChatCacheService, SendMessageWebsocket],
+  providers: [ChatService, SendMessageUseCase, ChatCacheService],
+  exports: [ChatService, ChatCacheService, SendMessageUseCase],
 })
 export class ChatModule {}

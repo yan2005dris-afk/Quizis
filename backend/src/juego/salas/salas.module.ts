@@ -20,7 +20,7 @@ import { RestartRoundUseCase } from './application/use-cases/restart-round.use-c
 import { ReactivateRoomUseCase } from './application/use-cases/reactivate-room.use-case';
 import { HandleJoinRoomWebsocket } from './infrastructure/websockets/handle-join-room.websocket';
 import { HandleDisconnectWebsocket } from './infrastructure/websockets/handle-disconnect.websocket';
-import { ToggleRoomEnabledWebsocket } from './infrastructure/websockets/toggle-room-enabled.websocket';
+import { ToggleRoomEnabledUseCase } from './application/use-cases/toggle-room-enabled.use-case';
 import { AuthModule } from '../../identity/auth/auth.module';
 import { CacheModule } from '../../core/cache/cache.module';
 import { ChatModule } from '../chat/chat.module';
@@ -58,13 +58,13 @@ import { RoomBroadcastModule } from '../infrastructure/websockets/room-broadcast
     ReactivateRoomUseCase,
     HandleJoinRoomWebsocket,
     HandleDisconnectWebsocket,
-    ToggleRoomEnabledWebsocket,
+    ToggleRoomEnabledUseCase,
   ],
   exports: [
     SalasService,
     HandleJoinRoomWebsocket,
     HandleDisconnectWebsocket,
-    ToggleRoomEnabledWebsocket,
+    ToggleRoomEnabledUseCase,
     RoomStateModule,
   ],
 })

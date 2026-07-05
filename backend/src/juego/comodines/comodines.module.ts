@@ -6,8 +6,9 @@ import { GetIaSuggestionUseCase } from './application/use-cases/get-ia-suggestio
 import { SelectRandomConsultantUseCase } from './application/use-cases/select-random-consultant.use-case';
 import { GetPublicVoteResultsUseCase } from './application/use-cases/get-public-vote-results.use-case';
 import { EliminateOptions5050UseCase } from './application/use-cases/eliminate-options-5050.use-case';
-import { ActivateCallJokerWebsocket } from './infrastructure/websockets/activate-call-joker.websocket';
-import { SendHintWebsocket } from './infrastructure/websockets/send-hint.websocket';
+import { BlockComodinUseCase } from './application/use-cases/block-comodin.use-case';
+import { ActivateCallJokerUseCase } from './application/use-cases/activate-call-joker.use-case';
+import { SendHintUseCase } from './application/use-cases/send-hint.use-case';
 import { HelperCacheService } from './infrastructure/cache/helper-cache.service';
 import { CacheModule } from '../../core/cache/cache.module';
 import { DatabaseModule } from '../../core/database/prisma/prisma.module';
@@ -30,15 +31,17 @@ import { RoomBroadcastModule } from '../infrastructure/websockets/room-broadcast
     SelectRandomConsultantUseCase,
     GetPublicVoteResultsUseCase,
     EliminateOptions5050UseCase,
-    ActivateCallJokerWebsocket,
-    SendHintWebsocket,
+    BlockComodinUseCase,
+    ActivateCallJokerUseCase,
+    SendHintUseCase,
     HelperCacheService,
   ],
   exports: [
     ComodinesService,
     SelectRandomConsultantUseCase,
-    ActivateCallJokerWebsocket,
-    SendHintWebsocket,
+    ActivateCallJokerUseCase,
+    BlockComodinUseCase,
+    SendHintUseCase,
     HelperCacheService,
   ],
 })

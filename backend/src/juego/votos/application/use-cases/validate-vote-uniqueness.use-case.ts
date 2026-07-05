@@ -3,8 +3,8 @@ import { ConfigService } from '@nestjs/config';
 import { ParticipantsCacheService } from '../../../shared/room-state/participants-cache.service';
 
 @Injectable()
-export class ValidateVoteUniquenessWebsocket {
-  private readonly logger = new Logger(ValidateVoteUniquenessWebsocket.name);
+export class ValidateVoteUniquenessUseCase {
+  private readonly logger = new Logger(ValidateVoteUniquenessUseCase.name);
 
   constructor(
     private readonly cacheService: ParticipantsCacheService,

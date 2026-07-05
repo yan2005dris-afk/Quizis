@@ -6,7 +6,7 @@ import type {
   ParticipanteDisconnectedEvent,
 } from '../../../../core/common/events/game-events.types';
 import { ConsensusCacheService } from '../cache/consensus-cache.service';
-import { EvaluateConsensusWebsocket } from '../websockets/evaluate-consensus.websocket';
+import { EvaluateConsensusUseCase } from '../../application/use-cases/evaluate-consensus.use-case';
 import { RoomStateCacheService } from '../../../shared/room-state/room-state-cache.service';
 import { SalasService } from '../../../salas/application/salas.service';
 
@@ -16,7 +16,7 @@ export class ConsensusListener {
 
   constructor(
     private readonly consensusCache: ConsensusCacheService,
-    private readonly evaluateConsensus: EvaluateConsensusWebsocket,
+    private readonly evaluateConsensus: EvaluateConsensusUseCase,
     private readonly roomStateCache: RoomStateCacheService,
     private readonly salasService: SalasService,
     private readonly eventEmitter: EventEmitter2,

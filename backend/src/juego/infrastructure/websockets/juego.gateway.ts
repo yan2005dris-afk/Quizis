@@ -21,10 +21,10 @@ import { VotosService } from '../../votos/application/votos.service';
 // WebSocket Use Cases
 import { HandleJoinRoomWebsocket } from '../../salas/infrastructure/websockets/handle-join-room.websocket';
 import { HandleDisconnectWebsocket } from '../../salas/infrastructure/websockets/handle-disconnect.websocket';
-import { ProcessAudienceVoteWebsocket } from '../../votos/infrastructure/websockets/process-audience-vote.websocket';
+import { ProcessAudienceVoteUseCase } from '../../votos/application/use-cases/process-audience-vote.use-case';
 import { HandleTimerExpirationUseCase } from '../../rondas/application/use-cases/handle-timer-expiration.use-case';
-import { ActivateCallJokerWebsocket } from '../../comodines/infrastructure/websockets/activate-call-joker.websocket';
-import { SendHintWebsocket } from '../../comodines/infrastructure/websockets/send-hint.websocket';
+import { ActivateCallJokerUseCase } from '../../comodines/application/use-cases/activate-call-joker.use-case';
+import { SendHintUseCase } from '../../comodines/application/use-cases/send-hint.use-case';
 
 // Infrastructure / Common
 import { GameEvents } from '../../../core/common/events/game-events.types';
@@ -32,8 +32,13 @@ import type {
   ConsensusEvaluatedEvent,
   RondaReiniciadaEvent,
   TokenRegeneradoEvent,
+  SalaIniciadaEvent,
+  IaSuggestionEvent,
+  ComodinBloqueadoEvent,
+  ParticipantesActualizadosEvent,
+  ChatMensajeEnviadoEvent,
 } from '../../../core/common/events/game-events.types';
-import type { VotePayload } from '../../votos/infrastructure/websockets/process-audience-vote.websocket';
+import type { VotePayload } from '../../votos/application/use-cases/process-audience-vote.use-case';
 
 // WebSocket Infrastructure
 import { RoomBroadcasterService } from './room-broadcaster.service';
@@ -148,9 +153,9 @@ export class JuegoGateway
     private readonly comodinesService: ComodinesService,
     private readonly handleJoinRoom: HandleJoinRoomWebsocket,
     private readonly handleDisconnectWebsocket: HandleDisconnectWebsocket,
-    private readonly processAudienceVote: ProcessAudienceVoteWebsocket,
-    private readonly activateCallJokerWebsocket: ActivateCallJokerWebsocket,
-    private readonly sendHintWebsocket: SendHintWebsocket,
+    private readonly processAudienceVote: ProcessAudienceVoteUseCase,
+    private readonly activateCallJokerWebsocket: ActivateCallJokerUseCase,
+    private readonly sendHintWebsocket: SendHintUseCase,
     private readonly roomBroadcaster: RoomBroadcasterService,
     private readonly socketMapService: SocketMapService,
     private readonly distributedTimerService: DistributedTimerService,
@@ -213,13 +218,8 @@ export class JuegoGateway
 
   // ─── Events Listeners ──────────────────────────────────────────────────────
 
-  @OnEvent('comodin.ia.suggestion')
-  handleIaSuggestionBroadcast(payload: {
-    preguntaId: number;
-    literal: string;
-    explicacion: string;
-    tokenCompartido: string;
-  }) {
+  @OnEvent(GameEvents.COMODINES.IA_SUGGESTION)
+  handleIaSuggestionBroadcast(payload: IaSuggestionEvent) {
     this.roomBroadcaster.broadcastToRoom(
       payload.tokenCompartido,
       'ia_sugerencia_recibida',
@@ -229,6 +229,25 @@ export class JuegoGateway
         explicacion: payload.explicacion,
       },
     );
+  }
+
+  @OnEvent(GameEvents.COMODINES.BLOQUEADO)
+  handleComodinBloqueado(event: ComodinBloqueadoEvent) {
+    this.roomBroadcaster.broadcastToRoom(event.tokenCompartido, 'comodin_bloqueado', {
+      tokenCompartido: event.tokenCompartido,
+      userId: event.userId,
+      tipoComodin: event.tipo,
+    });
+
+    if (event.tipo === 'PUBLICO') {
+      this.roomBroadcaster.broadcastToRoom(event.tokenCompartido, 'voto_recibido', {
+        A: 0,
+        B: 0,
+        C: 0,
+        D: 0,
+        total: 0,
+      });
+    }
   }
 
   @OnEvent(GameEvents.VOTOS.VOTO_PUBLICO_RECIBIDO)
@@ -268,6 +287,24 @@ export class JuegoGateway
    * ad-hoc 'sala.iniciada' string). Broadcasts `estado_sala_cambiado`
    * to the room.
    */
+  @OnEvent(GameEvents.SALA.PARTICIPANTES_ACTUALIZADOS)
+  handleParticipantesActualizados(event: ParticipantesActualizadosEvent) {
+    this.roomBroadcaster.broadcastToRoom(
+      event.tokenCompartido,
+      'participantes',
+      event.list,
+    );
+  }
+
+  @OnEvent(GameEvents.CHAT.MENSAJE_ENVIADO)
+  handleChatMensajeEnviado(event: ChatMensajeEnviadoEvent) {
+    this.roomBroadcaster.broadcastToRoom(
+      event.tokenCompartido,
+      'mensaje_chat',
+      event.mensajes,
+    );
+  }
+
   @OnEvent(GameEvents.SALA.ESTADO_CAMBIADO)
   handleEstadoCambiado(payload: { tokenCompartido: string; estado: string }) {
     this.roomBroadcaster.broadcastToRoom(
@@ -319,11 +356,8 @@ export class JuegoGateway
    * Broadcasts `info_ronda` so the frontend updates the header ("Esperando
    * información de la ronda..." goes away) and the active-question state.
    */
-  @OnEvent('sala.iniciada')
-  handleSalaIniciada(payload: {
-    tokenCompartido: string;
-    infoRonda: { ronda: number; totalRondas: number; premio: string };
-  }) {
+  @OnEvent(GameEvents.SALA.INICIADA)
+  handleSalaIniciada(payload: SalaIniciadaEvent) {
     this.roomBroadcaster.broadcastToRoom(
       payload.tokenCompartido,
       'info_ronda',

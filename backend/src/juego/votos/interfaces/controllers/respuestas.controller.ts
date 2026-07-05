@@ -13,8 +13,8 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { PrismaService } from '../../../../core/database/prisma/prisma.service';
-import { SubmitAnswerWebsocket } from '../../infrastructure/websockets/submit-answer.websocket';
-import type { SubmitAnswerResult } from '../../infrastructure/websockets/submit-answer.websocket';
+import { SubmitAnswerUseCase } from '../../application/use-cases/submit-answer.use-case';
+import type { SubmitAnswerResult } from '../../application/use-cases/submit-answer.use-case';
 import { SubmitAnswerDto } from '../../../respuestas/interfaces/dto/submit-answer.dto';
 
 /**
@@ -31,7 +31,7 @@ import { SubmitAnswerDto } from '../../../respuestas/interfaces/dto/submit-answe
 @Controller('salas/:salaId/respuestas')
 export class RespuestasController {
   constructor(
-    private readonly submitAnswerWebsocket: SubmitAnswerWebsocket,
+    private readonly submitAnswerUseCase: SubmitAnswerUseCase,
     private readonly prisma: PrismaService,
   ) {}
 
@@ -73,7 +73,7 @@ export class RespuestasController {
       );
     }
 
-    return this.submitAnswerWebsocket.execute({
+    return this.submitAnswerUseCase.execute({
       tokenCompartido: salaId,
       rondaId: dto.rondaId,
       preguntaId: dto.preguntaId,

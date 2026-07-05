@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
+import { GameEvents } from '../../../core/common/events/game-events.types';
 import { GetIaSuggestionUseCase } from './use-cases/get-ia-suggestion.use-case';
 import { SelectRandomConsultantUseCase } from './use-cases/select-random-consultant.use-case';
 import { GetPublicVoteResultsUseCase } from './use-cases/get-public-vote-results.use-case';
@@ -42,7 +43,7 @@ export class ComodinesService {
     const tokenCompartido = respuesta?.ronda?.sala?.tokenCompartido;
 
     if (tokenCompartido) {
-      this.eventEmitter.emit('comodin.ia.suggestion', {
+      this.eventEmitter.emit(GameEvents.COMODINES.IA_SUGGESTION, {
         preguntaId,
         literal: result.literal,
         explicacion: result.explicacion,

@@ -8,10 +8,10 @@ import { DatabaseModule } from '../../core/database/prisma/prisma.module';
 import { RegisterVoteUseCase } from './application/use-cases/register-vote.use-case';
 import { GetVotesFromCacheUseCase } from './application/use-cases/get-votes-from-cache.use-case';
 import { PersistVotesUseCase } from './application/use-cases/persist-votes.use-case';
-import { ProcessAudienceVoteWebsocket } from './infrastructure/websockets/process-audience-vote.websocket';
-import { ValidateVoteUniquenessWebsocket } from './infrastructure/websockets/validate-vote-uniqueness.websocket';
-import { EvaluateConsensusWebsocket } from './infrastructure/websockets/evaluate-consensus.websocket';
-import { SubmitAnswerWebsocket } from './infrastructure/websockets/submit-answer.websocket';
+import { ProcessAudienceVoteUseCase } from './application/use-cases/process-audience-vote.use-case';
+import { ValidateVoteUniquenessUseCase } from './application/use-cases/validate-vote-uniqueness.use-case';
+import { EvaluateConsensusUseCase } from './application/use-cases/evaluate-consensus.use-case';
+import { SubmitAnswerUseCase } from './application/use-cases/submit-answer.use-case';
 import { VotesCacheService } from './infrastructure/cache/votes-cache.service';
 import { ConsensusCacheService } from './infrastructure/cache/consensus-cache.service';
 import { ConsensusListener } from './infrastructure/listeners/consensus.listener';
@@ -26,19 +26,19 @@ import { RespuestasModule } from '../respuestas/respuestas.module';
     RegisterVoteUseCase,
     GetVotesFromCacheUseCase,
     PersistVotesUseCase,
-    ProcessAudienceVoteWebsocket,
-    ValidateVoteUniquenessWebsocket,
-    EvaluateConsensusWebsocket,
-    SubmitAnswerWebsocket,
+    ProcessAudienceVoteUseCase,
+    ValidateVoteUniquenessUseCase,
+    EvaluateConsensusUseCase,
+    SubmitAnswerUseCase,
     VotesCacheService,
     ConsensusCacheService,
     ConsensusListener,
   ],
   exports: [
     VotosService,
-    ProcessAudienceVoteWebsocket,
-    EvaluateConsensusWebsocket,
-    SubmitAnswerWebsocket,
+    ProcessAudienceVoteUseCase,
+    EvaluateConsensusUseCase,
+    SubmitAnswerUseCase,
     ConsensusCacheService,
     VotesCacheService,
   ],

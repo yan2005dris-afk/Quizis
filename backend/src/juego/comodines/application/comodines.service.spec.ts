@@ -1,5 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { EventEmitter2 } from '@nestjs/event-emitter';
+import { GameEvents } from '../../../core/common/events/game-events.types';
 import { ComodinesService } from './comodines.service';
 import { GetIaSuggestionUseCase } from './use-cases/get-ia-suggestion.use-case';
 import { SelectRandomConsultantUseCase } from './use-cases/select-random-consultant.use-case';
@@ -133,7 +134,7 @@ describe('ComodinesService', () => {
       await service.obtenerSugerenciaIa(1);
 
       expect(mockEventEmitter.emit).toHaveBeenCalledWith(
-        'comodin.ia.suggestion',
+        GameEvents.COMODINES.IA_SUGGESTION,
         {
           preguntaId: 1,
           literal: 'A',

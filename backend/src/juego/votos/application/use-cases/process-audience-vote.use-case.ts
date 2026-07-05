@@ -1,8 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { ValidateVoteUniquenessWebsocket } from './validate-vote-uniqueness.websocket';
-import { VotosService } from '../../application/votos.service';
+import { ValidateVoteUniquenessUseCase } from './validate-vote-uniqueness.use-case';
+import { VotosService } from '../votos.service';
 import { RoomStateCacheService } from '../../../shared/room-state/room-state-cache.service';
-import { VotesCacheService } from '../cache/votes-cache.service';
+import { VotesCacheService } from '../../infrastructure/cache/votes-cache.service';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { PrismaService } from '../../../../core/database/prisma/prisma.service';
 
@@ -16,11 +16,11 @@ export interface VotePayload {
 }
 
 @Injectable()
-export class ProcessAudienceVoteWebsocket {
-  private readonly logger = new Logger(ProcessAudienceVoteWebsocket.name);
+export class ProcessAudienceVoteUseCase {
+  private readonly logger = new Logger(ProcessAudienceVoteUseCase.name);
 
   constructor(
-    private readonly validateVoteUniqueness: ValidateVoteUniquenessWebsocket,
+    private readonly validateVoteUniqueness: ValidateVoteUniquenessUseCase,
     private readonly votosService: VotosService,
     private readonly cacheService: RoomStateCacheService,
     private readonly votesCache: VotesCacheService,

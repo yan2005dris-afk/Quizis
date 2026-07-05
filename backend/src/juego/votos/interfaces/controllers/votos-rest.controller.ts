@@ -8,8 +8,8 @@ import {
 } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { PrismaService } from '../../../../core/database/prisma/prisma.service';
-import { ProcessAudienceVoteWebsocket } from '../../infrastructure/websockets/process-audience-vote.websocket';
-import type { VotePayload } from '../../infrastructure/websockets/process-audience-vote.websocket';
+import { ProcessAudienceVoteUseCase } from '../../application/use-cases/process-audience-vote.use-case';
+import type { VotePayload } from '../../application/use-cases/process-audience-vote.use-case';
 
 /**
  * REST endpoint for the audience vote mutation (comodín "Pregunta al público").
@@ -26,7 +26,7 @@ import type { VotePayload } from '../../infrastructure/websockets/process-audien
 @Controller('salas/:salaId/votos')
 export class VotosRestController {
   constructor(
-    private readonly processAudienceVote: ProcessAudienceVoteWebsocket,
+    private readonly processAudienceVote: ProcessAudienceVoteUseCase,
     private readonly prisma: PrismaService,
   ) {}
 

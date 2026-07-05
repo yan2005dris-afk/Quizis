@@ -4,6 +4,8 @@ export const GameEvents = {
     PARTICIPANTE_DESCONECTADO: 'sala.participante_desconectado',
     ESTADO_CAMBIADO: 'sala.estado_cambiado',
     TOKEN_REGENERADO: 'sala.token_regenerado',
+    INICIADA: 'sala.iniciada',
+    PARTICIPANTES_ACTUALIZADOS: 'sala.participantes_actualizados',
   },
   VOTOS: {
     CONSENSO_EVALUADO: 'votos.consenso_evaluado',
@@ -12,6 +14,13 @@ export const GameEvents = {
   RONDAS: {
     PREGUNTA_LIBERADA: 'rondas.pregunta_liberada',
     RONDA_REINICIADA: 'rondas.reiniciada',
+  },
+  COMODINES: {
+    IA_SUGGESTION: 'comodin.ia.suggestion',
+    BLOQUEADO: 'comodines.bloqueado',
+  },
+  CHAT: {
+    MENSAJE_ENVIADO: 'chat.mensaje_enviado',
   },
 } as const;
 
@@ -71,4 +80,36 @@ export interface RondaReiniciadaEvent {
       respuestaDada: any | null;
     }>;
   };
+}
+
+export interface SalaIniciadaEvent {
+  tokenCompartido: string;
+  infoRonda: {
+    ronda: number;
+    totalRondas: number;
+    premio: string;
+  };
+}
+
+export interface IaSuggestionEvent {
+  preguntaId: number;
+  literal: string;
+  explicacion: string;
+  tokenCompartido: string;
+}
+
+export interface ComodinBloqueadoEvent {
+  tokenCompartido: string;
+  userId: number;
+  tipo: string;
+}
+
+export interface ParticipantesActualizadosEvent {
+  tokenCompartido: string;
+  list: any[];
+}
+
+export interface ChatMensajeEnviadoEvent {
+  tokenCompartido: string;
+  mensajes: any[];
 }
