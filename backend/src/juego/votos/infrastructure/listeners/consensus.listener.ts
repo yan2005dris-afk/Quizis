@@ -7,7 +7,7 @@ import type {
 } from '../../../../core/common/events/game-events.types';
 import { ConsensusCacheService } from '../cache/consensus-cache.service';
 import { EvaluateConsensusWebsocket } from '../websockets/evaluate-consensus.websocket';
-import { RoomStateCacheService } from '../../../salas/infrastructure/cache/room-state-cache.service';
+import { RoomStateCacheService } from '../../../shared/room-state/room-state-cache.service';
 import { SalasService } from '../../../salas/application/salas.service';
 
 @Injectable()

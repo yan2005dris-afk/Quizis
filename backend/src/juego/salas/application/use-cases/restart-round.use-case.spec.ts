@@ -2,8 +2,8 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { NotFoundException, BadRequestException } from '@nestjs/common';
 import { RestartRoundUseCase } from './restart-round.use-case';
 import { PrismaService } from 'src/core/database/prisma/prisma.service';
-import { RoomStateCacheService } from 'src/juego/salas/infrastructure/cache/room-state-cache.service';
-import { ParticipantsCacheService } from 'src/juego/salas/infrastructure/cache/participants-cache.service';
+import { RoomStateCacheService } from 'src/juego/shared/room-state/room-state-cache.service';
+import { ParticipantsCacheService } from 'src/juego/shared/room-state/participants-cache.service';
 
 describe('RestartRoundUseCase', () => {
   let useCase: RestartRoundUseCase;

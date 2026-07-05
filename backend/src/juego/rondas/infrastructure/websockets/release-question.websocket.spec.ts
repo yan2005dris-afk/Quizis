@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { BadRequestException } from '@nestjs/common';
 import { ReleaseQuestionWebsocket } from './release-question.websocket';
-import { RoomStateCacheService } from '../../../salas/infrastructure/cache/room-state-cache.service';
+import { RoomStateCacheService } from '../../../shared/room-state/room-state-cache.service';
 
 describe('ReleaseQuestionWebsocket', () => {
   let websocket: ReleaseQuestionWebsocket;

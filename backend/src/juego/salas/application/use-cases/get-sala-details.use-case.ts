@@ -1,7 +1,7 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../../../core/database/prisma/prisma.service';
-import { ParticipantsCacheService } from '../../infrastructure/cache/participants-cache.service';
-import { RoomStateCacheService } from '../../infrastructure/cache/room-state-cache.service';
+import { ParticipantsCacheService } from '../../../shared/room-state/participants-cache.service';
+import { RoomStateCacheService } from '../../../shared/room-state/room-state-cache.service';
 
 // ── Tipos locales para las funciones puras de mapeo ──
 

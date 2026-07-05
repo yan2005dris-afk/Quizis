@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { RoomStateCacheService } from '../cache/room-state-cache.service';
+import { RoomStateCacheService } from '../../../shared/room-state/room-state-cache.service';
 
 @Injectable()
 export class ToggleRoomEnabledWebsocket {

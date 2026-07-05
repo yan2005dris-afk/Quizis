@@ -1,5 +1,5 @@
 import { Injectable, Logger, BadRequestException } from '@nestjs/common';
-import { RoomStateCacheService } from '../../../salas/infrastructure/cache/room-state-cache.service';
+import { RoomStateCacheService } from '../../../shared/room-state/room-state-cache.service';
 
 @Injectable()
 export class ReleaseQuestionWebsocket {

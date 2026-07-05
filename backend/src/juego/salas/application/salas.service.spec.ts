@@ -18,8 +18,8 @@ import { UpdateParticipantRoleUseCase } from './use-cases/update-participant-rol
 import { GetParticipantsWithRolesUseCase } from './use-cases/get-participants-with-roles.use-case';
 import { RestartRoundUseCase } from './use-cases/restart-round.use-case';
 import { ReactivateRoomUseCase } from './use-cases/reactivate-room.use-case';
-import { ParticipantsCacheService } from '../infrastructure/cache/participants-cache.service';
-import { RoomStateCacheService } from '../infrastructure/cache/room-state-cache.service';
+import { ParticipantsCacheService } from '../../shared/room-state/participants-cache.service';
+import { RoomStateCacheService } from '../../shared/room-state/room-state-cache.service';
 import { EstadoSala } from '../interfaces/dto/update-estado-sala.dto';
 
 describe('SalasService', () => {

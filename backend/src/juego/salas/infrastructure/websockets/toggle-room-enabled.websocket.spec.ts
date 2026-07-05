@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ToggleRoomEnabledWebsocket } from './toggle-room-enabled.websocket';
-import { RoomStateCacheService } from '../cache/room-state-cache.service';
+import { RoomStateCacheService } from '../../../shared/room-state/room-state-cache.service';
 
 describe('ToggleRoomEnabledWebsocket', () => {
   let websocket: ToggleRoomEnabledWebsocket;

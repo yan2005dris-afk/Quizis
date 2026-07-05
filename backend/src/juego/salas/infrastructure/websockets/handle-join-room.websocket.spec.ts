@@ -1,8 +1,8 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { HandleJoinRoomWebsocket } from './handle-join-room.websocket';
-import { ParticipantsCacheService } from '../cache/participants-cache.service';
-import { RoomStateCacheService } from '../cache/room-state-cache.service';
+import { ParticipantsCacheService } from '../../../shared/room-state/participants-cache.service';
+import { RoomStateCacheService } from '../../../shared/room-state/room-state-cache.service';
 import { SalasService } from '../../application/salas.service';
 import { GameEvents } from '../../../../core/common/events/game-events.types';
 

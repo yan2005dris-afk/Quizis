@@ -1,4 +1,4 @@
-import { Module, forwardRef } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { SalasController } from './interfaces/salas.controller';
 import { SalasByTokenController } from './interfaces/controllers/salas-by-token.controller';
 import { SalasService } from './application/salas.service';
@@ -21,15 +21,14 @@ import { ReactivateRoomUseCase } from './application/use-cases/reactivate-room.u
 import { HandleJoinRoomWebsocket } from './infrastructure/websockets/handle-join-room.websocket';
 import { HandleDisconnectWebsocket } from './infrastructure/websockets/handle-disconnect.websocket';
 import { ToggleRoomEnabledWebsocket } from './infrastructure/websockets/toggle-room-enabled.websocket';
-import { ParticipantsCacheService } from './infrastructure/cache/participants-cache.service';
-import { RoomStateCacheService } from './infrastructure/cache/room-state-cache.service';
 import { AuthModule } from '../../identity/auth/auth.module';
 import { CacheModule } from '../../core/cache/cache.module';
 import { ChatModule } from '../chat/chat.module';
 import { RondasModule } from '../rondas/rondas.module';
+import { RoomStateModule } from '../shared/room-state/room-state.module';
 
 @Module({
-  imports: [AuthModule, CacheModule, ChatModule, forwardRef(() => RondasModule)],
+  imports: [AuthModule, CacheModule, ChatModule, RondasModule, RoomStateModule],
   controllers: [SalasController, SalasByTokenController],
   providers: [
     SalasService,
@@ -52,16 +51,13 @@ import { RondasModule } from '../rondas/rondas.module';
     HandleJoinRoomWebsocket,
     HandleDisconnectWebsocket,
     ToggleRoomEnabledWebsocket,
-    ParticipantsCacheService,
-    RoomStateCacheService,
   ],
   exports: [
     SalasService,
-    ParticipantsCacheService,
-    RoomStateCacheService,
     HandleJoinRoomWebsocket,
     HandleDisconnectWebsocket,
     ToggleRoomEnabledWebsocket,
+    RoomStateModule,
   ],
 })
 export class SalasModule {}

@@ -5,7 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../../../../core/database/prisma/prisma.service';
-import { RoomStateCacheService } from '../../infrastructure/cache/room-state-cache.service';
+import { RoomStateCacheService } from '../../../shared/room-state/room-state-cache.service';
 import { EstadoSala } from '../../interfaces/dto/update-estado-sala.dto';
 import { randomUUID } from 'crypto';
 import { JwtService } from '@nestjs/jwt';
