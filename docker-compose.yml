@@ -21,7 +21,7 @@ services:
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-quizisdb}
       POSTGRES_USER: ${POSTGRES_USER:-quizisuser}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-quizispass}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     ports:
       - '${QUIZIS_POSTGRES_PORT:-5432}:5432'
     volumes:
@@ -83,7 +83,7 @@ services:
       - .env
     environment:
       - NODE_ENV=production
-      - DATABASE_URL=postgresql://${POSTGRES_USER:-quizisuser}:${POSTGRES_PASSWORD:-quizispass}@postgres:5432/${POSTGRES_DB:-quizisdb}
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-quizisuser}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-quizisdb}
     depends_on:
       postgres:
         condition: service_healthy
@@ -112,7 +112,7 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=3000
-      - DATABASE_URL=postgresql://${POSTGRES_USER:-quizisuser}:${POSTGRES_PASSWORD:-quizispass}@postgres:5432/${POSTGRES_DB:-quizisdb}
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-quizisuser}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-quizisdb}
       - REDIS_URL=redis://redis:6379
     depends_on:
       quizis-migrate:
