@@ -43,9 +43,6 @@ export class DistributedTimerService {
     onTick: (remaining: number) => void,
     onExpire: () => void,
   ): Promise<void> {
-    // Clear any existing interval for this token first
-    this._clearInterval(token);
-
     if (segundos <= 0) return;
 
     const client = this.redisService.getClient();
@@ -78,29 +75,52 @@ export class DistributedTimerService {
       );
     }
 
+    // Clear any existing interval ONLY after confirming we own the slot.
+    // This prevents a TOCTOU race where call-2's _clearInterval kills
+    // the interval started by call-1 before call-2 fails the NX lock.
+    this._clearInterval(token);
+
     let remaining = segundos;
     onTick(remaining); // initial tick
 
     const interval = setInterval(async () => {
       remaining -= 1;
-      onTick(remaining);
+
+      // Isolate onTick from the tick's critical path (lock renewal + expiry)
+      // so a transient broadcast failure never blocks expiry or leaks the timer.
+      try {
+        onTick(remaining);
+      } catch (tickErr) {
+        this.logger.error(
+          `[DistributedTimer] onTick error for ${token}: ${tickErr}`,
+        );
+      }
 
       if (client) {
-        // Per-tick renewal: reset the TTL to prevent expiry between ticks
-        const renewed = await client.expire(lockKey, lockTtl);
-        if (renewed === 0) {
-          // Lock lost (key gone) — stop interval
+        try {
+          const renewed = await client.expire(lockKey, lockTtl);
+          if (renewed === 0) {
+            this.logger.warn(
+              `[DistributedTimer] Lock lost for room ${token}, stopping interval`,
+            );
+            this._clearInterval(token);
+            return;
+          }
+        } catch (err) {
+          // Redis unavailable — degrade: stop local interval and fire expiry
+          // so the game can progress even without the distributed lock.
           this.logger.warn(
-            `[DistributedTimer] Lock lost for room ${token}, stopping interval`,
+            `[DistributedTimer] Redis unreachable on tick for ${token}, stopping: ${err}`,
           );
           this._clearInterval(token);
+          this._safeExpire(onExpire);
           return;
         }
       }
 
       if (remaining <= 0) {
         await this.detenerTimer(token);
-        onExpire();
+        this._safeExpire(onExpire);
       }
     }, 1000);
 
@@ -140,6 +160,15 @@ export class DistributedTimerService {
     if (existing) {
       clearInterval(existing);
       this.intervals.delete(token);
+    }
+  }
+
+  /** Safely call onExpire, catching any throw so it never escapes the tick. */
+  private _safeExpire(onExpire: () => void): void {
+    try {
+      onExpire();
+    } catch (err) {
+      this.logger.error(`[DistributedTimer] onExpire error: ${err}`);
     }
   }
 }

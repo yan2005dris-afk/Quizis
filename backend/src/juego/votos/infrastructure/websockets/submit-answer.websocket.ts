@@ -4,10 +4,12 @@ import {
   BadRequestException,
   NotFoundException,
 } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { RoomStateCacheService } from '../../../shared/room-state/room-state-cache.service';
 import { RecordAnswerUseCase } from '../../../respuestas/application/use-cases/record-answer.use-case';
 import { ConsensusCacheService } from '../cache/consensus-cache.service';
 import { EvaluateConsensusWebsocket } from './evaluate-consensus.websocket';
+import { GameEvents } from '../../../../core/common/events/game-events.types';
 
 export interface AnswerPayload {
   tokenCompartido: string;
@@ -44,6 +46,7 @@ export class SubmitAnswerWebsocket {
     private readonly recordAnswerUseCase: RecordAnswerUseCase,
     private readonly consensusCache: ConsensusCacheService,
     private readonly evaluateConsensus: EvaluateConsensusWebsocket,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   async execute(payload: AnswerPayload): Promise<SubmitAnswerResult> {
@@ -93,6 +96,14 @@ export class SubmitAnswerWebsocket {
       payload.tokenCompartido,
       payload.preguntaId,
     );
+
+    // 5b. Emitir evento de consenso evaluado para que el gateway
+    //     frene el timer y notifique a TODOS los clientes vía WS.
+    this.eventEmitter.emit(GameEvents.VOTOS.CONSENSO_EVALUADO, {
+      tokenCompartido: payload.tokenCompartido,
+      preguntaId: payload.preguntaId,
+      result,
+    });
 
     // 6. Actuar según el resultado del consenso
     switch (result.type) {

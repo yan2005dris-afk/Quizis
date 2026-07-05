@@ -267,20 +267,76 @@ export class JuegoGateway
 
   /**
    * Fired by ReleaseQuestionWebsocket after a question is released via REST.
-   * Broadcasts `pregunta_liberada` so the frontend shows the active question.
+   * Broadcasts `pregunta_liberada` so the frontend shows the active question,
+   * and starts the sala-level countdown timer.
    */
   @OnEvent(GameEvents.RONDAS.PREGUNTA_LIBERADA)
-  handlePreguntaLiberada(payload: {
+  async handlePreguntaLiberada(payload: {
     tokenCompartido: string;
     pregunta: any;
   }) {
+    const { tokenCompartido, pregunta } = payload;
+
+    // Validate required fields before broadcasting.
+    if (!pregunta?.preguntaId) {
+      this.logger.error(
+        `[handlePreguntaLiberada] Payload missing preguntaId for room ${tokenCompartido}`,
+      );
+      return;
+    }
+
+    try {
+      // Start timer BEFORE broadcasting so a timer failure prevents
+      // broadcasting a question with no countdown.
+      const { segundos, rondaId } =
+        await this.salasService.getTiempoLimite(tokenCompartido);
+
+      await this.distributedTimerService.iniciarTimer(
+        tokenCompartido,
+        segundos,
+        // onTick — broadcast remaining seconds to the room (plain number,
+        // matching the frontend's expected contract: tiempoRestante.set(data))
+        (remaining: number) => {
+          this.roomBroadcaster.broadcastToRoom(
+            tokenCompartido,
+            'temporizador_actualizado',
+            remaining,
+          );
+        },
+        // onExpire — persist "no answer" and notify the room
+        () => {
+          void this.handleTimerExpiration
+            .execute({ tokenCompartido, rondaId, preguntaId: pregunta.preguntaId })
+            .catch((err) =>
+              this.logger.error(
+                `[handlePreguntaLiberada] Timer expiry handler failed for ${tokenCompartido}: ${err}`,
+              ),
+            );
+
+          this.roomBroadcaster.broadcastToRoom(
+            tokenCompartido,
+            'tiempo_agotado',
+            { preguntaId: pregunta.preguntaId, tokenCompartido },
+          );
+        },
+      );
+    } catch (err) {
+      this.logger.error(
+        `[handlePreguntaLiberada] Timer setup failed for sala=${tokenCompartido} pregunta=${pregunta.preguntaId}: ${err}`,
+      );
+      // Do NOT broadcast pregunta_liberada — the timer is essential for
+      // game flow. Without it, the question hangs permanently.
+      return;
+    }
+
+    // Only broadcast once the timer infrastructure is confirmed ready.
     this.roomBroadcaster.broadcastToRoom(
-      payload.tokenCompartido,
+      tokenCompartido,
       'pregunta_liberada',
-      payload.pregunta,
+      pregunta,
     );
     this.logger.log(
-      `[RONDAS:PREGUNTA_LIBERADA] Broadcast pregunta ${payload.pregunta.preguntaId} for ${payload.tokenCompartido}`,
+      `[RONDAS:PREGUNTA_LIBERADA] Broadcast pregunta ${pregunta.preguntaId} for ${tokenCompartido}`,
     );
   }
 

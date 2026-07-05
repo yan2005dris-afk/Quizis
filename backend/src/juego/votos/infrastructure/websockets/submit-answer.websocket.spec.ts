@@ -1,5 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { SubmitAnswerWebsocket } from './submit-answer.websocket';
 import { RoomStateCacheService } from '../../../shared/room-state/room-state-cache.service';
 import { RecordAnswerUseCase } from '../../../respuestas/application/use-cases/record-answer.use-case';
@@ -64,6 +65,7 @@ describe('SubmitAnswerWebsocket', () => {
           provide: EvaluateConsensusWebsocket,
           useValue: mockEvaluateConsensusWebsocket,
         },
+        { provide: EventEmitter2, useValue: { emit: jest.fn() } },
       ],
     }).compile();
 
