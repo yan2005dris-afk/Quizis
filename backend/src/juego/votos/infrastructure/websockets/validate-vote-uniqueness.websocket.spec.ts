@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ValidateVoteUniquenessWebsocket } from './validate-vote-uniqueness.websocket';
 import { ConfigService } from '@nestjs/config';
-import { ParticipantsCacheService } from '../../../salas/infrastructure/cache/participants-cache.service';
+import { ParticipantsCacheService } from '../../../shared/room-state/participants-cache.service';
 
 describe('ValidateVoteUniquenessWebsocket', () => {
   let websocket: ValidateVoteUniquenessWebsocket;

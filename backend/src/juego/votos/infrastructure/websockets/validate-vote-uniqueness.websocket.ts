@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { ParticipantsCacheService } from '../../../salas/infrastructure/cache/participants-cache.service';
+import { ParticipantsCacheService } from '../../../shared/room-state/participants-cache.service';
 
 @Injectable()
 export class ValidateVoteUniquenessWebsocket {

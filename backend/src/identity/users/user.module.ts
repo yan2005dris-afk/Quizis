@@ -15,6 +15,11 @@ import { IdentityInfrastructureModule } from '../infrastructure/identity-infrast
     CreateUserUseCase,
     GetEffectivePermissionsUseCase,
   ],
-  exports: [UserService, UserApplicationService, CreateUserUseCase, GetEffectivePermissionsUseCase],
+  exports: [
+    UserService,
+    UserApplicationService,
+    CreateUserUseCase,
+    GetEffectivePermissionsUseCase,
+  ],
 })
 export class UserModule {}

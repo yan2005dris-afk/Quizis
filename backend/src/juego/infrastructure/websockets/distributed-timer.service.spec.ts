@@ -155,7 +155,12 @@ describe('DistributedTimerService — NX lock (Redis path)', () => {
     await service.iniciarTimer('room-1', 10, jest.fn(), jest.fn());
     await service.detenerTimer('room-1');
 
-    expect(redisMock.eval).toHaveBeenCalledWith(expect.any(String), 1, 'timer:room-1:owner', instanceId);
+    expect(redisMock.eval).toHaveBeenCalledWith(
+      expect.any(String),
+      1,
+      'timer:room-1:owner',
+      instanceId,
+    );
   });
 
   it('does NOT DEL lock on detenerTimer when another instance owns it', async () => {

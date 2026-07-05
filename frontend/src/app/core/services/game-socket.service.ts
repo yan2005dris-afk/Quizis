@@ -1,5 +1,6 @@
 import { Injectable, signal, inject } from '@angular/core';
 import { io, Socket } from 'socket.io-client';
+import { firstValueFrom } from 'rxjs';
 import {
   ChatMessage,
   SalaEvento,
@@ -7,6 +8,7 @@ import {
   RondaInfo,
 } from '../../features/rooms/game/play.types';
 import { ToastService } from './toast.service';
+import { GameApiService, SubmitAnswerResult, UpdateEstadoSalaResponse } from './game-api.service';
 
 // Representa una opción de respuesta individual dentro de una pregunta
 export interface Opcion {
@@ -55,6 +57,13 @@ export interface ResultRespuesta {
 // Servicio singleton: Angular crea una sola instancia compartida por toda la app
 @Injectable({ providedIn: 'root' })
 export class GameSocketService {
+  // HTTP API client (N1: 3 mutations migrated from WS to REST).
+  private readonly api = inject(GameApiService);
+
+  // Local nickname for REST calls (mirrors what `unirseASala` sends via WS).
+  // Set by `unirseASala()` when joining a room.
+  private localNickname: string | null = null;
+
   // Instancia de la conexión WebSocket; null hasta que se llame a conectar()
   private socket: Socket | null = null;
 
@@ -172,11 +181,48 @@ export class GameSocketService {
       this.tiempoRestante.set(data);
     });
 
-    this.socket.on('tiempo_agotado', () => {
+    this.socket.on('tiempo_agotado', (data: { preguntaId: number; tokenCompartido: string }) => {
+      // Validate preguntaId matches active question (prevents out-of-order overwrite
+      // when timeout from old question overlaps with new pregunta_liberada).
+      const activeId = this.preguntaActiva()?.preguntaId;
+      if (data.preguntaId !== activeId) {
+        console.warn('[GameSocketService] tiempo_agotado preguntaId mismatch — ignoring', {
+          received: data.preguntaId,
+          active: activeId,
+        });
+        return;
+      }
       this.tiempoRestante.set(0);
+
+      // Defensive fallback: if pregunta_respondida hasn't arrived yet for
+      // this question, populate ultimoResultado with esCorrecta=false so
+      // the feedback still renders. pregunta_respondida (which arrives
+      // BEFORE tiempo_agotado in normal flow) will overwrite this with
+      // the authoritative payload.
+      const existing = this.ultimoResultado();
+      if (!existing || existing.preguntaId !== data.preguntaId) {
+        this.ultimoResultado.set({
+          preguntaId: data.preguntaId,
+          opcionId: -1, // unknown — overwritten when pregunta_respondida arrives
+          esCorrecta: false,
+          feedback: '',
+        });
+      }
+
+      // Schedule local transition overlay — gives the user time to see the
+      // feedback before the next-question overlay shows up. Backend no
+      // longer manages this timing (see juego.gateway.ts onExpire).
+      this.enTransicion.set(true);
+      this.transicionSegundos.set(3);
+      setTimeout(() => {
+        this.enTransicion.set(false);
+        this.transicionSegundos.set(null);
+      }, 4_000);
     });
 
     this.socket.on('transicion_pregunta', (data: { segundos: number }) => {
+      // Kept for backwards compatibility — backend no longer emits this,
+      // but if a future server does emit it, honor it.
       this.enTransicion.set(true);
       this.transicionSegundos.set(data.segundos);
       setTimeout(
@@ -213,7 +259,12 @@ export class GameSocketService {
 
     this.socket.on(
       'pregunta_respondida',
-      (data: { preguntaId: number; opcionId: number; esCorrecta: boolean | null; feedback: string | null }) => {
+      (data: {
+        preguntaId: number;
+        opcionId: number;
+        esCorrecta: boolean | null;
+        feedback: string | null;
+      }) => {
         this.ultimoResultado.set({
           preguntaId: data.preguntaId,
           opcionId: data.opcionId,
@@ -226,14 +277,11 @@ export class GameSocketService {
       },
     );
 
-    this.socket.on(
-      'revoto_solicitado',
-      (_data: { preguntaId: number; motivo: string }) => {
-        this.revotoSolicitado.set(true);
-        this.esperandoConsenso.set(false);
-        this.votantesConfirmados.set(0);
-      },
-    );
+    this.socket.on('revoto_solicitado', (_data: { preguntaId: number; motivo: string }) => {
+      this.revotoSolicitado.set(true);
+      this.esperandoConsenso.set(false);
+      this.votantesConfirmados.set(0);
+    });
   }
 
   // ─── Comodines (bloqueo, uso, estado inicial) ───
@@ -422,6 +470,7 @@ export class GameSocketService {
 
   // Se unte a una sala específica
   unirseASala(tokenCompartido: string, nombre: string): void {
+    this.localNickname = nombre;
     this.socket?.emit('unirse_sala', { tokenCompartido, nombre });
   }
 
@@ -433,19 +482,38 @@ export class GameSocketService {
   // ——— Gameplay Actions ———
 
   // Liberar pregunta (Solo Host/Admin)
-  liberarPregunta(tokenCompartido: string, pregunta: Pregunta): void {
-    this.socket?.emit('pregunta_liberada', { tokenCompartido, pregunta });
+  // N1: now uses REST (GameApiService). Returns a Promise for parity with
+  // the new REST contract. The WS 'pregunta_liberada' event was deprecated
+  // and removed in backend.
+  liberarPregunta(tokenCompartido: string, pregunta: Pregunta): Promise<Pregunta> {
+    return firstValueFrom(this.api.liberarPregunta(tokenCompartido, { pregunta }));
   }
 
   // Responder pregunta (Solo Estudiante)
+  // N1: now uses REST. The REST endpoint validates nickname + role
+  // server-side and returns the same SubmitAnswerResult shape.
   responderPregunta(payload: {
     tokenCompartido: string;
     rondaId: number;
     preguntaId: number;
     opcionId: number;
     comodinUsado?: string;
-  }): void {
-    this.socket?.emit('responder_pregunta', payload);
+  }): Promise<SubmitAnswerResult> {
+    const nickname = this.localNickname;
+    if (!nickname) {
+      return Promise.reject(
+        new Error('No hay nickname local — debes unirte a una sala primero'),
+      );
+    }
+    return firstValueFrom(
+      this.api.submitAnswer(payload.tokenCompartido, {
+        rondaId: payload.rondaId,
+        preguntaId: payload.preguntaId,
+        opcionId: payload.opcionId,
+        nickname,
+        comodinUsado: payload.comodinUsado,
+      }),
+    );
   }
 
   // Emitir voto del público (Solo Observador)
@@ -461,8 +529,18 @@ export class GameSocketService {
   }
 
   // Cambiar estado sala (Solo Admin)
-  cambiarEstadoSala(tokenCompartido: string, habilitada: boolean): void {
-    this.socket?.emit('cambiar_estado_sala', { tokenCompartido, habilitada });
+  // N1: now uses REST. Returns a Promise for parity with the new REST contract.
+  cambiarEstadoSala(
+    tokenCompartido: string,
+    habilitada: boolean,
+  ): Promise<UpdateEstadoSalaResponse> {
+    // The REST endpoint uses the full estado string; we map from the legacy
+    // boolean (`habilitada`) by inferring the next state.
+    return firstValueFrom(
+      this.api.updateEstadoSala(tokenCompartido, {
+        estado: habilitada ? 'EN_VIVO' : 'FINALIZADO',
+      }),
+    );
   }
 
   // Cambiar rol participante (Solo Admin)

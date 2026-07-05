@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { RedisService } from '../../../../core/database/redis/redis.service';
-import { MemoryCacheStore } from '../../../../core/cache/memory-cache.store';
+import { RedisService } from '../../../core/database/redis/redis.service';
+import { MemoryCacheStore } from '../../../core/cache/memory-cache.store';
 
 @Injectable()
 export class RoomStateCacheService {
@@ -90,6 +90,57 @@ export class RoomStateCacheService {
       }
     }
     this.memory.set(sk, status, 3_600_000);
+  }
+
+  /**
+   * Atomically set the question status to 'answered' only if not already set.
+   * Returns true if this caller won the race (key was set), false if another
+   * caller already set it.
+   *
+   * Used to prevent double-persistence when student answer and timer
+   * expiration fire near-simultaneously. First writer wins.
+   *
+   * Single-instance mode (no Redis): falls back to non-atomic set + returns
+   * true. Logs a warning because the race is not actually prevented in that
+   * mode (acceptable in dev, not for production).
+   */
+  async setQuestionStatusNX(
+    token: string,
+    status: 'answered',
+  ): Promise<boolean> {
+    const sk = this.key(token, 'status');
+    const client = this.redisService.getClient();
+    if (client) {
+      try {
+        // Lua EVAL: compare current value to 'released', if match set to new value.
+        // KEYS[1] = status key, ARGV[1] = new value, ARGV[2] = TTL seconds
+        const lua = `
+          if redis.call('GET', KEYS[1]) == 'released' then
+            redis.call('SET', KEYS[1], ARGV[1], 'EX', ARGV[2])
+            return 1
+          end
+          return 0
+        `;
+        const result = await client.eval(lua, 1, sk, status, '3600');
+        return result === 1;
+      } catch (err) {
+        // Redis failed — fall through to memory fallback (non-atomic)
+        this.logger.warn(
+          `[RoomStateCache] Redis EVAL failed, falling back to memory: ${err}`,
+        );
+      }
+    } else {
+      this.logger.warn(
+        '[RoomStateCache] Running in single-instance mode — using in-memory check-then-set',
+      );
+    }
+    // In-memory check-then-set: only succeed if status is still 'released'.
+    const existing = this.memory.get(sk);
+    if (existing === 'answered') {
+      return false;
+    }
+    this.memory.set(sk, status, 3_600_000);
+    return true;
   }
 
   async getQuestionStatus(token: string): Promise<string | null> {

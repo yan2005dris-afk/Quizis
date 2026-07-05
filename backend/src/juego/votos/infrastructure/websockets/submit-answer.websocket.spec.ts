@@ -1,7 +1,8 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { SubmitAnswerWebsocket } from './submit-answer.websocket';
-import { RoomStateCacheService } from '../../../salas/infrastructure/cache/room-state-cache.service';
+import { RoomStateCacheService } from '../../../shared/room-state/room-state-cache.service';
 import { RecordAnswerUseCase } from '../../../respuestas/application/use-cases/record-answer.use-case';
 import { ConsensusCacheService } from '../cache/consensus-cache.service';
 import { EvaluateConsensusWebsocket } from './evaluate-consensus.websocket';
@@ -16,6 +17,7 @@ describe('SubmitAnswerWebsocket', () => {
     getActiveQuestion: jest.fn(),
     getQuestionStatus: jest.fn(),
     setQuestionStatus: jest.fn(),
+    setQuestionStatusNX: jest.fn(),
   };
 
   const mockRecordAnswerUseCase = {
@@ -63,6 +65,7 @@ describe('SubmitAnswerWebsocket', () => {
           provide: EvaluateConsensusWebsocket,
           useValue: mockEvaluateConsensusWebsocket,
         },
+        { provide: EventEmitter2, useValue: { emit: jest.fn() } },
       ],
     }).compile();
 
@@ -77,7 +80,7 @@ describe('SubmitAnswerWebsocket', () => {
     it('respuesta correcta → esCorrecta true, feedback correcto, status → answered', async () => {
       mockCacheService.getActiveQuestion.mockResolvedValue(mockQuestion);
       mockCacheService.getQuestionStatus.mockResolvedValue('released');
-      mockCacheService.setQuestionStatus.mockResolvedValue(undefined);
+      mockCacheService.setQuestionStatusNX.mockResolvedValue(true);
       mockRecordAnswerUseCase.execute.mockResolvedValue(undefined);
       mockConsensusCacheService.recordVote.mockResolvedValue(undefined);
       mockEvaluateConsensusWebsocket.execute.mockResolvedValue({
@@ -92,7 +95,7 @@ describe('SubmitAnswerWebsocket', () => {
         expect(result.esCorrecta).toBe(true);
         expect(result.feedback).toBe('¡Muy bien!');
       }
-      expect(cacheService.setQuestionStatus).toHaveBeenCalledWith(
+      expect(cacheService.setQuestionStatusNX).toHaveBeenCalledWith(
         'token-abc',
         'answered',
       );
@@ -101,7 +104,7 @@ describe('SubmitAnswerWebsocket', () => {
     it('respuesta incorrecta → esCorrecta false, feedback incorrecto', async () => {
       mockCacheService.getActiveQuestion.mockResolvedValue(mockQuestion);
       mockCacheService.getQuestionStatus.mockResolvedValue('released');
-      mockCacheService.setQuestionStatus.mockResolvedValue(undefined);
+      mockCacheService.setQuestionStatusNX.mockResolvedValue(true);
       mockRecordAnswerUseCase.execute.mockResolvedValue(undefined);
       mockConsensusCacheService.recordVote.mockResolvedValue(undefined);
       mockEvaluateConsensusWebsocket.execute.mockResolvedValue({
@@ -138,7 +141,7 @@ describe('SubmitAnswerWebsocket', () => {
         expect(result.totalRequeridos).toBe(3);
       }
       expect(recordAnswerUseCase.execute).not.toHaveBeenCalled();
-      expect(cacheService.setQuestionStatus).not.toHaveBeenCalled();
+      expect(cacheService.setQuestionStatusNX).not.toHaveBeenCalled();
     });
   });
 
@@ -169,7 +172,7 @@ describe('SubmitAnswerWebsocket', () => {
     it('todos votan, hay mayoría → esCorrecta retornada, status → answered', async () => {
       mockCacheService.getActiveQuestion.mockResolvedValue(mockQuestion);
       mockCacheService.getQuestionStatus.mockResolvedValue('released');
-      mockCacheService.setQuestionStatus.mockResolvedValue(undefined);
+      mockCacheService.setQuestionStatusNX.mockResolvedValue(true);
       mockRecordAnswerUseCase.execute.mockResolvedValue(undefined);
       mockConsensusCacheService.recordVote.mockResolvedValue(undefined);
       mockEvaluateConsensusWebsocket.execute.mockResolvedValue({
@@ -187,7 +190,7 @@ describe('SubmitAnswerWebsocket', () => {
         expect(result.feedback).toBe('¡Muy bien!');
         expect(result.winningOpcionId).toBe(10);
       }
-      expect(cacheService.setQuestionStatus).toHaveBeenCalledWith(
+      expect(cacheService.setQuestionStatusNX).toHaveBeenCalledWith(
         'token-abc',
         'answered',
       );
@@ -196,7 +199,7 @@ describe('SubmitAnswerWebsocket', () => {
     it('todos votan, mayoría vota opción incorrecta → esCorrecta false', async () => {
       mockCacheService.getActiveQuestion.mockResolvedValue(mockQuestion);
       mockCacheService.getQuestionStatus.mockResolvedValue('released');
-      mockCacheService.setQuestionStatus.mockResolvedValue(undefined);
+      mockCacheService.setQuestionStatusNX.mockResolvedValue(true);
       mockRecordAnswerUseCase.execute.mockResolvedValue(undefined);
       mockConsensusCacheService.recordVote.mockResolvedValue(undefined);
       mockEvaluateConsensusWebsocket.execute.mockResolvedValue({
@@ -230,7 +233,7 @@ describe('SubmitAnswerWebsocket', () => {
     it('un solo estudiante requerido (single) → evaluateConsensus retorna single, persiste y responde', async () => {
       mockCacheService.getActiveQuestion.mockResolvedValue(mockQuestion);
       mockCacheService.getQuestionStatus.mockResolvedValue('released');
-      mockCacheService.setQuestionStatus.mockResolvedValue(undefined);
+      mockCacheService.setQuestionStatusNX.mockResolvedValue(true);
       mockRecordAnswerUseCase.execute.mockResolvedValue(undefined);
       mockConsensusCacheService.recordVote.mockResolvedValue(undefined);
       mockEvaluateConsensusWebsocket.execute.mockResolvedValue({
@@ -242,7 +245,7 @@ describe('SubmitAnswerWebsocket', () => {
 
       expect(result.status).toBe('single');
       expect(recordAnswerUseCase.execute).toHaveBeenCalled();
-      expect(cacheService.setQuestionStatus).toHaveBeenCalledWith(
+      expect(cacheService.setQuestionStatusNX).toHaveBeenCalledWith(
         'token-abc',
         'answered',
       );
@@ -266,7 +269,7 @@ describe('SubmitAnswerWebsocket', () => {
         expect(result.totalRequeridos).toBe(3);
       }
       expect(recordAnswerUseCase.execute).not.toHaveBeenCalled();
-      expect(cacheService.setQuestionStatus).not.toHaveBeenCalled();
+      expect(cacheService.setQuestionStatusNX).not.toHaveBeenCalled();
     });
 
     it('todos votan, sin mayoría → clearConsensus llamado, status no-majority', async () => {
@@ -336,7 +339,7 @@ describe('SubmitAnswerWebsocket', () => {
     it('con comodinUsado → pasa el comodin a RecordAnswerUseCase', async () => {
       mockCacheService.getActiveQuestion.mockResolvedValue(mockQuestion);
       mockCacheService.getQuestionStatus.mockResolvedValue('released');
-      mockCacheService.setQuestionStatus.mockResolvedValue(undefined);
+      mockCacheService.setQuestionStatusNX.mockResolvedValue(true);
       mockRecordAnswerUseCase.execute.mockResolvedValue(undefined);
       mockConsensusCacheService.recordVote.mockResolvedValue(undefined);
       mockEvaluateConsensusWebsocket.execute.mockResolvedValue({
@@ -358,7 +361,7 @@ describe('SubmitAnswerWebsocket', () => {
     it('persiste en DB con todos los campos correctos', async () => {
       mockCacheService.getActiveQuestion.mockResolvedValue(mockQuestion);
       mockCacheService.getQuestionStatus.mockResolvedValue('released');
-      mockCacheService.setQuestionStatus.mockResolvedValue(undefined);
+      mockCacheService.setQuestionStatusNX.mockResolvedValue(true);
       mockRecordAnswerUseCase.execute.mockResolvedValue(undefined);
       mockConsensusCacheService.recordVote.mockResolvedValue(undefined);
       mockEvaluateConsensusWebsocket.execute.mockResolvedValue({
@@ -368,6 +371,52 @@ describe('SubmitAnswerWebsocket', () => {
 
       await websocket.execute({ ...basePayload, opcionId: 10 });
 
+      expect(recordAnswerUseCase.execute).toHaveBeenCalledWith({
+        rondaId: 1,
+        preguntaId: 1,
+        opcionId: 10,
+        esCorrecta: true,
+        comodinUsado: null,
+      });
+    });
+  });
+
+  // ─── sdd/quizis-timer-hardening AC-P1-05 ─────────────────────────
+  // Race condition guard: if the timer path already claimed 'answered'
+  // state via setQuestionStatusNX, the student answer path must bail
+  // out with 'race-lost' status without double-persisting.
+
+  describe('NX race-condition guard (AC-P1-05)', () => {
+    it('returns race-lost when NX fails (timer won the race)', async () => {
+      mockCacheService.getActiveQuestion.mockResolvedValue(mockQuestion);
+      mockCacheService.getQuestionStatus.mockResolvedValue('released');
+      mockCacheService.setQuestionStatusNX.mockResolvedValue(false);
+      mockConsensusCacheService.recordVote.mockResolvedValue(undefined);
+      mockEvaluateConsensusWebsocket.execute.mockResolvedValue({
+        type: 'majority',
+        winningOpcionId: 10,
+      });
+
+      const result = await websocket.execute({ ...basePayload, opcionId: 10 });
+
+      expect(result.status).toBe('race-lost');
+      expect(recordAnswerUseCase.execute).not.toHaveBeenCalled();
+    });
+
+    it('persists normally when NX wins (student won the race)', async () => {
+      mockCacheService.getActiveQuestion.mockResolvedValue(mockQuestion);
+      mockCacheService.getQuestionStatus.mockResolvedValue('released');
+      mockCacheService.setQuestionStatusNX.mockResolvedValue(true);
+      mockRecordAnswerUseCase.execute.mockResolvedValue(undefined);
+      mockConsensusCacheService.recordVote.mockResolvedValue(undefined);
+      mockEvaluateConsensusWebsocket.execute.mockResolvedValue({
+        type: 'majority',
+        winningOpcionId: 10,
+      });
+
+      const result = await websocket.execute({ ...basePayload, opcionId: 10 });
+
+      expect(result.status).toBe('majority');
       expect(recordAnswerUseCase.execute).toHaveBeenCalledWith({
         rondaId: 1,
         preguntaId: 1,

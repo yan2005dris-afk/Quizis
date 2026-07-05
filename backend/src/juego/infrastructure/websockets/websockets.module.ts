@@ -10,7 +10,13 @@ import { ComodinesModule } from '../../comodines/comodines.module';
 import { RondasModule } from '../../rondas/rondas.module';
 
 @Module({
-  imports: [SalasModule, VotosModule, ChatModule, ComodinesModule, RondasModule],
+  imports: [
+    SalasModule,
+    VotosModule,
+    ChatModule,
+    ComodinesModule,
+    RondasModule,
+  ],
   providers: [
     JuegoGateway,
     RoomBroadcasterService,

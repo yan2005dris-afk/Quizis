@@ -8,33 +8,27 @@ import {
   ConnectedSocket,
   MessageBody,
 } from '@nestjs/websockets';
-import { Logger } from '@nestjs/common';
+import { Logger, OnModuleDestroy } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
 import { Server, Socket } from 'socket.io';
 
 // Domain Services
 import { SalasService } from '../../salas/application/salas.service';
-import { VotosService } from '../../votos/application/votos.service';
 import { ChatService } from '../../chat/application/chat.service';
 import { ComodinesService } from '../../comodines/application/comodines.service';
 
 // WebSocket Use Cases
 import { HandleJoinRoomWebsocket } from '../../salas/infrastructure/websockets/handle-join-room.websocket';
 import { HandleDisconnectWebsocket } from '../../salas/infrastructure/websockets/handle-disconnect.websocket';
-import { ToggleRoomEnabledWebsocket } from '../../salas/infrastructure/websockets/toggle-room-enabled.websocket';
 import { ProcessAudienceVoteWebsocket } from '../../votos/infrastructure/websockets/process-audience-vote.websocket';
-import { SubmitAnswerWebsocket } from '../../votos/infrastructure/websockets/submit-answer.websocket';
-import { ReleaseQuestionWebsocket } from '../../rondas/infrastructure/websockets/release-question.websocket';
+import { HandleTimerExpirationUseCase } from '../../rondas/application/use-cases/handle-timer-expiration.use-case';
 import { ActivateCallJokerWebsocket } from '../../comodines/infrastructure/websockets/activate-call-joker.websocket';
 import { SendHintWebsocket } from '../../comodines/infrastructure/websockets/send-hint.websocket';
 
 // Infrastructure / Common
-import {
-  GameEvents,
-} from '../../../core/common/events/game-events.types';
+import { GameEvents } from '../../../core/common/events/game-events.types';
 import type { ConsensusEvaluatedEvent } from '../../../core/common/events/game-events.types';
 import type { VotePayload } from '../../votos/infrastructure/websockets/process-audience-vote.websocket';
-import type { AnswerPayload } from '../../votos/infrastructure/websockets/submit-answer.websocket';
 
 // WebSocket Infrastructure
 import { RoomBroadcasterService } from './room-broadcaster.service';
@@ -42,7 +36,12 @@ import { SocketMapService } from './socket-map.service';
 import { DistributedTimerService } from './distributed-timer.service';
 import { createSocketIoRedisAdapter } from './redis-io-adapter.util';
 
-type ParticipantInfo = { id: string; nombre: string; puntaje: number; rol: string };
+type ParticipantInfo = {
+  id: string;
+  nombre: string;
+  puntaje: number;
+  rol: string;
+};
 type VoteDistribution = { total: number; [letra: string]: number };
 type ConsensusInput = {
   type?: string;
@@ -55,7 +54,13 @@ type ConsensusInput = {
 };
 
 @WebSocketGateway({ cors: { origin: '*' } })
-export class JuegoGateway implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {
+export class JuegoGateway
+  implements
+    OnGatewayInit,
+    OnGatewayConnection,
+    OnGatewayDisconnect,
+    OnModuleDestroy
+{
   @WebSocketServer()
   server!: Server;
 
@@ -70,12 +75,19 @@ export class JuegoGateway implements OnGatewayInit, OnGatewayConnection, OnGatew
     { distribucion: VoteDistribution; timer: NodeJS.Timeout }
   >();
 
-  private scheduleBroadcast(tokenCompartido: string, distribucion: VoteDistribution): void {
+  private scheduleBroadcast(
+    tokenCompartido: string,
+    distribucion: VoteDistribution,
+  ): void {
     const existing = this.pendingBroadcasts.get(tokenCompartido);
     if (existing) clearTimeout(existing.timer);
 
     const timer = setTimeout(() => {
-      this.roomBroadcaster.broadcastToRoom(tokenCompartido, 'voto_recibido', distribucion);
+      this.roomBroadcaster.broadcastToRoom(
+        tokenCompartido,
+        'voto_recibido',
+        distribucion,
+      );
       this.pendingBroadcasts.delete(tokenCompartido);
     }, 500);
 
@@ -86,27 +98,57 @@ export class JuegoGateway implements OnGatewayInit, OnGatewayConnection, OnGatew
     const pending = this.pendingBroadcasts.get(tokenCompartido);
     if (pending) {
       clearTimeout(pending.timer);
-      this.roomBroadcaster.broadcastToRoom(tokenCompartido, 'voto_recibido', pending.distribucion);
+      this.roomBroadcaster.broadcastToRoom(
+        tokenCompartido,
+        'voto_recibido',
+        pending.distribucion,
+      );
       this.pendingBroadcasts.delete(tokenCompartido);
+    }
+  }
+
+  /**
+   * Cancel a pending broadcast for a room without firing it.
+   * Used when the room is empty (no listeners) or on shutdown.
+   */
+  private clearPendingBroadcast(tokenCompartido: string): void {
+    const pending = this.pendingBroadcasts.get(tokenCompartido);
+    if (pending) {
+      clearTimeout(pending.timer);
+      this.pendingBroadcasts.delete(tokenCompartido);
+    }
+  }
+
+  /**
+   * Clean up all pending broadcast timers on module destroy.
+   * Prevents leaked setTimeout references when the app shuts down
+   * (hot reload, restart, or graceful shutdown).
+   */
+  onModuleDestroy(): void {
+    const count = this.pendingBroadcasts.size;
+    for (const [token] of this.pendingBroadcasts.entries()) {
+      this.clearPendingBroadcast(token);
+    }
+    if (count > 0) {
+      this.logger.log(
+        `[JuegoGateway] onModuleDestroy: cleared ${count} pending broadcast timers`,
+      );
     }
   }
 
   constructor(
     private readonly salasService: SalasService,
-    private readonly votosService: VotosService,
     private readonly chatService: ChatService,
     private readonly comodinesService: ComodinesService,
     private readonly handleJoinRoom: HandleJoinRoomWebsocket,
     private readonly handleDisconnectWebsocket: HandleDisconnectWebsocket,
-    private readonly toggleRoomEnabledWebsocket: ToggleRoomEnabledWebsocket,
     private readonly processAudienceVote: ProcessAudienceVoteWebsocket,
-    private readonly submitAnswerWebsocket: SubmitAnswerWebsocket,
-    private readonly releaseQuestionWebsocket: ReleaseQuestionWebsocket,
     private readonly activateCallJokerWebsocket: ActivateCallJokerWebsocket,
     private readonly sendHintWebsocket: SendHintWebsocket,
     private readonly roomBroadcaster: RoomBroadcasterService,
     private readonly socketMapService: SocketMapService,
     private readonly distributedTimerService: DistributedTimerService,
+    private readonly handleTimerExpiration: HandleTimerExpirationUseCase,
   ) {}
 
   // ─── Lifecycle ─────────────────────────────────────────────────────────────
@@ -139,16 +181,24 @@ export class JuegoGateway implements OnGatewayInit, OnGatewayConnection, OnGatew
       await this.socketMapService.delete(client.id);
 
       // Stop timer if the room is now empty
-      const remainingInRoom = await this.socketMapService.getRoomSize(info.tokenCompartido);
+      const remainingInRoom = await this.socketMapService.getRoomSize(
+        info.tokenCompartido,
+      );
       if (remainingInRoom === 0) {
         await this.distributedTimerService.detenerTimer(info.tokenCompartido);
+        // Cancel any pending vote-distribution broadcast for this empty room.
+        this.clearPendingBroadcast(info.tokenCompartido);
       }
 
       const participantesDb = await this.salasService.getParticipantsWithRoles(
         info.tokenCompartido,
         result.participants,
       );
-      this.roomBroadcaster.broadcastToRoom(result.tokenCompartido, 'participantes', participantesDb);
+      this.roomBroadcaster.broadcastToRoom(
+        result.tokenCompartido,
+        'participantes',
+        participantesDb,
+      );
     } else {
       this.logger.log(`Cliente desconectado sin registro previo: ${client.id}`);
     }
@@ -163,11 +213,15 @@ export class JuegoGateway implements OnGatewayInit, OnGatewayConnection, OnGatew
     explicacion: string;
     tokenCompartido: string;
   }) {
-    this.roomBroadcaster.broadcastToRoom(payload.tokenCompartido, 'ia_sugerencia_recibida', {
-      preguntaId: payload.preguntaId,
-      literal: payload.literal,
-      explicacion: payload.explicacion,
-    });
+    this.roomBroadcaster.broadcastToRoom(
+      payload.tokenCompartido,
+      'ia_sugerencia_recibida',
+      {
+        preguntaId: payload.preguntaId,
+        literal: payload.literal,
+        explicacion: payload.explicacion,
+      },
+    );
   }
 
   @OnEvent(GameEvents.VOTOS.VOTO_PUBLICO_RECIBIDO)
@@ -175,7 +229,11 @@ export class JuegoGateway implements OnGatewayInit, OnGatewayConnection, OnGatew
     tokenCompartido: string;
     resultado: any;
   }) {
-    this.roomBroadcaster.broadcastToRoom(payload.tokenCompartido, 'voto_recibido', payload.resultado);
+    this.roomBroadcaster.broadcastToRoom(
+      payload.tokenCompartido,
+      'voto_recibido',
+      payload.resultado,
+    );
   }
 
   @OnEvent(GameEvents.VOTOS.CONSENSO_EVALUADO)
@@ -184,6 +242,101 @@ export class JuegoGateway implements OnGatewayInit, OnGatewayConnection, OnGatew
       event.tokenCompartido,
       event.preguntaId,
       event.result,
+    );
+  }
+
+  /**
+   * Fired by UpdateEstadoSalaUseCase when a room transitions to EN_VIVO.
+   * Broadcasts `info_ronda` so the frontend updates the header ("Esperando
+   * información de la ronda..." goes away) and the active-question state.
+   */
+  @OnEvent('sala.iniciada')
+  handleSalaIniciada(payload: {
+    tokenCompartido: string;
+    infoRonda: { ronda: number; totalRondas: number; premio: string };
+  }) {
+    this.roomBroadcaster.broadcastToRoom(
+      payload.tokenCompartido,
+      'info_ronda',
+      payload.infoRonda,
+    );
+    this.logger.log(
+      `[SALA:INICIADA] Broadcast info_ronda for ${payload.tokenCompartido}`,
+    );
+  }
+
+  /**
+   * Fired by ReleaseQuestionWebsocket after a question is released via REST.
+   * Broadcasts `pregunta_liberada` so the frontend shows the active question,
+   * and starts the sala-level countdown timer.
+   */
+  @OnEvent(GameEvents.RONDAS.PREGUNTA_LIBERADA)
+  async handlePreguntaLiberada(payload: {
+    tokenCompartido: string;
+    pregunta: any;
+  }) {
+    const { tokenCompartido, pregunta } = payload;
+
+    // Validate required fields before broadcasting.
+    if (!pregunta?.preguntaId) {
+      this.logger.error(
+        `[handlePreguntaLiberada] Payload missing preguntaId for room ${tokenCompartido}`,
+      );
+      return;
+    }
+
+    try {
+      // Start timer BEFORE broadcasting so a timer failure prevents
+      // broadcasting a question with no countdown.
+      const { segundos, rondaId } =
+        await this.salasService.getTiempoLimite(tokenCompartido);
+
+      await this.distributedTimerService.iniciarTimer(
+        tokenCompartido,
+        segundos,
+        // onTick — broadcast remaining seconds to the room (plain number,
+        // matching the frontend's expected contract: tiempoRestante.set(data))
+        (remaining: number) => {
+          this.roomBroadcaster.broadcastToRoom(
+            tokenCompartido,
+            'temporizador_actualizado',
+            remaining,
+          );
+        },
+        // onExpire — persist "no answer" and notify the room
+        () => {
+          void this.handleTimerExpiration
+            .execute({ tokenCompartido, rondaId, preguntaId: pregunta.preguntaId })
+            .catch((err) =>
+              this.logger.error(
+                `[handlePreguntaLiberada] Timer expiry handler failed for ${tokenCompartido}: ${err}`,
+              ),
+            );
+
+          this.roomBroadcaster.broadcastToRoom(
+            tokenCompartido,
+            'tiempo_agotado',
+            { preguntaId: pregunta.preguntaId, tokenCompartido },
+          );
+        },
+      );
+    } catch (err) {
+      this.logger.error(
+        `[handlePreguntaLiberada] Timer setup failed for sala=${tokenCompartido} pregunta=${pregunta.preguntaId}: ${err}`,
+      );
+      // Do NOT broadcast pregunta_liberada — the timer is essential for
+      // game flow. Without it, the question hangs permanently.
+      return;
+    }
+
+    // Only broadcast once the timer infrastructure is confirmed ready.
+    this.roomBroadcaster.broadcastToRoom(
+      tokenCompartido,
+      'pregunta_liberada',
+      pregunta,
+    );
+    this.logger.log(
+      `[RONDAS:PREGUNTA_LIBERADA] Broadcast pregunta ${pregunta.preguntaId} for ${tokenCompartido}`,
     );
   }
 
@@ -210,12 +363,15 @@ export class JuegoGateway implements OnGatewayInit, OnGatewayConnection, OnGatew
       info.tokenCompartido,
       onlineNicknames,
     );
-    const yo = participantesDb.find((p: ParticipantInfo) => p.nombre === info.nickname);
+    const yo = participantesDb.find(
+      (p: ParticipantInfo) => p.nombre === info.nickname,
+    );
     if (yo?.rol === 'estudiante') {
       const sala = await this.salasService.obtenerPorId(info.tokenCompartido);
       if (sala) {
         const onlineStudents = participantesDb.filter(
-          (p: ParticipantInfo) => p.rol === 'estudiante' && p.nombre !== info.nickname,
+          (p: ParticipantInfo) =>
+            p.rol === 'estudiante' && p.nombre !== info.nickname,
         ).length;
         if (onlineStudents >= sala.maxEstudiantes) {
           this.logger.log(
@@ -231,13 +387,21 @@ export class JuegoGateway implements OnGatewayInit, OnGatewayConnection, OnGatew
             info.tokenCompartido,
             onlineNicknames,
           );
-          this.roomBroadcaster.broadcastToRoom(info.tokenCompartido, 'participantes', updatedList);
+          this.roomBroadcaster.broadcastToRoom(
+            info.tokenCompartido,
+            'participantes',
+            updatedList,
+          );
           return;
         }
       }
     }
 
-    this.roomBroadcaster.broadcastToRoom(info.tokenCompartido, 'participantes', participantesDb);
+    this.roomBroadcaster.broadcastToRoom(
+      info.tokenCompartido,
+      'participantes',
+      participantesDb,
+    );
 
     const bloqueados = await this.salasService.getBlockedComodines(
       info.tokenCompartido,
@@ -262,14 +426,17 @@ export class JuegoGateway implements OnGatewayInit, OnGatewayConnection, OnGatew
     },
   ) {
     try {
-      const participantesDb =
-        await this.salasService.changeParticipantRole(
-          payload.tokenCompartido,
-          payload.nickname,
-          payload.nuevoRol,
-        );
+      const participantesDb = await this.salasService.changeParticipantRole(
+        payload.tokenCompartido,
+        payload.nickname,
+        payload.nuevoRol,
+      );
 
-      this.roomBroadcaster.broadcastToRoom(payload.tokenCompartido, 'participantes', participantesDb);
+      this.roomBroadcaster.broadcastToRoom(
+        payload.tokenCompartido,
+        'participantes',
+        participantesDb,
+      );
 
       return { success: true };
     } catch (e: any) {
@@ -290,7 +457,10 @@ export class JuegoGateway implements OnGatewayInit, OnGatewayConnection, OnGatew
         return result;
       }
 
-      this.scheduleBroadcast(result.data!.tokenCompartido, result.distribucion as VoteDistribution);
+      this.scheduleBroadcast(
+        result.data!.tokenCompartido,
+        result.distribucion as VoteDistribution,
+      );
 
       return result;
     } catch (error) {
@@ -302,72 +472,9 @@ export class JuegoGateway implements OnGatewayInit, OnGatewayConnection, OnGatew
     }
   }
 
-  @SubscribeMessage('responder_pregunta')
-  async handleAnswer(
-    @ConnectedSocket() client: Socket,
-    @MessageBody() payload: AnswerPayload,
-  ) {
-    try {
-      const socketInfo = await this.socketMapService.get(client.id);
-      const nickname = socketInfo?.nickname ?? payload.nickname ?? 'unknown';
-
-      const result = await this.submitAnswerWebsocket.execute({
-        ...payload,
-        nickname,
-      });
-
-      const consensusInput: ConsensusInput = { type: result.status, ...result };
-      void this.emitConsensusResult(payload.tokenCompartido, payload.preguntaId, consensusInput);
-
-      if (result.status === 'no-majority') {
-        try {
-          await this.votosService.initConsensusRequired(
-            payload.tokenCompartido,
-            payload.preguntaId,
-          );
-          this.logger.log(
-            `[CONSENSUS:REVOTO] Required SET reinicializado para pregunta ${payload.preguntaId}`,
-          );
-        } catch (reinitError) {
-          this.logger.error(
-            `[CONSENSUS:REVOTO] Error reinicializando required SET: ${reinitError}`,
-          );
-        }
-      }
-
-      return result;
-    } catch (error: any) {
-      this.logger.error(`Error en Gateway al responder pregunta:`, error);
-      return {
-        success: false,
-        message: error.message || 'Error interno al procesar respuesta.',
-      };
-    }
-  }
-
-  @SubscribeMessage('cambiar_estado_sala')
-  async handleToggleRoom(
-    @MessageBody() payload: { tokenCompartido: string; habilitada: boolean },
-  ) {
-    try {
-      const result = await this.toggleRoomEnabledWebsocket.execute(
-        payload.tokenCompartido,
-        payload.habilitada,
-      );
-
-      this.roomBroadcaster.broadcastToRoom(payload.tokenCompartido, 'sala_estado_cambiado', {
-        habilitada: result.enabled,
-      });
-
-      return result;
-    } catch (error: any) {
-      this.logger.error(`Error en Gateway al cambiar estado de sala:`, error);
-      return {
-        success: false,
-        message: 'Error al cambiar el estado de la sala.',
-      };
-    }
-  }
+  // Removed in N1 PR1 (sdd/quizis-rest-n1-mutations AC-N1-26):
+  //   - handleAnswer (responder_pregunta) → REST POST /api/v1/salas/:salaId/respuestas
+  //   - handleToggleRoom (cambiar_estado_sala) → REST PATCH /api/v1/salas/by-token/:salaId/estado
 
   @SubscribeMessage('regenerar_token')
   async handleRegenerateToken(
@@ -376,9 +483,13 @@ export class JuegoGateway implements OnGatewayInit, OnGatewayConnection, OnGatew
     try {
       const res = await this.salasService.regenerarToken(payload.salaId);
 
-      this.roomBroadcaster.broadcastToRoom(payload.tokenAnterior, 'token_sala_actualizado', {
-        nuevoToken: res.tokenCompartido,
-      });
+      this.roomBroadcaster.broadcastToRoom(
+        payload.tokenAnterior,
+        'token_sala_actualizado',
+        {
+          nuevoToken: res.tokenCompartido,
+        },
+      );
 
       return res;
     } catch {
@@ -394,9 +505,13 @@ export class JuegoGateway implements OnGatewayInit, OnGatewayConnection, OnGatew
       this.flushBroadcast(payload.tokenCompartido);
       const res = await this.salasService.finalizarSala(payload.salaId);
 
-      this.roomBroadcaster.broadcastToRoom(payload.tokenCompartido, 'partida_finalizada', {
-        totalParticipantes: res.totalParticipantes,
-      });
+      this.roomBroadcaster.broadcastToRoom(
+        payload.tokenCompartido,
+        'partida_finalizada',
+        {
+          totalParticipantes: res.totalParticipantes,
+        },
+      );
 
       return res;
     } catch {
@@ -413,13 +528,19 @@ export class JuegoGateway implements OnGatewayInit, OnGatewayConnection, OnGatew
     );
     try {
       await this.distributedTimerService.detenerTimer(payload.tokenCompartido);
-      const sala = await this.salasService.obtenerPorId(payload.tokenCompartido);
+      const sala = await this.salasService.obtenerPorId(
+        payload.tokenCompartido,
+      );
       if (!sala) throw new Error('Sala no encontrada');
       await this.salasService.reiniciarRonda(sala.salaId);
 
-      this.roomBroadcaster.broadcastToRoom(payload.tokenCompartido, 'ronda_reiniciada', {
-        rondaActiva: payload.rondaActiva,
-      });
+      this.roomBroadcaster.broadcastToRoom(
+        payload.tokenCompartido,
+        'ronda_reiniciada',
+        {
+          rondaActiva: payload.rondaActiva,
+        },
+      );
 
       return { success: true };
     } catch (error) {
@@ -448,7 +569,11 @@ export class JuegoGateway implements OnGatewayInit, OnGatewayConnection, OnGatew
 
       const nuevoMensaje = mensajes[mensajes.length - 1];
       if (nuevoMensaje) {
-        this.roomBroadcaster.broadcastToRoom(info.tokenCompartido, 'mensaje_chat', [nuevoMensaje]);
+        this.roomBroadcaster.broadcastToRoom(
+          info.tokenCompartido,
+          'mensaje_chat',
+          [nuevoMensaje],
+        );
       }
 
       return { success: true };
@@ -462,81 +587,15 @@ export class JuegoGateway implements OnGatewayInit, OnGatewayConnection, OnGatew
   handleSalaCreada(
     @MessageBody() payload: { tokenCompartido: string; configuracion: any },
   ) {
-    this.roomBroadcaster.broadcastToRoom(payload.tokenCompartido, 'sala_creada', payload);
+    this.roomBroadcaster.broadcastToRoom(
+      payload.tokenCompartido,
+      'sala_creada',
+      payload,
+    );
   }
 
-  @SubscribeMessage('pregunta_liberada')
-  async handlePreguntaLiberada(
-    @MessageBody() payload: { tokenCompartido: string; pregunta: any },
-  ) {
-    try {
-      this.flushBroadcast(payload.tokenCompartido);
-
-      await this.releaseQuestionWebsocket.execute(
-        payload.tokenCompartido,
-        payload.pregunta,
-      );
-
-      this.roomBroadcaster.broadcastToRoom(payload.tokenCompartido, 'pregunta_liberada', payload.pregunta);
-
-      try {
-        await this.votosService.initConsensusRequired(
-          payload.tokenCompartido,
-          payload.pregunta.preguntaId,
-        );
-        this.logger.log(
-          `[CONSENSUS] Inicializado para pregunta ${payload.pregunta.preguntaId}`,
-        );
-      } catch (consensusError) {
-        this.logger.error(
-          `[CONSENSUS] Error inicializando required SET: ${consensusError}`,
-        );
-      }
-
-      // Start distributed server-authoritative timer
-      try {
-        const tiempoLimite = await this.salasService.getTiempoLimite(
-          payload.tokenCompartido,
-        );
-        await this.distributedTimerService.iniciarTimer(
-          payload.tokenCompartido,
-          tiempoLimite,
-          (remaining) =>
-            this.roomBroadcaster.broadcastToRoom(
-              payload.tokenCompartido,
-              'temporizador_actualizado',
-              remaining,
-            ),
-          () => {
-            this.roomBroadcaster.broadcastToRoom(
-              payload.tokenCompartido,
-              'tiempo_agotado',
-              { tokenCompartido: payload.tokenCompartido },
-            );
-            setTimeout(
-              () =>
-                this.roomBroadcaster.broadcastToRoom(
-                  payload.tokenCompartido,
-                  'transicion_pregunta',
-                  { segundos: 3 },
-                ),
-              500,
-            );
-          },
-        );
-      } catch (timerError) {
-        this.logger.error(`[TIMER] Error iniciando timer: ${timerError}`);
-      }
-
-      return { success: true };
-    } catch (error: any) {
-      this.logger.warn(`Bloqueo de liberación: ${error.message}`);
-      return {
-        success: false,
-        message: error.message,
-      };
-    }
-  }
+  // Removed in N1 PR1 (sdd/quizis-rest-n1-mutations AC-N1-26):
+  //   - handlePreguntaLiberada (pregunta_liberada) → REST POST /api/v1/salas/by-token/:salaId/preguntas/liberar
 
   @SubscribeMessage('comodin_bloqueado')
   async handleComodinBloqueado(
@@ -551,12 +610,24 @@ export class JuegoGateway implements OnGatewayInit, OnGatewayConnection, OnGatew
       payload.tokenCompartido,
       payload.tipoComodin,
     );
-    this.roomBroadcaster.broadcastToRoom(payload.tokenCompartido, 'comodin_bloqueado', payload);
+    this.roomBroadcaster.broadcastToRoom(
+      payload.tokenCompartido,
+      'comodin_bloqueado',
+      payload,
+    );
 
     if (payload.tipoComodin === 'PUBLICO') {
-      this.roomBroadcaster.broadcastToRoom(payload.tokenCompartido, 'voto_recibido', {
-        A: 0, B: 0, C: 0, D: 0, total: 0,
-      });
+      this.roomBroadcaster.broadcastToRoom(
+        payload.tokenCompartido,
+        'voto_recibido',
+        {
+          A: 0,
+          B: 0,
+          C: 0,
+          D: 0,
+          total: 0,
+        },
+      );
     }
   }
 
@@ -576,8 +647,10 @@ export class JuegoGateway implements OnGatewayInit, OnGatewayConnection, OnGatew
 
     const consultorNickname = result.consultor?.nickname;
     if (!consultorNickname) {
-       client.emit('comodin_llamada_error', { message: 'No hay consultor disponible.' });
-       return;
+      client.emit('comodin_llamada_error', {
+        message: 'No hay consultor disponible.',
+      });
+      return;
     }
 
     // T-08: await required — findSocketId is now async (Redis lookup)
@@ -599,9 +672,13 @@ export class JuegoGateway implements OnGatewayInit, OnGatewayConnection, OnGatew
       pregunta: payload.pregunta,
     });
 
-    this.roomBroadcaster.broadcastToRoom(payload.tokenCompartido, 'comodin_llamada_iniciado', {
-      nicknameConsultor: consultorNickname,
-    });
+    this.roomBroadcaster.broadcastToRoom(
+      payload.tokenCompartido,
+      'comodin_llamada_iniciado',
+      {
+        nicknameConsultor: consultorNickname,
+      },
+    );
   }
 
   @SubscribeMessage('enviar_pista_consultor')
@@ -641,14 +718,22 @@ export class JuegoGateway implements OnGatewayInit, OnGatewayConnection, OnGatew
       return;
     }
 
-    this.roomBroadcaster.broadcastToRoom(payload.tokenCompartido, 'pista_consultor_recibida', {
-      pista: result.pista,
-      consultor: result.helperNickname,
-    });
+    this.roomBroadcaster.broadcastToRoom(
+      payload.tokenCompartido,
+      'pista_consultor_recibida',
+      {
+        pista: result.pista,
+        consultor: result.helperNickname,
+      },
+    );
 
-    this.roomBroadcaster.broadcastToRoom(payload.tokenCompartido, 'comodin_usado', {
-      tipoComodin: 'LLAMADA',
-    });
+    this.roomBroadcaster.broadcastToRoom(
+      payload.tokenCompartido,
+      'comodin_usado',
+      {
+        tipoComodin: 'LLAMADA',
+      },
+    );
   }
 
   // ─── Private helpers ────────────────────────────────────────────────────────

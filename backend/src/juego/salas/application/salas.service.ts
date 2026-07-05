@@ -18,8 +18,8 @@ import { UpdateParticipantRoleUseCase } from './use-cases/update-participant-rol
 import { GetParticipantsWithRolesUseCase } from './use-cases/get-participants-with-roles.use-case';
 import { RestartRoundUseCase } from './use-cases/restart-round.use-case';
 import { ReactivateRoomUseCase } from './use-cases/reactivate-room.use-case';
-import { ParticipantsCacheService } from '../infrastructure/cache/participants-cache.service';
-import { RoomStateCacheService } from '../infrastructure/cache/room-state-cache.service';
+import { ParticipantsCacheService } from '../../shared/room-state/participants-cache.service';
+import { RoomStateCacheService } from '../../shared/room-state/room-state-cache.service';
 
 /**
  * Servicio fachada para el módulo de Salas.
@@ -187,8 +187,13 @@ export class SalasService {
     return this.roomStateCache.getBlockedComodines(tokenCompartido);
   }
 
-  async getTiempoLimite(tokenCompartido: string): Promise<number> {
+  async getTiempoLimite(
+    tokenCompartido: string,
+  ): Promise<{ segundos: number; rondaId: number }> {
     const sala = await this.getSalaDetailsUseCase.execute(tokenCompartido);
-    return (sala as any).tiempoLimitePregunta ?? 30;
+    return {
+      segundos: (sala as any).tiempoLimitePregunta ?? 30,
+      rondaId: (sala as any).rondaActiva?.rondaId,
+    };
   }
 }

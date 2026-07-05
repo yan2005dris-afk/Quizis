@@ -4,7 +4,7 @@ import { RegisterVoteUseCase } from './use-cases/register-vote.use-case';
 import { GetVotesFromCacheUseCase } from './use-cases/get-votes-from-cache.use-case';
 import { PersistVotesUseCase } from './use-cases/persist-votes.use-case';
 import { ConsensusCacheService } from '../infrastructure/cache/consensus-cache.service';
-import { ParticipantsCacheService } from '../../salas/infrastructure/cache/participants-cache.service';
+import { ParticipantsCacheService } from '../../shared/room-state/participants-cache.service';
 import { SalasService } from '../../salas/application/salas.service';
 
 describe('VotosService', () => {
@@ -20,7 +20,10 @@ describe('VotosService', () => {
   const mockPersistUseCase = {
     execute: jest.fn(),
   };
-  const mockConsensusCacheService = { recordVote: jest.fn(), clearConsensus: jest.fn() };
+  const mockConsensusCacheService = {
+    recordVote: jest.fn(),
+    clearConsensus: jest.fn(),
+  };
   const mockParticipantsCacheService = { getOnlineParticipants: jest.fn() };
   const mockSalasService = {};
 

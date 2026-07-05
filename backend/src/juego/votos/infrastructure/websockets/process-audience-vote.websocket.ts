@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ValidateVoteUniquenessWebsocket } from './validate-vote-uniqueness.websocket';
 import { VotosService } from '../../application/votos.service';
-import { RoomStateCacheService } from '../../../salas/infrastructure/cache/room-state-cache.service';
+import { RoomStateCacheService } from '../../../shared/room-state/room-state-cache.service';
 import { VotesCacheService } from '../cache/votes-cache.service';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { PrismaService } from '../../../../core/database/prisma/prisma.service';
