@@ -14,6 +14,7 @@ export type HandleTimerExpirationResult =
       claimed: true;
       opcionId: number;
       esCorrecta: false;
+      opcionCorrectaId: number;
       feedback: string | undefined;
     };
 
@@ -99,6 +100,13 @@ export class HandleTimerExpirationUseCase {
       claimed: true,
       opcionId: correctOpcion.opcionId,
       esCorrecta: false,
+      // The timer path persists the correct option as the (wrong) answer
+      // chosen by the student — there was no real choice. So `opcionCorrectaId`
+      // is the same as `opcionId`. The UI uses this to highlight the
+      // canonical correct option on timeout (security fix follow-up: the
+      // backend now sends this field in pregunta_respondida after the
+      // timer expires, even though the student never answered).
+      opcionCorrectaId: correctOpcion.opcionId,
       feedback: activeQuestion.feedbackIncorrecto as string | undefined,
     };
   }
