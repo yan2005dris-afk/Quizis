@@ -9,10 +9,7 @@ import { AppModule } from './app.module';
 import { ThrottlerExceptionFilter } from './core/common/filters/throttler-exception.filter';
 import { BigIntInterceptor } from './core/common/interceptors/bigint.interceptor';
 import { DecimalToNumberInterceptor } from './core/common/interceptors/decimal-to-number.interceptor';
-import {
-  TRUST_PROXY_HOPS,
-  TRUST_PROXY_KEY,
-} from './core/config/app.constants';
+import { TRUST_PROXY_HOPS, TRUST_PROXY_KEY } from './core/config/app.constants';
 
 type ProxyAwareHttpApp = {
   set: (key: typeof TRUST_PROXY_KEY, value: number) => void;
@@ -176,6 +173,8 @@ estado efímero: participantes conectados, pregunta actual, votos del público.
     .addTag('roles', 'Administración de roles')
     .addTag('permissions', 'Gestión de permisos')
     .addTag('salas', 'Gestión de salas de quiz')
+    .addTag('respuestas', 'Envío de respuestas a preguntas activas (REST)')
+    .addTag('rooms-by-token', 'Endpoints REST por token de sala (N1)')
     .addTag('bancos', 'Banco de preguntas')
     .addTag(
       'audience-votes',

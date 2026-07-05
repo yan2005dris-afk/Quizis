@@ -1,7 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import {
-  SessionRepository,
-} from '../../domain/repositories/session.repository';
+import { SessionRepository } from '../../domain/repositories/session.repository';
 import type { CreateSessionData } from '../../domain/repositories/session.repository';
 
 @Injectable()

@@ -1,4 +1,4 @@
-import { Module, forwardRef } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { AuthService } from './application/auth.service';
 import { AuthController } from './interfaces/auth.controller';
@@ -19,7 +19,7 @@ import { IdentityInfrastructureModule } from '../infrastructure/identity-infrast
 @Module({
   imports: [
     IdentityInfrastructureModule,
-    forwardRef(() => UserModule),
+    UserModule,
     SessionsModule,
     JwtModule.registerAsync({
       inject: [ConfigService],

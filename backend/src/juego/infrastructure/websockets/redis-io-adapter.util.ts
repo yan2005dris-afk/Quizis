@@ -15,9 +15,7 @@ export function createSocketIoRedisAdapter(
   redisUrl: string | undefined,
 ): ReturnType<typeof createAdapter> | null {
   if (!redisUrl) {
-    logger.log(
-      'REDIS_URL not set, skipping adapter (single-instance mode)',
-    );
+    logger.log('REDIS_URL not set, skipping adapter (single-instance mode)');
     return null;
   }
 

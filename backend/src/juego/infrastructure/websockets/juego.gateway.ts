@@ -14,17 +14,13 @@ import { Server, Socket } from 'socket.io';
 
 // Domain Services
 import { SalasService } from '../../salas/application/salas.service';
-import { VotosService } from '../../votos/application/votos.service';
 import { ChatService } from '../../chat/application/chat.service';
 import { ComodinesService } from '../../comodines/application/comodines.service';
 
 // WebSocket Use Cases
 import { HandleJoinRoomWebsocket } from '../../salas/infrastructure/websockets/handle-join-room.websocket';
 import { HandleDisconnectWebsocket } from '../../salas/infrastructure/websockets/handle-disconnect.websocket';
-import { ToggleRoomEnabledWebsocket } from '../../salas/infrastructure/websockets/toggle-room-enabled.websocket';
 import { ProcessAudienceVoteWebsocket } from '../../votos/infrastructure/websockets/process-audience-vote.websocket';
-import { SubmitAnswerWebsocket } from '../../votos/infrastructure/websockets/submit-answer.websocket';
-import { ReleaseQuestionWebsocket } from '../../rondas/infrastructure/websockets/release-question.websocket';
 import { HandleTimerExpirationUseCase } from '../../rondas/application/use-cases/handle-timer-expiration.use-case';
 import { ActivateCallJokerWebsocket } from '../../comodines/infrastructure/websockets/activate-call-joker.websocket';
 import { SendHintWebsocket } from '../../comodines/infrastructure/websockets/send-hint.websocket';
@@ -33,7 +29,6 @@ import { SendHintWebsocket } from '../../comodines/infrastructure/websockets/sen
 import { GameEvents } from '../../../core/common/events/game-events.types';
 import type { ConsensusEvaluatedEvent } from '../../../core/common/events/game-events.types';
 import type { VotePayload } from '../../votos/infrastructure/websockets/process-audience-vote.websocket';
-import type { AnswerPayload } from '../../votos/infrastructure/websockets/submit-answer.websocket';
 
 // WebSocket Infrastructure
 import { RoomBroadcasterService } from './room-broadcaster.service';
@@ -143,15 +138,11 @@ export class JuegoGateway
 
   constructor(
     private readonly salasService: SalasService,
-    private readonly votosService: VotosService,
     private readonly chatService: ChatService,
     private readonly comodinesService: ComodinesService,
     private readonly handleJoinRoom: HandleJoinRoomWebsocket,
     private readonly handleDisconnectWebsocket: HandleDisconnectWebsocket,
-    private readonly toggleRoomEnabledWebsocket: ToggleRoomEnabledWebsocket,
     private readonly processAudienceVote: ProcessAudienceVoteWebsocket,
-    private readonly submitAnswerWebsocket: SubmitAnswerWebsocket,
-    private readonly releaseQuestionWebsocket: ReleaseQuestionWebsocket,
     private readonly activateCallJokerWebsocket: ActivateCallJokerWebsocket,
     private readonly sendHintWebsocket: SendHintWebsocket,
     private readonly roomBroadcaster: RoomBroadcasterService,
@@ -271,6 +262,81 @@ export class JuegoGateway
     );
     this.logger.log(
       `[SALA:INICIADA] Broadcast info_ronda for ${payload.tokenCompartido}`,
+    );
+  }
+
+  /**
+   * Fired by ReleaseQuestionWebsocket after a question is released via REST.
+   * Broadcasts `pregunta_liberada` so the frontend shows the active question,
+   * and starts the sala-level countdown timer.
+   */
+  @OnEvent(GameEvents.RONDAS.PREGUNTA_LIBERADA)
+  async handlePreguntaLiberada(payload: {
+    tokenCompartido: string;
+    pregunta: any;
+  }) {
+    const { tokenCompartido, pregunta } = payload;
+
+    // Validate required fields before broadcasting.
+    if (!pregunta?.preguntaId) {
+      this.logger.error(
+        `[handlePreguntaLiberada] Payload missing preguntaId for room ${tokenCompartido}`,
+      );
+      return;
+    }
+
+    try {
+      // Start timer BEFORE broadcasting so a timer failure prevents
+      // broadcasting a question with no countdown.
+      const { segundos, rondaId } =
+        await this.salasService.getTiempoLimite(tokenCompartido);
+
+      await this.distributedTimerService.iniciarTimer(
+        tokenCompartido,
+        segundos,
+        // onTick — broadcast remaining seconds to the room (plain number,
+        // matching the frontend's expected contract: tiempoRestante.set(data))
+        (remaining: number) => {
+          this.roomBroadcaster.broadcastToRoom(
+            tokenCompartido,
+            'temporizador_actualizado',
+            remaining,
+          );
+        },
+        // onExpire — persist "no answer" and notify the room
+        () => {
+          void this.handleTimerExpiration
+            .execute({ tokenCompartido, rondaId, preguntaId: pregunta.preguntaId })
+            .catch((err) =>
+              this.logger.error(
+                `[handlePreguntaLiberada] Timer expiry handler failed for ${tokenCompartido}: ${err}`,
+              ),
+            );
+
+          this.roomBroadcaster.broadcastToRoom(
+            tokenCompartido,
+            'tiempo_agotado',
+            { preguntaId: pregunta.preguntaId, tokenCompartido },
+          );
+        },
+      );
+    } catch (err) {
+      this.logger.error(
+        `[handlePreguntaLiberada] Timer setup failed for sala=${tokenCompartido} pregunta=${pregunta.preguntaId}: ${err}`,
+      );
+      // Do NOT broadcast pregunta_liberada — the timer is essential for
+      // game flow. Without it, the question hangs permanently.
+      return;
+    }
+
+    // Only broadcast once the timer infrastructure is confirmed ready.
+    this.roomBroadcaster.broadcastToRoom(
+      tokenCompartido,
+      'pregunta_liberada',
+      pregunta,
+    );
+    this.logger.log(
+      `[RONDAS:PREGUNTA_LIBERADA] Broadcast pregunta ${pregunta.preguntaId} for ${tokenCompartido}`,
     );
   }
 
@@ -406,80 +472,9 @@ export class JuegoGateway
     }
   }
 
-  @SubscribeMessage('responder_pregunta')
-  async handleAnswer(
-    @ConnectedSocket() client: Socket,
-    @MessageBody() payload: AnswerPayload,
-  ) {
-    try {
-      const socketInfo = await this.socketMapService.get(client.id);
-      const nickname = socketInfo?.nickname ?? payload.nickname ?? 'unknown';
-
-      const result = await this.submitAnswerWebsocket.execute({
-        ...payload,
-        nickname,
-      });
-
-      const consensusInput: ConsensusInput = { type: result.status, ...result };
-      void this.emitConsensusResult(
-        payload.tokenCompartido,
-        payload.preguntaId,
-        consensusInput,
-      );
-
-      if (result.status === 'no-majority') {
-        try {
-          await this.votosService.initConsensusRequired(
-            payload.tokenCompartido,
-            payload.preguntaId,
-          );
-          this.logger.log(
-            `[CONSENSUS:REVOTO] Required SET reinicializado para pregunta ${payload.preguntaId}`,
-          );
-        } catch (reinitError) {
-          this.logger.error(
-            `[CONSENSUS:REVOTO] Error reinicializando required SET: ${reinitError}`,
-          );
-        }
-      }
-
-      return result;
-    } catch (error: any) {
-      this.logger.error(`Error en Gateway al responder pregunta:`, error);
-      return {
-        success: false,
-        message: error.message || 'Error interno al procesar respuesta.',
-      };
-    }
-  }
-
-  @SubscribeMessage('cambiar_estado_sala')
-  async handleToggleRoom(
-    @MessageBody() payload: { tokenCompartido: string; habilitada: boolean },
-  ) {
-    try {
-      const result = await this.toggleRoomEnabledWebsocket.execute(
-        payload.tokenCompartido,
-        payload.habilitada,
-      );
-
-      this.roomBroadcaster.broadcastToRoom(
-        payload.tokenCompartido,
-        'sala_estado_cambiado',
-        {
-          habilitada: result.enabled,
-        },
-      );
-
-      return result;
-    } catch (error: any) {
-      this.logger.error(`Error en Gateway al cambiar estado de sala:`, error);
-      return {
-        success: false,
-        message: 'Error al cambiar el estado de la sala.',
-      };
-    }
-  }
+  // Removed in N1 PR1 (sdd/quizis-rest-n1-mutations AC-N1-26):
+  //   - handleAnswer (responder_pregunta) → REST POST /api/v1/salas/:salaId/respuestas
+  //   - handleToggleRoom (cambiar_estado_sala) → REST PATCH /api/v1/salas/by-token/:salaId/estado
 
   @SubscribeMessage('regenerar_token')
   async handleRegenerateToken(
@@ -599,136 +594,8 @@ export class JuegoGateway
     );
   }
 
-  @SubscribeMessage('pregunta_liberada')
-  async handlePreguntaLiberada(
-    @MessageBody() payload: { tokenCompartido: string; pregunta: any },
-  ) {
-    try {
-      this.flushBroadcast(payload.tokenCompartido);
-
-      await this.releaseQuestionWebsocket.execute(
-        payload.tokenCompartido,
-        payload.pregunta,
-      );
-
-      this.roomBroadcaster.broadcastToRoom(
-        payload.tokenCompartido,
-        'pregunta_liberada',
-        payload.pregunta,
-      );
-
-      try {
-        await this.votosService.initConsensusRequired(
-          payload.tokenCompartido,
-          payload.pregunta.preguntaId,
-        );
-        this.logger.log(
-          `[CONSENSUS] Inicializado para pregunta ${payload.pregunta.preguntaId}`,
-        );
-      } catch (consensusError) {
-        this.logger.error(
-          `[CONSENSUS] Error inicializando required SET: ${consensusError}`,
-        );
-      }
-
-      // Start distributed server-authoritative timer
-      try {
-        const tiempoLimite = await this.salasService.getTiempoLimite(
-          payload.tokenCompartido,
-        );
-        const preguntaId = payload.pregunta.preguntaId;
-        const tokenCompartido = payload.tokenCompartido;
-
-        await this.distributedTimerService.iniciarTimer(
-          tokenCompartido,
-          tiempoLimite,
-          (remaining) =>
-            this.roomBroadcaster.broadcastToRoom(
-              tokenCompartido,
-              'temporizador_actualizado',
-              remaining,
-            ),
-          async () => {
-            // Timer expired. Try to claim the 'answered' state and persist
-            // a wrong answer. If the student already answered, the use case
-            // returns { claimed: false } and we skip emitting.
-            let rondaId: number | undefined;
-            try {
-              const sala =
-                await this.salasService.obtenerPorId(tokenCompartido);
-              rondaId = (sala as any)?.rondas?.[0]?.rondaId;
-            } catch (lookupErr) {
-              this.logger.error(
-                `[TIMER] Failed to look up rondaId for token=${tokenCompartido}: ${lookupErr}`,
-              );
-            }
-
-            if (!rondaId) {
-              this.logger.error(
-                `[TIMER] No active ronda for token=${tokenCompartido} — cannot persist timeout. Aborting.`,
-              );
-              // Still emit tiempo_agotado so frontend stops the visual timer.
-              this.roomBroadcaster.broadcastToRoom(
-                tokenCompartido,
-                'tiempo_agotado',
-                { preguntaId, tokenCompartido },
-              );
-              return;
-            }
-
-            const result = await this.handleTimerExpiration.execute({
-              tokenCompartido,
-              rondaId,
-              preguntaId,
-            });
-
-            if (!result.claimed) {
-              // Race lost — student already answered. Nothing to broadcast;
-              // submit-answer.websocket.ts already emitted pregunta_respondida.
-              return;
-            }
-
-            // Emit pregunta_respondida FIRST so frontend renders feedback
-            // (active-question.component.ts depends on ultimoResultado).
-            this.roomBroadcaster.broadcastToRoom(
-              tokenCompartido,
-              'pregunta_respondida',
-              {
-                preguntaId,
-                opcionId: result.opcionId,
-                esCorrecta: false,
-                feedback: result.feedback ?? null,
-              },
-            );
-
-            // THEN emit tiempo_agotado (frontend listener sets timer=0 +
-            // schedules local transition overlay).
-            this.roomBroadcaster.broadcastToRoom(
-              tokenCompartido,
-              'tiempo_agotado',
-              { preguntaId, tokenCompartido },
-            );
-
-            // transicion_pregunta is no longer emitted here. The frontend
-            // schedules its own transition overlay upon receiving
-            // tiempo_agotado (see game-socket.service.ts listener). This
-            // removes the fragile temporal coupling between backend and
-            // assumed frontend render timing.
-          },
-        );
-      } catch (timerError) {
-        this.logger.error(`[TIMER] Error iniciando timer: ${timerError}`);
-      }
-
-      return { success: true };
-    } catch (error: any) {
-      this.logger.warn(`Bloqueo de liberación: ${error.message}`);
-      return {
-        success: false,
-        message: error.message,
-      };
-    }
-  }
+  // Removed in N1 PR1 (sdd/quizis-rest-n1-mutations AC-N1-26):
+  //   - handlePreguntaLiberada (pregunta_liberada) → REST POST /api/v1/salas/by-token/:salaId/preguntas/liberar
 
   @SubscribeMessage('comodin_bloqueado')
   async handleComodinBloqueado(

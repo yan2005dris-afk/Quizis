@@ -5,8 +5,8 @@ import {
 } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { PrismaService } from '../../../../core/database/prisma/prisma.service';
-import { RoomStateCacheService } from '../../infrastructure/cache/room-state-cache.service';
-import { ParticipantsCacheService } from '../../infrastructure/cache/participants-cache.service';
+import { RoomStateCacheService } from '../../../shared/room-state/room-state-cache.service';
+import { ParticipantsCacheService } from '../../../shared/room-state/participants-cache.service';
 import {
   UpdateEstadoSalaDto,
   EstadoSala,

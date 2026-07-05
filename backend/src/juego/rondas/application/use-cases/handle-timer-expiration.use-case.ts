@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { RoomStateCacheService } from '../../../salas/infrastructure/cache/room-state-cache.service';
+import { RoomStateCacheService } from '../../../shared/room-state/room-state-cache.service';
 import { RecordAnswerUseCase } from '../../../respuestas/application/use-cases/record-answer.use-case';
 
 export interface HandleTimerExpirationParams {

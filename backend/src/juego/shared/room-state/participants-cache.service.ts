@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { RedisService } from '../../../../core/database/redis/redis.service';
-import { MemoryCacheStore } from '../../../../core/cache/memory-cache.store';
+import { RedisService } from '../../../core/database/redis/redis.service';
+import { MemoryCacheStore } from '../../../core/cache/memory-cache.store';
 
 @Injectable()
 export class ParticipantsCacheService {
