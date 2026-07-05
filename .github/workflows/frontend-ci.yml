@@ -43,11 +43,21 @@ jobs:
         run: pnpm run build
         working-directory: frontend
 
-      # N1: ensure the deprecated WebSocket mutations are not reintroduced.
-      # These were moved to REST in sdd/quizis-rest-n1-mutations.
+      # N1+N2: ensure the deprecated WebSocket mutations are not reintroduced.
+      # These were moved to REST in sdd/quizis-rest-n1-mutations and
+      # sdd/quizis-rest-n2-mutations.
       - name: Verify no deprecated WS mutations
         run: |
           ! grep -rn "socket.emit('responder_pregunta'" frontend/src/
           ! grep -rn "socket.emit('cambiar_estado_sala'" frontend/src/
           ! grep -rn "socket.emit('pregunta_liberada'" frontend/src/
+          ! grep -rn "socket.emit('cambiar_rol_participante'" frontend/src/
+          ! grep -rn "socket.emit('audience:vote'\|socket.emit('audience\\\\:vote'" frontend/src/
+          ! grep -rn "socket.emit('regenerar_token'" frontend/src/
+          ! grep -rn "socket.emit('finalizar_partida'" frontend/src/
+          ! grep -rn "socket.emit('reiniciar_ronda'" frontend/src/
+          ! grep -rn "socket.emit('enviar_mensaje'" frontend/src/
+          ! grep -rn "socket.emit('comodin_bloqueado'" frontend/src/
+          ! grep -rn "socket.emit('activar_comodin_llamada'" frontend/src/
+          ! grep -rn "socket.emit('enviar_pista_consultor'" frontend/src/
           echo "✓ No deprecated WS mutation calls found"
