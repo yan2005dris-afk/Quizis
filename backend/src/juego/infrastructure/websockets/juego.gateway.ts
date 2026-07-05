@@ -30,6 +30,7 @@ import { GameEvents } from '../../../core/common/events/game-events.types';
 import type {
   ConsensusEvaluatedEvent,
   RondaReiniciadaEvent,
+  TokenRegeneradoEvent,
 } from '../../../core/common/events/game-events.types';
 import type { VotePayload } from '../../votos/infrastructure/websockets/process-audience-vote.websocket';
 
@@ -271,6 +272,21 @@ export class JuegoGateway
       payload.tokenCompartido,
       'estado_sala_cambiado',
       payload,
+    );
+  }
+
+  /**
+   * Fired by RegenerateRoomTokenUseCase. Broadcasts `token_regenerado`
+   * to the OLD room (sockets are still joined under the old token).
+   * Per design: notify only, do not kick. The frontend updates the
+   * shareable link live; no participants are disconnected.
+   */
+  @OnEvent(GameEvents.SALA.TOKEN_REGENERADO)
+  handleTokenRegenerado(event: TokenRegeneradoEvent) {
+    this.roomBroadcaster.broadcastToRoom(
+      event.tokenCompartidoViejo,
+      'token_regenerado',
+      event,
     );
   }
 

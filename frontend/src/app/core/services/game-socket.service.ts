@@ -94,6 +94,10 @@ export class GameSocketService {
   readonly comodinBloqueado = signal<string[]>([]);
   readonly salaHabilitada = signal<boolean>(true);
   readonly salaFinalizadaWs = signal<boolean>(false);
+  readonly tokenInvitacionRegenerado = signal<{
+    tokenCompartidoNuevo: string;
+    tokenInvitacion: string;
+  } | null>(null);
   readonly conectado = signal<boolean>(false);
 
   // Estado para Comodín Llamada
@@ -424,6 +428,26 @@ export class GameSocketService {
         this.salaFinalizadaWs.set(true);
       }
     });
+
+    // Fired by RegenerateRoomTokenUseCase → JuegoGateway when the admin
+    // regenerates the shareable token. Per design ("notify, don't
+    // kick"), connected sockets stay joined under the OLD token —
+    // this signal gives every connected client (including secondary
+    // admin views, spectator displays) a chance to update the
+    // shareable link they show without a manual refresh.
+    this.socket.on(
+      'token_regenerado',
+      (data: {
+        tokenCompartidoViejo: string;
+        tokenCompartidoNuevo: string;
+        tokenInvitacion: string;
+      }) => {
+        this.tokenInvitacionRegenerado.set({
+          tokenCompartidoNuevo: data.tokenCompartidoNuevo,
+          tokenInvitacion: data.tokenInvitacion,
+        });
+      },
+    );
   }
 
   // ─── Ronda (reinicio completo) ───

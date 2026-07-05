@@ -1,9 +1,11 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { NotFoundException } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { RegenerateRoomTokenUseCase } from './regenerate-room-token.use-case';
 import { PrismaService } from 'src/core/database/prisma/prisma.service';
+import { GameEvents } from 'src/core/common/events/game-events.types';
 
 jest.mock('crypto', () => ({
   ...jest.requireActual('crypto'),
@@ -26,6 +28,10 @@ describe('RegenerateRoomTokenUseCase', () => {
     get: jest.fn().mockReturnValue('24h'),
   };
 
+  const mockEventEmitter = {
+    emit: jest.fn(),
+  };
+
   const mockSala = { salaId: 1, tokenCompartido: 'old-uuid' };
 
   const mockSalaActualizada = {
@@ -40,6 +46,7 @@ describe('RegenerateRoomTokenUseCase', () => {
         { provide: PrismaService, useValue: mockPrisma },
         { provide: JwtService, useValue: mockJwtService },
         { provide: ConfigService, useValue: mockConfigService },
+        { provide: EventEmitter2, useValue: mockEventEmitter },
       ],
     }).compile();
 
@@ -96,5 +103,29 @@ describe('RegenerateRoomTokenUseCase', () => {
       tokenCompartido: 'new-uuid-1234-5678',
       tokenInvitacion: 'new-jwt-invite-token',
     });
+  });
+
+  // ─── Broadcast event ─────────────────────────────────────────────
+
+  it('emite GameEvents.SALA.TOKEN_REGENERADO con viejo y nuevo token', async () => {
+    mockEventEmitter.emit.mockReturnValue(undefined);
+
+    await useCase.execute(1);
+
+    expect(mockEventEmitter.emit).toHaveBeenCalledWith(
+      GameEvents.SALA.TOKEN_REGENERADO,
+      expect.objectContaining({
+        tokenCompartidoViejo: 'old-uuid',
+        tokenCompartidoNuevo: 'new-uuid-1234-5678',
+        tokenInvitacion: 'new-jwt-invite-token',
+      }),
+    );
+  });
+
+  it('NO emite evento si la sala no existe', async () => {
+    mockPrisma.salas.findUnique.mockResolvedValue(null);
+
+    await expect(useCase.execute(999)).rejects.toThrow(NotFoundException);
+    expect(mockEventEmitter.emit).not.toHaveBeenCalled();
   });
 });
