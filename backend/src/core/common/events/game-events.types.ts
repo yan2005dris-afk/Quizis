@@ -10,6 +10,7 @@ export const GameEvents = {
   },
   RONDAS: {
     PREGUNTA_LIBERADA: 'rondas.pregunta_liberada',
+    RONDA_REINICIADA: 'rondas.reiniciada',
   },
 } as const;
 
@@ -29,4 +30,33 @@ export interface ConsensusEvaluatedEvent {
   tokenCompartido: string;
   preguntaId: number;
   result: any; // ConsensusResult
+}
+
+export interface RondaReiniciadaEvent {
+  tokenCompartido: string;
+  estado: string;
+  rondaActiva: {
+    rondaId: number;
+    numeroRonda: number;
+    estado: string;
+    fechaInicio: string | null;
+    preguntaActualId: number | null;
+    preguntaActual: any | null;
+    historialPreguntas: Array<{
+      preguntaId: number;
+      texto: string;
+      nivel: number;
+      feedbackCorrecto: string | null;
+      feedbackIncorrecto: string | null;
+      opciones: Array<{
+        opcionId: number;
+        texto: string;
+        letra: string;
+        // esCorrecta is INTENTIONALLY OMITTED in the broadcast payload —
+        // the admin's response still includes it (legitimate caller), but
+        // the WS broadcast to students must strip it (security fix).
+      }>;
+      respuestaDada: any | null;
+    }>;
+  };
 }
