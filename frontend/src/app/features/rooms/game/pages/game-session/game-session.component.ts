@@ -158,7 +158,12 @@ export class GameSessionComponent implements OnInit, OnDestroy {
 
   protected readonly miNickname = computed(() => {
     if (this.isHost()) return this.auth.user()?.nombre || 'Admin';
-    const participantInfo = JSON.parse(localStorage.getItem('participantInfo') ?? '{}');
+    let participantInfo: any = {};
+    try {
+      participantInfo = JSON.parse(localStorage.getItem('participantInfo') ?? '{}');
+    } catch {
+      participantInfo = {};
+    }
     return participantInfo.nickname;
   });
 
@@ -374,7 +379,12 @@ export class GameSessionComponent implements OnInit, OnDestroy {
 
           const interval = setInterval(() => {
             if (this.gameSocket.conectado()) {
-              const participantInfo = JSON.parse(localStorage.getItem('participantInfo') ?? '{}');
+              let participantInfo: any = {};
+    try {
+      participantInfo = JSON.parse(localStorage.getItem('participantInfo') ?? '{}');
+    } catch {
+      participantInfo = {};
+    }
               const nickname = this.isHost()
                 ? `Host-${this.auth.user()?.nombre || 'Admin'}`
                 : (participantInfo.nickname ?? `Estudiante-${Math.floor(Math.random() * 1000)}`);
@@ -551,7 +561,12 @@ export class GameSessionComponent implements OnInit, OnDestroy {
       // Validar que el comodín PÚBLICO esté activo antes de permitir el voto
       if (!this.gameSocket.votosPublico()) return;
 
-      const participantInfo = JSON.parse(localStorage.getItem('participantInfo') ?? '{}');
+      let participantInfo: any = {};
+    try {
+      participantInfo = JSON.parse(localStorage.getItem('participantInfo') ?? '{}');
+    } catch {
+      participantInfo = {};
+    }
       this.gameSocket.emitirVoto({
         salaId: sala.salaId,
         rondaId: sala.rondaActiva.rondaId,
