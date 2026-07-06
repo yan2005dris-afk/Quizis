@@ -172,23 +172,27 @@ describe('GameSocketService (observer extension)', () => {
   describe('enviarMensaje', () => {
     it('should call GameApiService.enviarMensaje with correct payload', () => {
       service.conectar('http://test.local', 'fake-token');
+      service.unirseASala('tok-123', 'TestUser');
 
       service.enviarMensaje('tok-123', 'Hola a todos', 'mensaje');
 
       expect(mockApi['enviarMensaje']).toHaveBeenCalledWith('tok-123', {
         texto: 'Hola a todos',
         tipo: 'mensaje',
+        nickname: 'TestUser',
       });
     });
 
     it('should handle sugerencia tipo', () => {
       service.conectar('http://test.local', 'fake-token');
+      service.unirseASala('tok-123', 'TestUser');
 
       service.enviarMensaje('tok-123', 'La respuesta es A', 'sugerencia');
 
       expect(mockApi['enviarMensaje']).toHaveBeenCalledWith('tok-123', {
         texto: 'La respuesta es A',
         tipo: 'sugerencia',
+        nickname: 'TestUser',
       });
     });
   });
