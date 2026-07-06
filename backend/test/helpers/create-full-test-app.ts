@@ -9,6 +9,9 @@ import { AuthModule } from 'src/identity/auth/auth.module';
 import { UserModule } from 'src/identity/users/user.module';
 import { BancosModule } from 'src/juego/bancos/bancos.module';
 import { SalasModule } from 'src/juego/salas/salas.module';
+import { ChatModule } from 'src/juego/chat/chat.module';
+import { VotosModule } from 'src/juego/votos/votos.module';
+import { ComodinesModule } from 'src/juego/comodines/comodines.module';
 import { HealthModule } from 'src/core/health/health.module';
 import { GlobalExceptionFilter } from 'src/core/common/filters/global-exception.filter';
 import { BigIntInterceptor } from 'src/core/common/interceptors/bigint.interceptor';
@@ -59,6 +62,9 @@ export async function createFullTestApp(): Promise<INestApplication> {
       UserModule,
       BancosModule,
       SalasModule,
+      ChatModule,
+      VotosModule,
+      ComodinesModule,
       HealthModule,
     ],
   })

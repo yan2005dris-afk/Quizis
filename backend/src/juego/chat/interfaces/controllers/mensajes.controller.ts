@@ -2,24 +2,23 @@ import {
   BadRequestException,
   Body,
   Controller,
-  ForbiddenException,
-  NotFoundException,
   Param,
   Post,
+  Req,
+  UseGuards,
 } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
-import { PrismaService } from '../../../../core/database/prisma/prisma.service';
 import { ChatService } from '../../application/chat.service';
+import { ParticipantRoleGuard } from '../../../shared/auth/participant-role.guard';
+import { ParticipantRoles } from '../../../shared/auth/participant-roles.decorator';
+import type { ParticipantRequest } from '../../../../core/common/types/auth-request.types';
 
 /**
  * REST endpoint for chat messages.
  *
- * Auth is per-sala (no JWT): the caller is identified by the
- * `nickname` in the body, and the controller validates that a participant
- * with that nickname exists in the targeted sala (deletedAt=null). This
- * matches the pattern used by `respuestas.controller.ts` — students and
- * observers join rooms via shareable links, not via login.
+ * Auth is hybrid (JWT-admin | tokenless-nickname) per `ParticipantRoleGuard`.
+ * Open to: admin (own sala via JWT), estudiante, observador.
  *
  * Equivalent to the WS `enviar_mensaje` handler. Delegates to
  * `ChatService.sendMessage()` — WS broadcast `mensaje_chat` fires
@@ -29,27 +28,24 @@ import { ChatService } from '../../application/chat.service';
  */
 @ApiTags('chat')
 @Controller('salas/:salaId/mensajes')
+@UseGuards(ParticipantRoleGuard)
 export class MensajesController {
-  constructor(
-    private readonly chatService: ChatService,
-    private readonly prisma: PrismaService,
-  ) {}
+  constructor(private readonly chatService: ChatService) {}
 
   @Post()
   @Throttle({ default: { limit: 1, ttl: 1000 } })
+  @ParticipantRoles('admin', 'estudiante', 'observador')
   @ApiOperation({ summary: 'Send a chat message in the sala' })
   async send(
     @Param('salaId') tokenCompartido: string,
     @Body()
     body: {
-      nickname: string;
+      nickname?: string;
       texto: string;
       tipo: 'mensaje' | 'sugerencia';
     },
+    @Req() req: ParticipantRequest,
   ) {
-    if (!body.nickname || body.nickname.trim().length === 0) {
-      throw new BadRequestException('nickname no puede estar vacío');
-    }
     if (!body.texto || body.texto.trim().length === 0) {
       throw new BadRequestException('texto no puede estar vacío');
     }
@@ -59,33 +55,19 @@ export class MensajesController {
       );
     }
 
-    const nickname = body.nickname.trim();
-
-    const participante = await this.prisma.participantes.findFirst({
-      where: {
-        sala: { tokenCompartido },
-        nickname,
-        deletedAt: null,
-      },
-      select: { rol: true },
-    });
-
-    if (!participante) {
-      throw new NotFoundException(
-        'No eres participante de esta sala con ese nickname',
-      );
-    }
-
-    // Chat is open to any active participant (estudiante or observador).
-    // The historical "user" from req was the JWT-authenticated admin — that
-    // never applied to participants joining via shareable links.
-    if (
-      participante.rol !== 'estudiante' &&
-      participante.rol !== 'observador'
-    ) {
-      throw new ForbiddenException(
-        `Tu rol actual (${participante.rol}) no permite enviar mensajes`,
-      );
+    // Admin role is force-labeled: the auth guard's admin branch resolves
+    // role='admin' (non-spoofable JWT-sala-owner check). For admins we
+    // IGNORE body.nickname entirely — otherwise a participant could spoof the
+    // admin identity by sending an arbitrary `nickname` string. Participants
+    // (tokenless branch) take their identity from body.nickname.
+    let nickname: string;
+    if (req.participante?.role === 'admin') {
+      nickname = `Admin #${req.participante.userId}`;
+    } else {
+      nickname = (body.nickname ?? '').trim();
+      if (nickname.length === 0) {
+        throw new BadRequestException('nickname requerido');
+      }
     }
 
     return this.chatService.sendMessage({

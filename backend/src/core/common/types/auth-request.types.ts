@@ -14,3 +14,16 @@ export type AuthUser = {
 export type AuthenticatedRequest = Request & {
   user?: AuthUser;
 };
+
+export type ParticipantRole = 'admin' | 'estudiante' | 'observador';
+
+export type ParticipanteInfo = {
+  role: ParticipantRole;
+  participanteId?: number;
+  userId?: number;
+  salaId?: number;
+};
+
+export type ParticipantRequest = AuthenticatedRequest & {
+  participante?: ParticipanteInfo;
+};
