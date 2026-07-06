@@ -15,6 +15,7 @@ import { DatabaseModule } from '../../core/database/prisma/prisma.module';
 import { VotosModule } from '../votos/votos.module';
 import { SalasModule } from '../salas/salas.module';
 import { RoomBroadcastModule } from '../infrastructure/websockets/room-broadcast.module';
+import { JuegoAuthModule } from '../shared/auth/juego-auth.module';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { RoomBroadcastModule } from '../infrastructure/websockets/room-broadcast
     VotosModule,
     SalasModule,
     RoomBroadcastModule,
+    JuegoAuthModule,
   ],
   controllers: [ComodinesController, ComodinesRestController],
   providers: [

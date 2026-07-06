@@ -17,9 +17,16 @@ import { ConsensusCacheService } from './infrastructure/cache/consensus-cache.se
 import { ConsensusListener } from './infrastructure/listeners/consensus.listener';
 import { SalasModule } from '../salas/salas.module';
 import { RespuestasModule } from '../respuestas/respuestas.module';
+import { JuegoAuthModule } from '../shared/auth/juego-auth.module';
 
 @Module({
-  imports: [CacheModule, DatabaseModule, SalasModule, RespuestasModule],
+  imports: [
+    CacheModule,
+    DatabaseModule,
+    SalasModule,
+    RespuestasModule,
+    JuegoAuthModule,
+  ],
   controllers: [VotosController, RespuestasController, VotosRestController],
   providers: [
     VotosService,
