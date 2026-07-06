@@ -33,6 +33,7 @@ describe('UpdateEstadoSalaUseCase', () => {
 
   const mockParticipantsCache = {
     getHistoricalParticipants: jest.fn().mockResolvedValue([]),
+    getOnlineParticipants: jest.fn().mockResolvedValue([]),
   };
 
   const mockEventEmitter = {
@@ -52,6 +53,9 @@ describe('UpdateEstadoSalaUseCase', () => {
 
     useCase = module.get<UpdateEstadoSalaUseCase>(UpdateEstadoSalaUseCase);
     jest.clearAllMocks();
+    // clearAllMocks resets call data but not implementations; re-establish the
+    // default so a prior test's override does not leak into the next one.
+    mockParticipantsCache.getOnlineParticipants.mockResolvedValue([]);
   });
 
   it('debería estar definido', () => {
@@ -85,6 +89,9 @@ describe('UpdateEstadoSalaUseCase', () => {
       estado: EstadoSala.ESPERANDO_ALUMNOS,
     });
     mockPrisma.participantes.count.mockResolvedValue(2);
+    mockParticipantsCache.getOnlineParticipants.mockResolvedValue([
+      'TestStudent',
+    ]);
     // ensureRondaActiva mocks
     mockPrisma.rondas.findFirst.mockResolvedValue(null);
     mockPrisma.participantes.findFirst.mockResolvedValue({
@@ -123,6 +130,9 @@ describe('UpdateEstadoSalaUseCase', () => {
       estado: EstadoSala.ESPERANDO_ALUMNOS,
     });
     mockPrisma.participantes.count.mockResolvedValue(2);
+    mockParticipantsCache.getOnlineParticipants.mockResolvedValue([
+      'TestStudent',
+    ]);
     mockPrisma.rondas.findFirst.mockResolvedValue(null);
     mockPrisma.participantes.findFirst.mockResolvedValue({
       participanteId: 1,
@@ -180,6 +190,24 @@ describe('UpdateEstadoSalaUseCase', () => {
       useCase.execute(1, { estado: EstadoSala.EN_VIVO }),
     ).rejects.toThrow(BadRequestException);
 
+    expect(mockRoomStateCache.setRoomEstado).not.toHaveBeenCalled();
+  });
+
+  it('debería rechazar EN_VIVO si hay estudiante en DB pero ninguno conectado', async () => {
+    mockPrisma.salas.findUnique.mockResolvedValue({
+      salaId: 1,
+      tokenCompartido: 'T1',
+      estado: EstadoSala.ESPERANDO_ALUMNOS,
+    });
+    // Nadie conectado (Redis vacío) aunque exista fila de estudiante en DB.
+    mockParticipantsCache.getOnlineParticipants.mockResolvedValue([]);
+
+    await expect(
+      useCase.execute(1, { estado: EstadoSala.EN_VIVO }),
+    ).rejects.toThrow(BadRequestException);
+
+    // Short-circuit por online vacío: no consulta la DB para contar.
+    expect(mockPrisma.participantes.count).not.toHaveBeenCalled();
     expect(mockRoomStateCache.setRoomEstado).not.toHaveBeenCalled();
   });
 
