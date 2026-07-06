@@ -164,6 +164,17 @@ export class SalasService {
     );
   }
 
+  /**
+   * Count observers currently ONLINE in the sala. Used to gate the "Público"
+   * comodín — there is no audience to poll if no observers are connected.
+   */
+  async contarObservadoresOnline(tokenCompartido: string): Promise<number> {
+    const online =
+      await this.participantsCache.getOnlineParticipants(tokenCompartido);
+    const conRoles = await this.getParticipantsWithRoles(tokenCompartido, online);
+    return conRoles.filter((p) => p.rol === 'observador').length;
+  }
+
   async reiniciarRonda(salaId: number) {
     return this.restartRoundUseCase.execute(salaId);
   }
