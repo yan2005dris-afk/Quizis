@@ -21,6 +21,7 @@ export type ParticipanteInfo = {
   role: ParticipantRole;
   participanteId?: number;
   userId?: number;
+  salaId?: number;
 };
 
 export type ParticipantRequest = AuthenticatedRequest & {

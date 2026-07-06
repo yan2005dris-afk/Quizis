@@ -61,7 +61,14 @@ export class ParticipantRoleGuard implements CanActivate {
       this.readSalaIdFromParams(request) ?? this.readSalaIdFromBody(request);
 
     if (!tokenCompartido) {
-      throw new ForbiddenException('salaId (tokenCompartido) requerido en URL');
+      // All current consumers register this guard behind a `:salaId`
+      // route param (router guarantees presence). This branch is a
+      // never-expected sanity guard for future controllers that may
+      // expose the participant axis without the URL param — 400 rather
+      // than 403 since it is a malformed request, not an authz issue.
+      throw new BadRequestException(
+        'salaId (tokenCompartido) requerido en URL o body',
+      );
     }
 
     const resolved: ParticipanteInfo | null = await this.tryResolveAdmin(
@@ -113,14 +120,18 @@ export class ParticipantRoleGuard implements CanActivate {
         secret: this.config.getOrThrow<string>('JWT_ACCESS_SECRET'),
       });
     } catch (err) {
-      this.logger.warn(
-        `Admin branch: verifyAsync failed → falling through: ${(err as Error).message}`,
+      // verifyAsync failure is expected on every public-by-design endpoint
+      // (joining participantes don't carry JWTs); log at debug to avoid
+      // log-injection / DoS via random Bearer headers. Only the
+      // sala-not-found case stays at warn since it is suspicious.
+      this.logger.debug(
+        `Admin branch: verifyAsync failed (${(err as Error).name}) — falling through`,
       );
       return null;
     }
 
     if (typeof payload.sub !== 'number') {
-      this.logger.warn(
+      this.logger.debug(
         `Admin branch: payload.sub is not a number (typeof=${typeof payload.sub}); sala=${tokenCompartido}`,
       );
       return null;
@@ -139,13 +150,13 @@ export class ParticipantRoleGuard implements CanActivate {
     }
 
     if (sala.adminId !== payload.sub) {
-      this.logger.warn(
+      this.logger.debug(
         `Admin branch: usuario ${payload.sub} no es admin de la sala ${sala.salaId} (admin=${sala.adminId})`,
       );
       return null;
     }
 
-    return { role: 'admin', userId: payload.sub };
+    return { role: 'admin', userId: payload.sub, salaId: sala.salaId };
   }
 
   // ─── Layer 2: tokenless branch ─────────────────────────────────
@@ -188,10 +199,15 @@ export class ParticipantRoleGuard implements CanActivate {
       return {
         role: 'observador',
         participanteId: participante.participanteId,
+        salaId: sala.salaId,
       };
     }
 
-    return { role: rol, participanteId: participante.participanteId };
+    return {
+      role: rol,
+      participanteId: participante.participanteId,
+      salaId: sala.salaId,
+    };
   }
 
   private readSalaIdFromParams(

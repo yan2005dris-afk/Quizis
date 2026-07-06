@@ -1,8 +1,7 @@
 import { INestApplication } from '@nestjs/common';
-import { EventEmitter2 } from '@nestjs/event-emitter';
 import request from 'supertest';
 import { PrismaService } from 'src/core/database/prisma/prisma.service';
-import { GameEvents } from 'src/core/common/events/game-events.types';
+import { BlockComodinUseCase } from 'src/juego/comodines/application/use-cases/block-comodin.use-case';
 import { createFullTestApp } from '../../helpers/create-full-test-app';
 import {
   seedAdminUser,
@@ -36,7 +35,6 @@ import {
 describe('Comodines REST (POST /salas/:salaId/comodines/...)', () => {
   let app: INestApplication;
   let prisma: PrismaService;
-  let eventEmitter: EventEmitter2;
   let admin: SeededAdminUser;
   let banco: SeededBanco;
   let sala: SeededSala;
@@ -46,7 +44,6 @@ describe('Comodines REST (POST /salas/:salaId/comodines/...)', () => {
   beforeAll(async () => {
     app = await createFullTestApp();
     prisma = app.get(PrismaService);
-    eventEmitter = app.get(EventEmitter2);
 
     admin = await seedAdminUser(prisma, [
       { recurso: 'salas', accion: 'create' },
@@ -63,13 +60,13 @@ describe('Comodines REST (POST /salas/:salaId/comodines/...)', () => {
       estado: 'EN_VIVO',
     });
 
-estudiante = await seedParticipante(
-          prisma,
-          sala.salaId,
-          'TestEstudiante',
-          'estudiante',
-        );
-        await seedParticipante(prisma, sala.salaId, 'TestObservador', 'observador');
+    estudiante = await seedParticipante(
+      prisma,
+      sala.salaId,
+      'TestEstudiante',
+      'estudiante',
+    );
+    await seedParticipante(prisma, sala.salaId, 'TestObservador', 'observador');
 
     await seedComodinesForSala(prisma, sala.salaId);
   });
@@ -140,29 +137,39 @@ estudiante = await seedParticipante(
       expect(res.status).toBeGreaterThanOrEqual(400);
     });
 
-it('missing nickname → 400', async () => {
+    it('missing nickname → 400', async () => {
       const res = await bloquear('PUBLICO', {});
       expect(res.status).toBe(400);
     });
 
-    it('estudiante bloquear → comodin_bloqueado WS event userId = participanteId (no sentinel 0)', async () => {
+    it('estudiante bloquear → use-case recibe userId = participanteId real (no sentinel 0)', async () => {
       // Regression: pre-fix, the controller forwarded `userId: 0` to
       // BlockComodinUseCase → broadcast `comodin_bloqueado { userId: 0 }`
-      // to every WS client. The use-case must receive the real
-      // participanteId so audit logs identify the actor.
-      let captured: { userId?: number } | undefined;
-      const handler = (payload: { userId?: number }) => {
-    captured = payload;
+      // to every WS client (audit hole). Now the controller must receive
+      // the real participanteId from req.participante and pass it to the
+      // use-case, which then emits the broadcast with the real id.
+      //
+      // We verify directly by spying on BlockComodinUseCase.execute —
+      // its signature is `execute({ tokenCompartido, tipo, userId })`,
+      // so the captured argument proves the controller passed the real
+      // participanteId (not a `0` sentinel).
+      const blockUseCase = app.get(BlockComodinUseCase);
+      type Arg = { tokenCompartido: string; tipo: string; userId: number };
+      let capturedArg: Arg | undefined;
+      const origExecute = blockUseCase.execute.bind(blockUseCase);
+      const spy = (arg: Arg) => {
+        capturedArg = arg;
+        return origExecute(arg);
       };
-      eventEmitter.on(GameEvents.COMODINES.BLOQUEADO, handler);
+      blockUseCase.execute = spy as typeof blockUseCase.execute;
       try {
-    const res = await bloquear('50_50', { nickname: 'TestEstudiante' });
-    expect(res.status).toBe(201);
-    expect(captured).toBeDefined();
-    expect(captured!.userId).toBe(estudiante.participanteId);
-    expect(captured!.userId).not.toBe(0);
+        const res = await bloquear('50_50', { nickname: 'TestEstudiante' });
+        expect(res.status).toBe(201);
+        expect(capturedArg).toBeDefined();
+        expect(capturedArg!.userId).toBe(estudiante.participanteId);
+        expect(capturedArg!.userId).not.toBe(0);
       } finally {
-    eventEmitter.off(GameEvents.COMODINES.BLOQUEADO, handler);
+        blockUseCase.execute = origExecute;
       }
     });
   });

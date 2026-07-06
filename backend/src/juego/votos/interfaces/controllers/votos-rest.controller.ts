@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   NotFoundException,
@@ -13,7 +14,6 @@ import type { VotePayload } from '../../application/use-cases/process-audience-v
 import { ParticipantRoleGuard } from '../../../shared/auth/participant-role.guard';
 import { ParticipantRoles } from '../../../shared/auth/participant-roles.decorator';
 import type { ParticipantRequest } from '../../../../core/common/types/auth-request.types';
-import { PrismaService } from '../../../../core/database/prisma/prisma.service';
 
 /**
  * REST endpoint for the audience vote mutation (comodín "Pregunta al público").
@@ -32,7 +32,6 @@ import { PrismaService } from '../../../../core/database/prisma/prisma.service';
 export class VotosRestController {
   constructor(
     private readonly processAudienceVote: ProcessAudienceVoteUseCase,
-    private readonly prisma: PrismaService,
   ) {}
 
   @Post()
@@ -52,19 +51,18 @@ export class VotosRestController {
   ) {
     const participante = req.participante;
     if (!participante?.participanteId) {
-      throw new NotFoundException(
-        'No se pudo identificar al participante (rol: observador requerido)',
+      throw new NotFoundException('No se pudo identificar al participante');
+    }
+    // salaId is attached by ParticipantRoleGuard after its sala lookup,
+    // so this controller no longer needs PrismaService.
+    if (typeof participante.salaId !== 'number') {
+      throw new BadRequestException(
+        'No se pudo resolver la sala desde la sesión',
       );
     }
 
-    const sala = await this.prisma.salas.findUnique({
-      where: { tokenCompartido },
-      select: { salaId: true },
-    });
-    if (!sala) throw new NotFoundException('Sala no encontrada');
-
     const payload: VotePayload = {
-      salaId: sala.salaId,
+      salaId: participante.salaId,
       rondaId: body.rondaId,
       tokenCompartido,
       preguntaId: body.preguntaId,

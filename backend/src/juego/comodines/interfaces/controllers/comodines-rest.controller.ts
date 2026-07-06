@@ -4,15 +4,16 @@ import {
   Controller,
   Param,
   Post,
+  Req,
   UseGuards,
 } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
-import { SalasService } from '../../../salas/application/salas.service';
 import { ActivateCallJokerUseCase } from '../../application/use-cases/activate-call-joker.use-case';
 import { SendHintUseCase } from '../../application/use-cases/send-hint.use-case';
 import { BlockComodinUseCase } from '../../application/use-cases/block-comodin.use-case';
 import { ParticipantRoleGuard } from '../../../shared/auth/participant-role.guard';
 import { ParticipantRoles } from '../../../shared/auth/participant-roles.decorator';
+import type { ParticipantRequest } from '../../../../core/common/types/auth-request.types';
 
 /**
  * REST endpoints for comodín mutations.
@@ -36,7 +37,6 @@ import { ParticipantRoles } from '../../../shared/auth/participant-roles.decorat
 @UseGuards(ParticipantRoleGuard)
 export class ComodinesRestController {
   constructor(
-    private readonly salasService: SalasService,
     private readonly activateCallJoker: ActivateCallJokerUseCase,
     private readonly sendHint: SendHintUseCase,
     private readonly blockComodinUseCase: BlockComodinUseCase,
@@ -54,6 +54,7 @@ export class ComodinesRestController {
     @Param('salaId') tokenCompartido: string,
     @Param('tipo') tipo: string,
     @Body() _body: { nickname?: string; preguntaId?: number },
+    @Req() req: ParticipantRequest,
   ) {
     if (!this.VALID_TIPOS.includes(tipo)) {
       throw new BadRequestException(
@@ -61,10 +62,20 @@ export class ComodinesRestController {
       );
     }
 
+    // Previously emitted `userId: 0` as a sentinel (audit hole — the WS
+    // `comodin_bloqueado` event was broadcast with userId=0). Now pass the
+    // resolved participanteId from the guard. `@ParticipantRoles('estudiante')`
+    // guarantees the guard set participanteId before this method runs, so
+    // the non-null assertion is safe.
+    if (req.participante?.participanteId == null) {
+      throw new BadRequestException('participante no resuelto por el guard');
+    }
+    const userId: number = req.participante.participanteId;
+
     await this.blockComodinUseCase.execute({
       tokenCompartido,
       tipo,
-      userId: 0, // sentinela — guard ya validó identidad, use-case no usa userId
+      userId,
     });
 
     return { ok: true, tipo, tokenCompartido };
