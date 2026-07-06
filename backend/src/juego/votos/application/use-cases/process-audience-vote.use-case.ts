@@ -5,6 +5,7 @@ import { RoomStateCacheService } from '../../../shared/room-state/room-state-cac
 import { VotesCacheService } from '../../infrastructure/cache/votes-cache.service';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { PrismaService } from '../../../../core/database/prisma/prisma.service';
+import { GameEvents } from '../../../../core/common/events/game-events.types';
 
 export interface VotePayload {
   salaId: number;
@@ -78,6 +79,17 @@ export class ProcessAudienceVoteUseCase {
         distribucion.total += count;
       }
     }
+
+    // 4. Broadcaster distribución al resto de la sala para que las barras
+    //    del público se actualicen en vivo. Sin este emit, sólo el votante
+    //    ve la distribución (vía HTTP response) y los demás participantes
+    //    nunca ven las barras actualizarse.
+    //    El gateway reenvía este evento como `voto_recibido` (ver
+    //    JuegoGateway.handlePublicoVoteBroadcast).
+    this.eventEmitter.emit(GameEvents.VOTOS.VOTO_PUBLICO_RECIBIDO, {
+      tokenCompartido: payload.tokenCompartido,
+      resultado: distribucion,
+    });
 
     return {
       success: true,
