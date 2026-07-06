@@ -2,6 +2,7 @@ import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { PrismaService } from 'src/core/database/prisma/prisma.service';
 import { BlockComodinUseCase } from 'src/juego/comodines/application/use-cases/block-comodin.use-case';
+import { ParticipantsCacheService } from 'src/juego/shared/room-state/participants-cache.service';
 import { createFullTestApp } from '../../helpers/create-full-test-app';
 import {
   seedAdminUser,
@@ -102,9 +103,25 @@ describe('Comodines REST (POST /salas/:salaId/comodines/...)', () => {
       return req.send(body);
     };
 
-    it('estudiante → 201', async () => {
+    it('estudiante + observador conectado → 201', async () => {
+      // Público requires a live audience: register an online observer so the
+      // BlockComodinUseCase guard passes.
+      const cache = app.get(ParticipantsCacheService);
+      await cache.addParticipantOnline(sala.tokenCompartido, 'TestObservador');
+      try {
+        const res = await bloquear('PUBLICO', { nickname: 'TestEstudiante' });
+        expect(res.status).toBe(201);
+      } finally {
+        await cache.removeParticipantOnline(
+          sala.tokenCompartido,
+          'TestObservador',
+        );
+      }
+    });
+
+    it('estudiante sin observadores conectados → 400 (regla del público)', async () => {
       const res = await bloquear('PUBLICO', { nickname: 'TestEstudiante' });
-      expect(res.status).toBe(201);
+      expect(res.status).toBe(400);
     });
 
     it('observador → 403', async () => {
