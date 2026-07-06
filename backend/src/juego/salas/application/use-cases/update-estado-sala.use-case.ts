@@ -49,19 +49,31 @@ export class UpdateEstadoSalaUseCase {
       );
     }
 
-    // EN_VIVO guard: requiere al menos 1 estudiante en la sala
+    // EN_VIVO guard: requiere al menos 1 estudiante CONECTADO (activo).
+    // "Online" sale de Redis (estado en vivo); el rol sale de la DB
+    // (fuente de verdad). La DB por sí sola contaría estudiantes que ya
+    // se desconectaron — para iniciar el juego lo que importa es quién
+    // está presente ahora.
     if (nuevoEstado === EstadoSala.EN_VIVO) {
-      const estudiantesCount = await this.prisma.participantes.count({
-        where: {
-          salaId: id,
-          deletedAt: null,
-          rol: 'estudiante',
-        },
-      });
+      const online = await this.participantsCache.getOnlineParticipants(
+        sala.tokenCompartido,
+      );
 
-      if (estudiantesCount === 0) {
+      const estudiantesOnline =
+        online.length === 0
+          ? 0
+          : await this.prisma.participantes.count({
+              where: {
+                salaId: id,
+                deletedAt: null,
+                rol: 'estudiante',
+                nickname: { in: online },
+              },
+            });
+
+      if (estudiantesOnline === 0) {
         throw new BadRequestException(
-          'No se puede iniciar la sala en vivo sin estudiantes. Debe haber al menos 1 estudiante.',
+          'No se puede iniciar la sala en vivo sin estudiantes conectados. Debe haber al menos 1 estudiante activo.',
         );
       }
     }

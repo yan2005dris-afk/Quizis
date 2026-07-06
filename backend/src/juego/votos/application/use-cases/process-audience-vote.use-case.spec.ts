@@ -9,6 +9,7 @@ import { RoomStateCacheService } from '../../../shared/room-state/room-state-cac
 import { VotesCacheService } from '../../infrastructure/cache/votes-cache.service';
 import { PrismaService } from '../../../../core/database/prisma/prisma.service';
 import { EventEmitter2 } from '@nestjs/event-emitter';
+import { GameEvents } from '../../../../core/common/events/game-events.types';
 
 describe('ProcessAudienceVoteUseCase', () => {
   let useCase: ProcessAudienceVoteUseCase;
@@ -16,6 +17,7 @@ describe('ProcessAudienceVoteUseCase', () => {
   let votosService: VotosService;
   let roomStateCache: RoomStateCacheService;
   let votesCache: VotesCacheService;
+  let eventEmitter: { emit: jest.Mock };
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -66,6 +68,7 @@ describe('ProcessAudienceVoteUseCase', () => {
     votosService = module.get<VotosService>(VotosService);
     roomStateCache = module.get<RoomStateCacheService>(RoomStateCacheService);
     votesCache = module.get<VotesCacheService>(VotesCacheService);
+    eventEmitter = module.get(EventEmitter2);
   });
 
   const mockPayload: VotePayload = {
@@ -92,6 +95,13 @@ describe('ProcessAudienceVoteUseCase', () => {
     expect(result.success).toBe(true);
     expect(result.message).toBe('Voto registrado correctamente.');
     expect(votosService.registrarVoto).toHaveBeenCalledWith(1, 10, 100, 5);
+    expect(eventEmitter.emit).toHaveBeenCalledWith(
+      GameEvents.VOTOS.VOTO_PUBLICO_RECIBIDO,
+      {
+        tokenCompartido: 'abc-123',
+        resultado: { A: 1, total: 1 },
+      },
+    );
   });
 
   it('debería rechazar el voto si es duplicado', async () => {
@@ -102,5 +112,32 @@ describe('ProcessAudienceVoteUseCase', () => {
     expect(result.success).toBe(false);
     expect(result.message).toContain('Acción bloqueada');
     expect(votosService.registrarVoto).not.toHaveBeenCalled();
+    // Crucial: NO debe emitir si el voto fue rechazado (sólo el votante
+    // recibiría la distribución vía HTTP response; el resto no ve nada).
+    expect(eventEmitter.emit).not.toHaveBeenCalled();
+  });
+
+  it('debería emitir VOTO_PUBLICO_RECIBIDO aunque getActiveQuestion retorne null', async () => {
+    jest.spyOn(validateUniqueness, 'execute').mockResolvedValue(true);
+    jest.spyOn(votosService, 'registrarVoto').mockResolvedValue(undefined);
+    jest.spyOn(votesCache, 'getDistribution').mockResolvedValue(
+      new Map([
+        [5, 3],
+        [7, 2],
+      ]),
+    );
+    jest.spyOn(roomStateCache, 'getActiveQuestion').mockResolvedValue(null);
+
+    const result = await useCase.execute(mockPayload);
+
+    expect(result.success).toBe(true);
+    // Sin activeQuestion, distribucion queda como { total: 5 }.
+    expect(eventEmitter.emit).toHaveBeenCalledWith(
+      GameEvents.VOTOS.VOTO_PUBLICO_RECIBIDO,
+      {
+        tokenCompartido: 'abc-123',
+        resultado: { total: 5 },
+      },
+    );
   });
 });
