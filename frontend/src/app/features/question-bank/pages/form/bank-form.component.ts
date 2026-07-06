@@ -2,11 +2,7 @@ import { Component, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink, ActivatedRoute, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import {
-  BancosService,
-  Opcion,
-  BancoPreguntasDetalle,
-} from '../../services/bancos.service';
+import { BancosService, Opcion, BancoPreguntasDetalle } from '../../services/bancos.service';
 import { FileParserService, type ParseResult } from '../../../../core/services/file-parser.service';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { switchMap, catchError, tap, map, startWith } from 'rxjs/operators';

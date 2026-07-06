@@ -116,16 +116,16 @@
       }
     </div>
 
-        @if (!isAdmin()) {
-          <app-wildcards-panel
-            [comodines]="comodines()"
-            [cargandoIa]="cargandoIa()"
-            [comodinPublicoActivo]="comodinPublicoActivo()"
-            [interactive]="interactive()"
-            [comodinBloqueado]="comodinBloqueado()"
-            (comodinClick)="onComodinClick($event)"
-          />
-        }
+    @if (!isAdmin()) {
+      <app-wildcards-panel
+        [comodines]="comodines()"
+        [cargandoIa]="cargandoIa()"
+        [comodinPublicoActivo]="comodinPublicoActivo()"
+        [interactive]="interactive()"
+        [comodinBloqueado]="comodinBloqueado()"
+        (comodinClick)="onComodinClick($event)"
+      />
+    }
 
     <!-- Feedback después de responder -->
     @if (showFeedback(); as visible) {
