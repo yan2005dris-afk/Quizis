@@ -4,6 +4,7 @@ import {
   Controller,
   Param,
   Post,
+  Req,
   UseGuards,
 } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
@@ -11,6 +12,7 @@ import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { ChatService } from '../../application/chat.service';
 import { ParticipantRoleGuard } from '../../../shared/auth/participant-role.guard';
 import { ParticipantRoles } from '../../../shared/auth/participant-roles.decorator';
+import type { ParticipantRequest } from '../../../../core/common/types/auth-request.types';
 
 /**
  * REST endpoint for chat messages.
@@ -42,6 +44,7 @@ export class MensajesController {
       texto: string;
       tipo: 'mensaje' | 'sugerencia';
     },
+    @Req() req: ParticipantRequest,
   ) {
     if (!body.texto || body.texto.trim().length === 0) {
       throw new BadRequestException('texto no puede estar vacío');
@@ -52,10 +55,19 @@ export class MensajesController {
       );
     }
 
-    // Guard validates nickname presence + sala membership; for the admin
-    // branch (JWT) nickname is not required in body. Provide a placeholder
-    // for the admin path so ChatService receives the expected shape.
-    const nickname = (body.nickname ?? '').trim();
+    // Tokenless branch requires nickname in body (validated by guard).
+    // Admin branch (JWT) may omit it — derive `Admin #<userId>` so the
+    // persisted/broadcast message always has a non-empty `usuario`
+    // (audit hole fix).
+    const nickname =
+      (body.nickname ?? '').trim() ||
+      (req.participante?.role === 'admin'
+        ? `Admin #${req.participante.userId}`
+        : '');
+
+    if (nickname.length === 0) {
+      throw new BadRequestException('nickname requerido o admin identificado');
+    }
 
     return this.chatService.sendMessage({
       tokenCompartido,

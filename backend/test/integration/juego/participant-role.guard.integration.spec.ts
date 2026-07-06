@@ -1,4 +1,8 @@
-import { INestApplication } from '@nestjs/common';
+import { ForbiddenException, INestApplication } from '@nestjs/common';
+import { Test, TestingModule } from '@nestjs/testing';
+import { Reflector } from '@nestjs/core';
+import { JwtService } from '@nestjs/jwt';
+import { ConfigService } from '@nestjs/config';
 import request from 'supertest';
 import { PrismaService } from 'src/core/database/prisma/prisma.service';
 import { createFullTestApp } from '../../helpers/create-full-test-app';
@@ -12,6 +16,7 @@ import {
   SeededBanco,
   SeededSala,
 } from '../../helpers/db-seed.helper';
+import { ParticipantRoleGuard } from 'src/juego/shared/auth/participant-role.guard';
 
 /**
  * Heart spec for ParticipantRoleGuard.
@@ -245,5 +250,73 @@ describe('ParticipantRoleGuard (POST /salas/:salaId/mensajes)', () => {
       });
       expect(res.status).toBe(404);
     });
+  });
+});
+
+/**
+ * Layer 3: deny-by-default control.
+ *
+ * The guard fails CLOSED when `@ParticipantRoles(...)` is missing — a defense-
+ * in-depth rule that prevents accidental "open to everyone" endpoints if a
+ * future contributor forgets the decorator. This is documented in the spec
+ * docstring but previously had no dedicated assertion; this unit-style block
+ * pins the behavior.
+ */
+describe('ParticipantRoleGuard — deny-by-default (Layer 3 control)', () => {
+  let guardModule: TestingModule;
+  let guard: ParticipantRoleGuard;
+
+  // Mocks: simulate a request that successfully resolves a participante so
+  // execution reaches the role-check stage. Then Reflector returns
+  // `undefined` for `@ParticipantRoles` → guard must throw 403.
+  const fakeReflector = {
+    getAllAndOverride: jest.fn().mockReturnValue(undefined),
+  };
+  const fakePrisma = {
+    salas: {
+      findUnique: jest.fn().mockResolvedValue({ salaId: 1 }),
+    },
+    participantes: {
+      findFirst: jest.fn().mockResolvedValue({
+        participanteId: 99,
+        rol: 'estudiante',
+      }),
+    },
+  };
+  const fakeJwt = { verifyAsync: jest.fn() };
+  const fakeConfig = { getOrThrow: jest.fn().mockReturnValue('secret') };
+
+  beforeAll(async () => {
+    guardModule = await Test.createTestingModule({
+      providers: [
+        ParticipantRoleGuard,
+        { provide: Reflector, useValue: fakeReflector },
+        { provide: PrismaService, useValue: fakePrisma },
+        { provide: JwtService, useValue: fakeJwt },
+        { provide: ConfigService, useValue: fakeConfig },
+      ],
+    }).compile();
+
+    guard = guardModule.get(ParticipantRoleGuard);
+  });
+
+  afterAll(async () => {
+    if (guardModule) await guardModule.close();
+  });
+
+  it('handler sin @ParticipantRoles → 403 deny-by-default', async () => {
+    const ctx = {
+      switchToHttp: () => ({
+        getRequest: () => ({
+          headers: {},
+          params: { salaId: 'token-x' },
+          body: { nickname: 'TestUser' },
+        }),
+      }),
+      getHandler: () => undefined,
+      getClass: () => undefined,
+    } as unknown as Parameters<typeof guard.canActivate>[0];
+
+    await expect(guard.canActivate(ctx)).rejects.toThrow(ForbiddenException);
   });
 });

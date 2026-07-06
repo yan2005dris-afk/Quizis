@@ -1,6 +1,8 @@
 import { INestApplication } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import request from 'supertest';
 import { PrismaService } from 'src/core/database/prisma/prisma.service';
+import { GameEvents } from 'src/core/common/events/game-events.types';
 import { createFullTestApp } from '../../helpers/create-full-test-app';
 import {
   seedAdminUser,
@@ -12,6 +14,7 @@ import {
   SeededAdminUser,
   SeededBanco,
   SeededSala,
+  SeededParticipante,
 } from '../../helpers/db-seed.helper';
 
 /**
@@ -33,14 +36,17 @@ import {
 describe('Comodines REST (POST /salas/:salaId/comodines/...)', () => {
   let app: INestApplication;
   let prisma: PrismaService;
+  let eventEmitter: EventEmitter2;
   let admin: SeededAdminUser;
   let banco: SeededBanco;
   let sala: SeededSala;
+  let estudiante: SeededParticipante;
   let adminToken: string;
 
   beforeAll(async () => {
     app = await createFullTestApp();
     prisma = app.get(PrismaService);
+    eventEmitter = app.get(EventEmitter2);
 
     admin = await seedAdminUser(prisma, [
       { recurso: 'salas', accion: 'create' },
@@ -57,8 +63,13 @@ describe('Comodines REST (POST /salas/:salaId/comodines/...)', () => {
       estado: 'EN_VIVO',
     });
 
-    await seedParticipante(prisma, sala.salaId, 'TestEstudiante', 'estudiante');
-    await seedParticipante(prisma, sala.salaId, 'TestObservador', 'observador');
+estudiante = await seedParticipante(
+          prisma,
+          sala.salaId,
+          'TestEstudiante',
+          'estudiante',
+        );
+        await seedParticipante(prisma, sala.salaId, 'TestObservador', 'observador');
 
     await seedComodinesForSala(prisma, sala.salaId);
   });
@@ -129,9 +140,30 @@ describe('Comodines REST (POST /salas/:salaId/comodines/...)', () => {
       expect(res.status).toBeGreaterThanOrEqual(400);
     });
 
-    it('missing nickname → 400', async () => {
+it('missing nickname → 400', async () => {
       const res = await bloquear('PUBLICO', {});
       expect(res.status).toBe(400);
+    });
+
+    it('estudiante bloquear → comodin_bloqueado WS event userId = participanteId (no sentinel 0)', async () => {
+      // Regression: pre-fix, the controller forwarded `userId: 0` to
+      // BlockComodinUseCase → broadcast `comodin_bloqueado { userId: 0 }`
+      // to every WS client. The use-case must receive the real
+      // participanteId so audit logs identify the actor.
+      let captured: { userId?: number } | undefined;
+      const handler = (payload: { userId?: number }) => {
+    captured = payload;
+      };
+      eventEmitter.on(GameEvents.COMODINES.BLOQUEADO, handler);
+      try {
+    const res = await bloquear('50_50', { nickname: 'TestEstudiante' });
+    expect(res.status).toBe(201);
+    expect(captured).toBeDefined();
+    expect(captured!.userId).toBe(estudiante.participanteId);
+    expect(captured!.userId).not.toBe(0);
+      } finally {
+    eventEmitter.off(GameEvents.COMODINES.BLOQUEADO, handler);
+      }
     });
   });
 

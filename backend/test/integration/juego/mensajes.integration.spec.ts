@@ -1,6 +1,7 @@
 import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { PrismaService } from 'src/core/database/prisma/prisma.service';
+import { ChatCacheService } from 'src/juego/chat/infrastructure/cache/chat-cache.service';
 import { createFullTestApp } from '../../helpers/create-full-test-app';
 import {
   seedAdminUser,
@@ -21,6 +22,7 @@ import {
 describe('Mensajes (POST /salas/:salaId/mensajes)', () => {
   let app: INestApplication;
   let prisma: PrismaService;
+  let chatCache: ChatCacheService;
   let admin: SeededAdminUser;
   let banco: SeededBanco;
   let sala: SeededSala;
@@ -29,6 +31,7 @@ describe('Mensajes (POST /salas/:salaId/mensajes)', () => {
   beforeAll(async () => {
     app = await createFullTestApp();
     prisma = app.get(PrismaService);
+    chatCache = app.get(ChatCacheService);
 
     admin = await seedAdminUser(prisma, [
       { recurso: 'salas', accion: 'create' },
@@ -136,5 +139,21 @@ describe('Mensajes (POST /salas/:salaId/mensajes)', () => {
       { salaId: '00000000-0000-0000-0000-000000000000' },
     );
     expect(res.status).toBe(404);
+  });
+
+  it('admin (own sala, via JWT, sin nickname en body) → 201 y mensaje persistido con usuario no vacío', async () => {
+    // Regression: pre-fix el admin path enviaba nickname='' a ChatService,
+    // dejando el campo `usuario` del mensaje persistido vacío — un hueco de
+    // auditoría. El fix: el controller deriva `Admin #<userId>` cuando el
+    // guard resolvió role='admin' y no hay nickname en el body.
+    const texto = `admin-audit-${Date.now()}`;
+    const res = await send({ texto, tipo: 'mensaje' }, { token: adminToken });
+    expect(res.status).toBe(201);
+
+    const messages = await chatCache.getMessages(sala.tokenCompartido);
+    const persisted = messages.find((m) => m.texto === texto);
+    expect(persisted).toBeDefined();
+    expect(persisted!.usuario).toBeTruthy();
+    expect(persisted!.usuario.length).toBeGreaterThan(0);
   });
 });
