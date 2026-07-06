@@ -546,7 +546,11 @@ export class GameSocketService {
     texto: string,
     tipo: 'mensaje' | 'sugerencia',
   ): Promise<unknown> {
-    return firstValueFrom(this.api.enviarMensaje(tokenCompartido, { texto, tipo }));
+    const nickname = this.localNickname;
+    if (!nickname) return Promise.reject(new Error('No hay nickname local'));
+    return firstValueFrom(
+      this.api.enviarMensaje(tokenCompartido, { texto, tipo, nickname }),
+    );
   }
 
   // ——— Gameplay Actions ———

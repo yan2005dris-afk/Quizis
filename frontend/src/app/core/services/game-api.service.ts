@@ -182,7 +182,7 @@ export class GameApiService {
    */
   enviarMensaje(
     salaId: string,
-    payload: { texto: string; tipo: 'mensaje' | 'sugerencia' },
+    payload: { texto: string; tipo: 'mensaje' | 'sugerencia'; nickname: string },
   ): Observable<unknown> {
     return this.http
       .post<unknown>(`${this.apiUrl}/salas/${salaId}/mensajes`, payload)
