@@ -55,18 +55,19 @@ export class MensajesController {
       );
     }
 
-    // Tokenless branch requires nickname in body (validated by guard).
-    // Admin branch (JWT) may omit it — derive `Admin #<userId>` so the
-    // persisted/broadcast message always has a non-empty `usuario`
-    // (audit hole fix).
-    const nickname =
-      (body.nickname ?? '').trim() ||
-      (req.participante?.role === 'admin'
-        ? `Admin #${req.participante.userId}`
-        : '');
-
-    if (nickname.length === 0) {
-      throw new BadRequestException('nickname requerido o admin identificado');
+    // Admin role is force-labeled: the auth guard's admin branch resolves
+    // role='admin' (non-spoofable JWT-sala-owner check). For admins we
+    // IGNORE body.nickname entirely — otherwise a participant could spoof the
+    // admin identity by sending an arbitrary `nickname` string. Participants
+    // (tokenless branch) take their identity from body.nickname.
+    let nickname: string;
+    if (req.participante?.role === 'admin') {
+      nickname = `Admin #${req.participante.userId}`;
+    } else {
+      nickname = (body.nickname ?? '').trim();
+      if (nickname.length === 0) {
+        throw new BadRequestException('nickname requerido');
+      }
     }
 
     return this.chatService.sendMessage({

@@ -279,6 +279,12 @@ export async function cleanSeedData(
 
   // Participantes por ID (antes que la limpieza por salaId para no perder refs)
   if (participanteIds.length > 0) {
+    // Rondas reference participantes via participanteId — delete them
+    // first to avoid FK violation. (Mirrors the order used in the
+    // salaIds branch below.)
+    await prisma.rondas.deleteMany({
+      where: { participanteId: { in: participanteIds } },
+    });
     await prisma.participantes.deleteMany({
       where: { participanteId: { in: participanteIds } },
     });

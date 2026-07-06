@@ -50,7 +50,7 @@ export class VotosRestController {
     @Req() req: ParticipantRequest,
   ) {
     const participante = req.participante;
-    if (!participante?.participanteId) {
+    if (participante?.participanteId == null) {
       throw new NotFoundException('No se pudo identificar al participante');
     }
     // salaId is attached by ParticipantRoleGuard after its sala lookup,

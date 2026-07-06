@@ -133,7 +133,7 @@ describe('Votos REST (POST /salas/:salaId/votos)', () => {
     expect(res.status).toBe(403);
   });
 
-  it('admin JWT for own sala → fall through (no participante row) → 404, NOT 200', async () => {
+  it('admin JWT for own sala → 403 (admin denied by rol matrix [observador]), NOT 200', async () => {
     const rondaId = await fetchRondaId();
     const res = await vote(
       {
