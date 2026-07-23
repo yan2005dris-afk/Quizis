@@ -8,25 +8,35 @@
   </header>
 
   <nav class="help__toc" aria-label="Secciones del manual">
-    <a href="#help-panel">Panel principal</a>
-    <a href="#help-bancos">Banco de preguntas</a>
-    <a href="#help-salas">Crear una sala</a>
-    <a href="#help-presentador">Modo presentador</a>
-    <a href="#help-comodines">Comodines</a>
-    <a href="#help-reportes">Reportes</a>
-    <a href="#help-alumnos">Del lado del alumno</a>
-    <a href="#help-roles">Roles y permisos</a>
-    <a href="#help-notas">A tener en cuenta</a>
+    <a routerLink="." fragment="help-panel" (click)="scrollToSection('help-panel')">Panel principal</a>
+    <a routerLink="." fragment="help-bancos" (click)="scrollToSection('help-bancos')">Banco de preguntas</a>
+    <a routerLink="." fragment="help-salas" (click)="scrollToSection('help-salas')">Crear una sala</a>
+    <a routerLink="." fragment="help-presentador" (click)="scrollToSection('help-presentador')">Modo presentador</a>
+    <a routerLink="." fragment="help-comodines" (click)="scrollToSection('help-comodines')">Comodines</a>
+    <a routerLink="." fragment="help-reportes" (click)="scrollToSection('help-reportes')">Reportes</a>
+    <a routerLink="." fragment="help-alumnos" (click)="scrollToSection('help-alumnos')">Del lado del alumno</a>
+    <a routerLink="." fragment="help-roles" (click)="scrollToSection('help-roles')">Roles y permisos</a>
+    <a routerLink="." fragment="help-notas" (click)="scrollToSection('help-notas')">A tener en cuenta</a>
   </nav>
 
   <section id="help-panel" class="help__section">
     <h2><lucide-icon [img]="DashboardIcon" size="18" /> Panel principal</h2>
     <p>Es la pantalla de inicio después de loguearte. Las cuatro tarjetas resumen bancos de preguntas, preguntas totales, salas de juego creadas y salas activas en este momento. Desde ahí tenés dos atajos permanentes: <strong>+ Nueva Sala</strong> y <strong>Ver Bancos</strong>.</p>
+
+    <figure class="help__figure">
+      <img ngSrc="/help/dashboard.webp" width="1100" height="688" alt="Panel principal de Quizis con las tarjetas de bancos, preguntas totales, salas de juego y salas activas." />
+      <figcaption>Panel principal con el resumen de la cuenta.</figcaption>
+    </figure>
   </section>
 
   <section id="help-bancos" class="help__section">
     <h2><lucide-icon [img]="DatabaseIcon" size="18" /> Banco de preguntas</h2>
     <p>Un banco agrupa preguntas por tema (por ejemplo "Historia del Arte" o "Cultura General"). Una sala siempre toma sus preguntas de un banco.</p>
+
+    <figure class="help__figure">
+      <img ngSrc="/help/banco-list.webp" width="1100" height="688" alt="Listado de bancos de preguntas con su cantidad de preguntas cada uno." />
+      <figcaption>Listado de bancos, con acciones para crear uno nuevo o descargar la plantilla de importación.</figcaption>
+    </figure>
 
     <h3>Crear un banco nuevo</h3>
     <ol class="help__steps">
@@ -48,6 +58,11 @@
       <span class="help__callout-label"><lucide-icon [img]="WarnIcon" size="14" /> Ojo con este botón</span>
       <p><strong>+ Nueva pregunta</strong> no abre un formulario: agrega de inmediato una pregunta en blanco al banco y recién después se edita. Si lo tocás por error, cada pregunta se borra con el ícono que aparece al pasar el mouse por encima en la lista, previa confirmación.</p>
     </div>
+
+    <figure class="help__figure">
+      <img ngSrc="/help/pregunta-detalle.webp" width="1100" height="688" alt="Detalle de una pregunta con nivel, tiempo límite y cuatro opciones, una marcada como correcta." />
+      <figcaption>Detalle de una pregunta ya cargada: nivel, tiempo límite y opción correcta.</figcaption>
+    </figure>
   </section>
 
   <section id="help-salas" class="help__section">
@@ -55,6 +70,11 @@
     <p>Una sala es la partida en sí: conecta un banco de preguntas con un grupo de participantes en tiempo real. Se crea desde <strong>Salas → Crear Sala</strong>.</p>
     <p>El formulario define el título, el estado inicial (Borrador por defecto), cuántas preguntas se liberan por ronda, cuánto dura el link de invitación (1 a 168 horas), el máximo de estudiantes que pueden entrar con ese rol, y qué comodines están activos.</p>
     <p>Al pie hay dos acciones: <strong>Guardar borrador</strong> (sin generar link activo) o <strong>Iniciar sala</strong> (queda lista para recibir participantes).</p>
+
+    <figure class="help__figure">
+      <img ngSrc="/help/crear-sala.webp" width="1100" height="688" alt="Formulario de creación de sala con información general y comodines activos." />
+      <figcaption>Formulario de creación de sala, con los comodines activos abajo a la izquierda.</figcaption>
+    </figure>
   </section>
 
   <section id="help-presentador" class="help__section">
@@ -87,6 +107,11 @@
     </ol>
 
     <p>A la derecha del panel: pestañas de <strong>Participantes</strong> (con rol y estado de conexión) y <strong>Chat en Vivo</strong>, más un feed de eventos de la sala.</p>
+
+    <figure class="help__figure">
+      <img ngSrc="/help/sala-live-admin.webp" width="1100" height="688" alt="Sala en vivo desde el panel del organizador, con la pregunta pendiente y la lista de participantes." />
+      <figcaption>Sala en vivo: estado, temporizador, pregunta actual y participantes con su rol.</figcaption>
+    </figure>
   </section>
 
   <section id="help-comodines" class="help__section">
@@ -104,16 +129,31 @@
         </div>
       }
     </div>
+
+    <figure class="help__figure">
+      <img ngSrc="/help/comodines.webp" width="1100" height="688" alt="Sección de comodines activos del formulario de creación de sala, con cuatro interruptores." />
+      <figcaption>Los cuatro comodines, tal como se ven al crear una sala.</figcaption>
+    </figure>
   </section>
 
   <section id="help-reportes" class="help__section">
     <h2><lucide-icon [img]="ReportesIcon" size="18" /> Reportes</h2>
     <p>Analíticas y exportación de datos por sala, con búsqueda por nombre. Solo lista salas que ya pasaron por el ciclo completo de la partida: una sala que nunca se finalizó no aparece ahí.</p>
+
+    <figure class="help__figure">
+      <img ngSrc="/help/reportes.webp" width="1100" height="688" alt="Pantalla de reportes con un buscador de salas por nombre." />
+      <figcaption>Buscador de reportes por sala.</figcaption>
+    </figure>
   </section>
 
   <section id="help-alumnos" class="help__section">
     <h2><lucide-icon [img]="UsersIcon" size="18" /> Del lado del alumno</h2>
     <p>Los alumnos no crean cuenta ni inician sesión: entran directamente desde el link de invitación que vos compartís. La pantalla solo pide un apodo (nickname), visible para vos y el resto de la audiencia.</p>
+
+    <figure class="help__figure help__figure--narrow">
+      <img ngSrc="/help/join-alumno.webp" width="1100" height="1100" alt="Pantalla de invitación a jugar que ve el alumno, con el nombre de la sala y un campo para elegir nickname." />
+      <figcaption>Lo primero que ve el alumno al abrir el link de invitación.</figcaption>
+    </figure>
     <p>Mientras esperan, quedan como <strong>Observador</strong> hasta que los promovés a Estudiante. Una vez que arranca la partida y liberás una pregunta, ven un contador en cuenta regresiva y las opciones para responder; si hay comodines activados, aparecen debajo de las opciones. Como Observador no responden preguntas, pero sí pueden chatear y, si activaste el comodín Público, votar en tiempo real.</p>
 
     <div class="help__callout help__callout--good">

@@ -1,4 +1,6 @@
-import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { RouterLink } from '@angular/router';
+import { DOCUMENT, NgOptimizedImage } from '@angular/common';
 import {
   LucideAngularModule,
   type LucideIconData,
@@ -33,11 +35,13 @@ interface RolFila {
 @Component({
   selector: 'app-help',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [LucideAngularModule],
+  imports: [RouterLink, LucideAngularModule, NgOptimizedImage],
   templateUrl: './help.component.html',
   styleUrl: './help.component.scss',
 })
 export class HelpComponent {
+  private readonly document = inject(DOCUMENT);
+
   protected readonly HelpIcon = HelpCircle;
   protected readonly DashboardIcon = LayoutDashboard;
   protected readonly DatabaseIcon = Database;
@@ -95,4 +99,13 @@ export class HelpComponent {
         'Chatear y, si está activo, votar con el comodín Público. No responde preguntas.',
     },
   ];
+
+  /**
+   * El layout principal scrollea en un contenedor interno, no en `window`,
+   * así que el anchorScrolling del Router no llega. scrollIntoView() sí,
+   * porque scrollea el ancestro scrolleable más cercano sin importar cuál sea.
+   */
+  protected scrollToSection(id: string): void {
+    this.document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
 }
