@@ -1,0 +1,165 @@
+<div class="help">
+  <header class="help__header">
+    <lucide-icon [img]="HelpIcon" size="26" class="help__header-icon" />
+    <div>
+      <h1 class="help__title">Manual de Usuario</h1>
+      <p class="help__subtitle">Guía rápida de Quizis: cómo armar bancos, crear salas y conducir una partida en vivo</p>
+    </div>
+  </header>
+
+  <nav class="help__toc" aria-label="Secciones del manual">
+    <a href="#help-panel">Panel principal</a>
+    <a href="#help-bancos">Banco de preguntas</a>
+    <a href="#help-salas">Crear una sala</a>
+    <a href="#help-presentador">Modo presentador</a>
+    <a href="#help-comodines">Comodines</a>
+    <a href="#help-reportes">Reportes</a>
+    <a href="#help-alumnos">Del lado del alumno</a>
+    <a href="#help-roles">Roles y permisos</a>
+    <a href="#help-notas">A tener en cuenta</a>
+  </nav>
+
+  <section id="help-panel" class="help__section">
+    <h2><lucide-icon [img]="DashboardIcon" size="18" /> Panel principal</h2>
+    <p>Es la pantalla de inicio después de loguearte. Las cuatro tarjetas resumen bancos de preguntas, preguntas totales, salas de juego creadas y salas activas en este momento. Desde ahí tenés dos atajos permanentes: <strong>+ Nueva Sala</strong> y <strong>Ver Bancos</strong>.</p>
+  </section>
+
+  <section id="help-bancos" class="help__section">
+    <h2><lucide-icon [img]="DatabaseIcon" size="18" /> Banco de preguntas</h2>
+    <p>Un banco agrupa preguntas por tema (por ejemplo "Historia del Arte" o "Cultura General"). Una sala siempre toma sus preguntas de un banco.</p>
+
+    <h3>Crear un banco nuevo</h3>
+    <ol class="help__steps">
+      <li>
+        <h4>Nombrá el banco</h4>
+        <p>Un nombre corto y descriptivo. La descripción es opcional pero ayuda a otros organizadores a entender el contenido.</p>
+      </li>
+      <li>
+        <h4>Cargá las preguntas</h4>
+        <p>Sumalas una por una o importá un archivo JSON, CSV o Excel con la plantilla descargable desde el listado de bancos.</p>
+      </li>
+      <li>
+        <h4>Definí nivel, tiempo y opciones</h4>
+        <p>Cada pregunta tiene un nivel de dificultad, un límite de tiempo (30 s por defecto) y hasta 4 opciones; marcá cuál es la correcta.</p>
+      </li>
+    </ol>
+
+    <div class="help__callout help__callout--warn">
+      <span class="help__callout-label"><lucide-icon [img]="WarnIcon" size="14" /> Ojo con este botón</span>
+      <p><strong>+ Nueva pregunta</strong> no abre un formulario: agrega de inmediato una pregunta en blanco al banco y recién después se edita. Si lo tocás por error, cada pregunta se borra con el ícono que aparece al pasar el mouse por encima en la lista, previa confirmación.</p>
+    </div>
+  </section>
+
+  <section id="help-salas" class="help__section">
+    <h2><lucide-icon [img]="PlayIcon" size="18" /> Crear una sala</h2>
+    <p>Una sala es la partida en sí: conecta un banco de preguntas con un grupo de participantes en tiempo real. Se crea desde <strong>Salas → Crear Sala</strong>.</p>
+    <p>El formulario define el título, el estado inicial (Borrador por defecto), cuántas preguntas se liberan por ronda, cuánto dura el link de invitación (1 a 168 horas), el máximo de estudiantes que pueden entrar con ese rol, y qué comodines están activos.</p>
+    <p>Al pie hay dos acciones: <strong>Guardar borrador</strong> (sin generar link activo) o <strong>Iniciar sala</strong> (queda lista para recibir participantes).</p>
+  </section>
+
+  <section id="help-presentador" class="help__section">
+    <h2><lucide-icon [img]="PlayIcon" size="18" /> Modo presentador</h2>
+    <p>Al entrar a una sala en vivo, ves el panel de control de la partida: quién está conectado, el link para invitar, y los controles para arrancar y avanzar preguntas. <strong>Copiar Enlace</strong> lo comparte tal cual; <strong>Regenerar</strong> invalida el anterior y crea uno nuevo.</p>
+
+    <div class="help__callout help__callout--warn">
+      <span class="help__callout-label"><lucide-icon [img]="WarnIcon" size="14" /> Requisito real para iniciar el juego</span>
+      <p><strong>Iniciar juego</strong> necesita al menos un participante con rol Estudiante conectado — no alcanza con que haya gente en la sala. Quien entra por el link llega primero como Observador; promovelo a Estudiante con el ícono que aparece junto a su nombre en la lista de participantes.</p>
+    </div>
+
+    <h3>Conducir la partida</h3>
+    <ol class="help__steps">
+      <li>
+        <h4>Iniciar juego</h4>
+        <p>Pasa la sala de "Esperando alumnos" a "En vivo". Aparecen el temporizador y el contador de premio.</p>
+      </li>
+      <li>
+        <h4>Liberar siguiente pregunta</h4>
+        <p>Cada pregunta se libera manualmente; mientras tanto el panel muestra un contador circular con el tiempo restante.</p>
+      </li>
+      <li>
+        <h4>Seguir el progreso</h4>
+        <p>La barra de puntitos sobre la pregunta indica cuántas quedan en la ronda.</p>
+      </li>
+      <li>
+        <h4>Finalizar sala</h4>
+        <p>Cierra la partida de forma definitiva y habilita el reporte de resultados de esa sala.</p>
+      </li>
+    </ol>
+
+    <p>A la derecha del panel: pestañas de <strong>Participantes</strong> (con rol y estado de conexión) y <strong>Chat en Vivo</strong>, más un feed de eventos de la sala.</p>
+  </section>
+
+  <section id="help-comodines" class="help__section">
+    <h2><lucide-icon [img]="ReportesIcon" size="18" /> Comodines</h2>
+    <p>Ayudas opcionales que se activan al crear la sala. Cada una cambia la dinámica de una pregunta puntual durante la partida en vivo. <strong>Público</strong> e <strong>IA</strong> vienen activados por defecto; <strong>Llamada</strong> y <strong>50/50</strong>, apagados.</p>
+
+    <div class="help__comodin-grid">
+      @for (c of comodines; track c.nombre) {
+        <div class="help__comodin-card">
+          <span class="help__comodin-name">
+            <lucide-icon [img]="c.icon" size="15" />
+            {{ c.nombre }}
+          </span>
+          <p>{{ c.descripcion }}</p>
+        </div>
+      }
+    </div>
+  </section>
+
+  <section id="help-reportes" class="help__section">
+    <h2><lucide-icon [img]="ReportesIcon" size="18" /> Reportes</h2>
+    <p>Analíticas y exportación de datos por sala, con búsqueda por nombre. Solo lista salas que ya pasaron por el ciclo completo de la partida: una sala que nunca se finalizó no aparece ahí.</p>
+  </section>
+
+  <section id="help-alumnos" class="help__section">
+    <h2><lucide-icon [img]="UsersIcon" size="18" /> Del lado del alumno</h2>
+    <p>Los alumnos no crean cuenta ni inician sesión: entran directamente desde el link de invitación que vos compartís. La pantalla solo pide un apodo (nickname), visible para vos y el resto de la audiencia.</p>
+    <p>Mientras esperan, quedan como <strong>Observador</strong> hasta que los promovés a Estudiante. Una vez que arranca la partida y liberás una pregunta, ven un contador en cuenta regresiva y las opciones para responder; si hay comodines activados, aparecen debajo de las opciones. Como Observador no responden preguntas, pero sí pueden chatear y, si activaste el comodín Público, votar en tiempo real.</p>
+
+    <div class="help__callout help__callout--good">
+      <span class="help__callout-label"><lucide-icon [img]="CheckIcon" size="14" /> Dato útil</span>
+      <p>El link de invitación vence según lo definido al crear la sala (1 a 168 horas). Si expiró, hay que regenerarlo desde el panel del presentador.</p>
+    </div>
+  </section>
+
+  <section id="help-roles" class="help__section">
+    <h2><lucide-icon [img]="UsersIcon" size="18" /> Roles y permisos</h2>
+    <p>Tres roles conviven dentro de una sala en vivo. No confundir con la cuenta con la que iniciás sesión: los alumnos nunca tienen usuario propio, su rol vive solo dentro de esa sala.</p>
+
+    <div class="help__table-wrap">
+      <table class="help__table">
+        <thead>
+          <tr><th>Rol</th><th>Cómo se llega</th><th>Puede hacer</th></tr>
+        </thead>
+        <tbody>
+          @for (r of roles; track r.rol) {
+            <tr>
+              <td><span class="help__badge" [class]="r.badgeClass">{{ r.rol }}</span></td>
+              <td>{{ r.comoSeLlega }}</td>
+              <td>{{ r.puedeHacer }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="help-notas" class="help__section">
+    <h2><lucide-icon [img]="DangerIcon" size="18" /> A tener en cuenta</h2>
+
+    <div class="help__callout help__callout--danger">
+      <span class="help__callout-label"><lucide-icon [img]="DangerIcon" size="14" /> Es irreversible</span>
+      <p><strong>Finalizar sala</strong> cierra la partida de forma definitiva; no hay forma de reabrirla desde la interfaz. Usalo solo cuando la sesión terminó de verdad.</p>
+    </div>
+
+    <div class="help__callout help__callout--warn">
+      <span class="help__callout-label"><lucide-icon [img]="WarnIcon" size="14" /> Configuración</span>
+      <p>El ítem <strong>Configuración</strong> del menú lateral todavía no está disponible — por ahora vuelve al Panel Principal.</p>
+    </div>
+
+    <div class="help__callout help__callout--warn">
+      <span class="help__callout-label"><lucide-icon [img]="WarnIcon" size="14" /> Observador por defecto</span>
+      <p>Si un alumno no puede responder preguntas, probablemente sigue como Observador. Promovelo a Estudiante desde la lista de participantes antes de tocar "Iniciar juego".</p>
+    </div>
+  </section>
+</div>

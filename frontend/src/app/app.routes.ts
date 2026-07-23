@@ -74,6 +74,12 @@ export const routes: Routes = [
           ),
       },
 
+      {
+        path: 'ayuda',
+        canActivate: [authGuard],
+        loadChildren: () => import('./features/help/help.routes').then((m) => m.HELP_ROUTES),
+      },
+
       // Fallbacks para placeholders
       { path: 'preguntas', redirectTo: 'home', pathMatch: 'full' },
       { path: 'usuarios', redirectTo: 'reportes', pathMatch: 'full' },
