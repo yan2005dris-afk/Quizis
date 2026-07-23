@@ -60,3 +60,6 @@ docker-compose.override.yml
 .atl/
 /.claude
 /.junie
+
+# -- foglamp local scan --
+.foglamp/
