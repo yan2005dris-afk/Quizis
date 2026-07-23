@@ -11,6 +11,7 @@ import {
   BarChart2,
   Database,
   PlayCircle,
+  HelpCircle,
 } from 'lucide-angular';
 
 @Component({
@@ -30,6 +31,7 @@ export class SidebarComponent {
   readonly PlayIcon = PlayCircle;
   readonly ReportesIcon = BarChart2;
   readonly DatabaseIcon = Database;
+  readonly HelpIcon = HelpCircle;
   readonly SettingsIcon = Settings;
   readonly LogOutIcon = LogOut;
   readonly MenuIcon = Menu;

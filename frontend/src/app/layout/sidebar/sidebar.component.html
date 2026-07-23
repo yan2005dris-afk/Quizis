@@ -41,6 +41,12 @@
         <span>Reportes</span>
       }
     </a>
+    <a routerLink="/ayuda" routerLinkActive="active" class="nav-item">
+      <lucide-icon [img]="HelpIcon"></lucide-icon>
+      @if (!isCollapsed()) {
+        <span>Ayuda</span>
+      }
+    </a>
   </nav>
 
   <div class="sidebar-footer">
